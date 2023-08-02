@@ -1,0 +1,33 @@
+.progress-bar {
+    position: sticky;
+    top: 0;
+    margin-bottom: 1rem;
+    z-index: 9000;
+    width: 100%;
+}
+
+/* Here we apply styles to the progress bar */
+.progress-bar progress {
+    background-color: var(--vscode-quickInput-background);
+    width: 100%;
+    height: 1.25rem;
+    border: none;
+}
+
+.progress-bar-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 100%;
+}
+
+/* Here we define styles for the progress bar in different browsers */
+.progress-bar progress::-webkit-progress-bar {
+    background-color: var(--vscode-quickInput-background);
+}
+
+.progress-bar progress::-webkit-progress-value {
+    background-color: var(--vscode-button-background);
+}

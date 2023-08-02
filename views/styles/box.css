@@ -1,0 +1,28 @@
+.box {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    font-size: var(--vscode-editor-font-size);
+    /* font-size: medium */
+    font-family: var(--vscode-editor-font-family);
+  }
+  
+  .box__header {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .box__header__info {
+    font-size: 10px;
+    color: #666;
+    margin-left: 20px;
+  }
+  
+  .box__content {
+    font-size: 12px;
+    line-height: 1.5;
+    color: --vscode-sideBarTitle-foreground;
+  }

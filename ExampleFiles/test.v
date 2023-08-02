@@ -1,0 +1,2 @@
+(** coqdoc comment *)
+Coqcode.

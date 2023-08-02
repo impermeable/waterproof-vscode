@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig-base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ESNext",
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts"]
+}

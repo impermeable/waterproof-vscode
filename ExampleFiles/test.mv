@@ -1,0 +1,18 @@
+<markdown># Header
+Paragraph
+1. List element one
+2. List element two
+</markdown>
+<lock>
+<markdown># header</markdown>
+</lock>
+<coqblock>
+<coqdoc>
+<coqdown>* Header</coqdown>
+<math-display>latex</math-display>
+</coqdoc>
+<coqcode>Lemma.</coqcode>
+</coqblock>
+<hint title="optional">
+<markdown>## Header</markdown>
+</hint>

@@ -1,0 +1,130 @@
+[contenteditable]:focus {
+  outline: 0px transparent;
+}
+
+.ProseMirror hr {
+  color: var(--vscode-textSeparator-foreground);
+  background-color: var(--vscode-textSeparator-foreground);
+  border: 0.3em solid var(--vscode-textSeparator-foreground);
+}
+
+#editor > .ProseMirror {
+  margin-top: 10px;  /* same as body padding */
+}
+
+.ProseMirror {
+  font-size: var(--vscode-editor-font-size);
+  font-family: var(--vscode-font-family);
+  font-weight: var(--vscode-editor-font-weight);
+  caret-color: auto !important;
+  position: relative; /*needed for the highlighting*/
+}
+
+.ProseMirror ::selection {
+  color: var(--vscode-editor-selectionForeground);
+  background-color: var(--vscode-editor-selectionBackground);
+}
+
+.ProseMirror-selectednode {
+  position: relative;
+}
+
+/* Style the selected prosemirror node */
+.ProseMirror-selectednode::after {
+  --width: 4px;
+  content: " ";
+  height: 100%;
+  display: block;
+  position: absolute;
+  top: 0;
+  right: calc(-1.5 * var(--width));
+  bottom: 0;
+  width: var(--width); 
+  /* background-color: greenyellow; */
+  background-color: var(--vscode-button-secondaryBackground);
+  /* we add a border for some high contrast themes */
+  outline: 1px solid var(--vscode-button-border); 
+}
+
+/* Add space around the hr to make clicking it easier */
+.ProseMirror-example-setup-style hr {
+  padding: 2px 10px;
+  border: none;
+  margin: 1em 0;
+}
+
+.ProseMirror-example-setup-style hr:after {
+  content: "";
+  display: block;
+  height: 1px;
+  background-color: silver;
+  line-height: 2px;
+}
+
+.ProseMirror ul, .ProseMirror ol {
+  padding-left: 30px;
+}
+
+.ProseMirror blockquote {
+  padding-left: 1em;
+  border-left: 3px solid #eee;
+  margin-left: 0; margin-right: 0;
+}
+
+.ProseMirror-example-setup-style img {
+  cursor: default;
+}
+
+.ProseMirror-prompt {
+  background: white;
+  padding: 5px 10px 5px 15px;
+  border: 1px solid silver;
+  position: fixed;
+  border-radius: 3px;
+  z-index: 11;
+  box-shadow: -.5px 2px 5px rgba(0, 0, 0, .2);
+}
+
+.ProseMirror-prompt h5 {
+  margin: 0;
+  font-weight: normal;
+  font-size: 100%;
+  color: #444;
+}
+
+.ProseMirror-prompt input[type="text"],
+.ProseMirror-prompt textarea {
+  background: #eee;
+  border: none;
+  outline: none;
+}
+
+.ProseMirror-prompt input[type="text"] {
+  padding: 0 4px;
+}
+
+.ProseMirror-prompt-close {
+  position: absolute;
+  left: 2px; top: 1px;
+  color: #666;
+  border: none; background: transparent; padding: 0;
+}
+
+.ProseMirror-prompt-close:after {
+  content: "✕";
+  font-size: 12px;
+}
+
+.ProseMirror-invalid {
+  background: #ffc;
+  border: 1px solid #cc7;
+  border-radius: 4px;
+  padding: 5px 10px;
+  position: absolute;
+  min-width: 10em;
+}
+
+.ProseMirror-prompt-buttons {
+  margin-top: 5px;
+  display: none;
+}

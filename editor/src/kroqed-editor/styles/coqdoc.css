@@ -1,0 +1,36 @@
+/* .coqdoc-view-editor {
+
+} */
+
+/* .coqdoc-view-rendered {
+
+} */
+
+/* .coqdoc-view {
+
+} */
+
+.coqdoc-view-empty:before {
+    display: inline;
+    color: var(--vscode-errorForeground);
+    content: "...";
+}
+
+.coqdoc-view-empty > div {
+    display: none;
+}
+
+
+.coqdoc-view-editor::before {
+    --border-color: var(--vscode-input-border);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    font-weight: var(--vscode-font-weight);
+    border-radius: 0px 0px 5px 0px;
+    content: "Coqdoc";
+    padding: 0.2em;
+}

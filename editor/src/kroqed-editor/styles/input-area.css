@@ -1,0 +1,28 @@
+.inputarea {
+  display: block;
+  position: relative;
+  padding-left: 8px;
+}
+  
+.inputarea::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  height: 100%;
+  width: 4px; 
+  background-color: var(--vscode-button-background); 
+  /* we add a border for some high contrast themes */
+  outline: 1px solid var(--vscode-button-border); 
+}
+
+.inputarea.proven::before {
+  width: 8px;
+  background-color: lightgreen;
+}
+
+.inputarea.incomplete::before {
+  width: 8px;
+  background-color: lightcoral;
+}
+  

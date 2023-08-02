@@ -1,0 +1,113 @@
+.text-area {
+    padding-top: 10px;
+    font-size: var(--vscode-editor-font-size);
+    font-family: var(--vscode-editor-font-family);
+}
+
+.proof-assistant {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  height: 100%; 
+  overflow: scroll;
+  row-gap: 10px;
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+  
+  .tactic-container {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--vscode-editor-font-size);
+}
+
+.tactic-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.button-group {
+    display: flex;
+    gap: 5px;
+}
+
+.tactic-description {
+    display: flex;
+    align-items: center;
+}
+
+.tactic-example {
+    margin-top: 10px;
+}
+
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-foreground);
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--vscode-editor-background) transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+    font-size: var(--vscode-font-size);
+}
+
+  .text-box {
+    top: 0; 
+    left: 0;
+    padding-top: 0px;
+    padding-bottom: 4px;
+    margin: 0px 0px;
+    min-height: 3em;
+    max-height: 3em;
+    position: sticky;
+    background-color: var(--vscode-editor-background);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .text-area {
+    position: static;
+    height: auto;
+    width: 200px;
+  }
+
+  .text {
+    position: static;
+  }
+  

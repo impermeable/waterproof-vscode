@@ -1,0 +1,310 @@
+# Tutorial: Getting used to Waterproof
+
+This interactive tutorial explains how to get started with Waterproof. The aim of Waterproof is to help learning how to prove mathematical statements.
+
+**`Very important`** Immediately after every sentence of a proof that you write in this tutorial and in general in Waterproof, let Waterproof check that sentence (sometimes we call this "execute the sentence") by pressing **Alt + ↓** (on MacOS: **Option + ↓** or **⌥ + ↓**). This is absolutely necessary to be able to understand this tutorial and in general to catch errors in time and to understand how the proof is evolving.
+
+This tutorial is in the form of an **exercise sheet** (sometimes we will call it a **notebook**). It is a mix of explanations and exercises in which you can try proving mathematical statements yourself.
+
+The exercise sheet contains **text cells** (white background) and **code cells** (gray background). So far, we have been writing text, in text cells. But now we will introduce the first code cell. There's nothing you need to understand in this code cell, so let's quickly skip past it.
+
+```coq
+Require Import Rbase.
+Require Import Rfunctions.
+
+Require Import Waterproof.Waterproof.
+Require Import Waterproof.Tactics.
+Require Import Waterproof.Notations.
+Require Import Waterproof.Automation.
+Require Import Waterproof.Libs.Analysis.SupAndInf.
+
+Waterproof Enable Automation RealsAndIntegers.
+
+Open Scope R_scope.
+Open Scope subset_scope.
+
+Set Default Goal Selector "!".
+Set Default Timeout 5.
+```
+
+
+## 1. Prove a lemma
+
+In the following code cell, we introduce a **lemma**. We called the lemma **example_reflexivity**.
+
+```coq
+Lemma example_reflexivity :
+  0 = 0.
+```
+
+All input to Waterproof, all text in code cells, is in the form of *sentences*. Every sentence finishes with a period.
+
+To understand this tutorial, it is necessary that you execute the code sentence-by-sentence by pressing **Alt + ↓** (on MacOS: **Option + ↓** or **⌥ + ↓**). (Alternatively, you can use the buttons on the left, but it is typically much faster to work with keyboard shortcuts.)
+
+Press **Alt + ↓** (on MacOS: **Option + ↓** or **⌥ + ↓**) until the blue checkmark appears on top of the period after `0 = 0` in the lemma above.
+
+We will now prove the lemma. We start the proof by writing the sentence `"Proof."` in a code cell.
+
+```coq
+Proof.
+```
+
+Execute the code sentence after sentence (press **Alt + ↓** or **Option + ↓**), until a blue checkmark appears in place of the period after `Proof.`. The checkmark means that Waterproof has checked every sentence before the checkmark. Note how in the part of the screen under **Proof progress** (either on the right of the screen, or down below) appeared what we need to show, namely `0 = 0`. We will often refer to this as the current **goal**.
+
+Next, we tell Waterproof what to do to prove the lemma. For such a simple statement, we can just write and execute the sentence `"We conclude that (0 = 0)."` and Waterproof will check automatically that this holds. We often say that in such a sentence, we **apply a tactic.**
+
+```coq
+We conclude that (0 = 0).
+```
+
+Execute the above sentence, with **Alt + ↓**, until the checkmark appears after the sentence. Note how under proof progress it says `Done.`. The lemma is proved! We close the proof by writing `Qed.`.
+
+```coq
+Qed.
+```
+
+**HINT:** When writing `We conclude that (...)`, it is important that at the place of the dots you write the current goal (which you can see under **Proof progress**), and not another statement.
+
+**HINT:** If you click on the hammer symbol on the top right, a list of tactics will open. You can click on one of the icons next to the tactics, and the tactic will either be copied to the clipboard or inserted in the text at the place of the cursor, usually with some placeholders that you need to fill in.
+
+### Try it yourself: prove a lemma
+
+You can now try this for yourself. We prepared a lemma below, that we named **exercise_reflexivity**.
+
+```coq
+Lemma exercise_reflexivity :
+  3 = 3.
+
+Proof.
+```
+
+The blue brackets below delineate an input area. You can freely work there. Move the mouse just below the first blue bracket until a blue, horizontal line appears and click on it. Then, you can add a code cell by pressing **Alt + c** (On MacOS: **Ctrl + c**), and add a text cell by pressing **Alt + t** (On MacOS: **Ctrl + t**).
+
+Below we already added one code cell, which says `Admitted.`. Executing that code cell (**Alt + ↓**), will also change the proof progress to `Done.` **However,** in that case it is not proven but assumed as an axiom. We do this so you can continue executing the notebook even if you cannot solve the exercise.
+
+**`Remember`** Immediately after every line that you write, execute that line (by pressing **Alt + ↓** or **Option + ↓**). This is absolutely necessary to be able to catch errors in time and to understand how the proof is evolving.
+
+**`Very important`** After you have found a proof, always replace the `Admitted.` by `Qed.` (click on the code cell and change the sentence).
+
+```coq
+(* Start of input area *)
+Admitted.
+(* End of input area *)
+```
+
+
+## 2. Show *for-all* statements: take arbitrary values
+
+Let us consider the following lemma.
+
+```coq
+Lemma every_x_equal_to_itself :
+  for all x : ℝ,
+    x = x.
+```
+
+> **NOTE:** the notation $x : ℝ$ means $x$ is in $\mathbb{R}$ (or more accurately, $x$ is of type $\mathbb{R}$). This notation may be unfamiliar to you, and you may be more familiar with the notation $x ∈ \reals$. The difference is due to the fact that Waterproof is built on **type theory** and not on set theory.
+
+**HINT:** You can insert characters such as ℝ either from the symbol menu that opens when clicking on 'Σ' in the top right corner, or you can write '\reals' until a menu pops up and press enter. Make sure that the code reads 'ℝ' and not '\reals' itself. For many other unicode characters you can use a backslash command as well.
+
+```coq
+Proof.
+```
+
+To show a statement like "for all $x : \mathbb{R}$, ...", you first need to take an arbitrary $x : \mathbb{R}$, and then continue showing ... . We do this by writing and executing the following sentence, i.e. by applying the following **tactic**.
+
+```coq
+Take x : (ℝ).
+```
+
+(In this case, we could have written `Take x : ℝ`, because `ℝ` is just one 'word', and we will do so below, but in general the brackets can be important).
+
+When showing $∀ x : ℝ, ...$, after taking $x : \mathbb{R}$ we need to continue showing whatever statement is at the place of the dots $...$. In our case, we need to show that $x = x$. So we are back in a situation we are by now familiar with. We finish the proof as before.
+
+```coq
+We conclude that (x = x).
+Qed.
+```
+
+### Try it yourself: show *for-all* statements
+
+Try to complete the proof of the following lemma.
+
+```coq
+Lemma exercise :
+  for all x : ℝ,
+    x + 3 = 3 + x.
+
+Proof.
+```
+
+**HINT:** If you would like to get a hint on what you need to do, you can write and execute the sentence `Help.`
+
+```coq
+
+(* Start of input area *)
+Admitted.
+(* End of input area *)
+```
+
+
+## 3. Show *there-exists* statements: choose values
+
+If you want to show that *there exists* $y : \mathbb{R}$ such that $(\dots)$, you need to **choose** a candidate for $y$, and continue showing $(\dots)$ with your choice.
+
+```coq
+Lemma example_choosing :
+  there exists y : ℝ,
+    y < 3.
+
+Proof.
+```
+
+We first choose $y:=2$ by using the tactic `Choose y := (` *value* `).`.
+
+```coq
+Choose y := (2).
+```
+
+(In this particular case we could also have written `Choose y := 2`, but in general the brackets are important.)
+
+We now need to show that ($y<3$) (see **Proof progress** after executing the previous sentence). We can record this for our own convenience.
+
+```coq
+We need to show that (y < 3).
+```
+
+In other words, we need to show that ($2 < 3$). We can also use the `We need to show that ` tactic to slightly reformulate the goal.
+
+```coq
+We need to show that (2 < 3).
+We conclude that (2 < 3).
+Qed.
+```
+
+### Try it yourself: show *there-exists* statements
+
+```coq
+Lemma exercise_choosing :
+  there exists z : ℝ,
+    10 < z.
+
+Proof.
+```
+
+**HINT:** The choice `z := 11` would work here.
+
+```coq
+(* Start of input area *)
+Admitted.
+(* End of input area *)
+```
+
+
+## 15. Expand definitions
+
+Sometimes you need to expand the definition of a function or a mathematical concept to continue.
+
+Consider a function called `f` given by
+
+```coq
+Definition f (x : ℝ) := x^2.
+```
+
+We now aim to prove the following lemma.
+
+```coq
+Lemma example_expand :
+  ∀ x : ℝ, f(x) ≥ 0.
+
+Proof.
+Take x : ℝ.
+```
+
+To show that `f(x) ≥ 0`, we need to use the definition of `f`.
+
+Because we know the definition of `f`, we can use a chain of (in)equalities to prove the goal:
+
+`We conclude that (& f(x) = x^2 ≥ 0).`
+
+This is not an option, however, if you do not know the definition of `f`.
+In that case, you need Waterproof to expand the definition for you. You can do this using:
+
+```coq
+Expand the definition of f.
+```
+
+Waterproof has expanded the definition of `f`. To keep the proof readable, Waterproof asks you to repeat the reformulation of the goal, see the **proof progress** window.
+
+We follow its advice:
+
+```coq
+That is, write the goal as (x^2 ≥ 0).
+```
+
+and continue with the proof
+
+```coq
+We conclude that (x^2 ≥ 0).
+Qed.
+```
+
+You can also expand the definition in a hypothesis. For instance,
+
+`Expand the definition of f in (i).`
+
+expands the definition of `f` in the hypothesis with the label `(i)`.
+
+For some mathematical objects we use natural language as part of the notation. For example, the phrase `0 is a _lower bound_ of [0,1]` is defined as the logical expression
+$$
+  ∀ x : ℝ, x : [0,1] ⇒ 0 ≤ x \,.
+$$
+
+Suppose we actually want to show this statement:
+
+```coq
+Lemma example_expand_2 :
+  0 is a _lower bound_ of [0,1].
+
+Proof.
+```
+
+We need the expanded definition to continue.
+Like with the function `f`, we can use
+
+`Expand the definition of lower bound.`
+
+to turn our goal into the logical formula shown above.
+
+```coq
+Expand the definition of lower bound.
+```
+
+**Note:** The underscores in the notation `is a _lower bound_` indicate which phrase to use to expand the definition, in this case, we indeed use the phrase `lower bound`.
+The underscores are **not** required, the formulation `0 is a lower bound of [0,1]` works just as well, but the underscores will always be displayed in the proof progress window or in messages.
+
+The proof continues as follows:
+
+```coq
+That is, write the goal as (for all a : ℝ, a : [0,1] ⇒ 0 ≤ a).
+Take a : ℝ.
+Assume that (a : [0,1]).
+We conclude that (0 ≤ a).
+Qed.
+```
+
+### Try it yourself: expand another definition
+
+```coq
+Lemma exercise_expand_2 :
+  100 is an _upper bound_ of [0,1].
+Proof.
+```
+
+**HINT:** Expand the definition of `upper bound`.
+
+```coq
+(* Start of input area *)
+Admitted.
+(* End of input area *)
+```

@@ -1,0 +1,92 @@
+{
+	"&": {
+	  "color": "var(--vscode-input-foreground)",
+	  "backgroundColor": "var(--vscode-input-background)"
+	},
+
+	".cm-coq-error": {
+		"textDecorationLine": "underline",
+		"textDecorationStyle": "wavy",
+		"textDecorationColor": "var(--vscode-editorError-foreground)"
+	},
+
+	".cm-coq-warning": {
+		"textDecorationLine": "underline",
+		"textDecorationStyle": "wavy",
+		"textDecorationColor": "var(--vscode-editorWarning-foreground)"
+	},
+
+	".cm-coq-hint": {
+		"textDecorationLine": "underline",
+		"textDecorationStyle": "wavy",
+		"textDecorationColor": "var(--vscode-editorHint-foreground)"
+	},
+
+	".cm-coq-info": {
+		"textDecorationDLine": "underline",
+		"textDecorationStyle": "wavy",
+		"textDecorationColor": "var(--vscode-editorInfo-foreground)"
+	},
+
+	".cm-content": {
+	  "caretColor": "auto",
+	  "fontFamily": "var(--vscode-editor-font-family)",
+	  "fontSize": "var(--vscode-editor-font-size)",
+	  "fontWeight": "var(--vscode-editor-font-weight)"
+	},
+  	".cm-cursor, .cm-dropCursor": {"borderLeftColor": "auto"},
+	"&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {"backgroundColor": "var(--vscode-list-activeSelectionBackground)"},
+  
+	".cm-panels": {"backgroundColor": "var(--vscode-list-dropBackground)", "color": "var(--vscode-list-highlightForeground)"},
+	".cm-panels.cm-panels-top": {"borderBottom": "2px solid black"},
+	".cm-panels.cm-panels-bottom": {"borderTop": "2px solid black"},
+  
+	".cm-searchMatch": {
+	  "backgroundColor": "#72a1ff59",
+	  "outline": "1px solid #457dff"
+	},
+	".cm-searchMatch.cm-searchMatch-selected": {
+	  "backgroundColor": "#6199ff2f"
+	},
+	".cm-activeLine": {"backgroundColor": "#6699ff0b"},
+	".cm-selectionMatch": {"backgroundColor": "#aafe661a"},
+	"&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket": {
+	  "backgroundColor": "#bad0f847"
+	},
+  
+	".cm-gutters": {
+	  "backgroundColor": "var(--vscode-editorInlayHint-background)",
+	  "color": "var(--vscode-editorInlayHint-foreground)",
+	  "border": "none"
+	},
+
+	".cm-activeLineGutter": {
+	  "backgroundColor": "var(--vscode-editorLightBulb-foreground)"
+	},
+  
+	".cm-foldPlaceholder": {
+	  "backgroundColor": "transparent",
+	  "border": "none",
+	  "color": "#ddd"
+	},
+  
+	".cm-tooltip": {
+	  "border": "none",
+	  "color": "var(--vscode-menu-foreground)",
+	  "backgroundColor": "var(--vscode-menu-background)"
+	},
+	".cm-tooltip .cm-tooltip-arrow:before": {
+	  "borderTopColor": "transparent",
+	  "borderBottomColor": "transparent"
+	},
+	".cm-tooltip .cm-tooltip-arrow:after": {
+	  "borderTopColor": "var(--vscode-menu-separatorBackground)",
+	  "borderBottomColor": "var(--vscode-menu-separatorBackground)"
+	},
+	".cm-tooltip-autocomplete": {
+	  "& > ul > li[aria-selected]": {
+		"backgroundColor": "var(--vscode-menu-selectionBackground)",
+		"color": "var(--vscode-menu-selectionForeground)"
+	  }
+	}
+}

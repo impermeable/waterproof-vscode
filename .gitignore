@@ -1,0 +1,10 @@
+.vscode/settings.json
+/editor_output
+/out
+node_modules/
+editor_output
+.DS_store
+.vscode-test
+test_out/
+.ui-test/
+__tests_output__/

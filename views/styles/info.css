@@ -1,0 +1,16 @@
+.error-browser {
+  flex: 1 1 0%;
+}
+
+.info-panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: var(--vscode-editor-font-size);
+  /* font-size: medium */
+  font-family: var(--vscode-editor-font-family);
+}
+
+.info-panel {
+  overflow: auto;
+}

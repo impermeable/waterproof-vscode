@@ -1,0 +1,15 @@
+{
+    //"extends": "../tsconfig-base.json",
+    "compilerOptions": {
+      "module": "CommonJS",
+      "target": "ESNext",
+      "sourceMap": true,
+      "strict": true,
+      "rootDir": "../",
+      "outDir": "../test_out",
+      "resolveJsonModule": true,
+      "skipLibCheck": true
+    },
+    "include": ["../test/**/*.ts", "../src/**/*.ts", "../lib/**/*.ts"],
+    "exclude": ["../src/browser.ts"]
+  }

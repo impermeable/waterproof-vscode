@@ -1,0 +1,66 @@
+.text-area {
+    padding-top: 10px;
+    font-size: var(--vscode-editor-font-size);
+    font-family: var(--vscode-editor-font-family);
+}
+
+.error-browser {
+    flex: 1 1 0%;
+}
+
+
+.info-panel {
+    overflow: auto;
+}
+
+.info-panel-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.sentence {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 10px;
+}
+
+.VSCodeTextField-container {
+    display: flex;
+    align-items: center;
+    margin: 5px;
+}
+
+.VSCodeTextField-container textarea::placeholder {
+    text-align: left;
+    line-height: 24px;
+    vertical-align: middle;
+}
+
+
+.VSCodeTextField {
+    padding: 5px;
+    border-radius: 3px;
+    height: 20px;
+    width: 200px;
+}
+
+.VSCodeButton {
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+}
+
+
+#rightButton {
+    float: right;
+    margin: 5px;
+}
+
+.text-area {
+    padding: 4px;
+    margin: 0 8px;
+    height: 24px;
+    width: 200px;
+}

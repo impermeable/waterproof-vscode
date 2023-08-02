@@ -1,0 +1,86 @@
+import { Disposable, Position } from "vscode";
+import { GoalAnswer, GoalRequest, PpString } from "../lib/types";
+import { CoqFileProgressParams } from "./lsp-client/requestTypes";
+
+/**
+ * This defines the interface of a component that displays
+ * the status of the underlying lsp client
+ */
+export interface IStatusComponent extends Disposable {
+    /**
+     * Update the status bar component to display current status
+     * of client
+     *
+     * @param clientRunning indicates whether the client is running
+     */
+    update(clientRunning: boolean): void;
+
+    /**
+     * Update the status bar to indicate failure to start client
+     *
+     * @param emsg the error that resulted in failure to start
+     */
+    failed(emsg: string): void;
+}
+
+/**
+ * This defines the interface of a component that displays
+ * the status of the underlying lsp client
+ */
+export interface ILineNumberComponent extends Disposable {
+    update(pos: Position): void;
+}
+
+/**
+ * This defines the interface of a component that displays
+ * the progress of coq checking a file
+ */
+export interface IFileProgressComponent extends Disposable {
+    /**
+     * Called when the LSP client receives a notification that part of the document has been
+     * processed.
+     */
+    onProgress(params: CoqFileProgressParams): void;
+}
+
+/**
+ * This defines the interface of components that display
+ * goal and message related information
+ */
+export interface IGoalsComponent extends Disposable {
+
+    /**
+     * Update the goals component that a goals request has been sent
+     *
+     * @param cursor the goals request object sent by lsp client
+     */
+    goalRequestSent(cursor: GoalRequest): void;
+
+    /**
+     * Update the goals component with the latest goals answer
+     * from the coq-lsp server
+     *
+     * @param goals the goal answer object received from coq-lsp
+     */
+    updateGoals(goals: GoalAnswer<PpString> | undefined): void;
+
+    /**
+     * Update the status bar to indicate failure to start client
+     *
+     * @param e the error that resulted in failure to receive
+     *          goal answer
+     */
+    failedGoals(e: any): void;
+
+    /**
+     * Disable the GoalsComponent
+     */
+    disable(): void;
+}
+
+/**
+ * This defines the interface of components that execute commands
+*/
+export interface IExecutor {
+    setResults(results: GoalAnswer<PpString> | string[]): void;
+}

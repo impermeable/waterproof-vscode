@@ -1,0 +1,98 @@
+
+pre.coqpp {
+  margin: 0;
+}
+
+/* For the Pp printer */
+div.Pp_box {
+  display: inline;
+}
+
+div.Pp_box[data-margin="1"] {
+  margin-left: 0.75em;
+}
+
+div.Pp_box[data-margin="2"] {
+  margin-left: 1.5em;
+}
+
+div.Pp_box[data-mode="horizontal"] {
+  cursor: text;
+}
+
+/*
+ * Adjust line breaks and indentation to appear in appropriate modes:
+ * - Vertical mode or horizontal when line is broken: hide spaces, show br and indents.
+ * - Horizontal mode when line not broken: show spaces, hide br and indents.
+ */
+div.Pp_box .Pp_break.br > span.spaces,
+div.Pp_box[data-mode="vertical"] > .Pp_break > span.spaces {
+  display: none;
+}
+
+div.Pp_box:not([data-mode="vertical"]) > .Pp_break:not(.br) > br,
+div.Pp_box:not([data-mode="vertical"]) > .Pp_break:not(.br) > span.indent,
+div.Pp_box:not([data-mode="vertical"]) > .Pp_break:not(.br) > span.prev-indent {
+  display: none;
+}
+
+.goal > div.Pp_box[data-mode="vertical"],
+.goal > div.Pp_box[data-mode="vertical"] > div.Pp_box[data-mode="vertical"] {
+  display: block;
+}
+
+/* .constr\.evar {
+  color: var(--vscode-charts-blue);
+} 
+
+.constr\.keyword {
+  color: var(--vscode-charts-blue);
+}
+
+.constr\.notation {
+  color: var(--vscode-symbolIcon-variableForeground);
+}
+
+.constr\.path {
+  color: var(--vscode-charts-orange);
+}
+
+.constr\.reference {
+  color: var(--vscode-charts-green);
+} */
+
+/* .constr\.type {
+  color: var(--vscode-charts-blue);
+} */
+
+.constr\.variable {
+  color: var(--vscode-charts-blue);
+}
+/* 
+.module\.definition {
+  color: var(--vscode-charts-green);
+}
+
+.module\.keyword {
+  color:var(--vscode-charts-orange);
+}
+
+.tactic\.keyword {
+  color: var(--vscode-symbolIcon-variableForeground);
+}
+
+.tactic\.primitive {
+  color: var(--vscode-charts-red);
+}
+
+.tactic\.string {
+  color: var(--vscode-symbolIcon-stringForeground);
+}  */
+
+.constr\.reference:hover,
+.constr\.type:hover,
+.constr\.variable:hover,
+.constr\.notation:hover {
+  background: rgba(204, 255, 1, 0.25);
+  box-shadow: 0 0 4px 1px rgba(204, 255, 1, 0.5);
+}

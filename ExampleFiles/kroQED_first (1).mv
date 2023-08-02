@@ -1,0 +1,369 @@
+
+
+```coq
+Require Import Rbase.
+Require Import Rfunctions.
+
+From Coq Require Import List.
+Import ListNotations.
+
+Require Import Waterproof.Waterproof.
+Require Import Waterproof.Tactics.
+Require Import Waterproof.Notations.
+Require Import Waterproof.Automation.
+
+Waterproof Enable Automation RealsAndIntegers.
+
+Open Scope R_scope.
+Open Scope subset_scope.
+
+Set Default Goal Selector "!".
+Set Default Timeout 5.
+```
+<input-area>
+# ATC 4 Open notebook
+
+This is the notebook which is opened in ATC 4.
+
+# ATC 5 Save on Desktop
+
+The notebook should be saved in a chosen location on the computer.
+
+# ATC 6 Closing
+
+After saving the file on the chosen location we open the file again. Without changing anything we close this file.
+
+# ATC 7 Closing without saving changes
+
+You have to make a change here: ...
+
+And then close the document without saving it.
+
+# ATC 8 Goals
+
+Here we will show what the goal looks like.
+
+```coq
+Lemma ATC_8:
+    forall x : ℝ,
+        x + 3 = 3 + x.
+```
+
+We want to prove this lemma.
+
+```coq
+Proof.
+Take x : (ℝ).
+We conclude that (x + 3 = 3 + x).
+```
+</input-area>
+```coq
+Qed.
+```
+<input-area>
+# ATC 9 Hypothesis
+
+We will show that the hypothesis works, by using the "Debug" panel.
+
+# ATC 10 Messages
+
+You can see that messages by asking for help in Lemma ATC_8.
+
+# ATC 11 Logbook
+
+You can open the logbook in order to see that messages are being saved.
+
+# ATC 12 Indication of correctness
+
+Once a proof is correctly finished, Coqnitive shall indicate this.
+
+```coq
+Lemma ATC_12:
+    forall x : ℝ,
+        x = x.
+```
+
+You can finish the following proof:
+</input-area>
+<input-area>
+```coq
+Proof.
+Take x : (ℝ).
+
+```
+</input-area>
+```coq
+Qed.
+```
+<input-area>
+
+# ATC 13 Show errors
+
+If the proof is wrong it will show an error.
+
+```coq
+Lemma ATC_13:
+    forall x : ℝ,
+        x < x + 1.
+Proof.
+Take x : (ℝ).
+We conclude that (x < x + 1).
+```
+</input-area>
+```coq
+Qed.
+```
+<input-area>
+# ATC 14 Add markdown cells
+
+You can add markdown cells to the notebook.
+
+```coq
+Lemma ATC_14:
+    there exists y : ℝ,
+        y < 3.
+        (* Click in this code cell and add a markdown cell above. *)
+        (* Now add a markdown cell below. *)
+```
+
+# ATC 15 Add code cells
+
+You can also add code cells to the notebook.
+
+```coq
+Lemma ATC_15:
+    there exists y : ℝ,
+        y > 50.
+        (* Click in this code cell and add a code cell above. *)
+        (* Now add a code cell below. *)
+```
+
+# ATC 16 Add coqdoc comments
+
+You can render Coqdoc comments in this editor.
+
+```coq
+(* ATC 16 *)
+
+```
+
+# ATC 17 Add comments
+
+You can add comments to the code cells.
+
+```coq
+Lemma ATC_17:
+    there exists k : ℕ,
+
+        k > 5.
+```
+</input-area>
+<input-area>
+# ATC 18 LaTeX display
+
+You can add LaTeX display.
+</input-area>
+<input-area>
+
+# ATC 19 LaTeX inline
+
+You can add LaTeX inline. To test this write this here: ...
+
+# ATC 20 Reveal hints
+
+You can show the hint by clicking on it.
+</input-area>
+<hint>
+Wow! The hint is now being shown!
+</hint>
+
+<input-area>
+# ATC 21 Hide hints
+You can hide it, by clicking again on it.
+</input-area>
+# ATC 22 Non editable areas for students
+
+This area is not editable for students.
+
+```coq
+(* ATC 22 *)
+```
+
+$$ \int^{\infty}_0 e^x dx$$
+
+<input-area>
+
+# ATC 23 Input areas for students
+
+This area is editable for students.
+
+# ATC 24 Change layout
+
+You can choose which panels are opened or closed.
+
+# ATC 25 Insert tactic
+
+You can see the list of tactics and use them, by opening the tactics panel.
+
+```coq
+(* Open the tactics panel. *)
+(* Insert the tactic beneath.*)
+
+```
+
+# ATC 26 Insert symbol
+
+You can see the symbols in the symbols panel and use them.
+
+```coq
+(* Open the symbol panel.*)
+(* Insert the symbol beneath.*)
+
+```
+
+# ATC 27 Search
+
+You can search Lemma ATC_8.
+
+# ATC 28 Vernecular commands
+
+You can ask coq for help at any time! :D
+
+```coq
+Lemma ATC_28:
+    there exists p : ℝ,
+        p + 3 < 4.
+Proof.
+
+```
+</input-area>
+```coq
+Qed.
+```
+<input-area>
+
+# ATC 29 Change color scheme
+
+Time for disco! You can change the Visual Studio Code color theme.
+Please make sure that you are currently not in the red mode.
+Now choose the red mode.
+Wow!! :D
+
+Ofcourse, you can also change it back to the one you prefer now...
+
+# ATC 30 Change font size
+
+You can change the font-size. For this you have to click on the "manage" button (gear icon) in the bottom left corner.
+You can change the value currently in "Editor: font size" to 36.
+Please change it back after this test.
+
+# ATC 31 Use copy-paste
+
+Luckily, our editor supports copying and pasting.
+
+```coq
+Lemma ATC_31:
+  ∀ x : ℝ, ∀ y : ℝ,
+    x < y ⇔ y > x.
+Proof.
+Take x : ℝ. Take y : ℝ.
+We show both directions.
+- We need to show that (x < y ⇒ y > x).
+  Assume that (x < y).
+  We conclude that (y > x).
+- We need to show that (y > x ⇒ x < y).
+  Assume that (y > x).
+  We conclude that (x < y).
+```
+</input-area>
+```coq
+Qed.
+```
+<input-area>
+
+# ATC 32 Cut-copy
+
+```coq
+(** You can also cut text and past it somewhere else.*)
+```
+
+# ATC 33 Undo-redo
+
+1. In ATC 32 you changed the header of ATC 33.
+2. Execute the second step of ATC 33. 
+4. Now tap 'ctrl + z' three times and see what happens after every undo.
+5. Now tap 'ctrl + y' three times and see what happens after every redo.
+
+# ATC 34 Autocomplete tactics
+
+You can autocomplete tactics.
+
+```coq
+(* ATC 34 *)
+
+```
+
+```coq
+Lemma example_both_statements:
+  ∀ x : ℝ, (x^2 ≥ 0) ∧ (| x | ≥ 0).
+```
+
+# ATC 35 Autocomplete theorems and definitions
+
+Furthermore, you can autocomplete theorems and definitions.
+
+```coq
+(* ATC 35 *)
+
+```
+
+# ATC 36 Autocomplete symbols
+
+Lastly, you can also autocomplete symbols.
+
+```coq
+(* ATC 36 *)
+(* You can also do this in code cells *)
+```
+
+# ATC 37 Use teacher mode
+
+You have to go into the settings again (the gear in the left bottom corner).
+Here you have to search for Coqnitive: mode.
+Once you check the box, you are in teacher mode.
+
+</input-area>
+
+# ATC 38 Make edits as teacher
+
+This cell is not marked as an input area. However, as a teacher you can still edit it.
+...
+
+# ATC 39 Make this cell an input area
+
+You can make this cell an input area for students by clicking in this cell and then clicking on "I...".
+
+```coq
+(* You can also make this cell an input area by clicking in this cell, then clicking on "Parent", and consecutively clicking on "I...".*)
+```
+
+# ATC 40 Make this cell a hint
+
+You can make this markdown cell a hint. 
+
+You can also make the code cell below a hint.
+
+```coq
+(* ATC 40 *)
+(* You can also make this cell an input area by clicking in this cell, then clicking on "Parent", and consecutively clicking on "?".*)
+```
+
+$$ \int^\infty_0 e^x dx \text{ You can also put this latex display in a hint.} $$
+
+<input-area>
+# ATC 41, 42, 43
+1. Check that this application uses Coqv8.17.
+2. You used Windows while doing this.
+3. All built in text was in English.
+    - Except for this word: "Kaassouflé"
+</input-area>

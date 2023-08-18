@@ -60,7 +60,7 @@ export class Coqnitive implements Disposable {
     private sidePanelProvider: SidePanelProvider;
 
     private get configuration(): WorkspaceConfiguration {
-        return workspace.getConfiguration("coqnitive");
+        return workspace.getConfiguration("waterproof");
     }
 
     /**
@@ -137,15 +137,15 @@ export class Coqnitive implements Disposable {
     }
 
     /**
-     * Registers a Coqnitive command and adds it to `disposables`.
+     * Registers a new Waterproof command and adds it to `disposables`.
      *
-     * @param name the identifier for the command (after the "coqnitive." prefix)
+     * @param name the identifier for the command (after the "waterproof." prefix)
      * @param handler the function that runs when the command is executed
      * @param editorCommand whether to register a "text editor" or ordinary command
      */
     private registerCommand(name: string, handler: (...args: any[]) => void, editorCommand: boolean = false) {
         const register = editorCommand ? commands.registerTextEditorCommand : commands.registerCommand;
-        this.disposables.push(register("coqnitive." + name, handler, this));
+        this.disposables.push(register("waterproof." + name, handler, this));
     }
 
     /**

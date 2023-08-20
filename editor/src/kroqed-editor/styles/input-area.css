@@ -21,8 +21,19 @@
   background-color: lightgreen;
 }
 
-.inputarea.incomplete::before {
+.inputarea.proven-contains-error::before {
+  width: 8px;
+  background-color: blue;
+}
+
+.inputarea.proven-contains-warning::before {
+  width: 8px;
+  background-color: orange;
+}
+
+.inputarea.incomplete::before,
+.inputarea.incomplete-contains-error::before,
+.inputarea.incomplete-contains-warning::before {
   width: 8px;
   background-color: lightcoral;
 }
-  

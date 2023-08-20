@@ -47,6 +47,9 @@ interface VSCodeAPI {
 	postMessage: (message: Message) => void;
 }
 
+/** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
+type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: DiagnosticSeverity};
+
 /**
  * Class that contains the editor component.
  *
@@ -75,6 +78,8 @@ export class Editor {
 	// User operating system.
 	private readonly _userOS;
 	private _filef: any;
+
+	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
 		this._api = vscodeapi;
@@ -201,7 +206,7 @@ export class Editor {
 		return [
 			createHintPlugin(this._schema),
 			inputAreaPlugin,
-			updateStatusPlugin,
+			updateStatusPlugin(this),
 			mathPlugin,
 			realMarkdownPlugin(this._schema),
 			coqdocPlugin(this._schema),
@@ -326,16 +331,14 @@ export class Editor {
 		// Clear the errors
 		for (let view of views) view.clearCoqErrors();
 
-		type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: DiagnosticSeverity};
-
 		// Convert to inverse mapped positions.
 		const doc = this._view.state.doc;
-		const proseDiags = new Array<DiagnosticObjectProse>();
+		this.currentProseDiagnostics = new Array<DiagnosticObjectProse>();
 		for (let diag of diagnostics) {
 			const start = map.findInvPosition(diag.startOffset);
 			const end = map.findInvPosition(diag.endOffset);
 			if (start >= end) continue;
-			proseDiags.push({
+			this.currentProseDiagnostics.push({
 				message: diag.message,
 				start,
 				$start: doc.resolve(start),
@@ -350,7 +353,7 @@ export class Editor {
 		for (let view of views) viewsWithPos.push({pos: view._getPos(), view});
 
 
-		for (const diag of proseDiags) {
+		for (const diag of this.currentProseDiagnostics) {
 			if (!diag.$start.sameParent(diag.$end)) {
 				console.error("We do not support multi line errors");
 				continue;
@@ -372,6 +375,12 @@ export class Editor {
 			if (theView === undefined) throw new Error("Diagnostic message does not match any coqblock");
 			theView.addCoqError(diag.$start.parentOffset, diag.$end.parentOffset, diag.message, diag.severity);
 		}
+	}
+
+	public getDiagnosticsInRange(low: number, high: number): Array<DiagnosticObjectProse> {
+		return this.currentProseDiagnostics.filter((value) => {
+			return ((low <= value.start) && (value.end <= high));
+		});
 	}
 
 	/**

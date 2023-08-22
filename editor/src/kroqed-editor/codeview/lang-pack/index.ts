@@ -54,7 +54,7 @@ export const coqLanguage = LRLanguage.define({
 const coqCompletions: Completion[] = coqWords;
 
 export const coqCompletionSource: CompletionSource = function(context) {
-    let before = context.matchBefore(/(\w+\-*\s*)+/)
+    let before = context.matchBefore(/[^]/)
     // If completion wasn't explicitly started and there
     // is no word before the cursor, don't open completions.
     if (!context.explicit && !before) return null

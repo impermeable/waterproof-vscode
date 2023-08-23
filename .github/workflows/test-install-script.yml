@@ -16,5 +16,20 @@ jobs:
       - name: Set up git repository
         uses: actions/checkout@v3
 
-      - name: Run installation script
-        run: sudo ./install.sh
+      - name: Show directory
+        run: ls
+
+      - name: Add a user
+        run: sudo useradd waterproof -m
+    
+      - name: Check whether home directory is created
+        run: ls /home/
+
+    #   - name: Show directory
+    #     run: ls
+
+      - name: Install opam
+        run: sudo bash ./setup-opam.sh
+    
+      - name: Make opam switch and install coq-lsp and waterproof
+        run: bash ./install.sh

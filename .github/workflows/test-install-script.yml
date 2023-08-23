@@ -17,4 +17,4 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Run installation script
-        run: ./install.sh
+        run: sudo ./install.sh

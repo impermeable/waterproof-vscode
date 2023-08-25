@@ -137,7 +137,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			effects: this._autocompletionCompartment.reconfigure(
 				autocompletion({
 					// Add autocompletion sources
-					override: [completionFunction, coqCompletionSource, symbolCompletionSource, emojiCompletionSource]
+					override: [completionFunction, coqCompletionSource, symbolCompletionSource]
 				})
 			)
 		})

@@ -21,11 +21,6 @@
   background-color: var(--vscode-terminal-ansiGreen);
 }
 
-.inputarea.proven-contains-error::before {
-  width: 8px;
-  background-color: var(--vscode-charts-orange);
-}
-
 .inputarea.proven-contains-warning::before {
   width: 8px;
   background-color: var(--vscode-terminal-ansiYellow);
@@ -33,7 +28,8 @@
 
 .inputarea.incomplete::before,
 .inputarea.incomplete-contains-error::before,
-.inputarea.incomplete-contains-warning::before {
+.inputarea.incomplete-contains-warning::before, 
+.inputarea.proven-contains-error::before {
   width: 8px;
   background-color: var(--vscode-terminal-ansiRed);
 }

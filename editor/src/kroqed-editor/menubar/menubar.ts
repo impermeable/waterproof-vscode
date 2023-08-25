@@ -5,6 +5,7 @@ import { EditorView } from "prosemirror-view";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 import { cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, InsertionPlace, liftWrapper } from "../commands";
 import { COQ_CODE_PLUGIN_KEY } from "../codeview/coqcodeplugin";
+import { OS } from "../osType";
 
 /** MenuEntry type contains the DOM, whether to only show it in teacher mode and the command to execute on click */
 type MenuEntry = {
@@ -130,22 +131,26 @@ const DEBUG = false;
  * @param filef The file format of the current file. Some commands will behave differently in `.mv` vs `.v` context.
  * @returns A new `MenuView` filled with default menu items.
  */
-function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any): MenuView {
+function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os: OS): MenuView {
+
+    // Platform specific keybinding string:
+    const cmdOrCtrl = os == OS.MacOS ? "Cmd" : "Ctrl";
+
     // Create the list of menu entries.
     let items: MenuEntry[] = [
         // Insert Coq command
-        createMenuItem("Coq↓", "Insert new coq cell underneath", cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Coq↑", "Insert new coq cell above", cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Coq↓", `Insert new coq cell underneath (${cmdOrCtrl}-q)`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Coq↑", `Insert new coq cell above (${cmdOrCtrl}-Q)`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
         // Insert Markdown
-        createMenuItem("MD↓", "Insert new Markdown block underneath", cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("MD↑", "Insert new Markdown block above", cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("MD↓", `Insert new Markdown block underneath (${cmdOrCtrl}-m)`, cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("MD↑", `Insert new Markdown block above (${cmdOrCtrl}-M)`, cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
         // Insert LaTeX
-        createMenuItem(`${LaTeX_SVG}<div>↓</div>`, "Insert new LaTeX block underneath", cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem(`${LaTeX_SVG}<div>↑</div>`, "Insert new LaTeX block above", cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
+        createMenuItem(`${LaTeX_SVG}<div>↓</div>`, `Insert new LaTeX block underneath (${cmdOrCtrl}-l)`, cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem(`${LaTeX_SVG}<div>↑</div>`, `Insert new LaTeX block above (${cmdOrCtrl}-L)`, cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
         // Toggle the line numbers in coq code cells.
         createMenuItem("Line Numbers", "Toggle Line Numbers", toggleLineNumbers(), false),
         // Select the parent node.
-        createMenuItem("Parent", "Select the parent node", selectParentNode, false),
+        createMenuItem("Parent", `Select the parent node (${cmdOrCtrl}-.)`, selectParentNode, false),
         // in teacher mode, display input area, hint and lift buttons.
         createMenuItem("ⵊ...", "Make selection an input area", wrapIn(schema.nodes["input"]), true),
         createMenuItem("<strong>?</strong>", "Make selection a hint element", wrapIn(schema.nodes["hint"]), true),
@@ -187,12 +192,12 @@ export const MENU_PLUGIN_KEY = new PluginKey<IMenuPluginState>("prosemirror-menu
  * @param filef The file format of the currently opened file.
  * @returns A prosemirror `Plugin` type containing the menubar.
  */
-export function menuPlugin(schema: Schema, filef: any) {
+export function menuPlugin(schema: Schema, filef: any, os: OS) {
     return new Plugin({
         // This plugin has an associated `view`. This allows it to add DOM elements.
         view(outerView) {
             // Create the default menu.
-            let menuView = createDefaultMenu(schema, outerView, filef);
+            let menuView = createDefaultMenu(schema, outerView, filef, os);
             // Get the parent node (the parent node of the outer prosemirror dom)
             let parentNode = outerView.dom.parentNode;
             if (parentNode == null) {

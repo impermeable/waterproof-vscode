@@ -30,14 +30,7 @@ import { CodeBlockView } from "./codeview/nodeview";
 import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, deleteNodeIfEmpty } from "./commands";
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
-
-enum OS {
-	Windows,
-	MacOS,
-	Unix,
-	Linux,
-	Unknown
-}
+import { OS } from "./osType";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -207,7 +200,7 @@ export class Editor {
 			coqdocPlugin(this._schema),
 			coqCodePlugin,
 			progressBarPlugin,
-			menuPlugin(this._schema, this._filef),
+			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				// TODO: How much of these are still necessary?
 				"Backspace": chainCommands(deleteNodeIfEmpty, deleteSelection),

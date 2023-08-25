@@ -28,14 +28,14 @@
 		"textDecorationColor": "var(--vscode-editorInfo-foreground)"
 	},
 
-	".cm-content": {
+	".cm-"content"": {
 	  "caretColor": "auto",
 	  "fontFamily": "var(--vscode-editor-font-family)",
 	  "fontSize": "var(--vscode-editor-font-size)",
 	  "fontWeight": "var(--vscode-editor-font-weight)"
 	},
   	".cm-cursor, .cm-dropCursor": {"borderLeftColor": "auto"},
-	"&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {"backgroundColor": "var(--vscode-list-activeSelectionBackground)"},
+	"&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-"content" ::selection": {"backgroundColor": "var(--vscode-list-activeSelectionBackground)"},
   
 	".cm-panels": {"backgroundColor": "var(--vscode-list-dropBackground)", "color": "var(--vscode-list-highlightForeground)"},
 	".cm-panels.cm-panels-top": {"borderBottom": "2px solid black"},
@@ -88,5 +88,260 @@
 		"backgroundColor": "var(--vscode-menu-selectionBackground)",
 		"color": "var(--vscode-menu-selectionForeground)"
 	  }
-	}
+	},
+	".cm-completionIcon-alpha": {
+        "&:after": { "content": "'α'" }
+    },
+    ".cm-completionIcon-Alpha": {
+        "&:after": { "content": "'A'" }
+    },
+    ".cm-completionIcon-abs": {
+        "&:after": { "content": "'|'" }
+    },
+    ".cm-completionIcon-and": {
+        "&:after": { "content": "'∧'" }
+    },
+    ".cm-completionIcon-arrowdown": {
+        "&:after": { "content": "'↓'" }
+    },
+    ".cm-completionIcon-arrowleft": {
+        "&:after": { "content": "'←'" }
+    },
+    ".cm-completionIcon-arrowlr": {
+        "&:after": { "content": "'↔'" }
+    },
+    ".cm-completionIcon-beta": {
+        "&:after": { "content": "'β'" }
+    },
+    ".cm-completionIcon-gamma": {
+        "&:after": { "content": "'γ'" }
+    },
+    ".cm-completionIcon-delta": {
+        "&:after": { "content": "'δ'" }
+    },
+    ".cm-completionIcon-epsilon": {
+        "&:after": { "content": "'ε'" }
+    },
+    ".cm-completionIcon-zeta": {
+        "&:after": { "content": "'ζ'" }
+    },
+    ".cm-completionIcon-eta": {
+        "&:after": { "content": "'η'" }
+    },
+    ".cm-completionIcon-theta": {
+        "&:after": { "content": "'θ'" }
+    },
+    ".cm-completionIcon-iota": {
+        "&:after": { "content": "'ι'" }
+    },
+    ".cm-completionIcon-kappa": {
+        "&:after": { "content": "'κ'" }
+    },
+    ".cm-completionIcon-lambda": {
+        "&:after": { "content": "'λ'" }
+    },
+    ".cm-completionIcon-mu": {
+        "&:after": { "content": "'μ'" }
+    },
+    ".cm-completionIcon-nu": {
+        "&:after": { "content": "'ν'" }
+    },
+    ".cm-completionIcon-ksi": {
+        "&:after": { "content": "'ξ'" }
+    },
+    ".cm-completionIcon-pi": {
+        "&:after": { "content": "'π'" }
+    },
+    ".cm-completionIcon-omikron": {
+        "&:after": { "content": "'ο'" }
+    },
+    ".cm-completionIcon-rho": {
+        "&:after": { "content": "'ρ'" }
+    },
+    ".cm-completionIcon-sigma1": {
+        "&:after": { "content": "'ς'" }
+    },
+    ".cm-completionIcon-sigma2": {
+        "&:after": { "content": "'σ'" }
+    },
+    ".cm-completionIcon-tau": {
+        "&:after": { "content": "'τ'" }
+    },
+    ".cm-completionIcon-upsilon": {
+        "&:after": { "content": "'υ'" }
+    },
+    ".cm-completionIcon-phi1": {
+        "&:after": { "content": "'ϕ'" }
+    },
+    ".cm-completionIcon-phi2": {
+        "&:after": { "content": "'φ'" }
+    },
+    ".cm-completionIcon-chi": {
+        "&:after": { "content": "'χ'" }
+    },
+    ".cm-completionIcon-psi": {
+        "&:after": { "content": "'ψ'" }
+    },
+    ".cm-completionIcon-omega": {
+        "&:after": { "content": "'ω'" }
+    },
+    ".cm-completionIcon-Beta": {
+        "&:after": { "content": "'Β'" }
+    },
+    ".cm-completionIcon-Gamma": {
+        "&:after": { "content": "'Γ'" }
+    },
+    ".cm-completionIcon-Delta": {
+        "&:after": { "content": "'Δ'" }
+    },
+    ".cm-completionIcon-Epsilon": {
+        "&:after": { "content": "'Ε'" }
+    },
+    ".cm-completionIcon-Zeta": {
+        "&:after": { "content": "'Ζ'" }
+    },
+    ".cm-completionIcon-Eta": {
+        "&:after": { "content": "'Η'" }
+    },
+    ".cm-completionIcon-Theta": {
+        "&:after": { "content": "'Θ'" }
+    },
+    ".cm-completionIcon-Iota": {
+        "&:after": { "content": "'Ι'" }
+    },
+    ".cm-completionIcon-Kappa": {
+        "&:after": { "content": "'Κ'" }
+    },
+    ".cm-completionIcon-Lambda": {
+        "&:after": { "content": "'Λ'" }
+    },
+    ".cm-completionIcon-Mu": {
+        "&:after": { "content": "'Μ'" }
+    },
+    ".cm-completionIcon-Nu": {
+        "&:after": { "content": "'Ν'" }
+    },
+    ".cm-completionIcon-Ksi": {
+        "&:after": { "content": "'Ξ'" }
+    },
+    ".cm-completionIcon-Omicron": {
+        "&:after": { "content": "'Ο'" }
+    },
+    ".cm-completionIcon-Pi": {
+        "&:after": { "content": "'Π'" }
+    },
+    ".cm-completionIcon-Rho": {
+        "&:after": { "content": "'Ρ'" }
+    },
+    ".cm-completionIcon-Sigma": {
+        "&:after": { "content": "'Σ'" }
+    },
+    ".cm-completionIcon-Tau": {
+        "&:after": { "content": "'Τ'" }
+    },
+    ".cm-completionIcon-Upsilon": {
+        "&:after": { "content": "'Υ'" }
+    },
+    ".cm-completionIcon-Phi": {
+        "&:after": { "content": "'Φ'" }
+    },
+    ".cm-completionIcon-Chi": {
+        "&:after": { "content": "'Χ'" }
+    },
+    ".cm-completionIcon-Psi": {
+        "&:after": { "content": "'Ψ'" }
+    },
+    ".cm-completionIcon-Omega": {
+        "&:after": { "content": "'Ω'" }
+    },
+    ".cm-completionIcon-forall": {
+        "&:after": { "content": "'∀'" }
+    },
+    ".cm-completionIcon-exists": {
+        "&:after": { "content": "'∃'" }
+    },
+    ".cm-completionIcon-in": {
+        "&:after": { "content": "'∈'" }
+    },
+    ".cm-completionIcon-QED": {
+        "&:after": { "content": "'∎'" }
+    },
+    ".cm-completionIcon-infty": {
+        "&:after": { "content": "'∞'" }
+    },
+    ".cm-completionIcon-or": {
+        "&:after": { "content": "'∨'" }
+    },
+    ".cm-completionIcon-intersection": {
+        "&:after": { "content": "'∩'" }
+    },
+    ".cm-completionIcon-union": {
+        "&:after": { "content": "'∪'" }
+    },
+    ".cm-completionIcon-emptyset": {
+        "&:after": { "content": "'∅'" }
+    },
+    ".cm-completionIcon-lessorequal": {
+        "&:after": { "content": "'≤'" }
+    },
+    ".cm-completionIcon-greaterorequal": {
+        "&:after": { "content": "'≥'" }
+    },
+    ".cm-completionIcon-notequal": {
+        "&:after": { "content": "'≠'" }
+    },
+    ".cm-completionIcon-not": {
+        "&:after": { "content": "'¬'" }
+    },
+    ".cm-completionIcon-circleplus": {
+        "&:after": { "content": "'⊕'" }
+    },
+    ".cm-completionIcon-circletimes": {
+        "&:after": { "content": "'⊗'" }
+    },
+    ".cm-completionIcon-arrowleft": {
+        "&:after": { "content": "'←'" }
+    },
+    ".cm-completionIcon-arrowup": {
+        "&:after": { "content": "'⬆'" }
+    },
+    ".cm-completionIcon-arrowright": {
+        "&:after": { "content": "'→'" }
+    },
+    ".cm-completionIcon-arrowmap": {
+        "&:after": { "content": "'↦'" }
+    },
+    ".cm-completionIcon-impliesleft": {
+        "&:after": { "content": "'⟸'" }
+    },
+    ".cm-completionIcon-impliesright": {
+        "&:after": { "content": "'⟹'" }
+    },
+    ".cm-completionIcon-implieslr": {
+        "&:after": { "content": "'⇔'" }
+    },
+    ".cm-completionIcon-converges": {
+        "&:after": { "content": "'⟶'" }
+    },
+    ".cm-completionIcon-naturals": {
+        "&:after": { "content": "'ℕ'" }
+    },
+    ".cm-completionIcon-integers": {
+        "&:after": { "content": "'ℤ'" }
+    },
+    ".cm-completionIcon-rationals": {
+        "&:after": { "content": "'ℚ'" }
+    },
+    ".cm-completionIcon-reals": {
+        "&:after": { "content": "'ℝ'" }
+    },
+    ".cm-completionIcon-complex": {
+        "&:after": { "content": "'ℂ'" }
+    },
+    ".cm-completionIcon-contradiction": {
+        "&:after": { "content": "'↯'" }
+    },
+    ".cm-completionIcon-degree": {
+        "&:after": { "content": "'°'" }
+    }
 }

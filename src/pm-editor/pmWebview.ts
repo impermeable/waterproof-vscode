@@ -115,7 +115,7 @@ export class ProseMirrorWebview extends EventEmitter {
         }));
 
         this._disposables.push(workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration("coqnitive.mode")) {
+            if (e.affectsConfiguration("waterproof.teacherMode")) {
                 this.updateTeacherMode();
             }
         }));
@@ -194,7 +194,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private updateTeacherMode() {
         this.postMessage({
             type: MessageType.teacher,
-            body: workspace.getConfiguration("coqnitive").get("mode")
+            body: workspace.getConfiguration("waterproof").get("teacherMode")
         }, true);
     }
 

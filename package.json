@@ -1,5 +1,5 @@
 {
-  "name": "coqnitive",
+  "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
   "version": "0.9.2",
@@ -8,7 +8,7 @@
     "Milo Goolkate <milo@goolkate.com>",
     "Pieter Wils aka Gangster <p.f.e.j.wils@student.tue.nl>"
   ],
-  "publisher": "KroQED",
+  "publisher": "Impermeable",
   "icon": "Waterproofdruppel128.png",
   "engines": {
     "vscode": "^1.73.0"
@@ -23,10 +23,10 @@
     "coq",
     "software verification"
   ],
-  "homepage": "https://github.com/gijs-pennings/2IPE0-2023-waterproof",
+  "homepage": "https://impermeable.github.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gijs-pennings/2IPE0-2023-waterproof"
+    "url": "https://github.com/impermeable/waterproof-vscode"
   },
   "activationEvents": [
     "onCommand:coqnitive.start"
@@ -69,21 +69,21 @@
     ],
     "commands": [
       {
-        "command": "coqnitive.start",
+        "command": "waterproof.start",
         "title": "Waterproof: Start the document checker"
       },
       {
-        "command": "coqnitive.stop",
+        "command": "waterproof.stop",
         "title": "Waterproof: Stop the document checker"
       },
       {
-        "command": "coqnitive.restart",
+        "command": "waterproof.restart",
         "title": "Waterproof: Restart the document checker"
       }
     ],
     "keybindings": [
       {
-        "command": "coqnitive.goals",
+        "command": "waterproof.goals",
         "key": "alt+enter",
         "mac": "meta+enter",
         "when": "editorTextFocus && editorLangId == coq || editorTextFocus && editorLangId == coqmarkdown"
@@ -111,7 +111,7 @@
       {
         "title": "User Mode",
         "properties": {
-          "coqnitive.mode": {
+          "waterproof.teacherMode": {
             "type": "boolean",
             "default": false,
             "description": "Enable teacher mode; if true, allows user to edit all content outside input fields."
@@ -122,22 +122,22 @@
         "title": "Diagnostics",
         "type": "object",
         "properties": {
-          "coqnitive.eager_diagnostics": {
+          "waterproof.eager_diagnostics": {
             "type": "boolean",
             "default": true,
             "description": "Send diagnostics as document is processed; if false, diagnostics are only sent when Coq finishes processing the file"
           },
-          "coqnitive.show_coq_info_messages": {
+          "waterproof.show_coq_info_messages": {
             "type": "boolean",
             "default": false,
             "description": "Show Coq's \"Info\" messages as diagnostics, such as 'foo has been defined.' and miscellaneous operational messages."
           },
-          "coqnitive.show_notices_as_diagnostics": {
+          "waterproof.show_notices_as_diagnostics": {
             "type": "boolean",
             "default": false,
             "description": "Show Coq's \"Notice\" messages as diagnostics, such as `About` and `Search` output."
           },
-          "coqnitive.max_errors": {
+          "waterproof.max_errors": {
             "type": "number",
             "default": 150,
             "description": "Maximum number of errors per file, after that, coq-lsp will stop checking the file."
@@ -148,12 +148,12 @@
         "title": "Goals and Info Panel",
         "type": "object",
         "properties": {
-          "coqnitive.goal_after_tactic": {
+          "waterproof.goal_after_tactic": {
             "type": "boolean",
             "default": false,
             "description": "When showing goals and the cursor is in a tactic, if false, show goals before executing the tactic, if true, show goals after"
           },
-          "coqnitive.pp_type": {
+          "waterproof.pp_type": {
             "type": "number",
             "default": 1,
             "description": "Method to Print Coq Terms",
@@ -174,7 +174,7 @@
         "title": "Language Server Binary",
         "type": "object",
         "properties": {
-          "coqnitive.trace.server": {
+          "waterproof.trace.server": {
             "scope": "window",
             "type": "string",
             "enum": [
@@ -185,17 +185,17 @@
             "default": "messages",
             "description": "Traces the communication between VS Code and the language server."
           },
-          "coqnitive.debug": {
+          "waterproof.debug": {
             "type": "boolean",
             "default": false,
             "description": "Enable Debug in Coq Server, usually this will produce backtraces on errors"
           },
-          "coqnitive.path": {
+          "waterproof.path": {
             "type": "string",
             "default": "coq-lsp",
             "description": "Path to the coq-lsp binary, by default, search in PATH"
           },
-          "coqnitive.args": {
+          "waterproof.args": {
             "type": "array",
             "items": {
               "type": "string"
@@ -209,7 +209,7 @@
         "title": "Proof Checking",
         "type": "object",
         "properties": {
-          "coqnitive.admit_on_bad_qed": {
+          "waterproof.admit_on_bad_qed": {
             "type": "boolean",
             "default": true,
             "description": "If a `Qed.` command fails, admit the proof automatically."
@@ -220,7 +220,7 @@
         "title": "Input",
         "type": "object",
         "properties": {
-          "coqnitive.unicode_completion": {
+          "waterproof.unicode_completion": {
             "type": "string",
             "default": "normal",
             "enum": [
@@ -236,7 +236,7 @@
         "title": "Coq Editor",
         "type": "object",
         "properties": {
-          "coqnitive.updateIgnores": {
+          "waterproof.updateIgnores": {
             "type": "boolean",
             "default": true,
             "description": "Automatically ignore Coq object files in the workspace (.vo, .vos, ...)"

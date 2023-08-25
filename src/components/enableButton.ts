@@ -15,11 +15,11 @@ export class CoqnitiveStatusBar implements IStatusComponent {
      */
     constructor() {
         this.item = window.createStatusBarItem(
-            "coqnitive.enable",
+            "waterproof.enable",
             StatusBarAlignment.Left,
             0
         );
-        this.item.command = "coqnitive.toggle";
+        this.item.command = "waterproof.toggle";
         this.item.text = "$(watch) Waterproof checker (starting...)";
         this.item.show();
     }

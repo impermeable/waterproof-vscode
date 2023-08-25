@@ -4,9 +4,8 @@
 export MAKEFLAGS='-j 10'
 
 # Install OCaml
-opam init
-eval $(opam env)
-opam switch create waterproof --packages coq.8.17.0
+opam init --disable-sandboxing --bare
+opam switch create 4.14.1+options waterproof
 $ eval $(opam env --switch=waterproof)
 
 # Install coq-lsp

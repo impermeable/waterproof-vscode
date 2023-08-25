@@ -1,6 +1,6 @@
 name: Test installation script
 
-on: [push, workflow_dispatch]
+on: [workflow_dispatch]
 
 concurrency:
   group: ${{ github.ref }}

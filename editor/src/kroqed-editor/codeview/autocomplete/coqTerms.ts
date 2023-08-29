@@ -1,5 +1,5 @@
 import { Completion, CompletionSource } from "@codemirror/autocomplete";
-import coqWords from "./coqWords.json";
+import coqWords from "./coqTerms.json";
 
 // Our list of completions (can be static, since the editor
 /// will do filtering based on context).

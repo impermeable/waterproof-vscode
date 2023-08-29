@@ -11,7 +11,7 @@ import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { addCoqErrorMark, clearCoqErrorMarks, removeCoqErrorMark } from "./coq-errors";
-import { symbolCompletionSource, coqCompletionSource } from "./autocomplete";
+import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 
 /**
@@ -136,7 +136,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			effects: this._autocompletionCompartment.reconfigure(
 				autocompletion({
 					// Add autocompletion sources
-					override: [completionFunction, coqCompletionSource, symbolCompletionSource]
+					override: [completionFunction, coqCompletionSource, symbolCompletionSource, tacticCompletionSource]
 				})
 			)
 		})

@@ -1,8 +1,7 @@
 import { Completion, CompletionSource, autocompletion } from "@codemirror/autocomplete";
 import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import {
-	coq, coqCompletionSource, coqSyntaxHighlighting } from "./lang-pack"
+import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
 import {
 	EditorView as CodeMirror, keymap as cmKeymap,
@@ -12,7 +11,7 @@ import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { addCoqErrorMark, clearCoqErrorMarks, removeCoqErrorMark } from "./coq-errors";
-import { emojiCompletionSource, symbolCompletionSource } from "../completions";
+import { symbolCompletionSource, coqCompletionSource } from "./autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 
 /**

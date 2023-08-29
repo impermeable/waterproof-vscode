@@ -1,0 +1,191 @@
+[
+    {
+        "label": "Take (*name*) : (*set*).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Take an arbitrary element from (*set*) and call it (*name*).",
+        "template": "Take ${(*name*)} : ${(*set*)}."
+    },
+    {
+        "label": "Assume (*name*) : ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "If you need to prove (*statement*) ⇒ B, this allows you to assume that (*statement*) holds, giving this assumption the name (*name*).",
+        "template": "Assume ${(*name*)} : (${(*statement*)})."
+    },
+    {
+        "label": "It holds that ((*statement*)) ((*name*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Tries to automatically prove (*statement*). If that works, (*statement*) is added as a hypothesis with name (*name*).",
+        "template": "It holds that (${(*statement*)}) (${(*name*)})."
+    },
+    {
+        "label": "It holds that ((*current goal*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Tries to automatically prove the current goal.",
+        "template": "It holds that (${(*current goal*)})."
+    },
+    {
+        "label": "By ((*lemma or assumption*)) it holds that ((*statement*)) ((*name*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Tries to prove (*statement*) using (*lemma*) or (*assumption*). If that works, (*statement*) is added as a hypothesis with name (*name*).",
+        "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}) (${(*name*)})."
+    },
+    {
+        "label": "We claim that ((*statement*)) ((*name*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Lets you first show (*statement*) before continuing with the rest of the proof. After you showed (*statement*), it will be available as a hypothesis with name (*name*).",
+        "template": "We claim that (${(*statement*)}) (${(*name*)})."
+    },
+    {
+        "label": "We argue by contradiction.",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Assumes the opposite of what you need to show. Afterwards, you can try to derive a contradiction.",
+        "template": "We argue by contradiction."
+    },
+    {
+        "label": "Contradiction",
+        "type": "type",
+        "detail": "tactic",
+        "info": "If you find two contradictory hypotheses in the proof context, you can write 'Contradiction' to finish the proof of the current goal.",
+        "template": "Contradiction"
+    },
+    {
+        "label": "Because (*name_combined_hyp*) both (*name_hyp_1*) and (*name_hyp_2*).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "If you currently have a hypothesis with name (*name_combined_hyp*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses with names (*name_hyp_1*) and (*name_hyp_2*).",
+        "template": "Because ${(*name_combined_hyp*)} both ${(*name_hyp_1*)} and ${(*name_hyp_2*)}."
+    },
+    {
+        "label": "Choose (*name_var*) := (*expression*).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "You can use this tactic when you need to show that there exists an x such that a certain property holds. You do this by proposing (*expression*) as a choice for x, giving it the name (*name_var*).",
+        "template": "Choose ${(*name_var*)} := ${(*expression*)}."
+    },
+    {
+        "label": "Choose (*name_var*) such that (*name_property*) according to (*name_hyp*).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "In case a hypothesis (*name_hyp*) starts with 'there exists' s.t. some property holds, then you can use this tactic to select such a variable. The variable will be named (*name_var*) and the property it satisfies (*name_property*).",
+        "template": "Choose ${(*name_var*)} such that ${(*name_property*)} according to ${(*name_hyp*)}."
+    },
+    {
+        "label": "Write goal using ((*equality*)) as ((*new goal*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "First attempts to automatically find a proof of the provided equality, and if it succeeds it uses it to replace in the goal the lhs of the equality by the rhs.",
+        "template": "Write goal using (${(*equality*)}) as (${(*new goal*)})."
+    },
+    {
+        "label": "Write (*name_hyp*) as ((*expression*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Checks that the hypothesis with name (*name_hyp*) can be converted to (*expression*), and then replaces it by (*expression*). This is in general a more readable alternative to 'Expand the definition'",
+        "template": "Write ${(*name_hyp*)} as (${(*expression*)})."
+    },
+    {
+        "label": "Write (*name_hyp*) using ((*equality*)) as ((*new_hyp*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "First attempts to automatically find a proof of the provided equality, and if it succeeds it uses it to replace in the hypothesis with name (*name_hyp*) the lhs of the equality by the rhs.",
+        "template": "Write ${(*name_hyp*)} using (${(*equality*)}) as (${(*new_hyp*)})."
+    },
+    {
+        "label": "Either ((*case_1*)) or ((*case_2*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Case distinction when always precisely one of (*case_1*) or (*case_2*) occurs.",
+        "template": "Either (${(*case_1*)}) or (${(*case_2*)})."
+    },
+    {
+        "label": "Rewrite ((*statement_1*)) (*sign_1*) ((*statement_2*)) (*sign_2*) ((*statement_3*))",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Here (sign) is one of '=', '<', '>', '≤' or '≥'. Sometimes, you want to conclude something by concatenating a number of (in)equalities. For example, when you know that $a < b$ and $b < c$ and need to show that $a < c$, you could write $a < b < c$.",
+        "template": "Rewrite (${(*statement_1*)}) ${(*sign_1*)} (${(*statement_2*)}) ${(*sign_2*)} (${(*statement_3*)})"
+    },
+    {
+        "label": "We show both statements.",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Splits the goal in two separate goals, if it is of the form A ∧ B",
+        "template": "We show both statements."
+    },
+    {
+        "label": "We show both directions.",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Splits a goal of the form A ⇔ B, into the goals (A ⇒ B) and (B ⇒ A)",
+        "template": "We show both directions."
+    },
+    {
+        "label": "We need to show that ((*(alternative) formulation of current goal*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Generally makes a proof more readable. Has the additional functionality that you can write a slightly different but equivalent formulation of the goal: you can for instance change names of certain variables.",
+        "template": "We need to show that (${(*(alternative) formulation of current goal*)})."
+    },
+    {
+        "label": "We prove by induction on (*name_1*), calling the induction hypothesis (*name_2*).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Prove a statement by induction on the variable with (*name_1*), calling the induction hypothesis (*name_2*).",
+        "template": "We prove by induction on ${(*name_1*)}, calling the induction hypothesis ${(*name_2*)}."
+    },
+    {
+        "label": "Apply (*lemma or assumption*).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Apply a lemma or an assumption.",
+        "template": "Apply ${(*lemma or assumption*)}."
+    },
+    {
+        "label": "Expand the definition of (*name_kw*).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Expands the definition of the keyword (*name_kw*) in the current goal.",
+        "template": "Expand the definition of ${(*name_kw*)}."
+    },
+    {
+        "label": "Expand the definition of (*name_kw*) in (*name_hyp*).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Expands the definition of the keyword (*name_kw*) in hypothesis (*name_hyp*).",
+        "template": "Expand the definition of ${(*name_kw*)} in ${(*name_hyp*)}."
+    },
+    {
+        "label": "By ((*lemma or assumption*)) it holds that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Tries to directly prove the goal using (*lemma or assumption*) when the goal corresponds to (*statement*).",
+        "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)})."
+    },
+    {
+        "label": "It suffices to show that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal. If so, (*statement*) becomes the new goal.",
+        "template": "It suffices to show that (${(*statement*)})."
+    },
+    {
+        "label": "Define (*name*) := ((*expression*)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Temporarily give the name (*name*) to the expression (*expression*).",
+        "template": "Define ${(*name*)} := (${(*expression*)})."
+    },
+    {
+        "label": "We conclude that ((* result *)).",
+        "type": "type",
+        "detail": "tactic",
+        "info": "Tries to automatically prove the current goal.",
+        "template": "We conclude that (${(* result *)})."
+    }
+]

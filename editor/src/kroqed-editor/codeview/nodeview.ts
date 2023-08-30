@@ -1,4 +1,4 @@
-import { Completion, CompletionSource, autocompletion } from "@codemirror/autocomplete";
+import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion } from "@codemirror/autocomplete";
 import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
@@ -49,7 +49,12 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 				autocompletion({
-					override: [tacticCompletionSource, this.dynamicCompletionSource]
+					override: [
+						tacticCompletionSource, 
+						this.dynamicCompletionSource, 
+						symbolCompletionSource, 
+						coqCompletionSource
+					]
 				}),
 				cmKeymap.of([
 					indentWithTab,
@@ -115,16 +120,18 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * (Dynamic) Completion Source.
 	 * Contains completions for defined theorems/lemmas/etc.
 	 */
-	dynamicCompletionSource: CompletionSource = context => {
-		let before = context.matchBefore(/(\w+\-*\'*)+/);
-		// If completion wasn't explicitly started and there
-		// is no word before the cursor, don't open completions.
-		if (!context.explicit && !before) return null;
-		return {
-			from: before ? before.from : context.pos,
-			options: this._dynamicCompletions,
-			validFor: /^\w*$/
-		};
+	dynamicCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
+		return new Promise((resolve, reject) => {
+			let before = context.matchBefore(/(\w+\-*\'*)+/);
+			// If completion wasn't explicitly started and there
+			// is no word before the cursor, don't open completions.
+			if (!context.explicit && !before) resolve(null);
+			resolve({
+				from: before ? before.from : context.pos,
+				options: this._dynamicCompletions,
+				validFor: /^\w*$/
+			});
+		});
 	};
 
 	/**

@@ -296,9 +296,6 @@
     ".cm-completionIcon-circletimes": {
         "&:after": { "content": "'⊗'" }
     },
-    ".cm-completionIcon-arrowleft": {
-        "&:after": { "content": "'←'" }
-    },
     ".cm-completionIcon-arrowup": {
         "&:after": { "content": "'⬆'" }
     },

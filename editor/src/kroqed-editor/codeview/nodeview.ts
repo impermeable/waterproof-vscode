@@ -26,8 +26,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	// TODO:
 	private _lineNumberCompartment: Compartment;
 	private _lineNumbersExtension: Extension;
-	private _theoremList: Completion[] = [];
-	private _autocompletionCompartment: Compartment;
+	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
 
 	constructor(
@@ -42,7 +41,6 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._getPos = getPos;
 		this._lineNumbersExtension = [];
 		this._lineNumberCompartment = new Compartment;
-		this._autocompletionCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
 
 		this._codemirror = new CodeMirror({
@@ -50,7 +48,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			extensions: [
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
-				this._autocompletionCompartment.of(autocompletion()),
+				autocompletion({
+					override: [tacticCompletionSource, this.dynamicCompletionSource]
+				}),
 				cmKeymap.of([
 					indentWithTab,
 					...this.embeddedCodeMirrorKeymap(),
@@ -108,39 +108,24 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * This method needs to be called with the new list to update it.
 	 */
 	handleNewComplete(newCompletions: Completion[]): void {
-		this._theoremList = newCompletions;
-		this.updateAutocompletion(this.standardCompletionSource)
+		this._dynamicCompletions = newCompletions;
 	}
 
 	/**
-	 * Standard function that is needed for codemirror autocomplete.
-	 * Uses `options` for the list of completions.
+	 * (Dynamic) Completion Source.
+	 * Contains completions for defined theorems/lemmas/etc.
 	 */
-	standardCompletionSource: CompletionSource = context => {
+	dynamicCompletionSource: CompletionSource = context => {
 		let before = context.matchBefore(/(\w+\-*\'*)+/);
 		// If completion wasn't explicitly started and there
 		// is no word before the cursor, don't open completions.
 		if (!context.explicit && !before) return null;
 		return {
 			from: before ? before.from : context.pos,
-			options: this._theoremList,
+			options: this._dynamicCompletions,
 			validFor: /^\w*$/
 		};
 	};
-
-	/**
-	 * Updating the autocompletion to include the new theoremList
-	 */
-	updateAutocompletion(completionFunction: CompletionSource): void {
-		this._codemirror.dispatch({
-			effects: this._autocompletionCompartment.reconfigure(
-				autocompletion({
-					// Add autocompletion sources
-					override: [completionFunction, coqCompletionSource, symbolCompletionSource, tacticCompletionSource]
-				})
-			)
-		})
-	}
 
 	/**
 	 * Add a new coq error to this view

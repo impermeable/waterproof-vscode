@@ -2,7 +2,7 @@ import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
 import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import { DOMParser, ResolvedPos, Schema } from "prosemirror-model";
-import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection } from "prosemirror-state";
+import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
 
@@ -277,11 +277,47 @@ export class Editor {
 		state = this._view.state;
 		const trans = state.tr;
 
-		const currentNode = state.selection.$from.node(state.selection.$from.depth).type.name;
-		trans.insertText(symbolUnicode, from, to);
-		this._view.dispatch(trans);
+		/* TODO: The check that makes sure we are allowed to insert is pretty much the
+			same as in `inputArea.ts` and could maybe be improved. */ 
+
+		const inputAreaPluginState = INPUT_AREA_PLUGIN_KEY.getState(state);
+		
+		// Early return if the plugin state is undefined.
+		if (inputAreaPluginState === undefined) return false;
+		const { locked, globalLock } = inputAreaPluginState;
+		// Early return if we are in the global locked mode 
+		// 	(nothing should be editable anymore)
+		if (globalLock) return false;
+
+		// If we are in teacher mode (ie. not locked) than 
+		// 	 we are always able to insert.
+		if (!locked) {
+			this.createAndDispatchInsertionTransaction(trans, symbolUnicode, from, to);
+			return true;
+		}
+
+		const { $from } = state.selection;
+
+
+		let isEditable = false;
+		state.doc.nodesBetween($from.pos, $from.pos, (node) => {
+			if (node.type.name === "input") {
+				isEditable = true;
+			}
+		});
+
+		if (!isEditable) return false;
+
+		this.createAndDispatchInsertionTransaction(trans, symbolUnicode, from, to);
 
 		return true;
+	}
+
+	private createAndDispatchInsertionTransaction(
+		trans: Transaction, textToInsert: string, from: number, to: number) {
+		
+		trans = trans.insertText(textToInsert, from, to);
+		this._view?.dispatch(trans);
 	}
 
 	/**

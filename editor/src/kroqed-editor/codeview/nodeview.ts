@@ -122,14 +122,14 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	dynamicCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
 		return new Promise((resolve, reject) => {
-			let before = context.matchBefore(/(\w+\-*\'*)+/);
+			let before = context.matchBefore(/\w/);
 			// If completion wasn't explicitly started and there
 			// is no word before the cursor, don't open completions.
 			if (!context.explicit && !before) resolve(null);
 			resolve({
 				from: before ? before.from : context.pos,
 				options: this._dynamicCompletions,
-				validFor: /^\w*$/
+				validFor: /[^ ]*/
 			});
 		});
 	};

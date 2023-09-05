@@ -89,6 +89,11 @@
 		"color": "var(--vscode-menu-selectionForeground)"
 	  }
 	},
+    ".cm-completionIcon": {
+        "fontSize": "100%",
+        "width": "1.5em",
+        "opacity": "1.0"
+    },
 	".cm-completionIcon-alpha": {
         "&:after": { "content": "'α'" }
     },

@@ -75,12 +75,22 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         if (this.state != WebviewState.ready) return; // Error handling
 
         let webviewOpts = { enableScripts: true, enableFindWidget: false };
-        this._panel = window.createWebviewPanel(
-            this.name,
-            this.name.charAt(0).toUpperCase() + this.name.slice(1),
-            { preserveFocus: true, viewColumn: ViewColumn.Two },
-            webviewOpts
-        );
+        if (this.name == "commonExecute") {
+            this._panel = window.createWebviewPanel(
+                this.name,
+                "Expand definition | Help | Search",
+                { preserveFocus: true, viewColumn: ViewColumn.Two },
+                webviewOpts
+            );
+        } else {
+            this._panel = window.createWebviewPanel(
+                this.name,
+                this.name.charAt(0).toUpperCase() + this.name.slice(1),
+                { preserveFocus: true, viewColumn: ViewColumn.Two },
+                webviewOpts
+            );
+        }
+        
 
         this._panel.onDidChangeViewState((e) => {
             if(e.webviewPanel.active) this.emit(WebviewEvents.change, WebviewState.focus);

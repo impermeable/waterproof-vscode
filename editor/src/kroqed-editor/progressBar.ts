@@ -31,24 +31,23 @@ function createProgressBar(progressState, progressBarContainer) {
     if (oldProgress) {
       progressBarContainer.removeChild(oldProgress);
     }
-    
-    // Create a new progress bar
-    progressBar = document.createElement('progress');
-    progressBarContainer.appendChild(progressBar);
   } else {
     // If resetProgressBar is false, we just update the existing progress bar
     progressBar = progressBarContainer.querySelector('progress');
   }
   
-  // Set the properties of the progress bar
-  if (progressBar) {
-    progressBar.max = endLine;
+  if (progressBar == null) {
+    progressBar = document.createElement('progress');
+    progressBarContainer.appendChild(progressBar);
+  }
 
-    if (progressParams.progress.length > 0) {
-      progressBar.value = startLine;
-    } else {
-      progressBar.value = endLine;
-    }
+  // Set the properties of the progress bar
+  progressBar.max = endLine;
+
+  if (progressParams.progress.length > 0) {
+    progressBar.value = startLine;
+  } else {
+    progressBar.value = endLine;
   }
 
   // Create a span for the text

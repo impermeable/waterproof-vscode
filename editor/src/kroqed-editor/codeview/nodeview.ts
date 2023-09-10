@@ -1,8 +1,7 @@
-import { Completion, CompletionSource, autocompletion } from "@codemirror/autocomplete";
+import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion } from "@codemirror/autocomplete";
 import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import {
-	coq, coqCompletionSource, coqSyntaxHighlighting } from "./lang-pack"
+import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
 import {
 	EditorView as CodeMirror, keymap as cmKeymap,
@@ -12,7 +11,7 @@ import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { addCoqErrorMark, clearCoqErrorMarks, removeCoqErrorMark } from "./coq-errors";
-import { emojiCompletionSource, symbolCompletionSource } from "../completions";
+import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 
 /**
@@ -27,8 +26,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	// TODO:
 	private _lineNumberCompartment: Compartment;
 	private _lineNumbersExtension: Extension;
-	private _theoremList: Completion[] = [];
-	private _autocompletionCompartment: Compartment;
+	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
 
 	constructor(
@@ -43,7 +41,6 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._getPos = getPos;
 		this._lineNumbersExtension = [];
 		this._lineNumberCompartment = new Compartment;
-		this._autocompletionCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
 
 		this._codemirror = new CodeMirror({
@@ -51,7 +48,14 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			extensions: [
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
-				this._autocompletionCompartment.of(autocompletion()),
+				autocompletion({
+					override: [
+						tacticCompletionSource, 
+						this.dynamicCompletionSource, 
+						symbolCompletionSource, 
+						coqCompletionSource
+					]
+				}),
 				cmKeymap.of([
 					indentWithTab,
 					...this.embeddedCodeMirrorKeymap(),
@@ -109,39 +113,26 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * This method needs to be called with the new list to update it.
 	 */
 	handleNewComplete(newCompletions: Completion[]): void {
-		this._theoremList = newCompletions;
-		this.updateAutocompletion(this.standardCompletionSource)
+		this._dynamicCompletions = newCompletions;
 	}
 
 	/**
-	 * Standard function that is needed for codemirror autocomplete.
-	 * Uses `options` for the list of completions.
+	 * (Dynamic) Completion Source.
+	 * Contains completions for defined theorems/lemmas/etc.
 	 */
-	standardCompletionSource: CompletionSource = context => {
-		let before = context.matchBefore(/(\w+\-*\'*)+/);
-		// If completion wasn't explicitly started and there
-		// is no word before the cursor, don't open completions.
-		if (!context.explicit && !before) return null;
-		return {
-			from: before ? before.from : context.pos,
-			options: this._theoremList,
-			validFor: /^\w*$/
-		};
+	dynamicCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
+		return new Promise((resolve, reject) => {
+			let before = context.matchBefore(/\w/);
+			// If completion wasn't explicitly started and there
+			// is no word before the cursor, don't open completions.
+			if (!context.explicit && !before) resolve(null);
+			resolve({
+				from: before ? before.from : context.pos,
+				options: this._dynamicCompletions,
+				validFor: /[^ ]*/
+			});
+		});
 	};
-
-	/**
-	 * Updating the autocompletion to include the new theoremList
-	 */
-	updateAutocompletion(completionFunction: CompletionSource): void {
-		this._codemirror.dispatch({
-			effects: this._autocompletionCompartment.reconfigure(
-				autocompletion({
-					// Add autocompletion sources
-					override: [completionFunction, coqCompletionSource, symbolCompletionSource]
-				})
-			)
-		})
-	}
 
 	/**
 	 * Add a new coq error to this view

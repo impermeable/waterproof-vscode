@@ -35,7 +35,7 @@
 	  "fontWeight": "var(--vscode-editor-font-weight)"
 	},
   	".cm-cursor, .cm-dropCursor": {"borderLeftColor": "auto"},
-	"&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {"backgroundColor": "var(--vscode-list-activeSelectionBackground)"},
+    "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {"backgroundColor": "var(--vscode-list-activeSelectionBackground)"},
   
 	".cm-panels": {"backgroundColor": "var(--vscode-list-dropBackground)", "color": "var(--vscode-list-highlightForeground)"},
 	".cm-panels.cm-panels-top": {"borderBottom": "2px solid black"},

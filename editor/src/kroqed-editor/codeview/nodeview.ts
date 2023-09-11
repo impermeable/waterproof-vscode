@@ -62,7 +62,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				coq(),
 				coqSyntaxHighlighting(),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
-				placeholder("Empty coq cell")
+				placeholder("Empty code cell")
 			]
 		});
 

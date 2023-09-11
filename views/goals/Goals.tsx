@@ -66,7 +66,7 @@ function GoalsList({
   if (count == 0) {
     if (show_on_empty) {
       return (
-        <Box summary="No more goals" pos={pos} textDox={textDoc}>{bullet_msg ? (
+        <Box summary="The current proof is complete, Jim is proud of you!" pos={pos} textDox={textDoc}>{bullet_msg ? (
           <div className="aside">
             <CoqPp content={bullet_msg} inline={true} />
           </div>

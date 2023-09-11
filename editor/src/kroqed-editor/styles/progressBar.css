@@ -3,7 +3,7 @@
     top: 0;
     margin-bottom: 1rem;
     z-index: 9000;
-    width: 100%;
+    width: 95%;
 }
 
 /* Here we apply styles to the progress bar */
@@ -25,7 +25,7 @@
 
 /* Here we define styles for the progress bar in different browsers */
 .progress-bar progress::-webkit-progress-bar {
-    background-color: var(--vscode-quickInput-background);
+    background-color: var(--vscode-textCodeBlock-background);
 }
 
 .progress-bar progress::-webkit-progress-value {

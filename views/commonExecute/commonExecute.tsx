@@ -212,54 +212,76 @@ export function CommonExecute() {
     return (
         <div className="info-panel-container">
             <div className="sentence">
-                {/* Search */}
-                <div>Search</div>
-                <div className="VSCodeTextField-container">
-                    <textarea
-                        id="searcharea"
-                        ref={searchareaRef}
-                        className="text-area"
-                        placeholder="term"
-                        onKeyDown={handleKeyDownSearch}
-                        onChange={handleChangeSearch}
-                        onClick={onClickSearch}
-                    />
-                </div>
-                <div>
-                    <VSCodeButton id="search" onClick={handleSearch}>{'\u23CE'}</VSCodeButton>
-                </div>
-            </div>
-            <div className="sentence">
-                {/* expand def in context */}
-                Expand
-                <div className="VSCodeTextField-container">
-                    <textarea
-                        ref={input1Ref}
-                        className="text-area"
-                        placeholder="definition"
-                        onKeyDown={handleKeyDown}
-                        onChange={handleChange}
-                        onClick={onClick1}
-                    />
-                </div>
-                in
-                <div className="VSCodeTextField-container">
-                    <textarea
-                        ref={input2Ref}
-                        className="text-area"
-                        placeholder="context"
-                        onKeyDown={handleKeyDown2}
-                        onChange={handleChange2}
-                        onClick={onClick2}
-                    />
-                </div>
-                <div>
-                    <VSCodeButton onClick={handleExecute}>{'\u23CE'}</VSCodeButton>
-                </div>
-            </div>
-            <div className="sentence">
-                {/* help button */}
-                <VSCodeButton onClick={handleHelp}>Help</VSCodeButton>
+                <table>
+                    <tr>
+                        <td align='right'>Expand</td>
+                        <td align='left'>
+                            <div className="VSCodeTextField-container">
+                                <textarea
+                                    ref={input1Ref}
+                                    className="text-area"
+                                    placeholder="definition"
+                                    onKeyDown={handleKeyDown}
+                                    onChange={handleChange}
+                                    onClick={onClick1}
+                                />
+                            </div>
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td align='right'>in</td>
+                        <td align='left'>
+                            <div className="VSCodeTextField-container">
+                                <textarea
+                                    ref={input2Ref}
+                                    className="text-area"
+                                    placeholder="context"
+                                    onKeyDown={handleKeyDown2}
+                                    onChange={handleChange2}
+                                    onClick={onClick2}
+                                />
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <VSCodeButton onClick={handleExecute}>{'\u23F5'}</VSCodeButton>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div className="sentence">
+                                {/* help button */}
+                                <VSCodeButton onClick={handleHelp}>Help</VSCodeButton>
+                            </div>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td align='right'>Search</td>
+                        <td align='left'>
+                            <div className="VSCodeTextField-container">
+                                <textarea
+                                    id="searcharea"
+                                    ref={searchareaRef}
+                                    className="text-area"
+                                    placeholder="term"
+                                    onKeyDown={handleKeyDownSearch}
+                                    onChange={handleChangeSearch}
+                                    onClick={onClickSearch}
+                                />
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <VSCodeButton id="search" onClick={handleSearch}><div>&#x1F50E;&#xFE0E;</div></VSCodeButton>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
             </div>
             {/* when loading show loading */}
             {isLoading ? (

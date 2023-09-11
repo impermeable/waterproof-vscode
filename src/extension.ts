@@ -90,7 +90,7 @@ export class Coqnitive implements Disposable {
             } 
             console.log("focus")
             this.webviewManager.open("goals")
-            this.webviewManager.reveal("goals")
+            // this.webviewManager.reveal("goals")
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
             // update active document and cursor

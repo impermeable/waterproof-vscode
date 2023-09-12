@@ -142,8 +142,8 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os
     // Create the list of menu entries.
     let items: MenuEntry[] = [
         // Insert Coq command
-        createMenuItem("Code ↓", "Insert new code cell underneath", cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Code ↑", "Insert new code cell above", cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Math ↓", "Insert new verified math block underneath", cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Math ↑", "Insert new verified math block above", cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
         // Insert Markdown
         createMenuItem("Text ↓", "Insert new text block underneath", cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
         createMenuItem("Text ↑", "Insert new text block above", cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),

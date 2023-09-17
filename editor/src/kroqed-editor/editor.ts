@@ -17,6 +17,7 @@ import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
+import { HelpPopup, createContextMenuHTML } from "./context-menu";
 
 // CSS imports
 import "katex/dist/katex.min.css";
@@ -74,11 +75,14 @@ export class Editor {
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 
+	private _helpPopup: HelpPopup;
+
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
 		this._api = vscodeapi;
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
 		this._contentElem = contentElement;
+		this._helpPopup = new HelpPopup(this);
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -86,6 +90,32 @@ export class Editor {
 		if (userAgent.includes("Mac")) this._userOS = OS.MacOS;
 		if (userAgent.includes("X11")) this._userOS = OS.Unix;
 		if (userAgent.includes("Linux")) this._userOS = OS.Linux;
+
+		const theContextMenu = createContextMenuHTML(this);
+
+		
+		document.body.appendChild(theContextMenu);
+		
+		console.log(document.querySelector(".context-menu"));
+		// Setup the custom context menu
+		document.addEventListener("click", (ev) => {
+			// Handle a 'left mouse click'
+			// console.log("LMB");
+			theContextMenu.style.display = "none";
+		});
+
+		document.addEventListener("contextmenu", (ev) => {
+			// Handle a 'right mouse click'
+			// We call preventDefault to prevent the default context menu from showing
+			ev.preventDefault();
+			// After this we display our own context menu
+			const x: string = `${ev.pageX}px`; 
+			const y: string = `${ev.pageY}px`;
+			theContextMenu.style.position = "absolute"; 
+			theContextMenu.style.left = x;
+			theContextMenu.style.top = y;
+			theContextMenu.style.display = "block";
+		})
 	}
 
 	init(content: string, fileFormat: FileFormat, version: number = 1) {
@@ -208,6 +238,7 @@ export class Editor {
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				// TODO: How much of these are still necessary?
+				"Mod-h": this._helpPopup.asCommand,
 				"Backspace": chainCommands(deleteNodeIfEmpty, deleteSelection),
 				"Enter" : chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
 				"Mod-Enter": chainCommands(newlineInCode, createParagraphNear, splitBlock),
@@ -454,6 +485,11 @@ export class Editor {
 			case MessageType.diagnostics:
 				const diagnostics = msg.body;
 				this.parseCoqDiagnostics(diagnostics);
+				break;
+			case MessageType.help:
+				const messages = msg.body;
+				if (messages === undefined) return;
+				this._helpPopup.setContentAndDisplay(messages);
 				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.

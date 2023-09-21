@@ -1,9 +1,11 @@
 .progress-bar {
     position: sticky;
+    display: inline-block;
     top: 0;
     margin-bottom: 1rem;
+    margin-right: 0.2rem;
     z-index: 9000;
-    width: 95%;
+    width: 93%;
 }
 
 /* Here we apply styles to the progress bar */

@@ -1,18 +1,18 @@
 .spinner-container {
-    position: fixed;
-    top: 8px;
-    right: 5px;
-    padding: 0px;
+    position: sticky;
+    display: inline-block;
+    top: 0;
+    vertical-align: top;
     z-index: 9999;
 }
 
 /* Define the spinner animation */
 .spinner {
-  border: 4px solid var(--vscode-quickInput-background);
-  border-top: 4px solid var(--vscode-button-background);
-  border-radius: 50%;
-  width: 1rem;
-  height: 1rem;
+  border: 0.3rem solid var(--vscode-quickInput-background);
+  border-top: 0.3rem solid var(--vscode-button-background);
+  border-radius: 100%;
+  width: 0.8rem;
+  height: 0.8rem;
   background-color: var(--vscode-quickInput-background);
   animation: spin 1s linear infinite;
 }

@@ -138,26 +138,27 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os
 
     // Platform specific keybinding string:
     const cmdOrCtrl = os == OS.MacOS ? "Cmd" : "Ctrl";
+    const keyBinding = (key: string): string => `${cmdOrCtrl}-${key}`;
 
     // Create the list of menu entries.
     let items: MenuEntry[] = [
         // Insert Coq command
-        createMenuItem("Math ↓", "Insert new verified math block underneath", cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Math ↑", "Insert new verified math block above", cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Math ↓", `Insert new verified math block underneath (${keyBinding("q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Math ↑", `Insert new verified math block above (${keyBinding("Q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
         // Insert Markdown
-        createMenuItem("Text ↓", "Insert new text block underneath", cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Text ↑", "Insert new text block above", cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Text ↓", `Insert new text block underneath (${keyBinding("m")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Text ↑", `Insert new text block above (${keyBinding("M")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
         // Insert LaTeX
-        createMenuItem(`${LaTeX_SVG} <div>↓</div>`, "Insert new LaTeX block underneath", cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem(`${LaTeX_SVG} <div>↑</div>`, "Insert new LaTeX block above", cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
+        createMenuItem(`${LaTeX_SVG} <div>↓</div>`, `Insert new LaTeX block underneath (${keyBinding("l")})`, cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem(`${LaTeX_SVG} <div>↑</div>`, `Insert new LaTeX block above (${keyBinding("L")})`, cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
         // Toggle the line numbers in coq code cells.
         createMenuItem("Line nr", "Toggle Line Numbers", toggleLineNumbers(), false),
         // Select the parent node.
-        createMenuItem("Parent", `Select the parent node (${cmdOrCtrl}-.)`, selectParentNode, false),
+        createMenuItem("Parent", `Select the parent node (${keyBinding(".")})`, selectParentNode, false),
         // in teacher mode, display input area, hint and lift buttons.
         createMenuItem("ⵊ...", "Make selection an input area", wrapIn(schema.nodes["input"]), true),
         createMenuItem("<strong>?</strong>", "Make selection a hint element", wrapIn(schema.nodes["hint"]), true),
-        createMenuItem("↑", "Lift selected node (Reverts the effect of making a 'hint' or 'input area'.", liftWrapper, true)
+        createMenuItem("↑", "Lift selected node (Reverts the effect of making a 'hint' or 'input area')", liftWrapper, true)
     ]
 
     // If the DEBUG variable is set to `true` then we display a `dump` menu item, which outputs the current 

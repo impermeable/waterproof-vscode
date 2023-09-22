@@ -1,15 +1,13 @@
 // Importing necessary components from various packages
 import { EditorState, Plugin, PluginKey, PluginSpec, Transaction } from "prosemirror-state";
-import { CoqFileProgressKind, SimpleProgressParams } from "../../../shared";
+import { SimpleProgressParams } from "../../../shared";
 
 // Interface for the state of the progress plugin
 export interface IProgressPluginState {
   progressParams: SimpleProgressParams;
-  totalProcessed: number;
-  totalLines: number;
   resetProgressBar: boolean;
-  currentLineNumbers: number[];
-  processedLineSet: Set<number>;
+  endLine: number;
+  startLine: number;
 }
 
 // Plugin key for the progress plugin
@@ -17,7 +15,7 @@ export const PROGRESS_PLUGIN_KEY = new PluginKey<IProgressPluginState>("prosemir
 
 // Function to create a progress bar given the progress state and the container for the progress bar
 function createProgressBar(progressState, progressBarContainer) {
-  const { progressParams, totalProcessed, totalLines, resetProgressBar, currentLineNumbers } = progressState;
+  const { progressParams, resetProgressBar, endLine, startLine } = progressState;
 
   // Remove existing progress bar text
   let oldProgressBarText = progressBarContainer.querySelector('.progress-bar-text');
@@ -33,36 +31,33 @@ function createProgressBar(progressState, progressBarContainer) {
     if (oldProgress) {
       progressBarContainer.removeChild(oldProgress);
     }
-    
-    // Create a new progress bar
-    progressBar = document.createElement('progress');
-    progressBarContainer.appendChild(progressBar);
   } else {
     // If resetProgressBar is false, we just update the existing progress bar
     progressBar = progressBarContainer.querySelector('progress');
   }
   
-  // Set the properties of the progress bar
-  if (progressBar) {
-    progressBar.max = totalLines;
+  if (progressBar == null) {
+    progressBar = document.createElement('progress');
+    progressBarContainer.appendChild(progressBar);
+  }
 
-    if (progressParams.progress.length > 0) {
-      progressBar.value = totalProcessed;
-    } else {
-      progressBar.value = totalLines;
-    }
+  // Set the properties of the progress bar
+  progressBar.max = endLine;
+
+  if (progressParams.progress.length > 0) {
+    progressBar.value = startLine;
+  } else {
+    progressBar.value = endLine;
   }
 
   // Create a span for the text
   let progressBarText = document.createElement('span');
   progressBarText.className = 'progress-bar-text';
 
-  // Create a string with all line numbers separated by commas
-  let lineNumberString = currentLineNumbers.join(", ");
   
   // Set the text of the span
-  if (currentLineNumbers.length > 0) {
-    progressBarText.textContent = `Progress: ${Math.round((progressBar.value / progressBar.max) * 100)}%, Currently at lines: ${lineNumberString}`;
+  if (progressParams.progress.length > 0) {
+    progressBarText.textContent = `Progress: ${Math.round((progressBar.value / progressBar.max) * 100)}%, Currently at line: ${startLine + 1}`;
   } else {
     progressBarText.textContent = `Progress: ${Math.round((progressBar.value / progressBar.max) * 100)}%`;
   }
@@ -80,50 +75,22 @@ let ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
           numberOfLines: 1,
           progress: []
         },
-        totalProcessed: 0,
-        totalLines: 0,
         resetProgressBar: true,
-        currentLineNumbers: [],
-        processedLineSet: new Set<number>()
+        endLine: 1,
+        startLine: 1,
       };
     },
     apply(tr: Transaction, value: IProgressPluginState, oldState: EditorState, newState: EditorState): IProgressPluginState {
       // Retrieve progress parameters from the transaction meta data
       const progressParams: SimpleProgressParams = tr.getMeta(PROGRESS_PLUGIN_KEY);
       if (progressParams != null) {
-        const resetProgressBar = (progressParams.numberOfLines !== value.totalLines);
-    
-        let currentLineNumbers: number[] = [];
-    
-        // If there are lines being processed, set currentLineNumbers to all of them
-        if (progressParams.progress.length > 0) {
-          currentLineNumbers = progressParams.progress.map(info => info.range.start.line);
-        }
-
-        let uniqueProcessedLines: Set<number>;
-
-        // If resetProgressBar is true, reset the processedLineSet
-        if (resetProgressBar) {
-          uniqueProcessedLines = new Set<number>();
-        } else {
-          uniqueProcessedLines = value.processedLineSet;
-        }
-
-        let newLinesProcessed = 0;
-        currentLineNumbers.forEach(lineNumber => {
-          if (!uniqueProcessedLines.has(lineNumber)) {
-            uniqueProcessedLines.add(lineNumber);
-            newLinesProcessed++;
-          }
-        });
-    
+        // If lines are being progressed, we reset the progress bar
+        const resetProgressBar = (progressParams.progress.length > 0);
         return { 
           progressParams,
-          totalProcessed: resetProgressBar ? newLinesProcessed : value.totalProcessed + newLinesProcessed,
-          totalLines: progressParams.numberOfLines,
           resetProgressBar,
-          currentLineNumbers,
-          processedLineSet: uniqueProcessedLines
+          startLine: resetProgressBar ? progressParams.progress[0].range.start.line + 1 : 1,
+          endLine: resetProgressBar ? progressParams.progress[0].range.end.line + 1 : 1,
         };
       }
       return value;

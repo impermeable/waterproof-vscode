@@ -9,7 +9,7 @@ import { PluginKey, TextSelection } from "prosemirror-state"
 import { Decoration, EditorView } from "prosemirror-view"
 import { SwitchableView } from "./SwitchableView"
 import { editorTheme } from "./EditorTheme"
-import { emojiCompletionSource, symbolCompletionSource } from "../../completions"
+import { symbolCompletionSource } from "../../codeview/autocomplete"
 import { autocompletion } from "@codemirror/autocomplete"
 import { EmbeddedCodeMirrorEditor } from "../../embedded-codemirror"
 
@@ -51,7 +51,7 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 				placeholder("Empty..."),
 				autocompletion({
 					// In the markdown / coqdoc editing add the symbol and emoji completions.
-					override: [symbolCompletionSource, emojiCompletionSource]
+					override: [symbolCompletionSource]
 				}),
 				CodeMirror.lineWrapping,
 				editorTheme

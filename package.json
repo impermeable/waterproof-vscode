@@ -2,13 +2,13 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.2",
+  "version": "0.9.6",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",
     "Pieter Wils aka Gangster <p.f.e.j.wils@student.tue.nl>"
   ],
-  "publisher": "Impermeable",
+  "publisher": "waterproof-tue",
   "icon": "Waterproofdruppel128.png",
   "engines": {
     "vscode": "^1.73.0"

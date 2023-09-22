@@ -18,11 +18,18 @@
 
 .inputarea.proven::before {
   width: 8px;
-  background-color: lightgreen;
+  background-color: var(--vscode-terminal-ansiGreen);
 }
 
-.inputarea.incomplete::before {
+.inputarea.proven-contains-warning::before {
   width: 8px;
-  background-color: lightcoral;
+  background-color: var(--vscode-terminal-ansiYellow);
 }
-  
+
+.inputarea.incomplete::before,
+.inputarea.incomplete-contains-error::before,
+.inputarea.incomplete-contains-warning::before, 
+.inputarea.proven-contains-error::before {
+  width: 8px;
+  background-color: var(--vscode-terminal-ansiRed);
+}

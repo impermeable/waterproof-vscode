@@ -2,7 +2,7 @@ import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
 import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import { DOMParser, ResolvedPos, Schema } from "prosemirror-model";
-import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection } from "prosemirror-state";
+import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
 
@@ -30,14 +30,7 @@ import { CodeBlockView } from "./codeview/nodeview";
 import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, deleteNodeIfEmpty } from "./commands";
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
-
-enum OS {
-	Windows,
-	MacOS,
-	Unix,
-	Linux,
-	Unknown
-}
+import { OS } from "./osType";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -46,6 +39,9 @@ enum OS {
 interface VSCodeAPI {
 	postMessage: (message: Message) => void;
 }
+
+/** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
+type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: DiagnosticSeverity};
 
 /**
  * Class that contains the editor component.
@@ -75,6 +71,8 @@ export class Editor {
 	// User operating system.
 	private readonly _userOS;
 	private _filef: any;
+
+	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
 		this._api = vscodeapi;
@@ -182,6 +180,17 @@ export class Editor {
 				if (view.state.selection instanceof NodeSelection) {
 					e.preventDefault();
 				}
+			}, 
+			handleDOMEvents: {
+				// This function will handle some DOM events before ProseMirror does.
+				// 	We use it here to cancel the 'drag' and 'drop' events, since these can
+				//  break the editor. 
+				"dragstart": (view, event) => {
+					event.preventDefault();
+				},
+				"drop": (view, event) => {
+					event.preventDefault();
+				}
 			}
 		});
 		this._view = view;
@@ -201,13 +210,13 @@ export class Editor {
 		return [
 			createHintPlugin(this._schema),
 			inputAreaPlugin,
-			updateStatusPlugin,
+			updateStatusPlugin(this),
 			mathPlugin,
 			realMarkdownPlugin(this._schema),
 			coqdocPlugin(this._schema),
 			coqCodePlugin,
 			progressBarPlugin,
-			menuPlugin(this._schema, this._filef),
+			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				// TODO: How much of these are still necessary?
 				"Backspace": chainCommands(deleteNodeIfEmpty, deleteSelection),
@@ -277,11 +286,47 @@ export class Editor {
 		state = this._view.state;
 		const trans = state.tr;
 
-		const currentNode = state.selection.$from.node(state.selection.$from.depth).type.name;
-		trans.insertText(symbolUnicode, from, to);
-		this._view.dispatch(trans);
+		/* TODO: The check that makes sure we are allowed to insert is pretty much the
+			same as in `inputArea.ts` and could maybe be improved. */ 
+
+		const inputAreaPluginState = INPUT_AREA_PLUGIN_KEY.getState(state);
+		
+		// Early return if the plugin state is undefined.
+		if (inputAreaPluginState === undefined) return false;
+		const { locked, globalLock } = inputAreaPluginState;
+		// Early return if we are in the global locked mode 
+		// 	(nothing should be editable anymore)
+		if (globalLock) return false;
+
+		// If we are in teacher mode (ie. not locked) than 
+		// 	 we are always able to insert.
+		if (!locked) {
+			this.createAndDispatchInsertionTransaction(trans, symbolUnicode, from, to);
+			return true;
+		}
+
+		const { $from } = state.selection;
+
+
+		let isEditable = false;
+		state.doc.nodesBetween($from.pos, $from.pos, (node) => {
+			if (node.type.name === "input") {
+				isEditable = true;
+			}
+		});
+
+		if (!isEditable) return false;
+
+		this.createAndDispatchInsertionTransaction(trans, symbolUnicode, from, to);
 
 		return true;
+	}
+
+	private createAndDispatchInsertionTransaction(
+		trans: Transaction, textToInsert: string, from: number, to: number) {
+		
+		trans = trans.insertText(textToInsert, from, to);
+		this._view?.dispatch(trans);
 	}
 
 	/**
@@ -326,16 +371,14 @@ export class Editor {
 		// Clear the errors
 		for (let view of views) view.clearCoqErrors();
 
-		type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: DiagnosticSeverity};
-
 		// Convert to inverse mapped positions.
 		const doc = this._view.state.doc;
-		const proseDiags = new Array<DiagnosticObjectProse>();
+		this.currentProseDiagnostics = new Array<DiagnosticObjectProse>();
 		for (let diag of diagnostics) {
 			const start = map.findInvPosition(diag.startOffset);
 			const end = map.findInvPosition(diag.endOffset);
 			if (start >= end) continue;
-			proseDiags.push({
+			this.currentProseDiagnostics.push({
 				message: diag.message,
 				start,
 				$start: doc.resolve(start),
@@ -350,7 +393,7 @@ export class Editor {
 		for (let view of views) viewsWithPos.push({pos: view._getPos(), view});
 
 
-		for (const diag of proseDiags) {
+		for (const diag of this.currentProseDiagnostics) {
 			if (!diag.$start.sameParent(diag.$end)) {
 				console.error("We do not support multi line errors");
 				continue;
@@ -372,6 +415,12 @@ export class Editor {
 			if (theView === undefined) throw new Error("Diagnostic message does not match any coqblock");
 			theView.addCoqError(diag.$start.parentOffset, diag.$end.parentOffset, diag.message, diag.severity);
 		}
+	}
+
+	public getDiagnosticsInRange(low: number, high: number): Array<DiagnosticObjectProse> {
+		return this.currentProseDiagnostics.filter((value) => {
+			return ((low <= value.start) && (value.end <= high));
+		});
 	}
 
 	/**

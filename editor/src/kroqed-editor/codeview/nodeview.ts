@@ -12,7 +12,7 @@ import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic, lintGutter } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic } from "@codemirror/lint";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -50,7 +50,6 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			doc: this._node.textContent,
 			extensions: [
 				linter(this.lintingFunction),	
-				lintGutter(),			
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 				autocompletion({
@@ -154,7 +153,13 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._diags.push({
 			from, to, 
 			message, 
-			severity: severityToString(severity)
+			severity: severityToString(severity),
+			actions: [{
+				name: "Copy", 
+				apply(view: EditorView, from: number, to: number) {
+					navigator.clipboard.writeText(message);
+				}
+			}]
 		});
 	}
 

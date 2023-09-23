@@ -24,5 +24,8 @@ import "./coqdoc.css";
 // for the progressBar
 import "./progressBar.css";
 
+// for the spinner
+import "./spinner.css";
+
 // for the freeze effect skull
 import "./freeze.css";

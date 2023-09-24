@@ -107,6 +107,11 @@ export class Editor {
 		if (newContent !== content) version = version + 1;
 
 		let parsedContent = this._translator.toProsemirror(newContent);
+
+		/** If new file or empty file insert markdown node */
+		if (parsedContent == "") {
+			parsedContent = `<markdown></markdown>`
+		}
 		
 		this._contentElem.innerHTML = parsedContent;
 		this._mapping = new TextDocMapping(parsedContent, version);

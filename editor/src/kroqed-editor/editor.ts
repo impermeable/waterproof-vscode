@@ -1,5 +1,5 @@
 import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
-import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
+import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock, wrapIn } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import { DOMParser, ResolvedPos, Schema } from "prosemirror-model";
 import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
@@ -108,14 +108,31 @@ export class Editor {
 
 		let parsedContent = this._translator.toProsemirror(newContent);
 
-		/** If new file or empty file insert markdown node */
-		if (parsedContent == "") {
-			parsedContent = `<markdown></markdown>`
-		}
 		
 		this._contentElem.innerHTML = parsedContent;
 		this._mapping = new TextDocMapping(parsedContent, version);
 		this.createProseMirrorEditor();
+
+		console.log("1")
+		if (this._view === undefined) return Error("view is undefined");
+		let state = this._view.state
+		console.log("2")
+		const inputAreaPluginState = INPUT_AREA_PLUGIN_KEY.getState(state);
+		console.log("3")
+		// Early return if the plugin state is undefined.
+		if (inputAreaPluginState === undefined) return Error("view is undefined");
+		console.log("4")
+		const { locked, globalLock } = inputAreaPluginState;
+		/** If new file or empty file insert markdown node */
+		if (parsedContent == "") {
+			if (!locked) {
+				cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath)
+			} else {
+				cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath)
+				selectParentNode
+				wrapIn(this._schema.nodes["input"])
+			}
+		}
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();

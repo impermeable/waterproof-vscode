@@ -36,8 +36,10 @@ export function createContextMenuHTML(editor: Editor): HTMLDivElement {
  */
 function contextMenuButton(buttonName: string, buttonCallback: () => any): HTMLLIElement {
     const element = document.createElement("li");
-    element.onclick = buttonCallback;
-    element.innerText = buttonName;
+    const a = document.createElement("a");
+    a.onclick = buttonCallback;
+    a.innerText = buttonName;
+    element.appendChild(a);
     return element;
 }
 

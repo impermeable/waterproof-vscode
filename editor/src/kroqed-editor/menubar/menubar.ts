@@ -50,9 +50,12 @@ class MenuView implements PluginView {
         // Create menubar dom container.
         this.menubarDOM = document.createElement("div");
         this.menubarDOM.classList.add("menubar");
+        this.menubarDOM.style.display = "flex"
+        this.menubarDOM.style.justifyContent = "space-between"
         
         for(const item of items) {
             // Append the menu item to the menubar DOM element.
+            item.dom.style.width = "40px"
             this.menubarDOM.appendChild(item.dom);
         }
         
@@ -139,16 +142,16 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os
     // Create the list of menu entries.
     let items: MenuEntry[] = [
         // Insert Coq command
-        createMenuItem("Coq↓", `Insert new coq cell underneath (${cmdOrCtrl}-q)`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Coq↑", `Insert new coq cell above (${cmdOrCtrl}-Q)`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Math ↓", "Insert new verified math block underneath", cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Math ↑", "Insert new verified math block above", cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
         // Insert Markdown
-        createMenuItem("MD↓", `Insert new Markdown block underneath (${cmdOrCtrl}-m)`, cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("MD↑", `Insert new Markdown block above (${cmdOrCtrl}-M)`, cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Text ↓", "Insert new text block underneath", cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Text ↑", "Insert new text block above", cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
         // Insert LaTeX
-        createMenuItem(`${LaTeX_SVG}<div>↓</div>`, `Insert new LaTeX block underneath (${cmdOrCtrl}-l)`, cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem(`${LaTeX_SVG}<div>↑</div>`, `Insert new LaTeX block above (${cmdOrCtrl}-L)`, cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
+        createMenuItem(`${LaTeX_SVG} <div>↓</div>`, "Insert new LaTeX block underneath", cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem(`${LaTeX_SVG} <div>↑</div>`, "Insert new LaTeX block above", cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
         // Toggle the line numbers in coq code cells.
-        createMenuItem("Line Numbers", "Toggle Line Numbers", toggleLineNumbers(), false),
+        createMenuItem("Line nr", "Toggle Line Numbers", toggleLineNumbers(), false),
         // Select the parent node.
         createMenuItem("Parent", `Select the parent node (${cmdOrCtrl}-.)`, selectParentNode, false),
         // in teacher mode, display input area, hint and lift buttons.

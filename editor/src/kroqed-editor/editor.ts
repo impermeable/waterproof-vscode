@@ -210,6 +210,17 @@ export class Editor {
 				if (view.state.selection instanceof NodeSelection) {
 					e.preventDefault();
 				}
+			}, 
+			handleDOMEvents: {
+				// This function will handle some DOM events before ProseMirror does.
+				// 	We use it here to cancel the 'drag' and 'drop' events, since these can
+				//  break the editor. 
+				"dragstart": (view, event) => {
+					event.preventDefault();
+				},
+				"drop": (view, event) => {
+					event.preventDefault();
+				}
 			}
 		});
 		this._view = view;

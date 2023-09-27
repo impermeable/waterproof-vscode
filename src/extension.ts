@@ -5,7 +5,8 @@ import {
     TextDocument,
     WorkspaceConfiguration,
     commands,
-    workspace
+    workspace,
+    window
 } from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
@@ -134,6 +135,7 @@ export class Coqnitive implements Disposable {
         this.registerCommand("restart", this.restartClient);
         this.registerCommand("toggle", this.toggleClient);
         this.registerCommand("stop", this.stopClient);
+        this.registerCommand("exportExerciseSheet", this.exportExerciseSheet);
     }
 
     /**
@@ -146,6 +148,24 @@ export class Coqnitive implements Disposable {
     private registerCommand(name: string, handler: (...args: any[]) => void, editorCommand: boolean = false) {
         const register = editorCommand ? commands.registerTextEditorCommand : commands.registerCommand;
         this.disposables.push(register("waterproof." + name, handler, this));
+    }
+
+    /**
+     * Remove solutions from document and open save dialog for clean file.
+     */
+    async exportExerciseSheet() {
+        const document = this.client.activeDocument;
+        if (document) {
+            let content = document.getText();
+            const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g; 
+            const replacement = `<input-area>\n\`\`\`coq\n(* Type your proof here *)\n\`\`\`\n</input-area>`;
+            content = content.replace(pattern, replacement);
+            const fileUri = await window.showSaveDialog();
+            if (fileUri) {
+                await workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
+                window.showInformationMessage(`Saved to: ${fileUri.fsPath}`);
+            }
+        }
     }
 
     /**

@@ -93,6 +93,7 @@ export class Editor {
 			// Hack to forcefully remove the 'old' menubar
 			document.querySelector(".menubar")?.remove();
 			document.querySelector(".progress-bar")?.remove();
+			document.querySelector(".spinner-container")?.remove();
 			this._view.dom.remove();
 		}
 

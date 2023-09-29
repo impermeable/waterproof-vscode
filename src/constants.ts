@@ -1,1 +1,1 @@
-export const newFileContent = "<input-area>\n```coq\nLemma\n```\n</input-area>";
+export const newFileContent = "<input-area>\n```coq\n(* Empty Waterproof Document *)\n```\n</input-area>";

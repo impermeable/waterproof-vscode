@@ -1,0 +1,1 @@
+export const newFileContent = "<input-area>\n```coq\nLemma\n```\n</input-area>";

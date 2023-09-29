@@ -69,6 +69,11 @@
     ],
     "commands": [
       {
+        "command": "waterproof.newWaterproofDocument",
+        "title": "Waterproof: Create new waterproof document",
+        "shortTitle": "New waterproof document"
+      },
+      {
         "command": "waterproof.start",
         "title": "Waterproof: Start the document checker"
       },
@@ -81,6 +86,15 @@
         "title": "Waterproof: Restart the document checker"
       }
     ],
+    "menus": {
+      "file/newFile": [
+        {
+          "command": "waterproof.newWaterproofDocument",
+          "group": "file",
+          "when": "!virtualWorkspace"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "waterproof.goals",

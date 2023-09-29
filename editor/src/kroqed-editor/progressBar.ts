@@ -65,11 +65,9 @@ function createProgressBar(progressState, progressBarContainer, spinnerContainer
   
   // Set the text of the span
   if (progressParams.progress.length > 0) {
-    progressBarText.textContent = `Progress: ${Math.round((progressBar.value / progressBar.max) * 100)}%, Currently at line: ${startLine + 1}`;
-    startSpinner(spinnerContainer);
+    progressBarText.textContent = `Verifying file, currently at line: ${startLine + 1}`;
   } else {
-    progressBarText.textContent = `Progress: ${Math.round((progressBar.value / progressBar.max) * 100)}%`;
-    stopSpinner(spinnerContainer);
+    progressBarText.textContent = `File verified`;
   }
 
   progressBarContainer.appendChild(progressBarText);

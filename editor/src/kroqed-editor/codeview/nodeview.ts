@@ -155,7 +155,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			message, 
 			severity: severityToString(severity),
 			actions: [{
-				name: "Copy", 
+				name: "Copy 📋", 
 				apply(view: EditorView, from: number, to: number) {
 					navigator.clipboard.writeText(message);
 				}

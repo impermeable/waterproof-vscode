@@ -140,5 +140,15 @@
       "name": "Define (*name*) := ((*expression*)).",
       "description": "Temporarily give the name (*name*) to the expression (*expression*)",
       "advanced": true
+  },
+  {
+    "name": "Since ((*extra_statement*)) it holds that ((*statement*)) ((*optional_label*)).",
+    "description": "Tries to first verify (*extra_statement*) after it uses that to verify (*statement*). The statement gets added as a hypothesis, optionally with the name (*optional_label*).",
+    "example": "Since (x = y) it holds that (x = z)."
+  },
+  {
+    "name": "Since ((*extra_statement*)) we conclude that ((*(alternative) formulation of current goal*)).",
+    "description": "Tries to automatically prove the current goal, after first trying to prove (*extra_statement*).",
+    "example": "Since (x = y) we conclude that (x = z)."
   }
 ]

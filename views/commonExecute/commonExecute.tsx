@@ -133,7 +133,7 @@ export function CommonExecute() {
     //button press execute
     const handleExecute = () => {
         //Send the message the execute button was pressed
-        vscode.postMessage({time: date.getTime(), type: MessageType.command, body: `Expand the definition of ${inputText1} in (${inputText2}).`})
+        vscode.postMessage({time: date.getTime(), type: MessageType.command, body: `_internal_ Expand the definition of ${inputText1} in (${inputText2}).`})
         setIsLoading(true);
     };
 

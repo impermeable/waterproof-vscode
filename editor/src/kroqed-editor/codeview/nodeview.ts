@@ -10,9 +10,9 @@ import {
 import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
-import { addCoqErrorMark, clearCoqErrorMarks, removeCoqErrorMark } from "./coq-errors";
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
+import { linter, LintSource, Diagnostic } from "@codemirror/lint";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -28,6 +28,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
+	private _diags;
 
 	constructor(
 		node: Node,
@@ -42,10 +43,13 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = [];
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
+		this._diags = [];
+		
 
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
+				linter(this.lintingFunction),	
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 				autocompletion({
@@ -81,6 +85,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 		this.updating = false;
 		this.handleNewComplete([]);
+	}
+
+	private lintingFunction: LintSource = (view: CodeMirror): readonly Diagnostic[] => {
+		return this._diags;
 	}
 
 	/**
@@ -142,7 +150,17 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * @param severity The severity attached to this error.
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
-		addCoqErrorMark(this._codemirror, {from, to}, message, severity);
+		this._diags.push({
+			from, to, 
+			message, 
+			severity: severityToString(severity),
+			actions: [{
+				name: "Copy 📋", 
+				apply(view: EditorView, from: number, to: number) {
+					navigator.clipboard.writeText(message);
+				}
+			}]
+		});
 	}
 
 	/**
@@ -151,13 +169,28 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * @param to The to position of the error.
 	 */
 	public removeCoqError(from: number, to: number) {
-		removeCoqErrorMark(this._codemirror, {from, to});
+		this._diags = [];
 	}
 
 	/**
 	 * Clear all coq errors from this view.
 	 */
 	public clearCoqErrors() {
-		clearCoqErrorMarks(this._codemirror);
+		this._diags = [];
+	}
+}
+
+const severityToString = (sv: number) => {
+	switch (sv) {
+		case 0: 
+			return "error";
+		case 1: 
+			return "warning";
+		case 2: 
+			return "info";
+		case 3: 
+			return "hint";
+		default: 
+			return "error";
 	}
 }

@@ -216,11 +216,8 @@ export class Editor {
 			progressBarPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
-				// TODO: How much of these are still necessary?
-				"Backspace": chainCommands(deleteNodeIfEmpty, deleteSelection),
-				"Enter" : chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
-				"Mod-Enter": chainCommands(newlineInCode, createParagraphNear, splitBlock),
-				"Delete": chainCommands(deleteNodeIfEmpty, deleteSelection),
+				"Backspace": deleteSelection,
+				"Delete": deleteSelection,
 				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),
 				"Mod-M": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Above),
 				"Mod-q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Underneath),

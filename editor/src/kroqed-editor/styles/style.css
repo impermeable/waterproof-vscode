@@ -5,7 +5,6 @@
 .ProseMirror hr {
   color: var(--vscode-textSeparator-foreground);
   background-color: var(--vscode-textSeparator-foreground);
-  border: 0.3em solid var(--vscode-textSeparator-foreground);
 }
 
 #editor > .ProseMirror {

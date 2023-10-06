@@ -20,11 +20,12 @@ let watchConfig = (entry) => {
 let watch = process.argv.includes("--watch") ? watchConfig : (entry) => false;
 let minify = process.argv.includes("--minify");
 let disable_sourcemap = process.argv.includes("--sourcemap=no");
-let sourcemap_client = disable_sourcemap ? null : { sourcemap: true };
+let sourcemap_client = disable_sourcemap ? null : { sourcemap: "inline" };
 let sourcemap_view = disable_sourcemap ? null : { sourcemap: "inline" };
 
 // Build prosemirror editor.
 const fontLoader = "copy";
+
 var editor = esbuild.build({
 	entryPoints: ["./editor/src/index.ts"],
 	bundle: true,

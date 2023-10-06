@@ -69,6 +69,11 @@
     ],
     "commands": [
       {
+        "command": "waterproof.newWaterproofDocument",
+        "title": "Waterproof: Create new waterproof document",
+        "shortTitle": "New waterproof document"
+      },
+      {
         "command": "waterproof.start",
         "title": "Waterproof: Start the document checker"
       },
@@ -85,6 +90,15 @@
         "title": "Waterproof: Save as exercise sheet"
       }
     ],
+    "menus": {
+      "file/newFile": [
+        {
+          "command": "waterproof.newWaterproofDocument",
+          "group": "file",
+          "when": "!virtualWorkspace"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "waterproof.goals",
@@ -263,6 +277,7 @@
     "@types/vscode": "^1.73.0",
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.0",
+    "@vscode/vsce": "^2.21.0",
     "esbuild": "^0.16.13",
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
@@ -271,7 +286,6 @@
     "prettier": "^2.8.1",
     "ts-jest": "^29.1.0",
     "typescript": "^5.1.3",
-    "vsce": "^2.15.0",
     "vscode-extension-tester": "^5.6.0"
   },
   "dependencies": {
@@ -279,6 +293,7 @@
     "@codemirror/autocomplete": "^6.7.1",
     "@codemirror/commands": "^6.2.4",
     "@codemirror/language": "^6.6.0",
+    "@codemirror/lint": "^6.4.1",
     "@codemirror/view": "^6.11.0",
     "@lezer/highlight": "^1.1.6",
     "@lezer/lr": "^1.3.5",
@@ -291,14 +306,10 @@
     "markdown-it": "^13.0.1",
     "object-hash": "^3.0.0",
     "prosemirror-commands": "^1.1.7",
-    "prosemirror-example-setup": "^1.2.1",
-    "prosemirror-gapcursor": "^1.1.5",
-    "prosemirror-history": "^1.1.3",
     "prosemirror-inputrules": ">=1.1.2",
     "prosemirror-keymap": "^1.1.4",
     "prosemirror-markdown": "^1.11.0",
     "prosemirror-model": "^1.13.3",
-    "prosemirror-schema-basic": "^1.2.1",
     "prosemirror-state": "^1.3.4",
     "prosemirror-transform": "^1.2.12",
     "prosemirror-view": "^1.18.2",

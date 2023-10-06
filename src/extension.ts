@@ -6,8 +6,7 @@ import {
     WorkspaceConfiguration,
     commands,
     workspace,
-    window
-} from "vscode";
+    window} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -25,6 +24,8 @@ import { CommonExecute } from "./webviews/standardviews/commonExecute";
 import { ExecutePanel } from "./webviews/standardviews/execute";
 import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
+
+import { newFileContent } from "./constants";
 
 /**
  * Main extension class
@@ -136,6 +137,30 @@ export class Coqnitive implements Disposable {
         this.registerCommand("toggle", this.toggleClient);
         this.registerCommand("stop", this.stopClient);
         this.registerCommand("exportExerciseSheet", this.exportExerciseSheet);
+
+        // Register the new Waterproof Document command
+        this.registerCommand("newWaterproofDocument", this.newFileCommand);
+    }
+
+    /**
+     * Handle the newWaterproofDocument command. 
+     * This command can be either activated by the user via the 'command palette' 
+     * or by using the File -> New File... option. 
+     */
+    private async newFileCommand(): Promise<void> {
+
+        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document"}).then((uri) => {
+            if (!uri) {
+                window.showErrorMessage("Something went wrong in creating a new waterproof document");
+                return;
+            }
+
+            workspace.fs.writeFile(uri, Buffer.from(newFileContent)).then(() => {
+                // Open the file using the waterproof editor
+                // TODO: Hardcoded `coqEditor.coqEditor`.
+                commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+            });
+        });
     }
 
     /**
@@ -151,7 +176,7 @@ export class Coqnitive implements Disposable {
     }
 
     /**
-     * Remove solutions from document and open save dialog for clean file.
+     * Remove solutions from document and open save dialog for the solution-less file.
      */
     async exportExerciseSheet() {
         const document = this.client.activeDocument;

@@ -4,29 +4,20 @@
 	  "backgroundColor": "var(--vscode-input-background)"
 	},
 
-	".cm-coq-error": {
-		"textDecorationLine": "underline",
-		"textDecorationStyle": "wavy",
-		"textDecorationColor": "var(--vscode-editorError-foreground)"
-	},
+	".cm-diagnosticButton": {
+        "order": 1
+    },
 
-	".cm-coq-warning": {
-		"textDecorationLine": "underline",
-		"textDecorationStyle": "wavy",
-		"textDecorationColor": "var(--vscode-editorWarning-foreground)"
-	},
+    ".cm-diagnosticText": {
+        "order": 2,
+        "marginLeft": "8px"
+    },
 
-	".cm-coq-hint": {
-		"textDecorationLine": "underline",
-		"textDecorationStyle": "wavy",
-		"textDecorationColor": "var(--vscode-editorHint-foreground)"
-	},
-
-	".cm-coq-info": {
-		"textDecorationDLine": "underline",
-		"textDecorationStyle": "wavy",
-		"textDecorationColor": "var(--vscode-editorInfo-foreground)"
-	},
+    ".cm-diagnostic": {
+        "display": "inline-flex", 
+        "alignItems": "center",
+        "flexFlow": "row"
+    },
 
 	".cm-content": {
 	  "caretColor": "auto",

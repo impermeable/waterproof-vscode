@@ -66,7 +66,7 @@ function GoalsList({
   if (count == 0) {
     if (show_on_empty) {
       return (
-        <Box summary="No more goals" pos={pos} textDox={textDoc}>{bullet_msg ? (
+        <Box summary="Proof finished" pos={pos} textDox={textDoc}>{bullet_msg ? (
           <div className="aside">
             <CoqPp content={bullet_msg} inline={true} />
           </div>
@@ -112,7 +112,7 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
       {/* uses GoalsList to show the goals as a list within a stack */}
       <GoalsList
         goals={goals}
-        header={`Remaining goals at ${level_indicator}`}
+        header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
         show_on_empty={false}
         pos={pos}
         textDoc={textDoc}

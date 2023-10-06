@@ -5,14 +5,13 @@ import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
 import {
 	EditorView as CodeMirror, keymap as cmKeymap,
-	lineNumbers, placeholder
-} from "@codemirror/view"
+	lineNumbers, placeholder} from "@codemirror/view"
 import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
-import { addCoqErrorMark, clearCoqErrorMarks, removeCoqErrorMark } from "./coq-errors";
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
+import { linter, LintSource, Diagnostic, forceLinting } from "@codemirror/lint";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -28,6 +27,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
+	private _diags;
+
+	// Compartment storing the linting information (needs to be in a comp. because of refreshing)
+	private _lintingCompartment: Compartment;
 
 	constructor(
 		node: Node,
@@ -42,10 +45,15 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = [];
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
+		this._lintingCompartment = new Compartment;
+		this._diags = [];
+		
 
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
+				// Create the first linting compartment. 
+				this._lintingCompartment.of(linter(this.lintingFunction)),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 				autocompletion({
@@ -81,6 +89,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 		this.updating = false;
 		this.handleNewComplete([]);
+	}
+
+	private lintingFunction: LintSource = (view: CodeMirror): readonly Diagnostic[] => {
+		return this._diags;
 	}
 
 	/**
@@ -142,22 +154,53 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * @param severity The severity attached to this error.
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
-		addCoqErrorMark(this._codemirror, {from, to}, message, severity);
+		this._diags.push({
+			from, to, 
+			message, 
+			severity: severityToString(severity),
+			actions: [{
+				name: "Copy 📋", 
+				apply(view: EditorView, from: number, to: number) {
+					navigator.clipboard.writeText(message);
+				}
+			}]
+		});
+		this.forceUpdateLinting();		
 	}
 
 	/**
-	 * Remove a coq error given a position.
-	 * @param from The from position of the error.
-	 * @param to The to position of the error.
+	 * Helper function that forces the linter function to run. 
+	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
-	public removeCoqError(from: number, to: number) {
-		removeCoqErrorMark(this._codemirror, {from, to});
+	private forceUpdateLinting() {
+		// Reconfigure the linting compartment (forces the linter to run again when editor idle)
+		this._codemirror.dispatch({
+			effects: this._lintingCompartment.reconfigure(linter(() => this._diags, {delay: 100}))
+		})
+		// Not necessary but we can force the linter to run straightaway, instead of waiting for `delay`
+		// forceLinting(this._codemirror);
 	}
 
 	/**
 	 * Clear all coq errors from this view.
 	 */
 	public clearCoqErrors() {
-		clearCoqErrorMarks(this._codemirror);
+		this._diags = [];
+		this.forceUpdateLinting();
+	}
+}
+
+const severityToString = (sv: number) => {
+	switch (sv) {
+		case 0: 
+			return "error";
+		case 1: 
+			return "warning";
+		case 2: 
+			return "info";
+		case 3: 
+			return "hint";
+		default: 
+			return "error";
 	}
 }

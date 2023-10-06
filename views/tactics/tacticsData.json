@@ -76,9 +76,9 @@
       "example": "Contradiction."
   },
   {
-      "name": "Because (*name_combined_hyp*) both (*name_hyp_1*) and (*name_hyp_2*).",
-      "description": "If you currently have a hypothesis with name (*name_combined_hyp*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses with names (*name_hyp_1*) and (*name_hyp_2*).",
-      "example": "Lemma and_example : for all A B : Prop, A ∧ B ⇒ A.\nTake A : Prop. Take B : Prop.\nAssume A_and_B : A .",
+      "name": "Because ((*name_combined_hyp*)) both ((*statement_1*)) ((*optional_label_1*)) and ((*statement_2*)) ((*optional_label_2*)).",
+      "description": "If you currently have a hypothesis with name (*name_combined_hyp*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses.",
+      "example": "Lemma and_example : for all A B : Prop, A ∧ B ⇒ A.\nTake A : Prop. Take B : Prop.\nAssume that (A ∧ B) (i). Because (i) both (A) (ii) and (B) (iii).",
       "advanced": true
   },
   {

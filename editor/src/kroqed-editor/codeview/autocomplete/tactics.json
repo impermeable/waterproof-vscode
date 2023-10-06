@@ -1,5 +1,11 @@
 [
     {
+        "label": "Help.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Help."
+    },
+    {
         "label": "Take (*name*) : ((*set*)).",
         "type": "type",
         "detail": "tactic",
@@ -96,24 +102,6 @@
         "template": "Obtain ${(*name_var*)} according to (${(*name_hyp*)})."
     },
     {
-        "label": "Write goal using ((*equality*)) as ((*new goal*)).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Write goal using (${(*equality*)}) as (${(*new goal*)})."
-    },
-    {
-        "label": "Write (*name_hyp*) as ((*expression*)).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Write ${(*name_hyp*)} as (${(*expression*)})."
-    },
-    {
-        "label": "Write (*name_hyp*) using ((*equality*)) as ((*new_hyp*)).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Write ${(*name_hyp*)} using (${(*equality*)}) as (${(*new_hyp*)})."
-    },
-    {
         "label": "Either ((*case_1*)) or ((*case_2*)).",
         "type": "type",
         "detail": "tactic",
@@ -144,12 +132,6 @@
         "template": "We use induction on ${(*name_var*)}."
     },
     {
-        "label": "Apply (*lemma or assumption*).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Apply ${(*lemma or assumption*)}."
-    },
-    {
         "label": "Expand the definition of (*name_kw*) in ((*expression*)).",
         "type": "type",
         "detail": "tactic",
@@ -171,7 +153,13 @@
         "label": "We conclude that ((*(alternative) formulation of current goal*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "We conclude that (${(*alternative*) formulation of current goal})."
+        "template": "We conclude that (${(*(alternative) formulation of current goal*)})."
+    },
+    {
+        "label": "By ((*lemma or assumption*)) we conclude that ((*(alternative) formulation of current goal*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "By (${(*lemma or assumption*)}) we conclude that (${(*(alternative) formulation of current goal*)})."
     },
     {
         "label": "Since ((*extra_statement*)) it holds that ((*statement*)).",

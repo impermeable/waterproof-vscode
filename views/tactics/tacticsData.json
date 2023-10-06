@@ -82,30 +82,6 @@
       "advanced": true
   },
   {
-      "name": "Apply (*lemma or assumption*).",
-      "description": "Apply a lemma or an assumption.",
-      "example": "Lemma a: forall A B: Prop, (A -> B) -> A -> B.\nProof.\n  Assume that (A -> B) (H). Assume that (A) (H0).\n  Apply H.\n  Apply H0.\nQed.",
-      "advanced": true
-  },
-  {
-      "name": "Write goal using ((*equality*)) as ((*new goal*)).",
-      "description": "First attempts to automatically find a proof of the provided equality, and if it succeeds it uses it to replace in the goal the lhs of the equality by the rhs.",
-      "example": "Write goal using (2 + 3 = 5) as (5 = 5).",
-      "advanced": true
-  },
-  {
-      "name": "Write (*name_hyp*) as ((*expression*)).",
-      "description": "Checks that the hypothesis with name (*name_hyp*) can be converted to (*expression*), and then replaces it by (*expression*). This is in general a more readable alternative to \"Expand the definition\"",
-      "example": "Write x_in_A as (x ∈ A).",
-      "advanced": true
-  },
-  {
-      "name": "Write (*name_hyp*) using ((*equality*)) as ((*new_hyp*)).",
-      "description": "First attempts to automatically find a proof of the provided equality, and if it succeeds it uses it to replace in the hypothesis with name (*name_hyp*) the lhs of the equality by the rhs.",
-      "example": "Rewrite H0 using (2 + 3 = 5) as (5 = 5).",
-      "advanced": true
-  },
-  {
       "name": "Either ((*case_1*)) or ((*case_2*)).",
       "description": "Split in two cases (*case_1*) and (*case_2*).",
       "example": "Lemma example_cases : \n  ∀ x : ℝ, ∀ y : ℝ,\n    Rmax(x,y) = x ∨ Rmax(x,y) = y.\nProof. \nTake x : ℝ. Take y : ℝ.\nEither (x < y) or (x ≥ y).\n- Case (x < y).\n  It suffices to show that (Rmax(x,y) = y).\n  We conclude that (Rmax(x,y) = y).\n- Case (x ≥ y).\n  It suffices to show that (Rmax(x,y) = x).\n  We conclude that (Rmax(x,y) = x).\nQed."

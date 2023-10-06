@@ -5,14 +5,13 @@ import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
 import {
 	EditorView as CodeMirror, keymap as cmKeymap,
-	lineNumbers, placeholder
-} from "@codemirror/view"
+	lineNumbers, placeholder} from "@codemirror/view"
 import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic, forceLinting } from "@codemirror/lint";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -30,6 +29,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _readOnlyCompartment: Compartment;
 	private _diags;
 
+	// Compartment storing the linting information (needs to be in a comp. because of refreshing)
+	private _lintingCompartment: Compartment;
+
 	constructor(
 		node: Node,
 		view: EditorView,
@@ -43,13 +45,15 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = [];
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
+		this._lintingCompartment = new Compartment;
 		this._diags = [];
 		
 
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
-				linter(this.lintingFunction),	
+				// Create the first linting compartment. 
+				this._lintingCompartment.of(linter(this.lintingFunction)),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 				autocompletion({
@@ -161,15 +165,20 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				}
 			}]
 		});
+		this.forceUpdateLinting();		
 	}
 
 	/**
-	 * Remove a coq error given a position.
-	 * @param from The from position of the error.
-	 * @param to The to position of the error.
+	 * Helper function that forces the linter function to run. 
+	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
-	public removeCoqError(from: number, to: number) {
-		this._diags = [];
+	private forceUpdateLinting() {
+		// Reconfigure the linting compartment (forces the linter to run again when editor idle)
+		this._codemirror.dispatch({
+			effects: this._lintingCompartment.reconfigure(linter(() => this._diags, {delay: 100}))
+		})
+		// Not necessary but we can force the linter to run straightaway, instead of waiting for `delay`
+		// forceLinting(this._codemirror);
 	}
 
 	/**
@@ -177,6 +186,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public clearCoqErrors() {
 		this._diags = [];
+		this.forceUpdateLinting();
 	}
 }
 

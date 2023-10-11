@@ -48,6 +48,12 @@
         "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)})."
     },
     {
+        "label": "By ((*lemma or assumption*)) it suffices to show that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "By (${(*lemma or assumption*)}) it suffices to show that (${(*statement*)})."
+    },
+    {
         "label": "We claim that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
@@ -178,5 +184,11 @@
         "type": "type",
         "detail": "tactic",
         "template": "Since (${(*extra_statement*)}) we conclude that (${(*(alternative) formulation of current goal*)})."
+    },
+    {
+        "label": "Since ((*extra_statement*)) it suffices to show that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since (${(*extra_statement*)}) it suffices to show that (${(*statement*)})."
     }
 ]

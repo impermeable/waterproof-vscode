@@ -51,6 +51,12 @@
       "advanced": false
   },
   {
+    "name": "By ((*lemma or assumption*)) it suffices to show that ((*statement*)).",
+    "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal, using (*lemma or assumption*). If so, (*statement*) becomes the new goal.",
+    "example": "Lemma example_it_suffices_to_show_that :\n  ∀ ε : ℝ,\n    ε > 0 ⇒\n      3 + Rmax(ε,2) ≥ 3.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0) (i).\nBy (i) it suffices to show that (Rmax(ε,2) ≥ 0).\nWe conclude that (& Rmax(ε,2) ≥ 2 ≥ 0).\nQed.",
+    "advanced": false
+  },
+  {
       "name": "It holds that ((*statement*)) ((*optional_label*)).",
       "description": "Tries to automatically prove (*statement*). If that works, (*statement*) is added as a hypothesis with name (*optional_label*).",
       "example": "Lemma example_it_holds_that :\n  ∀ ε : ℝ, ε > 0 ⇒\n    4 - Rmax(ε,1) ≤ 3.\n    \nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nIt holds that (Rmax(ε,1) ≥ 1) (i).\nWe conclude that (4 - Rmax(ε,1) ≤ 3).\nQed."
@@ -103,7 +109,7 @@
       "example": "Lemma example_both_directions:\n  ∀ x : ℝ, ∀ y : ℝ,\n    x < y ⇔ y > x.\nProof.\nTake x : (ℝ). Take y : (ℝ).\nWe show both directions.\n- We need to show that (x < y ⇒ y > x).\n  Assume that (x < y).\n  We conclude that (y > x).\n- We need to show that (y > x ⇒ x < y).\n  Assume that (y > x).\n  We conclude that (x < y).\nQed."
   },
   {
-      "name": "We use induction on (*name*)",
+      "name": "We use induction on (*name*).",
       "description": "Prove a statement by induction on the variable with (*name*).",
       "example": "Lemma example_induction :\n  ∀ n : ℕ → ℕ, (∀ k : ℕ, n(k) < n(k + 1))%nat ⇒\n    ∀ k : ℕ, (k ≤ n(k))%nat.\nProof.\nTake n : (ℕ → ℕ).\nAssume that (∀ k : ℕ, n(k) < n(k + 1))%nat (i).\nWe use induction on k.\n- We first show the base case, namely (0 ≤ n(0))%nat.\n  We conclude that (0 ≤ n(0))%nat.\n- We now show the induction step.\n  Assume that (k ≤ n(k))%nat.\n  By (i) it holds that (n(k) < n(k + 1))%nat.\n  We conclude that (& k + 1 ≤ n(k) + 1 ≤ n(k + 1))%nat.\nQed."
   },
@@ -114,8 +120,7 @@
   },
   {
       "name": "Define (*name*) := ((*expression*)).",
-      "description": "Temporarily give the name (*name*) to the expression (*expression*)",
-      "advanced": true
+      "description": "Temporarily give the name (*name*) to the expression (*expression*)"
   },
   {
     "name": "Since ((*extra_statement*)) it holds that ((*statement*)) ((*optional_label*)).",
@@ -126,5 +131,11 @@
     "name": "Since ((*extra_statement*)) we conclude that ((*(alternative) formulation of current goal*)).",
     "description": "Tries to automatically prove the current goal, after first trying to prove (*extra_statement*).",
     "example": "Since (x = y) we conclude that (x = z)."
+  },
+  {
+    "name": "Since ((*extra_statement*)) it suffices to show that ((*statement*)).",
+    "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal, after first trying to prove (*extra_statement*). If so, (*statement*) becomes the new goal.",
+    "example": "Lemma example_it_suffices_to_show_that :\n  ∀ ε : ℝ,\n    ε > 0 ⇒\n      3 + Rmax(ε,2) ≥ 3.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nSince (ε > 0) it suffices to show that (Rmax(ε,2) ≥ 0).\nWe conclude that (& Rmax(ε,2) ≥ 2 ≥ 0).\nQed.",
+    "advanced": false
   }
 ]

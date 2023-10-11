@@ -84,6 +84,10 @@
       {
         "command": "waterproof.restart",
         "title": "Waterproof: Restart the document checker"
+      },
+      {
+        "command": "waterproof.exportExerciseSheet",
+        "title": "Waterproof: Save as exercise sheet"
       }
     ],
     "menus": {

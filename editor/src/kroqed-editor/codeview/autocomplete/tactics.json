@@ -4,14 +4,14 @@
         "type": "type",
         "detail": "tactic",
         "template": "Take ${(*name*)} : ${(*set*)}.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Assume (*name*) : ((*statement*)).",
         "type": "type",
         "detail": "tactic",
         "template": "Assume ${(*name*)} : (${(*statement*)}).",
-        "boost": 1  
+        "boost": 2
     },
     {
         "label": "It holds that ((*statement*)) ((*name*)).",
@@ -25,133 +25,133 @@
         "type": "type",
         "detail": "tactic",
         "template": "It holds that (${(*current goal*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "By ((*lemma or assumption*)) it holds that ((*statement*)) ((*name*)).",
         "type": "type",
         "detail": "tactic",
         "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}) (${(*name*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "We claim that ((*statement*)) ((*name*)).",
         "type": "type",
         "detail": "tactic",
         "template": "We claim that (${(*statement*)}) (${(*name*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "We argue by contradiction.",
         "type": "type",
         "detail": "tactic",
         "template": "We argue by contradiction.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Contradiction",
         "type": "type",
         "detail": "tactic",
         "template": "Contradiction",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Because (*name_combined_hyp*) both (*name_hyp_1*) and (*name_hyp_2*).",
         "type": "type",
         "detail": "tactic",
         "template": "Because ${(*name_combined_hyp*)} both ${(*name_hyp_1*)} and ${(*name_hyp_2*)}.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Choose (*name_var*) := (*expression*).",
         "type": "type",
         "detail": "tactic",
         "template": "Choose ${(*name_var*)} := ${(*expression*)}.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Choose (*name_var*) such that (*name_property*) according to (*name_hyp*).",
         "type": "type",
         "detail": "tactic",
         "template": "Choose ${(*name_var*)} such that ${(*name_property*)} according to ${(*name_hyp*)}.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Write goal using ((*equality*)) as ((*new goal*)).",
         "type": "type",
         "detail": "tactic",
         "template": "Write goal using (${(*equality*)}) as (${(*new goal*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Write (*name_hyp*) as ((*expression*)).",
         "type": "type",
         "detail": "tactic",
         "template": "Write ${(*name_hyp*)} as (${(*expression*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Write (*name_hyp*) using ((*equality*)) as ((*new_hyp*)).",
         "type": "type",
         "detail": "tactic",
         "template": "Write ${(*name_hyp*)} using (${(*equality*)}) as (${(*new_hyp*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Either ((*case_1*)) or ((*case_2*)).",
         "type": "type",
         "detail": "tactic",
         "template": "Either (${(*case_1*)}) or (${(*case_2*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Rewrite ((*statement_1*)) (*sign_1*) ((*statement_2*)) (*sign_2*) ((*statement_3*))",
         "type": "type",
         "detail": "tactic",
         "template": "Rewrite (${(*statement_1*)}) ${(*sign_1*)} (${(*statement_2*)}) ${(*sign_2*)} (${(*statement_3*)})",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "We show both statements.",
         "type": "type",
         "detail": "tactic",
         "template": "We show both statements.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "We show both directions.",
         "type": "type",
         "detail": "tactic",
         "template": "We show both directions.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "We need to show that ((*(alternative) formulation of current goal*)).",
         "type": "type",
         "detail": "tactic",
         "template": "We need to show that (${(*(alternative) formulation of current goal*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "We prove by induction on (*name_1*), calling the induction hypothesis (*name_2*).",
         "type": "type",
         "detail": "tactic",
         "template": "We prove by induction on ${(*name_1*)}, calling the induction hypothesis ${(*name_2*)}.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Apply (*lemma or assumption*).",
         "type": "type",
         "detail": "tactic",
         "template": "Apply ${(*lemma or assumption*)}.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Expand the definition of (*name_kw*).",
         "type": "type",
         "detail": "tactic",
         "template": "Expand the definition of ${(*name_kw*)}.",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Expand the definition of (*name_kw*) in (*name_hyp*).",
@@ -165,27 +165,27 @@
         "type": "type",
         "detail": "tactic",
         "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "It suffices to show that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
         "template": "It suffices to show that (${(*statement*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Define (*name*) := ((*expression*)).",
         "type": "type",
         "detail": "tactic",
         "template": "Define ${(*name*)} := (${(*expression*)}).",
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "We conclude that ((* result *)).",
         "type": "type",
         "detail": "tactic",
         "template": "We conclude that (${(* result *)}).",
-        "boost": 1
+        "boost": 2
     }
 ]

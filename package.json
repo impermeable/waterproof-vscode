@@ -2,13 +2,15 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.6",
+  "version": "0.9.9",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",
-    "Pieter Wils aka Gangster <p.f.e.j.wils@student.tue.nl>"
+    "Pieter Wils aka Gangster <p.f.e.j.wils@student.tue.nl>",
+    "Jim Portegies <j.w.portegies@tue.nl>"
   ],
   "publisher": "waterproof-tue",
+  "license": "LGPL-2.1-only",
   "icon": "Waterproofdruppel128.png",
   "engines": {
     "vscode": "^1.73.0"

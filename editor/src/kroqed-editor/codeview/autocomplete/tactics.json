@@ -1,45 +1,80 @@
 [
     {
-        "label": "Take (*name*) : (*set*).",
+        "label": "Help.",
         "type": "type",
         "detail": "tactic",
-        "template": "Take ${(*name*)} : ${(*set*)}.",
+        "template": "Help.",
         "boost": 2
     },
     {
-        "label": "Assume (*name*) : ((*statement*)).",
+        "label": "Take (*name*) : ((*set*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Assume ${(*name*)} : (${(*statement*)}).",
+        "template": "Take ${(*name*)} : (${(*set*)}).",
         "boost": 2
     },
     {
-        "label": "It holds that ((*statement*)) ((*name*)).",
+        "label": "Assume that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "It holds that (${(*statement*)}) (${(*name*)}).",
+        "template": "Assume that (${(*statement*)}).",
+        "boost": 2
+    },
+    {
+        "label": "Assume that ((*statement*)) ((*label*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Assume that (${(*statement*)}) (${(*label*)}).",
         "boost": 1
     },
     {
-        "label": "It holds that ((*current goal*)).",
+        "label": "It holds that ((*statement*)) ((*label*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "It holds that (${(*current goal*)}).",
+        "template": "It holds that (${(*statement*)}) (${(*label*)}).",
+        "boost": 1
+    },
+    {
+        "label": "It holds that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "It holds that (${(*statement*)}).",
         "boost": 2
     },
     {
-        "label": "By ((*lemma or assumption*)) it holds that ((*statement*)) ((*name*)).",
+        "label": "By ((*lemma or assumption*)) it holds that ((*statement*)) ((*label*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}) (${(*name*)}).",
+        "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}) (${(*label*)}).",
+        "boost": 1
+    },
+    {
+        "label": "By ((*lemma or assumption*)) it holds that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}).",
         "boost": 2
     },
     {
-        "label": "We claim that ((*statement*)) ((*name*)).",
+        "label": "By ((*lemma or assumption*)) it suffices to show that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "We claim that (${(*statement*)}) (${(*name*)}).",
+        "template": "By (${(*lemma or assumption*)}) it suffices to show that (${(*statement*)}).",
         "boost": 2
+    },
+    {
+        "label": "We claim that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We claim that (${(*statement*)}).",
+        "boost": 2
+    },
+    {
+        "label": "We claim that ((*statement*)) ((*label*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We claim that (${(*statement*)}) (${(*label*)}).",
+        "boost": 1
     },
     {
         "label": "We argue by contradiction.",
@@ -56,45 +91,38 @@
         "boost": 2
     },
     {
-        "label": "Because (*name_combined_hyp*) both (*name_hyp_1*) and (*name_hyp_2*).",
+        "label": "Because ((*name_combined_hyp*)) both ((*statement_1*)) and ((*statement_2*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Because ${(*name_combined_hyp*)} both ${(*name_hyp_1*)} and ${(*name_hyp_2*)}.",
+        "template": "Because (${(*name_combined_hyp*)}) both (${(*name_hyp_1*)}) and (${(*name_hyp_2*)}).",
+        "boost": 1
+    },    
+    {
+        "label": "Because ((*name_combined_hyp*)) both ((*statement_1*)) ((*label_1*)) and ((*statement_2*)) ((*label_2*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Because (${(*name_combined_hyp*)}) both (${(*name_hyp_1*)}) (${(*label_1*)}) and (${(*name_hyp_2*)}) (${(*label_2*)}).",
+        "boost": 1
+    },
+    {
+        "label": "Choose (*name_var*) := ((*expression*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Choose ${(*name_var*)} := (${(*expression*)}).",
         "boost": 2
     },
     {
-        "label": "Choose (*name_var*) := (*expression*).",
+        "label": "Obtain such a (*name_var*)",
         "type": "type",
         "detail": "tactic",
-        "template": "Choose ${(*name_var*)} := ${(*expression*)}.",
+        "template": "Obtain such a ${(*name_var*)}.",
         "boost": 2
     },
     {
-        "label": "Choose (*name_var*) such that (*name_property*) according to (*name_hyp*).",
+        "label": "Obtain (*name_var*) according to ((*name_hyp*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Choose ${(*name_var*)} such that ${(*name_property*)} according to ${(*name_hyp*)}.",
-        "boost": 2
-    },
-    {
-        "label": "Write goal using ((*equality*)) as ((*new goal*)).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Write goal using (${(*equality*)}) as (${(*new goal*)}).",
-        "boost": 2
-    },
-    {
-        "label": "Write (*name_hyp*) as ((*expression*)).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Write ${(*name_hyp*)} as (${(*expression*)}).",
-        "boost": 2
-    },
-    {
-        "label": "Write (*name_hyp*) using ((*equality*)) as ((*new_hyp*)).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Write ${(*name_hyp*)} using (${(*equality*)}) as (${(*new_hyp*)}).",
+        "template": "Obtain ${(*name_var*)} according to (${(*name_hyp*)}).",
         "boost": 2
     },
     {
@@ -102,13 +130,6 @@
         "type": "type",
         "detail": "tactic",
         "template": "Either (${(*case_1*)}) or (${(*case_2*)}).",
-        "boost": 2
-    },
-    {
-        "label": "Rewrite ((*statement_1*)) (*sign_1*) ((*statement_2*)) (*sign_2*) ((*statement_3*))",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Rewrite (${(*statement_1*)}) ${(*sign_1*)} (${(*statement_2*)}) ${(*sign_2*)} (${(*statement_3*)})",
         "boost": 2
     },
     {
@@ -133,38 +154,17 @@
         "boost": 2
     },
     {
-        "label": "We prove by induction on (*name_1*), calling the induction hypothesis (*name_2*).",
+        "label": "We use induction on (*name_var*).",
         "type": "type",
         "detail": "tactic",
-        "template": "We prove by induction on ${(*name_1*)}, calling the induction hypothesis ${(*name_2*)}.",
+        "template": "We use induction on ${(*name_var*)}.",
         "boost": 2
     },
     {
-        "label": "Apply (*lemma or assumption*).",
+        "label": "Expand the definition of (*name_kw*) in ((*expression*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Apply ${(*lemma or assumption*)}.",
-        "boost": 2
-    },
-    {
-        "label": "Expand the definition of (*name_kw*).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Expand the definition of ${(*name_kw*)}.",
-        "boost": 2
-    },
-    {
-        "label": "Expand the definition of (*name_kw*) in (*name_hyp*).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "Expand the definition of ${(*name_kw*)} in ${(*name_hyp*)}.",
-        "boost": 1
-    },
-    {
-        "label": "By ((*lemma or assumption*)) it holds that ((*statement*)).",
-        "type": "type",
-        "detail": "tactic",
-        "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}).",
+        "template": "Expand the definition of ${(*name_kw*)} in (${(*expression*)}).",
         "boost": 2
     },
     {
@@ -182,10 +182,45 @@
         "boost": 2
     },
     {
-        "label": "We conclude that ((* result *)).",
+        "label": "We conclude that ((*(alternative) formulation of current goal*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "We conclude that (${(* result *)}).",
+        "template": "We conclude that (${(*(alternative) formulation of current goal*)}).",
+        "boost": 2
+    },
+    {
+        "label": "By ((*lemma or assumption*)) we conclude that ((*(alternative) formulation of current goal*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "By (${(*lemma or assumption*)}) we conclude that (${(*(alternative) formulation of current goal*)}).",
+        "boost": 2
+    },
+    {
+        "label": "Since ((*extra_statement*)) it holds that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since (${(*extra_statement*)}) it holds that (${(*statement*)}).",
+        "boost": 2
+    },
+    {
+        "label": "Since ((*extra_statement*)) it holds that ((*statement*)) ((*label*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since (${(*extra_statement*)}) it holds that (${(*statement*)}) (${(*label*)}).",
+        "boost": 1
+    },
+    {
+        "label": "Since ((*extra_statement*)) we conclude that ((*(alternative) formulation of current goal*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since (${(*extra_statement*)}) we conclude that (${(*(alternative) formulation of current goal*)}).",
+        "boost": 2
+    },
+    {
+        "label": "Since ((*extra_statement*)) it suffices to show that ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since (${(*extra_statement*)}) it suffices to show that (${(*statement*)}).",
         "boost": 2
     }
 ]

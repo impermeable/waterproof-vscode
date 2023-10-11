@@ -82,13 +82,17 @@ export class Coqnitive implements Disposable {
             this.client.updateCompletions(document);
         });
         this.webviewManager.on(WebviewManagerEvents.focus, (document: TextDocument) => {
+            
             // update active document
             // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
             if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
                 this.client.activeDocument = document;
                 this.client.activeCursorPosition = undefined;
                 for (const g of this.goalsComponents) g.updateGoals(undefined);
-            }
+            } 
+            console.log("focus")
+            this.webviewManager.open("goals")
+            // this.webviewManager.reveal("goals")
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
             // update active document and cursor
@@ -115,6 +119,7 @@ export class Coqnitive implements Disposable {
         var goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(this.configuration))
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
+        this.webviewManager.open("goals")
         this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
         this.webviewManager.addToolWebview("commonExecute", new CommonExecute(this.context.extensionUri));
         const executorPanel = new ExecutePanel(this.context.extensionUri);

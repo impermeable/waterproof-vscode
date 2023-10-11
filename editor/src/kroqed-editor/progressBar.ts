@@ -66,8 +66,10 @@ function createProgressBar(progressState, progressBarContainer, spinnerContainer
   // Set the text of the span
   if (progressParams.progress.length > 0) {
     progressBarText.textContent = `Verifying file, currently at line: ${startLine + 1}`;
+    startSpinner(spinnerContainer);
   } else {
     progressBarText.textContent = `File verified`;
+    stopSpinner(spinnerContainer);
   }
 
   progressBarContainer.appendChild(progressBarText);

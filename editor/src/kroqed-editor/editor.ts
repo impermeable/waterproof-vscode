@@ -56,6 +56,9 @@ export class Editor {
 	private _editorElem: HTMLElement;
 	private _contentElem: HTMLElement;
 
+    // The raw string containing the contents of the file.
+    private _rawContents: string;
+
 	// The prosemirror view
 	private _view: EditorView | undefined;
 
@@ -69,6 +72,9 @@ export class Editor {
 	private readonly _userOS;
 	private _filef: any;
 
+    // Whether the user wants detailed errors or not
+    private _detailedErrors: boolean;
+    
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
@@ -100,10 +106,10 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = this.checkPrePost(content);
-		if (newContent !== content) version = version + 1;
+		this._rawContents = this.checkPrePost(content);
+		if (this._rawContents !== content) version = version + 1;
 
-		let parsedContent = this._translator.toProsemirror(newContent);
+		let parsedContent = this._translator.toProsemirror(this._rawContents);
 		
 		this._contentElem.innerHTML = parsedContent;
 		this._mapping = new TextDocMapping(parsedContent, version);
@@ -370,8 +376,13 @@ export class Editor {
 		const doc = this._view.state.doc;
 		this.currentProseDiagnostics = new Array<DiagnosticObjectProse>();
 		for (let diag of diagnostics) {
-			const start = map.findInvPosition(diag.startOffset);
-			const end = map.findInvPosition(diag.endOffset);
+			let start = map.findInvPosition(diag.startOffset);
+			let end = map.findInvPosition(diag.endOffset);
+            if (!this._detailedErrors) { 
+                // Fix start and end points to cover full line.
+                start -= this.offsetToStartOfLine(diag.startOffset);
+                end += this.offsetToEndOfLine(diag.endOffset);
+            }
 			if (start >= end) continue;
 			this.currentProseDiagnostics.push({
 				message: diag.message,
@@ -411,6 +422,22 @@ export class Editor {
 			theView.addCoqError(diag.$start.parentOffset, diag.$end.parentOffset, diag.message, diag.severity);
 		}
 	}
+
+    private offsetToStartOfLine(startRaw: number): number {
+        let diff = 0;
+        while(this._rawContents.charAt(startRaw - 1 - diff) !== "." && (startRaw - diff) > 0) {
+            diff++;
+        }
+        return diff;
+    }
+
+    private offsetToEndOfLine(endRaw: number): number {
+        let diff = 0;
+        while(this._rawContents.charAt(endRaw + diff - 1) !== "." && (endRaw + diff) < this._rawContents.length) {
+            diff++;
+        }
+        return diff;
+    }
 
 	public getDiagnosticsInRange(low: number, high: number): Array<DiagnosticObjectProse> {
 		return this.currentProseDiagnostics.filter((value) => {
@@ -460,6 +487,9 @@ export class Editor {
 			case MessageType.diagnostics:
 				const diagnostics = msg.body;
 				this.parseCoqDiagnostics(diagnostics);
+				break;
+            case MessageType.errorDetail:
+                this._detailedErrors = msg.body;
 				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.

@@ -34,6 +34,7 @@ export enum MessageType {
     insert = "insertSymbol",
     command = "command",
     teacher = "toggleTeacherMode",
+    errorDetail = "toggleDetailMode",
     setAutocomplete = "autocomplete",
     qedStatus = "qed",
     progress = "progress",

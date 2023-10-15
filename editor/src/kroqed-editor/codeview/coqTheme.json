@@ -41,6 +41,7 @@
 	  "backgroundColor": "#6199ff2f"
 	},
 	".cm-activeLine": {"backgroundColor": "#6699ff0b"},
+    "&:not(.cm-focused) .cm-activeLine": { "backgroundColor": "transparent"},
 	".cm-selectionMatch": {"backgroundColor": "#aafe661a"},
 	"&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket": {
 	  "backgroundColor": "#bad0f847"

@@ -1,16 +1,9 @@
 import { Completion } from "@codemirror/autocomplete";
 
-import { Message, MessageType, QedStatus, SimpleProgressParams } from "../../shared";
+import { Message, MessageType } from "../../shared";
 import { Editor } from "./kroqed-editor";
 import { COQ_CODE_PLUGIN_KEY } from "./kroqed-editor/codeview/coqcodeplugin";
-
-/**
- * Very basic representation of the acquirable VSCodeApi.
- * At least supports `postMessage(message: Message)`.
- */
-interface VSCodeAPI {
-	postMessage: (message: Message) => void;
-}
+import { VSCodeAPI } from "./kroqed-editor/common/types";
 
 window.onload = () => {
 	// Get HTML DOM elements

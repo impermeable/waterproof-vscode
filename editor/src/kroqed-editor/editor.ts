@@ -1,5 +1,5 @@
 import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
-import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
+import { deleteSelection, selectParentNode } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import { DOMParser, ResolvedPos, Schema } from "prosemirror-model";
 import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
@@ -24,18 +24,11 @@ import "prosemirror-view/style/prosemirror.css";
 import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
-import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, deleteNodeIfEmpty } from "./commands";
+import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
-
-/**
- * Very basic representation of the acquirable VSCodeApi.
- * At least supports `postMessage(message: Message)`.
- */
-interface VSCodeAPI {
-	postMessage: (message: Message) => void;
-}
+import { VSCodeAPI } from "./common/types";
 
 /** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
 type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: DiagnosticSeverity};
@@ -67,7 +60,7 @@ export class Editor {
 
 	// User operating system.
 	private readonly _userOS;
-	private _filef: any;
+	private _filef: FileFormat;
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 

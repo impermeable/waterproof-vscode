@@ -26,6 +26,7 @@ import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { newFileContent } from "./constants";
+import { REPORT_ISSUE, reportIssueHandler } from "./reportIssue";
 
 /**
  * Main extension class
@@ -104,7 +105,8 @@ export class Coqnitive implements Disposable {
                 },
                 (error: Error) => {
                     // FIXME: Properly display to the user that something went wrong.
-                    source.setResults(["Error: " + error.message]);  // (temp)
+                    window.showWarningMessage(error.message, REPORT_ISSUE).then(reportIssueHandler);
+                    source.setResults([]);
                 }
             );
         });

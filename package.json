@@ -139,6 +139,16 @@
         }
       },
       {
+        "title": "Coq Syntax",
+        "properties": {
+          "waterproof.coqSyntax": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable coq syntax; if true, coq syntax will be used instead of coq-waterproof syntax."
+          }
+        }
+      },
+      {
         "title": "Diagnostics",
         "type": "object",
         "properties": {

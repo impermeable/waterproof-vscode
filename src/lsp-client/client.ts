@@ -1,5 +1,5 @@
 import { Completion } from "@codemirror/autocomplete";
-import { Disposable, Position, TextDocument, languages, workspace } from "vscode";
+import { Disposable, Position, TextDocument, languages, workspace, window, OutputChannel } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
@@ -9,13 +9,13 @@ import {
     VersionedTextDocumentIdentifier
 } from "vscode-languageclient";
 
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { FlecheDocument, FlecheDocumentParams, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { MessageType, OffsetDiagnostic, QedStatus, SimpleProgressParams } from "../../shared";
 import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
-import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
+import { convertToSimple, fileProgressNotificationType, getDocumentRequestType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 
 interface TimeoutDisposable extends Disposable {
@@ -44,6 +44,10 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
         webviewManager: WebviewManager | undefined;
 
+        // We create a new output channel to output all coq-lsp events on.
+        // This is not all coq-lsp events since some are submitted to the other (standard one) before our handlers are registered.
+        debugOutputChannel: OutputChannel;
+
         /**
          * Initializes the client.
          * @param args the arguments for the base `LanguageClient`
@@ -51,6 +55,11 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         constructor(...args: any[]) {
             super(...args);
             this.sentenceManager = new SentenceManager();
+
+            // TODO: Create a new output channel (for debug purposes, but we really need a way to display all events)
+            // Look into how coq-lsp does this.
+            this.debugOutputChannel = window.createOutputChannel("LSP EVENTS (DEBUG)");
+            this.debugOutputChannel.show(true);
 
             // forward progress notifications to editor
             this.fileProgressComponents.push({
@@ -100,7 +109,14 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // send proof statuses to editor when document checking is done
             this.disposables.push(this.onNotification(LogTraceNotification.type, params => {
+                // FIXME: For now append the LOG TRACE events messages to a custom debug output channel.
+                this.debugOutputChannel.appendLine(`[LOG TRACE] ${params.message}`);
+
                 // subscribing here prevents logs from being shown in the output?
+                
+                // Yes, since listeners are unique. 
+                // However, this should no longer be necessary since we can get the fully checked status from 
+                // `coq/getDocument`.
                 if (params.message.includes("document fully checked")) {
                     this.onCheckingCompleted();
                 }
@@ -157,18 +173,36 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             return this.start();
         }
+        
+        /** Create a `getDocument` request */
+        public getDocument(): Promise<FlecheDocument> {
+            const doc = this.activeDocument;
+            if (doc === undefined) return Promise.reject("There is no current active document (this.activeDocument === undefined).");
+            let textDocument = this.createIdentifier(doc);
+            let params: FlecheDocumentParams = { textDocument };
+            return this.sendRequest(getDocumentRequestType, params);
+        };
 
-        getEndOfCurrentSentence(): Position | undefined {
+        /**
+        * Create a versioned identifier given document.
+        * @param document The `TextDocument` to create the identifier for. 
+        * This will most likely be the current active document.
+        */
+        createIdentifier(document: TextDocument): VersionedTextDocumentIdentifier {
+            return VersionedTextDocumentIdentifier.create(
+                document.uri.toString(), 
+                document.version
+            );
+        }
+
+        getEndOfCurrentSentence(): Position | undefined {            
             if (!this.activeCursorPosition) return undefined;
             return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);
         }
 
         createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest {
             return {
-                textDocument: VersionedTextDocumentIdentifier.create(
-                    document.uri.toString(),
-                    document.version
-                ),
+                textDocument: this.createIdentifier(document),
                 position
             };
         }

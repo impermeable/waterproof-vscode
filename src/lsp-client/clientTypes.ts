@@ -1,7 +1,7 @@
 import { Position, TextDocument, WorkspaceConfiguration } from "vscode";
 import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscode-languageclient";
 
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { FlecheDocument, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
 
@@ -65,6 +65,8 @@ export interface ICoqLspClient {
      * Requests symbols and sends corresponding completions to the editor.
      */
     updateCompletions(document: TextDocument): Promise<void>;
+
+    getDocument(): Promise<FlecheDocument>;
 }
 
 /**

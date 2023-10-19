@@ -99,9 +99,11 @@ export class Coqnitive implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
             executeCommand(this.client, command).then(
                 results => {
+                    // Display the results.
                     source.setResults(results);
                 },
                 (error: Error) => {
+                    // FIXME: Properly display to the user that something went wrong.
                     source.setResults(["Error: " + error.message]);  // (temp)
                 }
             );
@@ -187,7 +189,8 @@ export class Coqnitive implements Disposable {
             outputChannelName: "Waterproof LSP Events",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
             initializationOptions: CoqLspServerConfig.create(
-                this.context.extension.packageJSON.version,
+                // FIXME: This is a 'fix' to get rid of the version mismatch error.
+                "0.1.7",
                 this.configuration
             ),
             markdown: { isTrusted: true, supportHtml: true },

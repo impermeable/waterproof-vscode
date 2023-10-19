@@ -2,13 +2,19 @@ import { Range } from "vscode";
 import { NotificationType, RequestType } from "vscode-languageclient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { FlecheDocument, FlecheDocumentParams, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { CoqFileProgressKind, SimpleProgressInfo } from "../../shared";
 
 /**
  * LSP request to obtain the goals at a specific point in the doc.
  */
 export const goalRequestType = new RequestType<GoalRequest, GoalAnswer<PpString>, void>("proof/goals");
+
+/**
+ * LSP request to obtain the current document.
+ * See https://github.com/ejgallego/coq-lsp/blob/main/etc/doc/PROTOCOL.md#document-ast-request
+ */
+export const getDocumentRequestType = new RequestType<FlecheDocumentParams, FlecheDocument, void>("coq/getDocument");
 
 /**
  * LSP notification regarding the progress on processing the document server side

@@ -1,4 +1,5 @@
-import { Range, WorkspaceEdit, workspace } from "vscode";
+import { Position, Range, WorkspaceEdit, workspace } from "vscode";
+import { Position as LSPPosition } from "vscode-languageserver-types";
 import { GoalAnswer, Message, PpString, convertToString } from "../../lib/types";
 import { CoqLspClient } from "./clientTypes";
 
@@ -27,13 +28,32 @@ function getResults(response: GoalAnswer<PpString>): PpString[] {
     return messages as PpString[];
 }
 
+const lspPositionToPosition = (position: LSPPosition) => new Position(position.line, position.character);
+
 export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<PpString>> {
     const documentUri = client.activeDocument?.uri;
     if (!documentUri) {
         throw new Error("Cannot execute command; there is no active document.");
     }
 
-    const commandPosition = client.getEndOfCurrentSentence();
+    const document = await client.getDocument();
+    let commandPos = undefined;
+    const activeCursorPosition = client.activeCursorPosition;
+    if (!activeCursorPosition) throw new Error("Cannot execute command; there is no active cursor position");
+    if (document.completed.status[0] === "Yes") {
+        const filtered = document.spans.filter((span) => {
+            const spanPos = new Position(span.range.end.line, span.range.end.character);
+            return activeCursorPosition.isAfterOrEqual(spanPos);
+        });
+        const first = filtered[filtered.length - 1];
+        commandPos = lspPositionToPosition(first.range.end);
+    }
+
+    // Fall back to old function in the case that the request document does not work.
+    const useGetDocumentOne = (commandPos !== undefined);
+    console.log(`useGetDocumentOne : ${useGetDocumentOne}`);
+    const commandPosition = useGetDocumentOne ? commandPos : client.getEndOfCurrentSentence(); 
+
     if (!commandPosition) {
         throw new Error("Cannot execute command; the document contains no Coq code.");
     }

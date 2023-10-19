@@ -26,6 +26,9 @@ import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { newFileContent } from "./constants";
+import { KeyBinding, MessageType } from "../shared/Messages";
+
+import { contributes } from "../package.json";
 
 /**
  * Main extension class
@@ -113,6 +116,10 @@ export class Coqnitive implements Disposable {
 
         this.disposables.push(CoqEditorProvider.register(context, this.webviewManager));
 
+        const defaultKeybindings = Object.values(KeyBinding)
+        const filteredDefaultKeybindings = contributes.keybindings.filter((value) => defaultKeybindings.includes(value.command.substring(11) as KeyBinding));
+        
+
 
         // make relevant gui components
         this.statusBar = new CoqnitiveStatusBar();
@@ -145,6 +152,21 @@ export class Coqnitive implements Disposable {
 
         // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
+
+        for (const keybinding of Object.keys(KeyBinding)) {
+            this.registerCommand(keybinding, this.execKeyBinding(keybinding as KeyBinding))
+        }
+    }
+
+    private execKeyBinding(kb: KeyBinding) {
+        return () => {
+            const uri = this.client.activeDocument?.uri;
+            if (uri === undefined) return;
+            this.webviewManager.postMessage(uri.toString(), {
+                type: MessageType.execKeyBinding, 
+                body: kb
+            });
+        }
     }
 
     /**

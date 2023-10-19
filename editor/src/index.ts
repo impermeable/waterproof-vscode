@@ -4,6 +4,7 @@ import { Message, MessageType } from "../../shared";
 import { Editor } from "./kroqed-editor";
 import { COQ_CODE_PLUGIN_KEY } from "./kroqed-editor/codeview/coqcodeplugin";
 import { VSCodeAPI } from "./kroqed-editor/common/types";
+import { KeyBinding } from "../../shared/Messages";
 
 window.onload = () => {
 	// Get HTML DOM elements
@@ -52,6 +53,9 @@ window.onload = () => {
 				break;
 			case MessageType.fatalError:
 				// TODO: show skull
+				break;
+			case MessageType.execKeyBinding:
+				theEditor.doKeyBinding(msg.body as KeyBinding);
 				break;
 			default:
 				theEditor.handleMessage(msg);

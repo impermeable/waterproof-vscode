@@ -2,7 +2,7 @@ import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
 import { deleteSelection, selectParentNode } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import { DOMParser, ResolvedPos, Schema } from "prosemirror-model";
-import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
+import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction, Command } from "prosemirror-state";
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
 
@@ -25,7 +25,7 @@ import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
 import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
-import { DiagnosticMessage } from "../../../shared/Messages";
+import { DiagnosticMessage, KeyBinding } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
 import { VSCodeAPI } from "./common/types";
@@ -157,21 +157,21 @@ export class Editor {
 
 				if (step !== undefined) this.sendLineNumbers();
 			}),
-			handleKeyDown(view, e) {
-				// Stop certain events from propagating
-				if ((userOS == OS.Windows && e.ctrlKey) ||
-					(userOS == OS.MacOS && e.metaKey)) {
-					if (["q", "m", "Enter", "Space", ".", "l", "Q", "M", "L"].includes(e.key)) {
-						// Fixes ctrl-q on Windows and cmd-q on MacOs opening weird ctrl-q thingie.
-						// when the user wants to make text bold.
-						e.stopImmediatePropagation();
-					}
-				}
-				// Prevent any key presses other than backspaces from registering when selecting node
-				if (view.state.selection instanceof NodeSelection) {
-					e.preventDefault();
-				}
-			}, 
+			// handleKeyDown(view, e) {
+			// 	// Stop certain events from propagating
+			// 	if ((userOS == OS.Windows && e.ctrlKey) ||
+			// 		(userOS == OS.MacOS && e.metaKey)) {
+			// 		if (["q", "m", "Enter", "Space", ".", "l", "Q", "M", "L"].includes(e.key)) {
+			// 			// Fixes ctrl-q on Windows and cmd-q on MacOs opening weird ctrl-q thingie.
+			// 			// when the user wants to make text bold.
+			// 			e.stopImmediatePropagation();
+			// 		}
+			// 	}
+			// 	// Prevent any key presses other than backspaces from registering when selecting node
+			// 	if (view.state.selection instanceof NodeSelection) {
+			// 		e.preventDefault();
+			// 	}
+			// }, 
 			handleDOMEvents: {
 				// This function will handle some DOM events before ProseMirror does.
 				// 	We use it here to cancel the 'drag' and 'drop' events, since these can
@@ -210,17 +210,53 @@ export class Editor {
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				"Backspace": deleteSelection,
-				"Delete": deleteSelection,
-				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),
-				"Mod-M": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Above),
-				"Mod-q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Underneath),
-				"Mod-Q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Above),
-				"Mod-l": cmdInsertLatex(this._schema, this._filef, InsertionPlace.Underneath),
-				"Mod-L": cmdInsertLatex(this._schema, this._filef, InsertionPlace.Above),
-				// We bind Ctrl/Cmd+. to selecting the parent node of the currently selected node.
-				"Mod-.": selectParentNode
+				"Delete": deleteSelection
 			})
+			// 	"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),
+			// 	"Mod-M": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Above),
+			// 	"Mod-q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Underneath),
+			// 	"Mod-Q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Above),
+			// 	"Mod-l": cmdInsertLatex(this._schema, this._filef, InsertionPlace.Underneath),
+			// 	"Mod-L": cmdInsertLatex(this._schema, this._filef, InsertionPlace.Above),
+			// 	// We bind Ctrl/Cmd+. to selecting the parent node of the currently selected node.
+			// 	"Mod-.": selectParentNode
+			// })
 		];
+	}
+
+	doKeyBinding(kb: KeyBinding): void {
+		console.log("Do keybinding", kb);
+		switch (kb) {
+			case KeyBinding.insertCoqAbove:
+				this.executeCommand(cmdInsertCoq(this._schema, this._filef, InsertionPlace.Above));
+				break;
+			case KeyBinding.insertCoqUnder:
+				this.executeCommand(cmdInsertCoq(this._schema, this._filef, InsertionPlace.Underneath));
+				break;
+			case KeyBinding.insertMarkdownAbove:
+				this.executeCommand(cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Above));
+				break;
+			case KeyBinding.insertMarkdownUnder:
+				this.executeCommand(cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath));
+				break;
+			case KeyBinding.insertLatexAbove: 
+				this.executeCommand(cmdInsertLatex(this._schema, this._filef, InsertionPlace.Above));
+				break;
+			case KeyBinding.insertLatexUnder: 
+				this.executeCommand(cmdInsertLatex(this._schema, this._filef, InsertionPlace.Underneath));
+				break;
+			case KeyBinding.selectParent:
+				this.executeCommand(selectParentNode);
+				break;
+			default:
+				return;
+		}
+	}
+
+	executeCommand(cmd: Command) {
+		const currentEditor = this._view;
+		if (!currentEditor) throw Error("Not good, no editor");
+		console.log("Command result",cmd(currentEditor.state, currentEditor.dispatch, currentEditor));
 	}
 
 	/** Called on every selection update. */

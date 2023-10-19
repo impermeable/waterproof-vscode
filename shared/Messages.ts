@@ -41,6 +41,7 @@ export enum MessageType {
     applyStepError = "applyStepError",
     fatalError = "fatal",
     updateVersion = "updateTextDocVersion",
+    execKeyBinding = "execKeyBinding"
 }
 
 export enum CoqFileProgressKind {
@@ -73,4 +74,14 @@ export interface OffsetDiagnostic {
 export type DiagnosticMessage = {
     positionedDiagnostics: OffsetDiagnostic[],
     version: number
+}
+
+export enum KeyBinding {
+	insertMarkdownAbove = "insertMarkdownAbove",
+	insertMarkdownUnder = "insertMarkdownUnder",
+	insertCoqAbove = "insertCoqAbove",
+	insertCoqUnder = "insertCoqUnder",
+	selectParent = "selectParent",
+	insertLatexAbove = "insertLatexAbove",
+	insertLatexUnder = "insertLatexUnder"
 }

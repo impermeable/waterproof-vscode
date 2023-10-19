@@ -90,6 +90,34 @@
       {
         "command": "waterproof.exportExerciseSheet",
         "title": "Waterproof: Save as exercise sheet"
+      },
+      {
+        "command": "waterproof.insertMarkdownAbove",
+        "title": "Waterproof: Insert new text cell above current cell"
+      },
+      {
+        "command": "waterproof.insertMarkdownUnder",
+        "title": "Waterproof: Insert new text cell below current cell"
+      },
+      {
+        "command": "waterproof.insertCoqAbove",
+        "title": "Waterproof: Insert new verified math cell above current cell"
+      },
+      {
+        "command": "waterproof.insertCoqUnder",
+        "title": "Waterproof: Insert verified math cell below current cell"
+      },
+      {
+        "command": "waterproof.selectParent",
+        "title": "Waterproof: Select parent node"
+      },
+      {
+        "command": "waterproof.insertLatexAbove",
+        "title": "Waterproof: Insert LaTeX cell above current cell"
+      },
+      {
+        "command": "waterproof.insertLatexUnder",
+        "title": "Waterproof: Insert LaTeX cell below current cell"
       }
     ],
     "menus": {
@@ -102,6 +130,41 @@
       ]
     },
     "keybindings": [
+      {
+        "command": "waterproof.insertMarkdownAbove",
+        "key": "ctrl+m ctrl+a",
+        "mac": "cmd+m cmd+a"
+      },
+      {
+        "command": "waterproof.insertMarkdownUnder",
+        "key": "ctrl+m ctrl+b",
+        "mac": "cmd+m cmd+b"
+      },
+      {
+        "command": "waterproof.insertCoqAbove",
+        "key": "ctrl+q ctrl+a",
+        "mac": "cmd+q cmd+a"
+      },
+      {
+        "command": "waterproof.insertCoqUnder",
+        "key": "ctrl+q ctrl+b",
+        "mac": "cmd+q cmd+b"
+      },
+      {
+        "command": "waterproof.selectParent",
+        "key": "ctrl+.",
+        "mac": "cmd+."
+      },
+      {
+        "command": "waterproof.insertLatexAbove",
+        "key": "ctrl+l ctrl+a",
+        "mac": "cmd+l cmd+a"
+      },
+      {
+        "command": "waterproof.insertLatexUnder",
+        "key": "ctrl+l ctrl+b",
+        "mac": "cmd+l cmd+b"
+      },
       {
         "command": "waterproof.goals",
         "key": "alt+enter",

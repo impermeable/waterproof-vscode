@@ -62,6 +62,10 @@ export class Editor {
 
 	private _errorManager: ErrorManager;
 
+	public get errorMan() {
+		return this._errorManager;
+	}
+
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
 		this._api = vscodeapi;
 		this._schema = TheSchema;

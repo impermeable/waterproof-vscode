@@ -69,10 +69,10 @@ let UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginSta
 
                 const start = inputNode.pos;
                 const end = start + inputNode.node.nodeSize;
-                const thingies = editor.getDiagnosticsInRange(start, end);
+                const thingies = editor.errorMan.getDiagnosticsInRange(start, end);
                 let className = statusToDecoration(newStatusUpdate);
                 if (thingies.length > 0) {
-                  if (thingies.find((value) => value.severity == 0)) {
+                  if (thingies.find((value) => value.severity == "error")) {
                     // Coq error in proof.
                     className += "-contains-error";
                   } else {

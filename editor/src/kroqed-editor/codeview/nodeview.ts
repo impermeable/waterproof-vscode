@@ -153,32 +153,19 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * @param message The message attached to this error.
 	 * @param severity The severity attached to this error.
 	 */
-	public addCoqError(from: number, to: number, message: string, severity: number) {
-		this._diags.push({
-			from, to, 
-			message, 
-			severity: severityToString(severity),
-			actions: [{
-				name: "Copy 📋", 
-				apply(view: EditorView, from: number, to: number) {
-					navigator.clipboard.writeText(message);
-				}
-			}]
-		});
-		this.forceUpdateLinting();		
+	public addCoqError(diagnostic: Diagnostic) {
+		this._diags.push(diagnostic);
 	}
 
 	/**
 	 * Helper function that forces the linter function to run. 
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
-	private forceUpdateLinting() {
+	public forceUpdateLinting() {
 		// Reconfigure the linting compartment (forces the linter to run again when editor idle)
 		this._codemirror.dispatch({
 			effects: this._lintingCompartment.reconfigure(linter(() => this._diags, {delay: 100}))
 		})
-		// Not necessary but we can force the linter to run straightaway, instead of waiting for `delay`
-		// forceLinting(this._codemirror);
 	}
 
 	/**
@@ -186,21 +173,5 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public clearCoqErrors() {
 		this._diags = [];
-		this.forceUpdateLinting();
-	}
-}
-
-const severityToString = (sv: number) => {
-	switch (sv) {
-		case 0: 
-			return "error";
-		case 1: 
-			return "warning";
-		case 2: 
-			return "info";
-		case 3: 
-			return "hint";
-		default: 
-			return "error";
 	}
 }

@@ -7,6 +7,8 @@ import { cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, InsertionPlace, liftWr
 import { COQ_CODE_PLUGIN_KEY } from "../codeview/coqcodeplugin";
 import { OS } from "../osType";
 
+import { contributes } from "../../../../package.json";
+
 /** MenuEntry type contains the DOM, whether to only show it in teacher mode and the command to execute on click */
 type MenuEntry = {
     dom: HTMLElement;
@@ -136,25 +138,34 @@ const DEBUG = false;
  */
 function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os: OS): MenuView {
 
+    let keybindings = {};
+    for (const kb of contributes.keybindings) {
+        // FIXME: Hardcoded substring.
+        keybindings[kb.command.substring(11)] = kb;
+    }
+
     // Platform specific keybinding string:
-    const cmdOrCtrl = os == OS.MacOS ? "Cmd" : "Ctrl";
-    const keyBinding = (key: string): string => `${cmdOrCtrl}-${key}`;
+    const isMacOS: boolean = os == OS.MacOS;
+    const keyBinding = (kb: string): string => {
+        return "Default: " + (isMacOS ? keybindings[kb].mac : keybindings[kb].key);
+    }
+
 
     // Create the list of menu entries.
     let items: MenuEntry[] = [
         // Insert Coq command
-        createMenuItem("Math ↓", `Insert new verified math block underneath (${keyBinding("q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Math ↑", `Insert new verified math block above (${keyBinding("Q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Math ↓", `Insert new verified math block underneath (${keyBinding("insertCoqUnder")})`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Math ↑", `Insert new verified math block above (${keyBinding("insertCoqAbove")})`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
         // Insert Markdown
-        createMenuItem("Text ↓", `Insert new text block underneath (${keyBinding("m")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Text ↑", `Insert new text block above (${keyBinding("M")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Text ↓", `Insert new text block underneath (${keyBinding("insertMarkdownUnder")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Text ↑", `Insert new text block above (${keyBinding("insertMarkdownAbove")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
         // Insert LaTeX
-        createMenuItem(`${LaTeX_SVG} <div>↓</div>`, `Insert new LaTeX block underneath (${keyBinding("l")})`, cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem(`${LaTeX_SVG} <div>↑</div>`, `Insert new LaTeX block above (${keyBinding("L")})`, cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
+        createMenuItem(`${LaTeX_SVG} <div>↓</div>`, `Insert new LaTeX block underneath (${keyBinding("insertLatexUnder")})`, cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem(`${LaTeX_SVG} <div>↑</div>`, `Insert new LaTeX block above (${keyBinding("insertLatexAbove")})`, cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
         // Toggle the line numbers in coq code cells.
         createMenuItem("Line nr", "Toggle Line Numbers", toggleLineNumbers(), false),
         // Select the parent node.
-        createMenuItem("Parent", `Select the parent node (${keyBinding(".")})`, selectParentNode, false),
+        createMenuItem("Parent", `Select the parent node (${keyBinding("selectParent")})`, selectParentNode, false),
         // in teacher mode, display input area, hint and lift buttons.
         createMenuItem("ⵊ...", "Make selection an input area", wrapIn(schema.nodes["input"]), true),
         createMenuItem("<strong>?</strong>", "Make selection a hint element", wrapIn(schema.nodes["hint"]), true),

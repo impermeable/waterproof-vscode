@@ -28,10 +28,8 @@ import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from 
 import { DiagnosticMessage, KeyBinding } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
+import { ErrorManager } from "./errors";
 import { VSCodeAPI } from "./common/types";
-
-/** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
-type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: DiagnosticSeverity};
 
 /**
  * Class that contains the editor component.
@@ -62,13 +60,14 @@ export class Editor {
 	private readonly _userOS;
 	private _filef: FileFormat;
 
-	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
+	private _errorManager: ErrorManager;
 
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
 		this._api = vscodeapi;
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
 		this._contentElem = contentElement;
+		this._errorManager = new ErrorManager();
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -382,71 +381,6 @@ export class Editor {
 		this._view.dispatch(tr);
 	}
 
-	parseCoqDiagnostics(msg: DiagnosticMessage) {
-		if (this._mapping === undefined || msg.version < this._mapping.version) return;
-
-		let diagnostics = msg.positionedDiagnostics;
-		const map = this._mapping;
-		if (this._view === undefined || map === undefined) return;
-
-		// Get the available coq views
-		const views = COQ_CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
-		if (views === undefined) return;
-		// Clear the errors
-		for (let view of views) view.clearCoqErrors();
-
-		// Convert to inverse mapped positions.
-		const doc = this._view.state.doc;
-		this.currentProseDiagnostics = new Array<DiagnosticObjectProse>();
-		for (let diag of diagnostics) {
-			const start = map.findInvPosition(diag.startOffset);
-			const end = map.findInvPosition(diag.endOffset);
-			if (start >= end) continue;
-			this.currentProseDiagnostics.push({
-				message: diag.message,
-				start,
-				$start: doc.resolve(start),
-				end,
-				$end: doc.resolve(end),
-				severity: diag.severity
-			});
-		}
-
-		// Create a view with pos array
-		const viewsWithPos = new Array<{pos: number | undefined, view: CodeBlockView}>();
-		for (let view of views) viewsWithPos.push({pos: view._getPos(), view});
-
-
-		for (const diag of this.currentProseDiagnostics) {
-			if (!diag.$start.sameParent(diag.$end)) {
-				console.error("We do not support multi line errors");
-				continue;
-			}
-			if (diag.start > diag.end) {
-				console.error("We do not support errors for which the start position is greater than the end postion.");
-				continue;
-			}
-			let theView: CodeBlockView | undefined = undefined;
-			let pos = this._view.state.doc.content.size;
-			for(const obj of viewsWithPos) {
-				if (obj.pos === undefined) continue;
-				if(diag.start - obj.pos < pos && obj.pos < diag.start) {
-					pos = diag.start - obj.pos;
-					theView = obj.view;
-				}
-			}
-
-			if (theView === undefined) throw new Error("Diagnostic message does not match any coqblock");
-			theView.addCoqError(diag.$start.parentOffset, diag.$end.parentOffset, diag.message, diag.severity);
-		}
-	}
-
-	public getDiagnosticsInRange(low: number, high: number): Array<DiagnosticObjectProse> {
-		return this.currentProseDiagnostics.filter((value) => {
-			return ((low <= value.start) && (value.end <= high));
-		});
-	}
-
 	/**
 	 * If the file starts with a coqblock or ends with a coqblock this function adds a newline to the start for 
 	 * insertion purposes
@@ -488,7 +422,7 @@ export class Editor {
 				break;
 			case MessageType.diagnostics:
 				const diagnostics = msg.body;
-				this.parseCoqDiagnostics(diagnostics);
+				this._errorManager.parseCoqDiagnostics(diagnostics, this._view, this._mapping);
 				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.

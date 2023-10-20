@@ -156,6 +156,16 @@ export class WebviewManager extends EventEmitter {
     }
 
     /**
+     * Reveals a panel to the user
+     * @param id the id of the tool webview
+     */
+    public reveal(id: string) {
+        if (this._toolWebviews.has(id)) new Error("Tool webview does not have this panel: " + id);
+        console.log(this._toolWebviews)
+        this._toolWebviews.get(id)?.revealPanel()
+    }
+
+    /**
      * Sends `message` to the specified panel.
      * @param panelName a URI to refer to a ProseMirror panel, or a name to refer to a tool panel
      */

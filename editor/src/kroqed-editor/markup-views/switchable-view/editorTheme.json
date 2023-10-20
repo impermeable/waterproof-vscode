@@ -275,6 +275,9 @@
     ".cm-completionIcon-impliesleft": {
         "&:after": { "content": "'⟸'" }
     },
+    ".cm-completionIcon-implies": {
+        "&:after": { "content": "'⟹'" }
+    },
     ".cm-completionIcon-impliesright": {
         "&:after": { "content": "'⟹'" }
     },

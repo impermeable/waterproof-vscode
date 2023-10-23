@@ -17,6 +17,7 @@
 }
 
 .progress-bar-text {
+    color: var(--button-foreground);
     position: absolute;
     top: 50%;
     left: 50%;

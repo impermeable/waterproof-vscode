@@ -303,10 +303,13 @@
         "&:after": { "content": "'↦'" }
     },
     ".cm-completionIcon-impliesleft": {
-        "&:after": { "content": "'⟸'" }
+        "&:after": { "content": "'⇐'" }
+    },
+    ".cm-completionIcon-implies": {
+        "&:after": { "content": "'⇒'" }
     },
     ".cm-completionIcon-impliesright": {
-        "&:after": { "content": "'⟹'" }
+        "&:after": { "content": "'⇒'" }
     },
     ".cm-completionIcon-implieslr": {
         "&:after": { "content": "'⇔'" }

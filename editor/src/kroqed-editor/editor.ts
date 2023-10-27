@@ -380,8 +380,8 @@ export class Editor {
 			let end = map.findInvPosition(diag.endOffset);
             if (!this._detailedErrors) { 
                 // Fix start and end points to cover full line.
-                start -= this.offsetToStartOfLine(diag.startOffset);
-                end += this.offsetToEndOfLine(diag.endOffset);
+                start -= this.offsetToPreviousLineBreak(diag.startOffset);
+                end += this.offsetToNextLineBreak(diag.endOffset);
             }
 			if (start >= end) continue;
 			this.currentProseDiagnostics.push({
@@ -423,19 +423,24 @@ export class Editor {
 		}
 	}
 
-    private offsetToStartOfLine(startRaw: number): number {
+    private offsetToPreviousLineBreak(startRaw: number): number {
         let diff = 0;
-        while(this._rawContents.charAt(startRaw - 1 - diff) !== "." && (startRaw - diff) > 0) {
+        while(this._rawContents.charAt(startRaw - diff) !== "\n" && (startRaw - diff - 1) > 0) {
             diff++;
+        }
+        if((this._rawContents.substring(startRaw - diff, startRaw - diff - 3) === "coq") && 
+            (this._rawContents.substring(startRaw + 1, startRaw + 4) !== "Qed")) {
+            diff--;
         }
         return diff;
     }
 
-    private offsetToEndOfLine(endRaw: number): number {
+    private offsetToNextLineBreak(endRaw: number): number {
         let diff = 0;
-        while(this._rawContents.charAt(endRaw + diff - 1) !== "." && (endRaw + diff) < this._rawContents.length) {
+        while(this._rawContents.charAt(endRaw + diff) !== "\n" && (endRaw + diff) < this._rawContents.length) {
             diff++;
         }
+        diff--;
         return diff;
     }
 

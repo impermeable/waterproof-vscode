@@ -121,9 +121,7 @@ export class ProseMirrorWebview extends EventEmitter {
         }));
 
         this._disposables.push(workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration("waterproof.detailedErrorsMode")) {
-                this.updateDetailedErrorsMode();
-            }
+            this.updateDetailedErrorsMode();
         }));
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {

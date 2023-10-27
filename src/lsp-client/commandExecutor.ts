@@ -33,7 +33,8 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
         throw new Error("Cannot execute command; there is no active document.");
     }
 
-    const commandPosition = client.getEndOfCurrentSentence();
+    // We execute the command at the end of the previous sentence.
+    const commandPosition = client.getBeginningOfCurrentSentence();
     if (!commandPosition) {
         throw new Error("Cannot execute command; the document contains no Coq code.");
     }

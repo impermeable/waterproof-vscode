@@ -4,29 +4,20 @@
 	  "backgroundColor": "var(--vscode-input-background)"
 	},
 
-	".cm-coq-error": {
-		"textDecorationLine": "underline",
-		"textDecorationStyle": "wavy",
-		"textDecorationColor": "var(--vscode-editorError-foreground)"
-	},
+	".cm-diagnosticButton": {
+        "order": 1
+    },
 
-	".cm-coq-warning": {
-		"textDecorationLine": "underline",
-		"textDecorationStyle": "wavy",
-		"textDecorationColor": "var(--vscode-editorWarning-foreground)"
-	},
+    ".cm-diagnosticText": {
+        "order": 2,
+        "marginLeft": "8px"
+    },
 
-	".cm-coq-hint": {
-		"textDecorationLine": "underline",
-		"textDecorationStyle": "wavy",
-		"textDecorationColor": "var(--vscode-editorHint-foreground)"
-	},
-
-	".cm-coq-info": {
-		"textDecorationDLine": "underline",
-		"textDecorationStyle": "wavy",
-		"textDecorationColor": "var(--vscode-editorInfo-foreground)"
-	},
+    ".cm-diagnostic": {
+        "display": "inline-flex", 
+        "alignItems": "center",
+        "flexFlow": "row"
+    },
 
 	".cm-content": {
 	  "caretColor": "auto",
@@ -35,6 +26,7 @@
 	  "fontWeight": "var(--vscode-editor-font-weight)"
 	},
   	".cm-cursor, .cm-dropCursor": {"borderLeftColor": "auto"},
+
         "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {"backgroundColor": "var(--vscode-list-activeSelectionBackground)"},
   
 	".cm-panels": {"backgroundColor": "var(--vscode-list-dropBackground)", "color": "var(--vscode-list-highlightForeground)"},
@@ -49,6 +41,7 @@
 	  "backgroundColor": "#6199ff2f"
 	},
 	".cm-activeLine": {"backgroundColor": "#6699ff0b"},
+    "&:not(.cm-focused) .cm-activeLine": { "backgroundColor": "transparent"},
 	".cm-selectionMatch": {"backgroundColor": "#aafe661a"},
 	"&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket": {
 	  "backgroundColor": "#bad0f847"
@@ -108,9 +101,6 @@
     },
     ".cm-completionIcon-arrowdown": {
         "&:after": { "content": "'↓'" }
-    },
-    ".cm-completionIcon-arrowleft": {
-        "&:after": { "content": "'←'" }
     },
     ".cm-completionIcon-arrowlr": {
         "&:after": { "content": "'↔'" }
@@ -314,10 +304,13 @@
         "&:after": { "content": "'↦'" }
     },
     ".cm-completionIcon-impliesleft": {
-        "&:after": { "content": "'⟸'" }
+        "&:after": { "content": "'⇐'" }
+    },
+    ".cm-completionIcon-implies": {
+        "&:after": { "content": "'⇒'" }
     },
     ".cm-completionIcon-impliesright": {
-        "&:after": { "content": "'⟹'" }
+        "&:after": { "content": "'⇒'" }
     },
     ".cm-completionIcon-implieslr": {
         "&:after": { "content": "'⇔'" }

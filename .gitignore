@@ -8,3 +8,5 @@ editor_output
 test_out/
 .ui-test/
 __tests_output__/
+**/*.cache
+ExampleFiles/

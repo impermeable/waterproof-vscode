@@ -5,8 +5,8 @@ import {
     TextDocument,
     WorkspaceConfiguration,
     commands,
-    workspace
-} from "vscode";
+    workspace,
+    window} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -24,6 +24,8 @@ import { CommonExecute } from "./webviews/standardviews/commonExecute";
 import { ExecutePanel } from "./webviews/standardviews/execute";
 import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
+
+import { newFileContent } from "./constants";
 
 /**
  * Main extension class
@@ -80,13 +82,17 @@ export class Coqnitive implements Disposable {
             this.client.updateCompletions(document);
         });
         this.webviewManager.on(WebviewManagerEvents.focus, (document: TextDocument) => {
+            
             // update active document
             // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
             if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
                 this.client.activeDocument = document;
                 this.client.activeCursorPosition = undefined;
                 for (const g of this.goalsComponents) g.updateGoals(undefined);
-            }
+            } 
+            console.log("focus")
+            this.webviewManager.open("goals")
+            // this.webviewManager.reveal("goals")
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
             // update active document and cursor
@@ -113,6 +119,7 @@ export class Coqnitive implements Disposable {
         var goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(this.configuration))
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
+        this.webviewManager.open("goals")
         this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
         this.webviewManager.addToolWebview("commonExecute", new CommonExecute(this.context.extensionUri));
         const executorPanel = new ExecutePanel(this.context.extensionUri);
@@ -134,6 +141,31 @@ export class Coqnitive implements Disposable {
         this.registerCommand("restart", this.restartClient);
         this.registerCommand("toggle", this.toggleClient);
         this.registerCommand("stop", this.stopClient);
+        this.registerCommand("exportExerciseSheet", this.exportExerciseSheet);
+
+        // Register the new Waterproof Document command
+        this.registerCommand("newWaterproofDocument", this.newFileCommand);
+    }
+
+    /**
+     * Handle the newWaterproofDocument command. 
+     * This command can be either activated by the user via the 'command palette' 
+     * or by using the File -> New File... option. 
+     */
+    private async newFileCommand(): Promise<void> {
+
+        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document"}).then((uri) => {
+            if (!uri) {
+                window.showErrorMessage("Something went wrong in creating a new waterproof document");
+                return;
+            }
+
+            workspace.fs.writeFile(uri, Buffer.from(newFileContent)).then(() => {
+                // Open the file using the waterproof editor
+                // TODO: Hardcoded `coqEditor.coqEditor`.
+                commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+            });
+        });
     }
 
     /**
@@ -146,6 +178,24 @@ export class Coqnitive implements Disposable {
     private registerCommand(name: string, handler: (...args: any[]) => void, editorCommand: boolean = false) {
         const register = editorCommand ? commands.registerTextEditorCommand : commands.registerCommand;
         this.disposables.push(register("waterproof." + name, handler, this));
+    }
+
+    /**
+     * Remove solutions from document and open save dialog for the solution-less file.
+     */
+    async exportExerciseSheet() {
+        const document = this.client.activeDocument;
+        if (document) {
+            let content = document.getText();
+            const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g; 
+            const replacement = `<input-area>\n\`\`\`coq\n(* Type your proof here *)\n\`\`\`\n</input-area>`;
+            content = content.replace(pattern, replacement);
+            const fileUri = await window.showSaveDialog();
+            if (fileUri) {
+                await workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
+                window.showInformationMessage(`Saved to: ${fileUri.fsPath}`);
+            }
+        }
     }
 
     /**

@@ -21,9 +21,6 @@ import { HelpPopup, createContextMenuHTML } from "./context-menu";
 
 // CSS imports
 import "katex/dist/katex.min.css";
-import "prosemirror-example-setup/style/style.css";
-import "prosemirror-gapcursor/style/gapcursor.css";
-import "prosemirror-menu/style/menu.css";
 import "prosemirror-view/style/prosemirror.css";
 import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
@@ -126,6 +123,7 @@ export class Editor {
 			// Hack to forcefully remove the 'old' menubar
 			document.querySelector(".menubar")?.remove();
 			document.querySelector(".progress-bar")?.remove();
+			document.querySelector(".spinner-container")?.remove();
 			this._view.dom.remove();
 		}
 
@@ -250,10 +248,8 @@ export class Editor {
 			keymap({
 				// TODO: How much of these are still necessary?
 				"Mod-h": this._helpPopup.asCommand,
-				"Backspace": chainCommands(deleteNodeIfEmpty, deleteSelection),
-				"Enter" : chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
-				"Mod-Enter": chainCommands(newlineInCode, createParagraphNear, splitBlock),
-				"Delete": chainCommands(deleteNodeIfEmpty, deleteSelection),
+				"Backspace": deleteSelection,
+				"Delete": deleteSelection,
 				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),
 				"Mod-M": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Above),
 				"Mod-q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Underneath),

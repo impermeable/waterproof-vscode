@@ -5,6 +5,7 @@ import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
 import {
 	EditorView as CodeMirror, keymap as cmKeymap,
+	highlightActiveLine,
 	lineNumbers, placeholder} from "@codemirror/view"
 import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
@@ -72,6 +73,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),
 				coq(),
+                highlightActiveLine(),
 				coqSyntaxHighlighting(),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
 				placeholder("Empty code cell")

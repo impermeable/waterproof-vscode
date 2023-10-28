@@ -1,7 +1,7 @@
 {
 	"&": {
 	  "color": "var(--vscode-input-foreground)",
-	  "backgroundColor": "var(--vscode-input-background)"
+	  "backgroundColor": "var(--vscode-listFilterWidget-background)"
 	},
 
 	".cm-diagnosticButton": {

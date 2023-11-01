@@ -20,7 +20,7 @@ C:\cygwin_wp\home\runneradmin\.opam\wp\bin\coq-lsp
 ```
 
 **Note:** This will only work if you have not changed the default installation for the dependencies.
-In the case that a different file location was used for the installation, find the location of '.opam\wp\bin\coq-lsp' within this location, and instead paste the absolute file address of the coq-lsp file into the 'Waterproof: Path' setting.
+In the case that a different file location was used for the installation, find the location of '.opam\wp\bin\coq-lsp' within this folder. Paste instead the absolute file address of this coq-lsp file into the 'Waterproof: Path' setting.
 
 ## Installation on Windows with WSL
 

@@ -1,0 +1,5 @@
+0 = lower case greek letters
+1 = upper case greek letters
+2 = mathematical symbols
+3 = arrows
+4 = number systems

@@ -10,7 +10,7 @@ import {
 import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
-import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
+import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic, forceLinting } from "@codemirror/lint";
 
@@ -63,7 +63,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 						this.dynamicCompletionSource, 
 						symbolCompletionSource, 
 						coqCompletionSource
-					]
+					], 
+					icons: false,
+					addToOptions: [renderIcon]
 				}),
 				cmKeymap.of([
 					indentWithTab,

@@ -1,0 +1,427 @@
+[
+    {
+        "label": "\\alpha",
+        "type": "symbol",
+        "apply": "α"
+    },
+    {
+        "label": "\\beta",
+        "type": "symbol",
+        "apply": "β"
+    },
+    {
+        "label": "\\gamma",
+        "type": "symbol",
+        "apply": "γ"
+    },
+    {
+        "label": "\\delta",
+        "type": "symbol",
+        "apply": "δ"
+    },
+    {
+        "label": "\\epsilon",
+        "type": "symbol",
+        "apply": "ε"
+    },
+    {
+        "label": "\\zeta",
+        "type": "symbol",
+        "apply": "ζ"
+    },
+    {
+        "label": "\\eta",
+        "type": "symbol",
+        "apply": "η"
+    },
+    {
+        "label": "\\theta",
+        "type": "symbol",
+        "apply": "θ"
+    },
+    {
+        "label": "\\iota",
+        "type": "symbol",
+        "apply": "ι"
+    },
+    {
+        "label": "\\kappa",
+        "type": "symbol",
+        "apply": "κ"
+    },
+    {
+        "label": "\\lambda",
+        "type": "symbol",
+        "apply": "λ"
+    },
+    {
+        "label": "\\mu",
+        "type": "symbol",
+        "apply": "μ"
+    },
+    {
+        "label": "\\nu",
+        "type": "symbol",
+        "apply": "ν"
+    },
+    {
+        "label": "\\ksi",
+        "type": "symbol",
+        "apply": "ξ"
+    },
+    {
+        "label": "\\pi",
+        "type": "symbol",
+        "apply": "π"
+    },
+    {
+        "label": "\\omikron",
+        "type": "symbol",
+        "apply": "ο"
+    },
+    {
+        "label": "\\rho",
+        "type": "symbol",
+        "apply": "ρ"
+    },
+    {
+        "label": "\\sigma1",
+        "type": "symbol",
+        "apply": "ς"
+    },
+    {
+        "label": "\\sigma2",
+        "type": "symbol",
+        "apply": "σ"
+    },
+    {
+        "label": "\\tau",
+        "type": "symbol",
+        "apply": "τ"
+    },
+    {
+        "label": "\\upsilon",
+        "type": "symbol",
+        "apply": "υ"
+    },
+    {
+        "label": "\\phi1",
+        "type": "symbol",
+        "apply": "ϕ"
+    },
+    {
+        "label": "\\phi2",
+        "type": "symbol",
+        "apply": "φ"
+    },
+    {
+        "label": "\\chi",
+        "type": "symbol",
+        "apply": "χ"
+    },
+    {
+        "label": "\\psi",
+        "type": "symbol",
+        "apply": "ψ"
+    },
+    {
+        "label": "\\omega",
+        "type": "symbol",
+        "apply": "ω"
+    },
+    {
+        "label": "\\Alpha",
+        "type": "symbol",
+        "apply": "Α"
+    },
+    {
+        "label": "\\Beta",
+        "type": "symbol",
+        "apply": "Β"
+    },
+    {
+        "label": "\\Gamma",
+        "type": "symbol",
+        "apply": "Γ"
+    },
+    {
+        "label": "\\Delta",
+        "type": "symbol",
+        "apply": "Δ"
+    },
+    {
+        "label": "\\Epsilon",
+        "type": "symbol",
+        "apply": "Ε"
+    },
+    {
+        "label": "\\Zeta",
+        "type": "symbol",
+        "apply": "Ζ"
+    },
+    {
+        "label": "\\Eta",
+        "type": "symbol",
+        "apply": "Η"
+    },
+    {
+        "label": "\\Theta",
+        "type": "symbol",
+        "apply": "Θ"
+    },
+    {
+        "label": "\\Iota",
+        "type": "symbol",
+        "apply": "Ι"
+    },
+    {
+        "label": "\\Kappa",
+        "type": "symbol",
+        "apply": "Κ"
+    },
+    {
+        "label": "\\Lambda",
+        "type": "symbol",
+        "apply": "Λ"
+    },
+    {
+        "label": "\\Mu",
+        "type": "symbol",
+        "apply": "Μ"
+    },
+    {
+        "label": "\\Nu",
+        "type": "symbol",
+        "apply": "Ν"
+    },
+    {
+        "label": "\\Ksi",
+        "type": "symbol",
+        "apply": "Ξ"
+    },
+    {
+        "label": "\\Omicron",
+        "type": "symbol",
+        "apply": "Ο"
+    },
+    {
+        "label": "\\Pi",
+        "type": "symbol",
+        "apply": "Π"
+    },
+    {
+        "label": "\\Rho",
+        "type": "symbol",
+        "apply": "Ρ"
+    },
+    {
+        "label": "\\Sigma",
+        "type": "symbol",
+        "apply": "Σ"
+    },
+    {
+        "label": "\\Tau",
+        "type": "symbol",
+        "apply": "Τ"
+    },
+    {
+        "label": "\\Upsilon",
+        "type": "symbol",
+        "apply": "Υ"
+    },
+    {
+        "label": "\\Phi",
+        "type": "symbol",
+        "apply": "Φ"
+    },
+    {
+        "label": "\\Chi",
+        "type": "symbol",
+        "apply": "Χ"
+    },
+    {
+        "label": "\\Psi",
+        "type": "symbol",
+        "apply": "Ψ"
+    },
+    {
+        "label": "\\Omega",
+        "type": "symbol",
+        "apply": "Ω"
+    },
+    {
+        "label": "\\forall",
+        "type": "symbol",
+        "apply": "∀"
+    },
+    {
+        "label": "\\exists",
+        "type": "symbol",
+        "apply": "∃"
+    },
+    {
+        "label": "\\in",
+        "type": "symbol",
+        "apply": "∈"
+    },
+    {
+        "label": "\\QED",
+        "type": "symbol",
+        "apply": "∎"
+    },
+    {
+        "label": "\\infty",
+        "type": "symbol",
+        "apply": "∞"
+    },
+    {
+        "label": "\\and",
+        "type": "symbol",
+        "apply": "∧"
+    },
+    {
+        "label": "\\or",
+        "type": "symbol",
+        "apply": "∨"
+    },
+    {
+        "label": "\\abs",
+        "type": "symbol",
+        "apply": "∣"
+    },
+    {
+        "label": "\\intersection",
+        "type": "symbol",
+        "apply": "∩"
+    },
+    {
+        "label": "\\union",
+        "type": "symbol",
+        "apply": "∪"
+    },
+    {
+        "label": "\\empty-set",
+        "type": "symbol",
+        "apply": "∅"
+    },
+    {
+        "label": "\\less-or-equal",
+        "type": "symbol",
+        "apply": "≤"
+    },
+    {
+        "label": "\\greater-or-equal",
+        "type": "symbol",
+        "apply": "≥"
+    },
+    {
+        "label": "\\not-equal",
+        "type": "symbol",
+        "apply": "≠"
+    },
+    {
+        "label": "\\not",
+        "type": "symbol",
+        "apply": "¬"
+    },
+    {
+        "label": "\\circle-plus",
+        "type": "symbol",
+        "apply": "⊕"
+    },
+    {
+        "label": "\\circle-times",
+        "type": "symbol",
+        "apply": "⊗"
+    },
+    {
+        "label": "\\arrow-left",
+        "type": "symbol",
+        "apply": "←"
+    },
+    {
+        "label": "\\arrow-up",
+        "type": "symbol",
+        "apply": "⬆"
+    },
+    {
+        "label": "\\arrow-right",
+        "type": "symbol",
+        "apply": "→"
+    },
+    {
+        "label": "\\arrow-down",
+        "type": "symbol",
+        "apply": "↓"
+    },
+    {
+        "label": "\\arrow-map",
+        "type": "symbol",
+        "apply": "↦"
+    },
+    {
+        "label": "\\arrow-left-right",
+        "type": "symbol",
+        "apply": "↔"
+    },
+    {
+        "label": "\\implies",
+        "type": "symbol",
+        "apply": "⇒"
+    },
+    {
+        "label": "\\implies-left",
+        "type": "symbol",
+        "apply": "⇐"
+    },
+    {
+        "label": "\\implies-right",
+        "type": "symbol",
+        "apply": "⇒"
+    },
+    {
+        "label": "\\implies-left-right",
+        "type": "symbol",
+        "apply": "⇔"
+    },
+    {
+        "label": "\\converges",
+        "type": "symbol",
+        "apply": "⟶"
+    },
+    {
+        "label": "\\naturals",
+        "type": "symbol",
+        "apply": "ℕ"
+    },
+    {
+        "label": "\\integers",
+        "type": "symbol",
+        "apply": "ℤ"
+    },
+    {
+        "label": "\\rationals",
+        "type": "symbol",
+        "apply": "ℚ"
+    },
+    {
+        "label": "\\reals",
+        "type": "symbol",
+        "apply": "ℝ"
+    },
+    {
+        "label": "\\complex-numbers",
+        "type": "symbol",
+        "apply": "ℂ"
+    },
+    {
+        "label": "\\contradiction",
+        "type": "symbol",
+        "apply": "↯"
+    },
+    {
+        "label": "\\degree",
+        "type": "symbol",
+        "apply": "°"
+    }
+]

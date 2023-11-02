@@ -1,0 +1,10 @@
+/* Style the completion icons that apear when the user starts autocompleting a symbol */
+.symbol-completion-icon {
+    font-size: 100%;
+    width: 1.5em;
+    opacity: 1.0;
+    display: inline-block;
+    text-align: center;
+    padding-right: 0.6em;
+    box-sizing: content-box;
+}

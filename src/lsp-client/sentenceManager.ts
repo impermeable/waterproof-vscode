@@ -63,11 +63,13 @@ export class SentenceManager implements IFileProgressComponent {
         const n = this.sentenceEndPositions.length;
         if (n === 0) return undefined;
         const i = this.getRank(position) - 1;
-
-        if (i === n)
-            return strict ? undefined : this.sentenceEndPositions[n-1];
-        else
-            return this.sentenceEndPositions[i];
+        const sentenceEndPosition = this.sentenceEndPositions[i];
+        if (this.sentenceEndPositions[i+1].isEqual(position)) {
+            return this.sentenceEndPositions[i+1];
+        } else {
+            return sentenceEndPosition;
+        }
+        
     }
 
     /**

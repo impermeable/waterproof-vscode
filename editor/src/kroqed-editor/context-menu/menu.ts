@@ -25,7 +25,7 @@ export function createContextMenuHTML(editor: Editor): HTMLDivElement {
     }));
 
     listContainer.appendChild(contextMenuButton("X", "Close", () => {}));
-    
+
     divContainer.appendChild(listContainer);
     return divContainer;
 }

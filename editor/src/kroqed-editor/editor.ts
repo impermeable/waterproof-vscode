@@ -17,7 +17,7 @@ import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
-import { HelpPopup, createContextMenuHTML } from "./context-menu";
+import { createContextMenuHTML } from "./context-menu";
 
 // CSS imports
 import "katex/dist/katex.min.css";
@@ -72,14 +72,11 @@ export class Editor {
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 
-	private _helpPopup: HelpPopup;
-
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
 		this._api = vscodeapi;
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
 		this._contentElem = contentElement;
-		this._helpPopup = new HelpPopup(this);
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -246,8 +243,10 @@ export class Editor {
 			progressBarPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
-				// TODO: How much of these are still necessary?
-				"Mod-h": this._helpPopup.asCommand,
+				"Mod-h": () => {
+					this.post({type: MessageType.command, body: "Help.", time: (new Date()).getTime()});
+					return true;
+				},
 				"Backspace": deleteSelection,
 				"Delete": deleteSelection,
 				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),

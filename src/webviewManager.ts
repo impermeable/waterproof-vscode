@@ -9,6 +9,7 @@ import { CoqWebview, WebviewEvents, WebviewState } from "./webviews/coqWebview";
 import { Goal, GoalAnswer, Hyp, Pp, PpString, convertToString } from "../lib/types";
 import { Message as GoalMessage } from "../lib/types";
 import { FormatPrettyPrint } from "../lib/format-pprint/js/main";
+import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 
 export enum WebviewManagerEvents {
     editorReady     = "ready",
@@ -252,50 +253,7 @@ export class WebviewManager extends EventEmitter {
                 break;
             case MessageType.command:
                 // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
-
-                // Refactor steps, move source to separate function. 
-                
-                const postMessage = (uri: Uri, message: Message) => {
-                    this.postMessage(uri.toString(), message);
-                }
-                const source: IExecutor = {
-                    setResults(results: GoalAnswer<PpString> | string[]) {
-                        // let messageToDisplay = "";
-                        // TODO: setResults also accepts a string[].
-                        const res = results as GoalAnswer<PpString>;
-                        const messages = res.messages;
-                        if (!messages) {
-                            // this should be an early return since there is no goal. 
-                            return;
-                        }
-                        // const first = messages[0];
-                        // if (isMessagePpString(first)) {
-                        //     // messages is an array of GoalMessage<PpString> objects.
-                        //     const messageTyped = messages as GoalMessage<PpString>[];
-                        //     messageTyped.map((val: GoalMessage<PpString>) => {
-                        //         messageToDisplay += convertToString(val.text) + '\n';
-                        //     });
-                        // } else {
-                        //     // messages is an array of PpString objects.
-                        //     const messageTyped = messages as PpString[];
-                            
-                        //     messageTyped.map((val: PpString) => {
-                            
-                        //         messageToDisplay += convertToString(val) + '\n';
-                        //     });
-                        // }
-                        
-                        // TODO: Sanity check that messageToDisplay is non-empty.
-                        // if (messageToDisplay.length === 0) {
-                        //     console.error("[webviewManager.ts] The message to display is empty");
-                        // }
-
-                        
-                        postMessage(document.uri, {type: MessageType.help, body: messages});
-                    }
-                }
-                this.emit(WebviewManagerEvents.command, source, message.body);
-                
+                this.onToolsMessage("commonExecute", {type: MessageType.command, body: "Help."});
                 break;
             default:
                 console.error(`Unrecognized message type ${message.type}, not handled by webview manager`);

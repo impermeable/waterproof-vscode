@@ -492,11 +492,6 @@ export class Editor {
 				const diagnostics = msg.body;
 				this.parseCoqDiagnostics(diagnostics);
 				break;
-			case MessageType.help:
-				const messages = msg.body;
-				if (messages === undefined) return;
-				this._helpPopup.setContentAndDisplay(messages);
-				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

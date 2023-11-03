@@ -2,14 +2,10 @@ import { EventEmitter } from "stream";
 import { TextDocument, Uri, window } from "vscode";
 
 import { Message, MessageType } from "../shared";
-import { IExecutor, ILineNumberComponent } from "./components";
+import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
 import { ProseMirrorWebview } from "./pm-editor/pmWebview";
 import { CoqWebview, WebviewEvents, WebviewState } from "./webviews/coqWebview";
-import { Goal, GoalAnswer, Hyp, Pp, PpString, convertToString } from "../lib/types";
-import { Message as GoalMessage } from "../lib/types";
-import { FormatPrettyPrint } from "../lib/format-pprint/js/main";
-import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 
 export enum WebviewManagerEvents {
     editorReady     = "ready",

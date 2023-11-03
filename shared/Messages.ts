@@ -41,7 +41,6 @@ export enum MessageType {
     applyStepError = "applyStepError",
     fatalError = "fatal",
     updateVersion = "updateTextDocVersion",
-    help = "help",
 }
 
 export enum CoqFileProgressKind {

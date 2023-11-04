@@ -50,8 +50,6 @@ class MenuView implements PluginView {
         // Create menubar dom container.
         this.menubarDOM = document.createElement("div");
         this.menubarDOM.classList.add("menubar");
-        this.menubarDOM.style.display = "flex"
-        this.menubarDOM.style.justifyContent = "space-between"
         
         for(const item of items) {
             // Append the menu item to the menubar DOM element.

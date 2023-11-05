@@ -232,11 +232,29 @@ export class ProseMirrorWebview extends EventEmitter {
         });
     }
 
+    private timer: any = undefined;
+    private bufferedChanges: Array<DocChange | WrappingDocChange> = [];
+    private addChange(change: DocChange | WrappingDocChange) {
+        clearTimeout(this.timer);
+        this.bufferedChanges.push(change);
+        this.timer = setTimeout(() => {
+            this.applyChanges();
+        }, 250);
+        // TODO: The value above should be tweaked. 
+    }
+
+    private applyChanges() {
+        for (const change of this.bufferedChanges) {
+            this.handleChangeFromEditor(change);
+        }
+        this.bufferedChanges = [];
+    }
+
     /** Handle the messages received from prosemirror */
     private handleMessage(msg: Message) {
         switch (msg.type) {
             case MessageType.docChange:
-                this.handleChangeFromEditor(msg.body);
+                this.addChange(msg.body);
                 break;
             case MessageType.ready:
                 this.syncWebview();

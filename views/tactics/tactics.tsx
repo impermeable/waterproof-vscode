@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { MessageType } from '../../shared';
 
 // Import the JSON data containing the tactics
-import data from './tacticsData.json';
+import data from "../../shared/completions/tactics.json";
 
 import '../styles/tactics.css';
 
@@ -23,9 +23,9 @@ const ProofAssistant = () => {
     };
 
     //handle button press of inserting a tactic
-    const handleInsert = (event, name) => {
+    const handleInsert = (event, template) => {
         // log the name of the tactic
-        vscode.postMessage({ time: Date.now(), type: MessageType.insert, body: { symbolLatex: name, symbolUnicode: name, type: "tactics" } });
+        vscode.postMessage({ time: Date.now(), type: MessageType.insert, body: { symbolLatex: template, symbolUnicode: template, type: "tactics" } });
     };
 
     //handle button press of copying a tactic to the clipboard
@@ -36,7 +36,9 @@ const ProofAssistant = () => {
 
     // Function to generate code for each tactic
     const generateCode = (tactic) => {
-        const { name, description, example } = tactic;
+        const { label, description, example, template } = tactic;
+        // FIXME: 
+        const name = label;
         const isVisible = tacticVisibility[name];
         return (
             <div key={name} className="tactic-container">
@@ -102,7 +104,7 @@ const ProofAssistant = () => {
                 onClick={handleClick} />
         </div><div className="proof-assistant">
                 {/* here we filter the data */}
-                {data.filter(item => item.name.toLowerCase().includes(value.toLowerCase())).map((tactic) => generateCode(tactic))}
+                {data.filter(item => item.label.toLowerCase().includes(value.toLowerCase())).map((tactic) => generateCode(tactic))}
             </div></>);
 };
 

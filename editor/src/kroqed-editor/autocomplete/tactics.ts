@@ -1,5 +1,5 @@
 import { Completion, CompletionContext, CompletionResult, CompletionSource, snippetCompletion } from "@codemirror/autocomplete";
-import tactics from "./tactics.json";
+import tactics from "../../../../shared/completions/tactics.json";
 
 const tacticCompletions: Completion[] = tactics.map((value) => {
     return snippetCompletion(value.template, value);

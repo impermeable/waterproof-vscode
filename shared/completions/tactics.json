@@ -96,7 +96,7 @@
         "detail": "tactic",
         "template": "Because (${(*name_combined_hyp*)}) both (${(*name_hyp_1*)}) and (${(*name_hyp_2*)}).",
         "boost": 1
-    },    
+    },
     {
         "label": "Because ((*name_combined_hyp*)) both ((*statement_1*)) ((*label_1*)) and ((*statement_2*)) ((*label_2*)).",
         "type": "type",
@@ -221,6 +221,9 @@
         "type": "type",
         "detail": "tactic",
         "template": "Since (${(*extra_statement*)}) it suffices to show that (${(*statement*)}).",
+        "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal, after first trying to prove (*extra_statement*). If so, (*statement*) becomes the new goal.",
+        "example": "Lemma example_it_suffices_to_show_that :\n  ∀ ε : ℝ,\n    ε > 0 ⇒\n      3 + Rmax(ε,2) ≥ 3.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nSince (ε > 0) it suffices to show that (Rmax(ε,2) ≥ 0).\nWe conclude that (& Rmax(ε,2) ≥ 2 ≥ 0).\nQed.",
+        "advanced": false,
         "boost": 2
     }
 ]

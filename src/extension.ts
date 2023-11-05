@@ -26,6 +26,7 @@ import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { newFileContent } from "./constants";
+import { VersionChecker } from "./version-checker";
 
 /**
  * Main extension class
@@ -201,7 +202,16 @@ export class Coqnitive implements Disposable {
     /**
      * Create the lsp client and update relevant status components
      */
-    initializeClient(): Promise<void> {
+    async initializeClient(): Promise<void> {
+        // Run the version checker.
+        const requiredVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
+        const versionChecker = new VersionChecker(this.configuration, requiredVersion);
+        // The await here is important, otherwise the next call to versionChecker.isWaterproofPathValid returns something nonsensical.
+        await versionChecker.run();
+
+        // TODO: Stop execution?
+        // if (!versionChecker.isWaterproofPathValid) this.stopClient();
+        
         if (this.client?.isRunning()) {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
@@ -211,7 +221,7 @@ export class Coqnitive implements Disposable {
             outputChannelName: "Waterproof LSP Events",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
             initializationOptions: CoqLspServerConfig.create(
-                this.context.extension.packageJSON.version,
+                this.context.extension.packageJSON.requiredCoqLspVersion.slice(2),
                 this.configuration
             ),
             markdown: { isTrusted: true, supportHtml: true },

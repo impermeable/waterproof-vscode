@@ -51,7 +51,7 @@ const ProofAssistant = () => {
                             {'\u2398'}
                             <span className="tooltiptext">copy</span>
                         </VSCodeButton>
-                        <VSCodeButton className="tooltip" appearance="primary" onClick={(event) => handleInsert(event, name)}>
+                        <VSCodeButton className="tooltip" appearance="primary" onClick={(event) => handleInsert(event, template)}>
                             {'\u270e'}
                             <span className="tooltiptext">insert</span>
                         </VSCodeButton>

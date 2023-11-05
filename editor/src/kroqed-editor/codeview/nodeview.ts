@@ -1,4 +1,4 @@
-import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion } from "@codemirror/autocomplete";
+import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet } from "@codemirror/autocomplete";
 import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
@@ -93,6 +93,14 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 		this.updating = false;
 		this.handleNewComplete([]);
+	}
+
+	public handleSnippet(template: string, posFrom: number, posTo: number) {
+		this._codemirror.focus();
+		snippet(template)({
+			state: this._codemirror.state,
+			dispatch: this._codemirror.dispatch
+		}, null, posFrom, posTo);
 	}
 
 	private lintingFunction: LintSource = (view: CodeMirror): readonly Diagnostic[] => {

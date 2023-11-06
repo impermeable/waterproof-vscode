@@ -17,7 +17,7 @@ import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
-import { initializeTacticCompletion } from "./codeview/autocomplete/tactics";
+import { initializeTacticCompletion } from "./autocomplete/tactics";
 
 // CSS imports
 import "katex/dist/katex.min.css";

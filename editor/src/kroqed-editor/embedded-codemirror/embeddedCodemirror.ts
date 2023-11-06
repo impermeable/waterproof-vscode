@@ -1,10 +1,9 @@
-import { EditorView as CodeMirror, KeyBinding, ViewUpdate } from "@codemirror/view";
+import { EditorView as CodeMirror, Command, KeyBinding, ViewUpdate } from "@codemirror/view";
 import { Node as PNode, Schema } from "prosemirror-model";
 import { TextSelection, Selection, Transaction } from "prosemirror-state";
 import { Decoration, DecorationSource, EditorView, NodeView } from "prosemirror-view";
 import { MovementDirection, MovementUnit } from "./types";
 import { exitCode } from "prosemirror-commands";
-import { selectAll } from "@codemirror/commands";
 import { keybindings } from "./embedded-codemirror-keymap";
 
 /**
@@ -147,64 +146,82 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 		  	this._outerView.dispatch(tr);
 		}
 	}
-    
-
+	
     /**
 	 * Do a movement, but first check if we escape the current view.
+	 * 
+	 * The command returns false when we **will not** escape the current view.
+	 * 
 	 * @param unit The movement unit (could be a line (up and down) or a character (left to right))
 	 * @param dir The direction either forward or backward.
-	 * @returns
+	 * @returns A command handling the escaping.
 	 */
-	maybeEscape(unit: MovementUnit, dir: MovementDirection): boolean {
-		// Get the current position.
-		let pos = this._getPos();
-		// If there is none, we can't escape this view,
-		if (!pos) return false;
+	maybeEscape(unit: MovementUnit, dir: MovementDirection): Command {
+		return (targetView: CodeMirror): boolean => {
+			// Get the current position.
+			const pos = this._getPos();
+			// If there is none, we can't escape this view,
+			if (!pos) return false;
 
-		// Get the current state and the main selection related to this state.
-		let _state = this._codemirror.state;
-		let _mainSelection = _state.selection.main;
+			// Get the current state and the main selection related to this state.
+			let _state = targetView.state;
+			let _mainSelection = _state.selection.main;
 
-		// If there is no main selection this is a no-op.
-		if (!_mainSelection.empty) return false;
+			// If there is no main selection this is a no-op.
+			if (!_mainSelection.empty) return false;
 
-		let targetPos: number;
-		let selection: Selection;
+			// TODO: Move the selection 'into' the above/ below cell.
 
-		switch (unit) {
-			case MovementUnit.line:
-				let $_mainSelection = _state.doc.lineAt(_mainSelection.head);
-				if (dir == MovementDirection.backward) {
-					if ($_mainSelection.from > 0) {
-						// There is room in this view to move backwards.
-						return false;
+			let targetPos: number;
+			let selection: Selection;
+
+			switch (unit) {
+				case MovementUnit.line:
+					// We are moving up and down within the coq cell.
+					// We get the line the cursor is currently in:
+					const currentLine = _state.doc.lineAt(_mainSelection.head);
+					if (dir == MovementDirection.backward) {
+						// Backward in the case of lines means going up :) 
+						if (currentLine.from > 0) {
+							// This is not the first line in the cell, therefore we can go up.
+							return false;
+						}
+					} else {
+						// We are going down.
+						if (currentLine.to < _state.doc.length) {
+							// This is not the last line in the cell, therefore we can go down.
+							return false;
+						}
 					}
-				} else {
-					if ($_mainSelection.to < _state.doc.length) {
-						// There is still room to move forward.
-						// We are not at the end of the document.
-						return false;
+					return true;
+					// targetPos = pos + (dir < 0 ? 0 : this._node.nodeSize);
+					// selection = Selection.near(this._outerView.state.doc.resolve(targetPos), dir);
+					// break;
+				case MovementUnit.character:
+					if (dir == MovementDirection.backward) {
+						if (_mainSelection.from > 0) {
+							// This is not the left most character on the first line, therefore we can go right.
+							return false;
+						}
+					} else {
+						if (_mainSelection.to < _state.doc.length) {
+							// This is not the right most character on the last line, therefore we can go left.
+							return false;
+						}
 					}
-				}
-				targetPos = pos + (dir < 0 ? 0 : this._node.nodeSize);
-				selection = Selection.near(this._outerView.state.doc.resolve(targetPos), dir);
-				break;
-			case MovementUnit.character:
-				if (dir == MovementDirection.backward ? _mainSelection.from > 0 : _mainSelection.to < _state.doc.length) return false;
-				targetPos = pos + (dir < 0 ? 0 : this._node.nodeSize);
-				selection = Selection.near(this._outerView.state.doc.resolve(targetPos), dir);
-				break;
-			default:
-				return false;
-		}
-
-		// Create new selection transaction...
-		let transaction: Transaction = this._outerView.state.tr.setSelection(selection).scrollIntoView();
-		// dispatch it..
-		this._outerView.dispatch(transaction);
-		// and focus on the outer editor.
-		this._outerView.focus();
-		return true;
+					return true;
+					// targetPos = pos + (dir < 0 ? 0 : this._node.nodeSize);
+					// selection = Selection.near(this._outerView.state.doc.resolve(targetPos), dir);
+					// break;
+			}
+			// // Create new selection transaction...
+			// let transaction: Transaction = this._outerView.state.tr.setSelection(selection).scrollIntoView();
+			// // dispatch it..
+			// this._outerView.dispatch(transaction);
+			// // and focus on the outer editor.
+			// this._outerView.focus();
+			// return true;
+		};
 	}
 
     // Setup codemirror keymap
@@ -213,11 +230,10 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 
 		// 'Mod' is a platform independent 'Ctrl'/'Cmd'
 		return [
-			...keybindings,
-			{ key: "ArrowUp", run: () => this.maybeEscape(MovementUnit.line, MovementDirection.backward) },
-			{ key: "ArrowLeft", run: () => this.maybeEscape(MovementUnit.character, MovementDirection.backward) },
-			{ key: "ArrowDown", run: () => this.maybeEscape(MovementUnit.line, MovementDirection.forward) },
-			{ key: "ArrowRight", run: () => this.maybeEscape(MovementUnit.character, MovementDirection.forward) },
+			{ key: "ArrowUp", run: this.maybeEscape(MovementUnit.line, MovementDirection.backward) },
+			{ key: "ArrowLeft", run: this.maybeEscape(MovementUnit.character, MovementDirection.backward) },
+			{ key: "ArrowDown", run: this.maybeEscape(MovementUnit.line, MovementDirection.forward) },
+			{ key: "ArrowRight", run: this.maybeEscape(MovementUnit.character, MovementDirection.forward) },
 			{
 				key: "Mod-Enter", run: () => {
 					if (!exitCode(view.state, view.dispatch)) return false
@@ -225,7 +241,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 					return true
 				}
 			},
-			{ key: "Mod-A", run: selectAll }
+			...keybindings,
 		]
 	}
 }

@@ -139,7 +139,7 @@
         }
       },
       {
-        "title": "Coq Syntax",
+        "title": "Standard Coq Syntax",
         "properties": {
           "waterproof.coqSyntax": {
             "type": "boolean",

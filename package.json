@@ -144,7 +144,7 @@
           "waterproof.coqSyntax": {
             "type": "boolean",
             "default": false,
-            "description": "Enable coq syntax; if true, coq syntax will be used instead of coq-waterproof syntax."
+            "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."
           }
         }
       },

@@ -12,7 +12,7 @@ import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic, forceLinting } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic } from "@codemirror/lint";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -69,8 +69,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				}),
 				cmKeymap.of([
 					indentWithTab,
-					...this.embeddedCodeMirrorKeymap(),
-					...defaultKeymap,
+					...this.embeddedCodeMirrorKeymap()
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),

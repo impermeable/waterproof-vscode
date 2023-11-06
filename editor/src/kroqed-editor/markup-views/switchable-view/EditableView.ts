@@ -1,4 +1,4 @@
-import { defaultKeymap, indentWithTab } from "@codemirror/commands"
+import { indentWithTab } from "@codemirror/commands"
 import {
 	EditorView as CodeMirror, ViewUpdate, keymap as cmKeymap,
 	placeholder
@@ -45,7 +45,6 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 				cmKeymap.of([
 					indentWithTab,
 					...this.embeddedCodeMirrorKeymap(),
-					...defaultKeymap
 				]),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
 				placeholder("Empty..."),

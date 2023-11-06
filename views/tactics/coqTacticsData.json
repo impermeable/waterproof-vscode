@@ -1,0 +1,152 @@
+[
+  {
+      "name": "exists (*indent*) : (*term*).",
+      "description": "",
+      "example": "exists a : A."
+  },
+  {
+      "name": "intro.",
+      "description": "",
+      "example": "intro."
+  },
+  {
+      "name": "intros.",
+      "description": "",
+      "example": "intro."
+  },
+  {
+      "name": "intro (*indent*).",
+      "description": "",
+      "example": "intro n."
+  },
+  {
+      "name": "intros (*indent*).",
+      "description": "",
+      "example": "intros n."
+  },
+  {
+      "name": "intro until (*indent*).",
+      "description": "",
+      "example": "intro until 1."
+  },
+  {
+      "name": "intros until (*indent*).",
+      "description": "",
+      "example": "intros until 1."
+  },
+  {
+      "name": "split.",
+      "description": "",
+      "example": "split."
+  },
+  {
+      "name": "contradiction.",
+      "description": "",
+      "example": "contradiction."
+  },
+  {
+      "name": "contradiction H1.",
+      "description": "",
+      "example": "contradiction H1."
+  },
+  {
+      "name": "destruct (*induction_clause*).",
+      "description": "",
+      "example": "destruct H."
+  },
+  {
+      "name": "destruct (*induction_clause*) as (*induction_principle*).",
+      "description": "",
+      "example": "destruct H as (HA & HB)."
+  },
+  {
+      "name": "assert ((*indent*) : (*description*)).",
+      "description": "",
+      "example": "assert (H : A)."
+  },
+  {
+      "name": "assert ((*indent*) := (*term*)).",
+      "description": "",
+      "example": "assert (n := y)."
+  },
+  {
+      "name": "assert ((*one_description*).",
+      "description": "",
+      "example": "assert A."
+  },
+  {
+      "name": "auto.",
+      "description": "",
+      "example": "auto."
+  },
+  {
+      "name": "eauto.",
+      "description": "",
+      "example": "eauto."
+  },
+  {
+      "name": "induction (*induction_clause*).",
+      "description": "",
+      "example": "induction n."
+  },
+  {
+      "name": "induction (*induction_clause*) as (*induction_principle*).",
+      "description": "",
+      "example": "induction n as [| n']."
+  },
+  {
+      "name": "induction (*induction_clause*) using (*induction_principle*).",
+      "description": "",
+      "example": "induction n using strong."
+  },
+  {
+      "name": "refine (*one_term*).",
+      "description": "",
+      "example": "refine (fun x:Option =>\n match x return x <> Fail -> bool with\n | Fail => _\n | Ok b => fun _ => b\n end).."
+  },
+  {
+      "name": "enough ((*indent*) : (*term*)).",
+      "description": "",
+      "example": "enough (a : A)."
+  },
+  {
+      "name": "enough (*one_term*).",
+      "description": "",
+      "example": "enough A."
+  },
+  {
+      "name": "rewrite (*oriented_rewriter*).",
+      "description": "",
+      "example": "rewrite H."
+  },
+  {
+      "name": "apply (*one_term_with_bindings*).",
+      "description": "",
+      "example": "apply H."
+  },
+  {
+      "name": "apply (*one_term_with_bindings*) in (*indent*).",
+      "description": "",
+      "example": "apply H in H0."
+  },
+  {
+      "name": "unfold (*reference_occs*).",
+      "description": "",
+      "example": "unfold t."
+  },
+  {
+      "name": "unfold (*reference_occs*) in (*ocurrences*).",
+      "description": "",
+      "example": "unfold t in H."
+  },
+  {
+      "name": "left.",
+      "description": "",
+      "example": "left."
+  },
+  {
+      "name": "right.",
+      "description": "",
+      "example": "right."
+  }
+]

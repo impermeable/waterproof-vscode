@@ -5,6 +5,7 @@ import { Decoration, DecorationSource, EditorView, NodeView } from "prosemirror-
 import { MovementDirection, MovementUnit } from "./types";
 import { exitCode } from "prosemirror-commands";
 import { selectAll } from "@codemirror/commands";
+import { keybindings } from "./embedded-codemirror-keymap";
 
 /**
  * A class implementing everything required to create an embedded codemirror editor for prosemirror.
@@ -212,6 +213,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 
 		// 'Mod' is a platform independent 'Ctrl'/'Cmd'
 		return [
+			...keybindings,
 			{ key: "ArrowUp", run: () => this.maybeEscape(MovementUnit.line, MovementDirection.backward) },
 			{ key: "ArrowLeft", run: () => this.maybeEscape(MovementUnit.character, MovementDirection.backward) },
 			{ key: "ArrowDown", run: () => this.maybeEscape(MovementUnit.line, MovementDirection.forward) },

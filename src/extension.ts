@@ -145,6 +145,8 @@ export class Coqnitive implements Disposable {
 
         // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
+
+        this.registerCommand("pathSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.path");});
     }
 
     /**

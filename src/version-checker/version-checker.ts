@@ -14,8 +14,7 @@ function isVersionError(input: any | VersionError): input is VersionError {
 }
 
 const DOWNLOAD_INSTALLER = "Download Installer";
-const OPEN_README = "Open README (Instructions)";
-const OPEN_SETTINGS = "Open Settings";
+const OPEN_INSTRUCTIONS = "Installation Instructions";
 
 export class VersionChecker {
     private _wpPath: string | undefined;
@@ -30,6 +29,7 @@ export class VersionChecker {
 
         this._reqVersionCoqLSP = VersionRequirement.fromString(coqLspVersion);
         this._reqVersionCoqWP = VersionRequirement.fromString(coqWaterproofVersion);
+
     }
 
     /**
@@ -46,7 +46,12 @@ export class VersionChecker {
                 this.informUpdateAvailable("coq-lsp", this._reqVersionCoqLSP, version);
             }
         } else {
+            // const message = "Waterproof\n\nThe Waterproof extension can not function without downloading additional software.\nIf you have not already done so, please download and execute the waterproof installer using the buttons below.";
+            // window.showInformationMessage(message, { modal: true}, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            
+            
             this.informWaterproofPathInvalid();
+            
             return Promise.resolve(false);
         }
         return Promise.resolve(true);
@@ -152,7 +157,7 @@ export class VersionChecker {
      * Inform the user that we could not find the coq-waterproof library.
      */
     private informWaterproofLibNotFound() {
-        const message = `We could not find a required library.\nUse the button below to download a new installer.`;
+        const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.`;
         window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
     }
 
@@ -179,22 +184,33 @@ export class VersionChecker {
      * Inform the user that the Waterproof path is invalid.
      */
     private informWaterproofPathInvalid() {
-        const message = "Waterproof Path setting does not point to a valid location.";
-        window.showErrorMessage(message, { modal: true }, OPEN_SETTINGS, OPEN_README).then(this.handleInvalidPath);
+        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function, did you follow the installation instructions?";
+        window.showErrorMessage(message, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
     }
 
     /**
      * Handle the options for the invalid waterproof path message.
      * @param value -
      */
-    private handleInvalidPath(value: typeof OPEN_README | typeof OPEN_SETTINGS | undefined) {
-        switch (value) {
-            case OPEN_README:
-                env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-vscode#waterproof"));
-                break;
-            case OPEN_SETTINGS:
-                commands.executeCommand("workbench.action.openSettings", "waterproof.path");
-                break;
+    private handleInvalidPath(value: typeof OPEN_INSTRUCTIONS | undefined) {
+        if (value == OPEN_INSTRUCTIONS) {
+            commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup.${getPlatformHelper()}`, false);
         }
+    }
+}
+
+const getPlatformHelper = () => {
+    switch (process.platform) {
+        case "aix": return "unknown";
+        case "android": return "unknown";
+        case "darwin": return "macos";
+        case "freebsd": return "unknown";
+        case "haiku": return "unknown";
+        case "linux": return "linux";
+        case "openbsd": return "unknown";
+        case "sunos": return "unknown";
+        case "win32": return "windows";
+        case "cygwin": return "windows";
+        case "netbsd": return "unknown";
     }
 }

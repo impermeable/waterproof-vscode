@@ -73,6 +73,11 @@
     ],
     "commands": [
       {
+        "command": "waterproof.pathSetting",
+        "category": "Waterproof",
+        "title": "Change Waterproof Path"
+      },
+      {
         "command": "waterproof.newWaterproofDocument",
         "title": "Waterproof: Create new waterproof document",
         "shortTitle": "New waterproof document"
@@ -129,6 +134,96 @@
         }
       ]
     },
+    "walkthroughs": [
+      {
+        "id": "waterproof.setup.windows",
+        "title": "Waterproof Initial Setup (Windows)",
+        "when": "isWindows",
+        "description": "",
+        "steps": [
+          {
+            "title": "Downloading the Installer",
+            "id": "download-installer",
+            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)",
+            "completionEvents": ["onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"],
+            "media": {"markdown": "walkthrough-data/initial-setup/windows/download-installer.md"}
+          },
+          {
+            "title": "Configuring Waterproof Settings", 
+            "id": "configure-settings", 
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Change Setting](command:waterproof.pathSetting)",
+            "completionEvents": ["onSettingChanged:waterproof.path"],
+            "media": {"markdown": "walkthrough-data/initial-setup/windows/change-setting.md"}
+          }
+        ]
+      },
+      {
+        "id": "waterproof.setup.macos",
+        "title": "Waterproof Initial Setup (MacOS)",
+        "when": "isMac",
+        "description": "",
+        "steps": [
+          {
+            "title": "Downloading the Installer",
+            "id": "download-installer",
+            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)",
+            "completionEvents": ["onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"],
+            "media": {"markdown": "walkthrough-data/initial-setup/windows/download-installer.md"}
+          },
+          {
+            "title": "Configuring Waterproof Settings", 
+            "id": "configure-settings", 
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Change Setting](command:waterproof.pathSetting)",
+            "completionEvents": ["onSettingChanged:waterproof.path"],
+            "media": {"markdown": "walkthrough-data/initial-setup/windows/change-setting.md"}
+          }
+        ]
+      },
+      {
+        "id": "waterproof.setup.linux",
+        "title": "Waterproof Initial Setup (Linux)",
+        "when": "isLinux",
+        "description": "",
+        "steps": [
+          {
+            "title": "Downloading the Installer",
+            "id": "download-installer",
+            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)",
+            "completionEvents": ["onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"],
+            "media": {"markdown": "walkthrough-data/initial-setup/windows/download-installer.md"}
+          },
+          {
+            "title": "Configuring Waterproof Settings", 
+            "id": "configure-settings", 
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Change Setting](command:waterproof.pathSetting)",
+            "completionEvents": ["onSettingChanged:waterproof.path"],
+            "media": {"markdown": "walkthrough-data/initial-setup/windows/change-setting.md"}
+          }
+        ]
+      },
+      {
+        "id": "waterproof.setup.unknown",
+        "title": "Waterproof Initial Setup (Unknown OS)",
+        "when": "!isLinux && !isMac && !isWindows",
+        "description": "",
+        "steps": [
+          {
+            "title": "Downloading the Installer",
+            "id": "download-installer",
+            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)",
+            "completionEvents": ["onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"],
+            "media": {"markdown": "walkthrough-data/initial-setup/windows/download-installer.md"}
+          },
+          {
+            "title": "Configuring Waterproof Settings", 
+            "id": "configure-settings", 
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Change Setting](command:waterproof.pathSetting)",
+            "media": {"markdown": "walkthrough-data/initial-setup/windows/change-setting.md"}
+          }
+        ]
+      }
+
+    ],
     "configuration": [
       {
         "title": "User Mode",

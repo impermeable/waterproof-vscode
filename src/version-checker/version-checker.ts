@@ -169,7 +169,7 @@ export class VersionChecker {
      * @param value -
      */
     private handleDownloadInstaller(value: typeof DOWNLOAD_INSTALLER | undefined) {
-        if (value === DOWNLOAD_INSTALLER) env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer"));
+        if (value === DOWNLOAD_INSTALLER) env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
     }
 
     /**

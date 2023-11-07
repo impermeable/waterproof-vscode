@@ -6,8 +6,9 @@ import {
     WorkspaceConfiguration,
     commands,
     workspace,
-    window} from "vscode";
-import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
+    window,
+    ConfigurationTarget} from "vscode";
+import { LanguageClientOptions, RevealOutputChannelOn, WorkspaceSymbolRequest } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
@@ -147,6 +148,31 @@ export class Coqnitive implements Disposable {
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
 
         this.registerCommand("pathSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.path");});
+        this.registerCommand("defaultPath", () => {
+            let defaultValue: string | undefined;
+            switch (process.platform) {
+                case "aix": defaultValue = undefined; break;
+                case "android": defaultValue = undefined; break;
+                // MACOS
+                case "darwin": defaultValue = undefined; break;
+                case "freebsd": defaultValue = undefined; break;
+                case "haiku": defaultValue = undefined; break;
+                // LINUX
+                case "linux": defaultValue = "coq-lsp"; break;
+                case "openbsd": defaultValue = undefined; break;
+                case "sunos": defaultValue = undefined; break;
+                // WINDOWS
+                case "win32": defaultValue = "C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\bin\\coq-lsp"; break;
+                case "cygwin": defaultValue = undefined; break;
+                case "netbsd": defaultValue = undefined; break;
+            }
+            if (defaultValue === undefined) {
+                window.showInformationMessage("Waterproof has no known default value for this platform, please update the setting manually.");
+                commands.executeCommand("workbench.action.openSettings", "waterproof.path");
+            } else {
+                workspace.getConfiguration().update("waterproof.path", defaultValue, ConfigurationTarget.Global);
+            }
+        })
     }
 
     /**

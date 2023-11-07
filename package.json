@@ -151,7 +151,7 @@
           {
             "title": "Configuring Waterproof Settings", 
             "id": "configure-settings", 
-            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": ["onSettingChanged:waterproof.path"],
             "media": {"markdown": "walkthrough-data/initial-setup/windows/change-setting.md"}
           }
@@ -173,7 +173,7 @@
           {
             "title": "Configuring Waterproof Settings", 
             "id": "configure-settings", 
-            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": ["onSettingChanged:waterproof.path"],
             "media": {"markdown": "walkthrough-data/initial-setup/windows/change-setting.md"}
           }
@@ -195,7 +195,7 @@
           {
             "title": "Configuring Waterproof Settings", 
             "id": "configure-settings", 
-            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": ["onSettingChanged:waterproof.path"],
             "media": {"markdown": "walkthrough-data/initial-setup/windows/change-setting.md"}
           }
@@ -217,7 +217,7 @@
           {
             "title": "Configuring Waterproof Settings", 
             "id": "configure-settings", 
-            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
             "media": {"markdown": "walkthrough-data/initial-setup/windows/change-setting.md"}
           }
         ]

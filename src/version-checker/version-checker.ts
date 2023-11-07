@@ -15,6 +15,7 @@ function isVersionError(input: any | VersionError): input is VersionError {
 
 const DOWNLOAD_INSTALLER = "Download Installer";
 const OPEN_INSTRUCTIONS = "Installation Instructions";
+const OPEN_README = "Open Readme";
 
 export class VersionChecker {
     private _wpPath: string | undefined;
@@ -168,8 +169,19 @@ export class VersionChecker {
      * @param found The version we found.
      */
     private informUpdateAvailable(software: string, requirement: VersionRequirement, found: Version) {
-        const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to download a new installer.`;
-        window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        const platform = getPlatformHelper();
+        if (platform === "macos" || platform == "windows") {
+            const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to download a new installer.`;
+            window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        } else {
+            // We have no installer for other platforms, so we supply the user with the readme.
+            const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to open instructions on how to update.`;
+            window.showErrorMessage(message, { modal: true }, OPEN_README).then(this.handleOpenReadme);
+        }
+    }
+
+    private handleOpenReadme(value: typeof OPEN_README | undefined) {
+        if (value === OPEN_README) env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-vscode#waterproof"));
     }
 
     /**
@@ -184,7 +196,7 @@ export class VersionChecker {
      * Inform the user that the Waterproof path is invalid.
      */
     private informWaterproofPathInvalid() {
-        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function, did you follow the installation instructions?";
+        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nFor more information on how to make the waterproof extension work, please see the installation instructions.";
         window.showErrorMessage(message, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
     }
 

@@ -2,16 +2,18 @@
 
 The Waterproof vscode extension helps students learn how to write mathematical proofs.
 
+====================================================================
+
 ## Installation on Windows
 
-### Dependencies installer
+### Step 1: Dependencies installer
 Download and execute the bundled installer `Installer.name.exe` from the [release page](http://github.com/impermeable/waterproof/releases) **Update link to vscode release page as well as installer name, currently incorrect**.
 **Note:** do not change the default installation location, otherwise Waterproof will not work.
 
-### Install the vscode extension
+### Step 2: Install the vscode extension
 Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
 
-### Update the settings for Waterproof
+### Step 3: Update the settings for Waterproof
 Within vscode, go to the Extensions tab (Ctrl+Shift+X) and search for the installed Waterproof extension. Once the extension is found, click on the gear icon and enter the 'Extension Settings'.
 Within the setting 'Waterproof: Path' enter the following line: 
 
@@ -21,6 +23,8 @@ C:\cygwin_wp\home\runneradmin\.opam\wp\bin\coq-lsp
 
 **Note:** This will only work if you have not changed the default installation for the dependencies.
 In the case that a different file location was used for the installation, find the location of '.opam\wp\bin\coq-lsp' within this folder. Paste instead the absolute file address of this coq-lsp file into the 'Waterproof: Path' setting.
+
+====================================================================
 
 ## Installation on Windows with WSL
 
@@ -72,6 +76,8 @@ Alternatively, one navigate to a folder in WSL itself, and type `code .` to open
 
 From this page in vscode, you can just click on the "Install" button.
 
+====================================================================
+
 ## Installation on Linux
 
 ### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
@@ -88,7 +94,24 @@ opam install coq-lsp -v 8.17
 opam install coq-waterproof
 ```
 
-## Installation on Mac
+====================================================================
+
+## Installation on Max
+
+### Step 1: Dependencies installer
+
+
+### Step 2: Install the vscode extension
+Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
+
+### Step 3: Update the settings for Waterproof
+Within vscode, go to the Extensions tab (Ctrl+Shift+X) and search for the installed Waterproof extension. Once the extension is found, click on the gear icon and enter the 'Extension Settings'.
+Within the setting 'Waterproof: Path' enter the following line: 
+
+
+====================================================================
+
+## Manual Installation on Mac
 
 ### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
 

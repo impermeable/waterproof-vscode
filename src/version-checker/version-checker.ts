@@ -36,9 +36,10 @@ export class VersionChecker {
      * Run version checks that should happen *before* the extension launches. 
      * 
      * This call should likely be awaited.
+     * 
+     * @returns `Promise<boolean>` where the boolean indicates whether we can start the extension.
      */
-    public async prelaunchChecks() {
-        // debugger;
+    public async prelaunchChecks(): Promise<boolean> {
         const version = await this.checkLSPBinary();
         if (!isVersionError(version)) {
             if (version.needsUpdate(this._reqVersionCoqLSP)) {
@@ -46,7 +47,9 @@ export class VersionChecker {
             }
         } else {
             this.informWaterproofPathInvalid();
+            return Promise.resolve(false);
         }
+        return Promise.resolve(true);
     }
 
     /**

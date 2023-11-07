@@ -208,37 +208,43 @@ export class Coqnitive implements Disposable {
         const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
         const versionChecker = new VersionChecker(this.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
         // 
-        await versionChecker.prelaunchChecks();
-        versionChecker.run();
-        
-        if (this.client?.isRunning()) {
-            return Promise.reject(new Error("Cannot initialize client; one is already running."))
-        }
+        const foundServer = await versionChecker.prelaunchChecks();
 
-        const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "coqmarkdown" }],  // only `.mv` files, not `.v`
-            outputChannelName: "Waterproof LSP Events",
-            revealOutputChannelOn: RevealOutputChannelOn.Info,
-            initializationOptions: CoqLspServerConfig.create(
-                this.context.extension.packageJSON.requiredCoqLspVersion.slice(2),
-                this.configuration
-            ),
-            markdown: { isTrusted: true, supportHtml: true },
-        };
+        if (foundServer) {
 
-        this.client = this.clientFactory(clientOptions, this.configuration);
-        return this.client.startWithHandlers(this.webviewManager).then(
-            () => {
-                // show user that LSP is working
-                this.statusBar.update(true);
-            },
-            reason => {
-                const message = reason.toString();
-                console.error(`Error during client initialization: ${message}`);
-                this.statusBar.failed(message);
-                throw reason;  // keep chain rejected
+            versionChecker.run();
+            
+            if (this.client?.isRunning()) {
+                return Promise.reject(new Error("Cannot initialize client; one is already running."))
             }
-        );
+
+            const clientOptions: LanguageClientOptions = {
+                documentSelector: [{ language: "coqmarkdown" }],  // only `.mv` files, not `.v`
+                outputChannelName: "Waterproof LSP Events",
+                revealOutputChannelOn: RevealOutputChannelOn.Info,
+                initializationOptions: CoqLspServerConfig.create(
+                    this.context.extension.packageJSON.requiredCoqLspVersion.slice(2),
+                    this.configuration
+                ),
+                markdown: { isTrusted: true, supportHtml: true },
+            };
+
+            this.client = this.clientFactory(clientOptions, this.configuration);
+            return this.client.startWithHandlers(this.webviewManager).then(
+                () => {
+                    // show user that LSP is working
+                    this.statusBar.update(true);
+                },
+                reason => {
+                    const message = reason.toString();
+                    console.error(`Error during client initialization: ${message}`);
+                    this.statusBar.failed(message);
+                    throw reason;  // keep chain rejected
+                }
+            );
+        } else {
+            this.statusBar.failed("LSP not found");
+        }
     }
 
     /**
@@ -254,7 +260,7 @@ export class Coqnitive implements Disposable {
      * otherwise initialize it.
      */
     private toggleClient(): Promise<void> {
-        if (this.client.isRunning()) {
+        if (this.client?.isRunning()) {
             return this.stopClient();
         } else {
             return this.initializeClient();

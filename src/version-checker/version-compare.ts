@@ -1,20 +1,22 @@
+import { NOT_SPECIFIED } from "./types";
 import { Version } from "./version"
 
-export const versionGreaterThan = (desired: Version, installed: Version): boolean => {
+export const versionGreaterThan = (required: Version, installed: Version): boolean => {
     return (
-        installed.major >= desired.major  &&
-        installed.minor >= desired.minor 
+        installed.major >= required.major  &&
+        installed.minor >= required.minor 
     );
 }
 
-export const versionEquals = (desired: Version, installed: Version): boolean => {
+export const versionEquals = (required: Version, installed: Version): boolean => {
+    if (required.patch === NOT_SPECIFIED) return versionEqualsIgnorePatch(required, installed);
     return (
-        installed.major == desired.major  &&
-        installed.minor == desired.minor  &&
-        installed.patch == desired.patch 
+        installed.major == required.major  &&
+        installed.minor == required.minor  &&
+        installed.patch == required.patch 
     );
 }
 
-export const versionEqualsIgnorePatch = (desired: Version, installed: Version): boolean => {
-    return (desired.major == installed.major && desired.minor == installed.minor);
+export const versionEqualsIgnorePatch = (required: Version, installed: Version): boolean => {
+    return (required.major == installed.major && required.minor == installed.minor);
 }

@@ -90,8 +90,7 @@ export class Coqnitive implements Disposable {
                 this.client.activeDocument = document;
                 this.client.activeCursorPosition = undefined;
                 for (const g of this.goalsComponents) g.updateGoals(undefined);
-            } 
-            console.log("focus")
+            }
             this.webviewManager.open("goals")
             // this.webviewManager.reveal("goals")
         });
@@ -203,14 +202,14 @@ export class Coqnitive implements Disposable {
      * Create the lsp client and update relevant status components
      */
     async initializeClient(): Promise<void> {
-        // Run the version checker.
-        const requiredVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
-        const versionChecker = new VersionChecker(this.configuration, requiredVersion);
-        // The await here is important, otherwise the next call to versionChecker.isWaterproofPathValid returns something nonsensical.
-        await versionChecker.run();
 
-        // TODO: Stop execution?
-        // if (!versionChecker.isWaterproofPathValid) this.stopClient();
+        // Run the version checker.
+        const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
+        const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
+        const versionChecker = new VersionChecker(this.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
+        // 
+        await versionChecker.prelaunchChecks();
+        versionChecker.run();
         
         if (this.client?.isRunning()) {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))

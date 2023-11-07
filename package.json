@@ -3,7 +3,8 @@
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
   "version": "0.9.9",
-  "requiredCoqLspVersion": ">=0.1.7",
+  "requiredCoqLspVersion": "==0.1.8",
+  "requiredCoqWaterproofVersion": "==2.1.0",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",

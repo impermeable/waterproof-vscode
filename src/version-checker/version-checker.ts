@@ -206,7 +206,7 @@ export class VersionChecker {
      */
     private handleInvalidPath(value: typeof OPEN_INSTRUCTIONS | undefined) {
         if (value == OPEN_INSTRUCTIONS) {
-            commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup.${getPlatformHelper()}`, false);
+            commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
         }
     }
 }

@@ -170,7 +170,16 @@ export class Coqnitive implements Disposable {
                 window.showInformationMessage("Waterproof has no known default value for this platform, please update the setting manually.");
                 commands.executeCommand("workbench.action.openSettings", "waterproof.path");
             } else {
-                workspace.getConfiguration().update("waterproof.path", defaultValue, ConfigurationTarget.Global);
+                try {
+                    workspace.getConfiguration().update("waterproof.path", defaultValue, ConfigurationTarget.Global).then(() => {
+                        setTimeout(() => {
+                            const changedTo = workspace.getConfiguration().get("waterproof.path");
+                            window.showInformationMessage(`Waterproof Path setting succesfully updated to: "${changedTo}"`);
+                        }, 100);
+                    });
+                } catch (e) {
+                    console.error(e);
+                }
             }
         })
     }

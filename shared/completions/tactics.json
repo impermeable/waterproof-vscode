@@ -258,7 +258,7 @@
         "label": "By ((*lemma or assumption*)) we conclude that ((*(alternative) formulation of current goal*)).",
         "type": "type",
         "detail": "tactic",
-        "By ((*lemma or assumption*)) we conclude that ((*(alternative) formulation of current goal*)).": "By (${(*lemma or assumption*)}) we conclude that (${(*(alternative) formulation of current goal*)}).",
+        "template": "By (${(*lemma or assumption*)}) we conclude that (${(*(alternative) formulation of current goal*)}).",
         "description": "Tries to directly prove the goal using (*lemma or assumption*) when the goal corresponds to (*statement*).",
         "boost": 2
     },

@@ -45,6 +45,13 @@ export interface ICoqLspClient {
     getEndOfCurrentSentence(): Position | undefined;
 
     /**
+     * Returns the beginning position of the currently selected sentence, i.e., the Coq sentence in the
+     * active document in which the text cursor is located. Only returns `undefined` if no sentences
+     * are known. This is really just the end position of the previous sentence.
+     */
+    getBeginningOfCurrentSentence(): Position | undefined
+
+    /**
      * Creates parameter object for a goals request.
      */
     createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest;

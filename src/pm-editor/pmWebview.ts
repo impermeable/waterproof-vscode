@@ -120,6 +120,10 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         }));
 
+        this._disposables.push(workspace.onDidChangeConfiguration(e => {
+            this.updateSyntaxMode();
+        }));
+
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
             this.handleMessage(msg);
         }));
@@ -195,6 +199,14 @@ export class ProseMirrorWebview extends EventEmitter {
         this.postMessage({
             type: MessageType.teacher,
             body: workspace.getConfiguration("waterproof").get("teacherMode")
+        }, true);
+    }
+
+    /** Toggle the syntax mode*/
+    private updateSyntaxMode() {
+        this.postMessage({
+            type: MessageType.syntax,
+            body: workspace.getConfiguration("waterproof").get("coqSyntax")
         }, true);
     }
 

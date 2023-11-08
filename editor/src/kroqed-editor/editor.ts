@@ -17,6 +17,7 @@ import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
+import { initializeTacticCompletion } from "./codeview/autocomplete/tactics";
 import { createContextMenuHTML } from "./context-menu";
 
 // CSS imports
@@ -492,11 +493,9 @@ export class Editor {
 				const diagnostics = msg.body;
 				this.parseCoqDiagnostics(diagnostics);
 				break;
-			case MessageType.help:
-				const messages = msg.body;
-				if (messages === undefined) return;
-				this._helpPopup.setContentAndDisplay(messages);
-				break;
+            case MessageType.syntax:
+                initializeTacticCompletion(msg.body as boolean);
+                break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

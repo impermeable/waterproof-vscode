@@ -110,16 +110,23 @@ Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/
 Within vscode, go to the Extensions tab (Shift+Command+X) and search for the installed Waterproof extension. Once the extension is found, click on the gear icon and enter the 'Extension Settings'.
 Within the setting 'Waterproof: Path' enter the following line: 
 
-`/Applications/APPNAME/Contents/Resources/bin/coq-lsp`
+```
+/Applications/APPNAME/Contents/Resources/bin/coq-lsp`
+```
 
 ### Step 4: Update the args settings for Waterproof
 Still in the 'Extension Settings' within the setting 'Waterproof: Args'. Click on the 'Add Item' button and   
 For each of the following lines, click on the 'Add Item' button and enter the line. Each of the lines should be entered inividually.
 
-`--ocamlpath=/Applications/APPNAME/Contents/Resources/lib`
-`--coqcorelib=/Applications/APPNAME/Contents/Resources/lib/coq-core`
-`--coqlib=/Applications/APPNAME/Contents/Resources/lib/coq`
-
+```
+--ocamlpath=/Applications/APPNAME/Contents/Resources/lib`
+```
+```
+--coqcorelib=/Applications/APPNAME/Contents/Resources/lib/coq-core`
+```
+```
+--coqlib=/Applications/APPNAME/Contents/Resources/lib/coq`
+```
 
 
 ## Manual Installation on Mac

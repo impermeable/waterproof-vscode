@@ -6,7 +6,7 @@ The Waterproof vscode extension helps students learn how to write mathematical p
 ## Installation on Windows
 
 ### Step 1: Dependencies installer
-Download and execute the bundled installer `Installer.name.exe` from the [release page](http://github.com/impermeable/waterproof/releases) **Update link to vscode release page as well as installer name, currently incorrect**.
+Download and execute the bundled installer `Waterproof-dependencies-installer-v2.1.0+8.17.exe` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v2.1.0%2B8.17)
 **Note:** do not change the default installation location, otherwise Waterproof will not work.
 
 ### Step 2: Install the vscode extension
@@ -98,9 +98,9 @@ opam install coq-waterproof
 ## Installation on Mac
 
 ### Step 1: Dependencies installer
-Download and execute the bundled installer `Installer.name.exe` from the [release page](http://github.com/impermeable/waterproof/releases) **Update link to vscode release page as well as installer name, currently incorrect**.
+Download and execute the bundled installer `Waterproof_Background.dmg` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v2.1.0%2B8.17)
 
-Open the `Waterproof_Background.dmg` and drag the "Waterproof_Background" folder into the "Applications" folder to download the required files. You may need to provide administrative access to do this.
+Open the `Waterproof_Background.dmg` and drag `Waterproof_Background.app` into the "Applications". You may need to provide administrative access to do this.
 
 
 ### Step 2: Install the vscode extension

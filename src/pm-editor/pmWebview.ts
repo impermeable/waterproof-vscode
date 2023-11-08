@@ -1,11 +1,12 @@
 import { EventEmitter } from "stream";
-import { Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
+import { Disposable, EndOfLine, Position, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
 import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNumber } from "../../shared";
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
 import { SequentialEditor } from "./edit";
 import {getFormatFromExtension } from "./fileUtils";
+import { readFile } from "fs";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -54,6 +55,20 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Create a prosemirror webview */
     public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
+        if (doc.uri.fragment === "tutorial") { 
+            const tutFilePath = Uri.joinPath(extensionUri, "misc-includes", "waterproof_tutorial.mv").fsPath;
+            readFile(tutFilePath, (err, data) => {
+                if (err) {
+                    window.showErrorMessage("Could not open Waterproof tutorial file.");
+                    console.error(`Could not read Waterproof tutorial file: ${err}`);
+                    return;
+                }
+                const content = data.toString();
+                const edit = new WorkspaceEdit();
+                edit.insert(doc.uri, new Position(0, 0), content);
+                workspace.applyEdit(edit);
+            });
+        } 
         // Check if the line endings of file are windows
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +

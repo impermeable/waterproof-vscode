@@ -77,6 +77,11 @@
     ],
     "commands": [
       {
+        "command": "waterproof.openTutorial",
+        "category": "Waterproof", 
+        "title": "Open Tutorial"
+      },
+      {
         "command": "waterproof.pathSetting",
         "category": "Waterproof",
         "title": "Change Waterproof Path"
@@ -185,6 +190,17 @@
             "description": "To determine whether Waterproof found everything it needs we need to restart it using the button below.\n[Restart](command:waterproof.start)",
             "completionEvents": [
               "onCommand:waterproof.start"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/restart.md"
+            }
+          },
+          {
+            "title": "Waterproof Tutorial", 
+            "id": "open-tutorial", 
+            "description": "Open the Waterproof tutorial to start learning.\n[Open Tutorial](command:waterproof.openTutorial)",
+            "completionEvents": [
+              "onCommand:waterproof.openTutorial"
             ],
             "media": {
               "markdown": "walkthrough-data/initial-setup/restart.md"

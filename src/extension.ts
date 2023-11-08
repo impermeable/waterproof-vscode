@@ -7,8 +7,9 @@ import {
     commands,
     workspace,
     window,
-    ConfigurationTarget} from "vscode";
-import { LanguageClientOptions, RevealOutputChannelOn, WorkspaceSymbolRequest } from "vscode-languageclient";
+    ConfigurationTarget,
+    Uri} from "vscode";
+import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
@@ -146,6 +147,12 @@ export class Coqnitive implements Disposable {
 
         // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
+
+        this.registerCommand("openTutorial", () => {
+            const fileName = "waterproof_tutorial.mv";
+            const newURI = Uri.file(fileName).with({ scheme: 'untitled', path: fileName, fragment: "tutorial"});
+            commands.executeCommand("vscode.openWith", newURI, "coqEditor.coqEditor");
+        });
 
         this.registerCommand("pathSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.path");});
         this.registerCommand("defaultPath", () => {

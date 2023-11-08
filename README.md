@@ -111,7 +111,7 @@ Within vscode, go to the Extensions tab (Shift+Command+X) and search for the ins
 Within the setting `Waterproof: Path` enter the following line: 
 
 ```
-/Applications/APPNAME/Contents/Resources/bin/coq-lsp`
+/Applications/Waterproof_Background.app/Contents/Resources/bin/coq-lsp
 ```
 
 ### Step 4: Update the args settings for Waterproof
@@ -119,13 +119,13 @@ Still in the 'Extension Settings' within the setting `Waterproof: Args`. Click o
 For each of the following lines, click on the 'Add Item' button and enter the line. Each of the lines should be entered inividually.
 
 ```
---ocamlpath=/Applications/APPNAME/Contents/Resources/lib`
+--ocamlpath=/Applications/Waterproof_Background.app/Contents/Resources/lib
 ```
 ```
---coqcorelib=/Applications/APPNAME/Contents/Resources/lib/coq-core`
+--coqcorelib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq-core
 ```
 ```
---coqlib=/Applications/APPNAME/Contents/Resources/lib/coq`
+--coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq
 ```
 ### Warning
 Upon opening a .mv file for the first time, a pop-up about verifying the developer may appear.

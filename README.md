@@ -27,7 +27,7 @@ In the case that a different file location was used for the installation, find t
 
 ## Installation on Windows with WSL
 
-If the above method did not work for windows, it is possible to instead install the dependencies and run the Waterproof vscode extension using WSL
+If the above method did not work for Windows, it is possible to instead install the dependencies and run the Waterproof vscode extension using WSL
 
 ### Step 0: Install WSL
 
@@ -136,6 +136,8 @@ Upon opening a .mv file for the first time, a pop-up about verifying the develop
 To fix this issue, click 'Show in Finder', Control click on the Coq-Platform application and press open. Click 'open' again if a pop-up appears. You may close the application once it has opened. This will ensure that the application is now trusted when using the Waterproof extension in the future.
 
 ## Manual Installation on Mac
+
+If the above method did not work for Mac, it is possible to instead install the dependencies manually using opam.
 
 ### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
 

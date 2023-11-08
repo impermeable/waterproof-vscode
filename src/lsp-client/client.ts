@@ -158,6 +158,11 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             return this.start();
         }
 
+        getBeginningOfCurrentSentence(): Position | undefined {
+            if (!this.activeCursorPosition) return undefined;
+            return this.sentenceManager.getBeginningOfSentence(this.activeCursorPosition);
+        }
+
         getEndOfCurrentSentence(): Position | undefined {
             if (!this.activeCursorPosition) return undefined;
             return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);

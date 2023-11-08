@@ -1,5 +1,5 @@
 import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion } from "@codemirror/autocomplete";
-import { defaultKeymap, indentWithTab } from "@codemirror/commands";
+import { indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
@@ -12,7 +12,7 @@ import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic, forceLinting } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic } from "@codemirror/lint";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -67,8 +67,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				}),
 				cmKeymap.of([
 					indentWithTab,
-					...this.embeddedCodeMirrorKeymap(),
-					...defaultKeymap,
+					...this.embeddedCodeMirrorKeymap()
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),

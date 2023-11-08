@@ -127,7 +127,10 @@ For each of the following lines, click on the 'Add Item' button and enter the li
 ```
 --coqlib=/Applications/APPNAME/Contents/Resources/lib/coq`
 ```
+### Warning
+Upon opening a .mv file for the first time, a pop-up about verifying the developer may appear.
 
+To fix this issue, click 'Show in Finder', Control click on the Coq-Platform application and press open. Click 'open' again if a pop-up appears. You may close the application once it has opened. This will ensure that the application is now trusted when using the Waterproof extension in the future.
 
 ## Manual Installation on Mac
 

@@ -162,7 +162,7 @@ export class Coqnitive implements Disposable {
                 case "openbsd": defaultValue = undefined; break;
                 case "sunos": defaultValue = undefined; break;
                 // WINDOWS
-                case "win32": defaultValue = "C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\bin\\coq-lsp"; break;
+                case "win32": defaultValue = "C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\bin\\coq-lsp.exe"; break;
                 case "cygwin": defaultValue = undefined; break;
                 case "netbsd": defaultValue = undefined; break;
             }

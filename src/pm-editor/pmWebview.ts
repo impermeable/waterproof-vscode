@@ -68,7 +68,21 @@ export class ProseMirrorWebview extends EventEmitter {
                 edit.insert(doc.uri, new Position(0, 0), content);
                 workspace.applyEdit(edit);
             });
-        } 
+        } else if (doc.uri.fragment === "newfile") {
+            const tutFilePath = Uri.joinPath(extensionUri, "misc-includes", "empty_waterproof_document.mv").fsPath;
+            readFile(tutFilePath, (err, data) => {
+                if (err) {
+                    window.showErrorMessage("Could not open a new Waterproof file.");
+                    console.error(`Could not open new Waterproof file: ${err}`);
+                    return;
+                }
+                const content = data.toString();
+                const edit = new WorkspaceEdit();
+                edit.insert(doc.uri, new Position(0, 0), content);
+                workspace.applyEdit(edit);
+            });
+        }
+
         // Check if the line endings of file are windows
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +

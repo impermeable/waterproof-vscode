@@ -27,7 +27,6 @@ import { ExecutePanel } from "./webviews/standardviews/execute";
 import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
-import { newFileContent } from "./constants";
 import { VersionChecker } from "./version-checker";
 
 /**
@@ -197,19 +196,9 @@ export class Coqnitive implements Disposable {
      * or by using the File -> New File... option. 
      */
     private async newFileCommand(): Promise<void> {
-
-        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document"}).then((uri) => {
-            if (!uri) {
-                window.showErrorMessage("Something went wrong in creating a new waterproof document");
-                return;
-            }
-
-            workspace.fs.writeFile(uri, Buffer.from(newFileContent)).then(() => {
-                // Open the file using the waterproof editor
-                // TODO: Hardcoded `coqEditor.coqEditor`.
-                commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-            });
-        });
+        const fileName = "new_waterproof_file.mv";
+        const newURI = Uri.file(fileName).with({ scheme: 'untitled', path: fileName, fragment: "newfile"});
+        commands.executeCommand("vscode.openWith", newURI, "coqEditor.coqEditor");
     }
 
     /**

@@ -127,6 +127,9 @@ For each of the following lines, click on the 'Add Item' button and enter the li
 ```
 --coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq
 ```
+
+You may have to restart vscode before these settings are used.
+
 ### Warning
 Upon opening a .mv file for the first time, a pop-up about verifying the developer may appear.
 

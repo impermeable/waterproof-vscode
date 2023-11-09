@@ -235,7 +235,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private updateSyntaxMode() {
         this.postMessage({
             type: MessageType.syntax,
-            body: workspace.getConfiguration("waterproof").get("coqSyntax")
+            body: workspace.getConfiguration("waterproof").get("standardCoqSyntax")
         }, true);
     }
 

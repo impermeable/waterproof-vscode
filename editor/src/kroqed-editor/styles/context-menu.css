@@ -10,7 +10,6 @@
 
   background-color: var(--vscode-menu-background);
   color: var(--vscode-menu-foreground);
-  border-radius: 10px;
   box-shadow: 0 10px 20px rgb(64 64 64 / 5%);
   padding: 10px 0;
   padding: 0;

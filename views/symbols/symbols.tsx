@@ -3,15 +3,16 @@ import React, { useState } from "react";
 import { MessageType } from '../../shared';
 import "../styles/info.css";
 // Get the button data
-import * as data from './buttonData.json';
+import data from "../../shared/completions/symbols.json";
 
 const vscode = acquireVsCodeApi();
 
 export function Symbols() {
     // Map the symbols to an array of tupels that contain a number (category), string (id) and string (title)
-    const buttonArray: [number, string, string][] = data.symbols.map((item: (string | number)[]) => {
-        const [num, str1, str2] = item;
-        return [num as number, str1 as string, str2 as string];
+
+    const buttonArray: [number, string, string][] = data.map((value) => {
+        const {label, symbolPanelCategory, apply} = value;
+        return [symbolPanelCategory as number, label, apply];
     });
 
     const [tooltip, setTooltip] = useState('');

@@ -372,16 +372,34 @@
         "symbolPanelCategory": 2
     },
     {
+        "label": "\\leq",
+        "type": "symbol",
+        "apply": "≤",
+        "symbolPanelCategory": 5
+    },
+    {
         "label": "\\greater-or-equal",
         "type": "symbol",
         "apply": "≥",
         "symbolPanelCategory": 2
     },
     {
+        "label": "\\geq",
+        "type": "symbol",
+        "apply": "≥",
+        "symbolPanelCategory": 5
+    },
+    {
         "label": "\\not-equal",
         "type": "symbol",
         "apply": "≠",
         "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\neq",
+        "type": "symbol",
+        "apply": "≠",
+        "symbolPanelCategory": 5
     },
     {
         "label": "\\not",
@@ -418,6 +436,12 @@
         "type": "symbol",
         "apply": "→",
         "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\to",
+        "type": "symbol",
+        "apply": "→",
+        "symbolPanelCategory": 5
     },
     {
         "label": "\\arrow-down",

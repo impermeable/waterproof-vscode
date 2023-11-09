@@ -116,7 +116,8 @@ Within the setting `Waterproof: Path` enter the following line:
 
 ### Step 4: Update the args settings for Waterproof
 Still in the 'Extension Settings' within the setting `Waterproof: Args`. Click on the 'Add Item' button and   
-For each of the following lines, click on the 'Add Item' button and enter the line. Each of the lines should be entered inividually.
+For each of the following lines, click on the 'Add Item' button and enter the line. 
+**Each of the lines should be added inividually.**
 
 ```
 --ocamlpath=/Applications/Waterproof_Background.app/Contents/Resources/lib
@@ -128,7 +129,7 @@ For each of the following lines, click on the 'Add Item' button and enter the li
 --coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq
 ```
 
-You may have to restart vscode before these settings are used.
+You may have to restart vscode before these settings are implemented.
 
 ### Warning
 Upon opening a .mv file for the first time, a pop-up about verifying the developer may appear.

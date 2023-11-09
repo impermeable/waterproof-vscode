@@ -187,13 +187,38 @@
           },
           {
             "title": "Configuring Waterproof Settings (Path)",
+            "when": "isWindows && !hasRemoteServer",
             "id": "configure-settings-windows",
             "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": [
               "onSettingChanged:waterproof.path"
             ],
             "media": {
-              "markdown": "walkthrough-data/initial-setup/change-setting-path.md"
+              "markdown": "walkthrough-data/initial-setup/change-setting-path-windows.md"
+            }
+          },
+          {
+            "title": "Configuring Waterproof Settings (Path)",
+            "when": "isMac && !hasRemoteServer",
+            "id": "configure-settings-mac",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "completionEvents": [
+              "onSettingChanged:waterproof.path"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/change-setting-path-mac.md"
+            }
+          },
+          {
+            "title": "Configuring Waterproof Settings (Path)",
+            "when": "!(isWindows || isMac) || hasRemoteServer",
+            "id": "configure-settings-linux",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "completionEvents": [
+              "onSettingChanged:waterproof.path"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/change-setting-path-linux.md"
             }
           },
           {

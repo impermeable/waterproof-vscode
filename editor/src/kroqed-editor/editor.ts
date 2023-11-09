@@ -17,6 +17,7 @@ import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
+import { createContextMenuHTML } from "./context-menu";
 import { initializeTacticCompletion } from "./autocomplete/tactics";
 
 // CSS imports
@@ -84,6 +85,32 @@ export class Editor {
 		if (userAgent.includes("Mac")) this._userOS = OS.MacOS;
 		if (userAgent.includes("X11")) this._userOS = OS.Unix;
 		if (userAgent.includes("Linux")) this._userOS = OS.Linux;
+
+		const theContextMenu = createContextMenuHTML(this);
+
+		
+		document.body.appendChild(theContextMenu);
+		
+		console.log(document.querySelector(".context-menu"));
+		// Setup the custom context menu
+		document.addEventListener("click", (ev) => {
+			// Handle a 'left mouse click'
+			// console.log("LMB");
+			theContextMenu.style.display = "none";
+		});
+
+		document.addEventListener("contextmenu", (ev) => {
+			// Handle a 'right mouse click'
+			// We call preventDefault to prevent the default context menu from showing
+			ev.preventDefault();
+			// After this we display our own context menu
+			const x: string = `${ev.pageX}px`; 
+			const y: string = `${ev.pageY}px`;
+			theContextMenu.style.position = "absolute"; 
+			theContextMenu.style.left = x;
+			theContextMenu.style.top = y;
+			theContextMenu.style.display = "block";
+		})
 	}
 
 	init(content: string, fileFormat: FileFormat, version: number = 1) {
@@ -217,6 +244,10 @@ export class Editor {
 			progressBarPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
+				"Mod-h": () => {
+					this.post({type: MessageType.command, body: "Help.", time: (new Date()).getTime()});
+					return true;
+				},
 				"Backspace": deleteSelection,
 				"Delete": deleteSelection,
 				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),

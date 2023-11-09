@@ -141,7 +141,7 @@
       {
         "title": "Standard Coq Syntax",
         "properties": {
-          "waterproof.coqSyntax": {
+          "waterproof.standardCoqSyntax": {
             "type": "boolean",
             "default": false,
             "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."

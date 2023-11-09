@@ -1,7 +1,6 @@
 import { Completion, CompletionContext, CompletionResult, CompletionSource, snippetCompletion } from "@codemirror/autocomplete";
-
-import tactics from "./tactics.json";
-import tacticsCoq from "./tacticsCoq.json";
+import tactics from "../../../../shared/completions/tactics.json";
+import tacticsCoq from "../../../../shared/completions/tacticsCoq.json";
 
 export function initializeTacticCompletion(useTacticsCoq: boolean = false) {
   TacticCompletion.initialize(useTacticsCoq); // Initialize the singleton instance

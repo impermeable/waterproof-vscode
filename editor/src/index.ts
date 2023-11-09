@@ -42,9 +42,15 @@ window.onload = () => {
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
-				const symbolUnicode = msg.body.symbolUnicode;
-				const symbolLaTeX = msg.body.symbolLatex;
-				theEditor.insertSymbol(symbolUnicode, symbolLaTeX);
+				const { symbolUnicode, symbolLatex } = msg.body;
+				if (msg.body.type === "tactics") {
+					// `symbolUnicode` stores the tactic template.
+					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
+					const template = symbolUnicode as string;
+					theEditor.handleSnippet(template);
+				} else {
+					theEditor.insertSymbol(symbolUnicode, symbolLatex);
+				}
 				break;
 			case MessageType.setAutocomplete:
 				// Handle autocompletion

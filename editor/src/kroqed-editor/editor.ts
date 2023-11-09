@@ -17,8 +17,8 @@ import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
-import { initializeTacticCompletion } from "./codeview/autocomplete/tactics";
 import { createContextMenuHTML } from "./context-menu";
+import { initializeTacticCompletion } from "./autocomplete/tactics";
 
 // CSS imports
 import "katex/dist/katex.min.css";
@@ -260,6 +260,43 @@ export class Editor {
 				"Mod-.": selectParentNode
 			})
 		];
+	}
+
+	handleSnippet(template: string) {
+		// FIXME: This is not supposed to be possible.
+		if (!this._view) return;
+
+		const view = this._view;
+		// Get the first selection.
+		const from = this._view.state.selection.from;
+		const to = this._view.state.selection.to;
+
+		// We need to figure out to which codemirror cell this insertion belongs.
+
+		const state = this._view.state;
+
+		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
+		if (!nodeViews) return;
+		const nodeViewsWithPositions = Array.from(nodeViews).map((codeblock) => {
+			return {
+				codeblock,
+				pos: codeblock._getPos()
+			}
+		});
+
+		let theView: CodeBlockView | undefined = undefined;
+		let pos = this._view.state.doc.content.size;
+		for(const obj of nodeViewsWithPositions) {
+			if (obj.pos === undefined) continue;
+			if(from - obj.pos < pos && obj.pos < from) {
+				pos = from - obj.pos;
+				theView = obj.codeblock;
+			}
+		}
+		if (!theView) return;
+		const insertionPosFrom 	= state.selection.$from.parentOffset;
+		const insertionPosTo 	= state.selection.$to.parentOffset;
+		theView.handleSnippet(template, insertionPosFrom, insertionPosTo);
 	}
 
 	/** Called on every selection update. */

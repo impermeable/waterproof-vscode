@@ -1,4 +1,4 @@
-import { defaultKeymap, indentWithTab } from "@codemirror/commands"
+import { indentWithTab } from "@codemirror/commands"
 import {
 	EditorView as CodeMirror, ViewUpdate, keymap as cmKeymap,
 	placeholder
@@ -9,7 +9,7 @@ import { PluginKey, TextSelection } from "prosemirror-state"
 import { Decoration, EditorView } from "prosemirror-view"
 import { SwitchableView } from "./SwitchableView"
 import { editorTheme } from "./EditorTheme"
-import { symbolCompletionSource } from "../../codeview/autocomplete"
+import { renderIcon, symbolCompletionSource } from "../../autocomplete"
 import { autocompletion } from "@codemirror/autocomplete"
 import { EmbeddedCodeMirrorEditor } from "../../embedded-codemirror"
 
@@ -45,13 +45,14 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 				cmKeymap.of([
 					indentWithTab,
 					...this.embeddedCodeMirrorKeymap(),
-					...defaultKeymap
 				]),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
 				placeholder("Empty..."),
 				autocompletion({
 					// In the markdown / coqdoc editing add the symbol and emoji completions.
-					override: [symbolCompletionSource]
+					override: [symbolCompletionSource],
+					icons: false,
+					addToOptions: [renderIcon]
 				}),
 				CodeMirror.lineWrapping,
 				editorTheme

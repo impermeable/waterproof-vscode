@@ -247,6 +247,10 @@ export class WebviewManager extends EventEmitter {
                 let mes = "File frozen due to corruption. Re-open the file. Error: " + message.body;
                 window.showErrorMessage(mes);
                 break;
+            case MessageType.command:
+                // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
+                this.onToolsMessage("commonExecute", {type: MessageType.command, body: "Help."});
+                break;
             default:
                 console.error(`Unrecognized message type ${message.type}, not handled by webview manager`);
                 break;
@@ -276,3 +280,5 @@ export class WebviewManager extends EventEmitter {
     }
 
 }
+
+

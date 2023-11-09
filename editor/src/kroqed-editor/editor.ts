@@ -17,6 +17,8 @@ import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
+import { createContextMenuHTML } from "./context-menu";
+import { initializeTacticCompletion } from "./autocomplete/tactics";
 
 // CSS imports
 import "katex/dist/katex.min.css";
@@ -83,6 +85,32 @@ export class Editor {
 		if (userAgent.includes("Mac")) this._userOS = OS.MacOS;
 		if (userAgent.includes("X11")) this._userOS = OS.Unix;
 		if (userAgent.includes("Linux")) this._userOS = OS.Linux;
+
+		const theContextMenu = createContextMenuHTML(this);
+
+		
+		document.body.appendChild(theContextMenu);
+		
+		console.log(document.querySelector(".context-menu"));
+		// Setup the custom context menu
+		document.addEventListener("click", (ev) => {
+			// Handle a 'left mouse click'
+			// console.log("LMB");
+			theContextMenu.style.display = "none";
+		});
+
+		document.addEventListener("contextmenu", (ev) => {
+			// Handle a 'right mouse click'
+			// We call preventDefault to prevent the default context menu from showing
+			ev.preventDefault();
+			// After this we display our own context menu
+			const x: string = `${ev.pageX}px`; 
+			const y: string = `${ev.pageY}px`;
+			theContextMenu.style.position = "absolute"; 
+			theContextMenu.style.left = x;
+			theContextMenu.style.top = y;
+			theContextMenu.style.display = "block";
+		})
 	}
 
 	init(content: string, fileFormat: FileFormat, version: number = 1) {
@@ -216,6 +244,10 @@ export class Editor {
 			progressBarPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
+				"Mod-h": () => {
+					this.post({type: MessageType.command, body: "Help.", time: (new Date()).getTime()});
+					return true;
+				},
 				"Backspace": deleteSelection,
 				"Delete": deleteSelection,
 				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),
@@ -228,6 +260,43 @@ export class Editor {
 				"Mod-.": selectParentNode
 			})
 		];
+	}
+
+	handleSnippet(template: string) {
+		// FIXME: This is not supposed to be possible.
+		if (!this._view) return;
+
+		const view = this._view;
+		// Get the first selection.
+		const from = this._view.state.selection.from;
+		const to = this._view.state.selection.to;
+
+		// We need to figure out to which codemirror cell this insertion belongs.
+
+		const state = this._view.state;
+
+		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
+		if (!nodeViews) return;
+		const nodeViewsWithPositions = Array.from(nodeViews).map((codeblock) => {
+			return {
+				codeblock,
+				pos: codeblock._getPos()
+			}
+		});
+
+		let theView: CodeBlockView | undefined = undefined;
+		let pos = this._view.state.doc.content.size;
+		for(const obj of nodeViewsWithPositions) {
+			if (obj.pos === undefined) continue;
+			if(from - obj.pos < pos && obj.pos < from) {
+				pos = from - obj.pos;
+				theView = obj.codeblock;
+			}
+		}
+		if (!theView) return;
+		const insertionPosFrom 	= state.selection.$from.parentOffset;
+		const insertionPosTo 	= state.selection.$to.parentOffset;
+		theView.handleSnippet(template, insertionPosFrom, insertionPosTo);
 	}
 
 	/** Called on every selection update. */
@@ -461,6 +530,9 @@ export class Editor {
 				const diagnostics = msg.body;
 				this.parseCoqDiagnostics(diagnostics);
 				break;
+            case MessageType.syntax:
+                initializeTacticCompletion(msg.body as boolean);
+                break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

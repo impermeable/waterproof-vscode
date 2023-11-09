@@ -147,6 +147,8 @@ export class Coqnitive implements Disposable {
         // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
 
+        // FIXME: Remove command handlers to their own location.
+
         this.registerCommand("openTutorial", () => {
             const fileName = "waterproof_tutorial.mv";
             const newURI = Uri.file(fileName).with({ scheme: 'untitled', path: fileName, fragment: "tutorial"});
@@ -154,13 +156,14 @@ export class Coqnitive implements Disposable {
         });
 
         this.registerCommand("pathSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.path");});
+        this.registerCommand("argsSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.args");});
         this.registerCommand("defaultPath", () => {
             let defaultValue: string | undefined;
             switch (process.platform) {
                 case "aix": defaultValue = undefined; break;
                 case "android": defaultValue = undefined; break;
                 // MACOS
-                case "darwin": defaultValue = undefined; break;
+                case "darwin": defaultValue = "/Applications/Waterproof_Background.app/Contents/Resources/bin/coq-lsp"; break;
                 case "freebsd": defaultValue = undefined; break;
                 case "haiku": defaultValue = undefined; break;
                 // LINUX
@@ -184,10 +187,32 @@ export class Coqnitive implements Disposable {
                         }, 100);
                     });
                 } catch (e) {
-                    console.error(e);
+                    console.error("Error in updating Waterproof.path setting:", e);
                 }
             }
-        })
+        });
+
+        this.registerCommand("defaultArgsMac", () => {
+            // If we are not on a mac platform, this is a no-op.
+            // if (process.platform !== "darwin") { window.showErrorMessage("Waterproof: This setting should only be used on Mac platforms."); return; }
+
+            const defaultArgs = [
+                "--ocamlpath=/Applications/Waterproof_Background.app/Contents/Resources/lib",
+                "--coqcorelib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq-core",
+                "--coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq"
+            ];
+            try {
+                workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
+                    setTimeout(() => {
+                        const changedTo = workspace.getConfiguration().get("waterproof.args");
+                        
+                        window.showInformationMessage(`Waterproof args setting succesfully updated!`);
+                    }, 100);
+                });
+            } catch (e) {
+                console.error("Error in updating Waterproof.args setting:", e);
+            }
+        });
     }
 
     /**

@@ -174,14 +174,26 @@
             }
           },
           {
-            "title": "Configuring Waterproof Settings",
+            "title": "Configuring Waterproof Settings (Path)",
             "id": "configure-settings-windows",
             "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": [
               "onSettingChanged:waterproof.path"
             ],
             "media": {
-              "markdown": "walkthrough-data/initial-setup/change-setting.md"
+              "markdown": "walkthrough-data/initial-setup/change-setting-path.md"
+            }
+          },
+          {
+            "title": "Configuring Waterproof Settings (Args)",
+            "when": "isMac",
+            "id": "configure-settings-args-mac",
+            "description": "Change the [Waterproof.Args](command:waterproof.argsSetting) setting.\n[Use Default](command:waterproof.defaultArgsMac)\n[Change Setting](command:waterproof.argsSetting)",
+            "completionEvents": [
+              "onSettingChanged:waterproof.args"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/change-setting-args.md"
             }
           },
           {
@@ -203,7 +215,7 @@
               "onCommand:waterproof.openTutorial"
             ],
             "media": {
-              "markdown": "walkthrough-data/initial-setup/restart.md"
+              "markdown": "walkthrough-data/initial-setup/tutorial.md"
             }
           }
         ]

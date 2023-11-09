@@ -1,0 +1,182 @@
+[
+    {
+        "label": "exists (*indent*) : (*term*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "exists ${(*indent*)} : ${(*term*)}."
+    },
+    {
+        "label": "intro.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "intro."
+    },
+    {
+        "label": "intros.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "intro."
+    },
+    {
+        "label": "intro (*indent*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "intro ${(*indent*)}."
+    },
+    {
+        "label": "intros (*indent*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "intros ${(*indent*)}."
+    },
+    {
+        "label": "intro until (*indent*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "intro until ${(*indent*)}."
+    },
+    {
+        "label": "intros until (*indent*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "intros until ${(*indent*)}."
+    },
+    {
+        "label": "split.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "split."
+    },
+    {
+        "label": "contradiction.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "contradiction."
+    },
+    {
+        "label": "contradiction (*one_term_with_bindings*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "contradiction ${(*one_term_with_bindings*)}."
+    },
+    {
+        "label": "destruct (*induction_clause*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "destruct ${(*induction_clause*)}."
+    },
+    {
+        "label": "destruct (*induction_clause*) as (*induction_principle*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "destruct ${(*induction_clause*)} as ${(*induction_principle*)}."
+    },
+    {
+        "label": "assert ((*indent*) : (*term*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "assert (${(*indent*)} : ${(*term*)})."
+    },
+    {
+        "label": "assert ((*indent*) := (*term*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "assert (${(*indent*)} := ${(*term*)})."
+    },
+    {
+        "label": "assert ((*one_term*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "assert ${(*one_term*)}."
+    },
+    {
+        "label": "auto.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "auto."
+    },
+    {
+        "label": "eauto.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "eauto."
+    },
+    {
+        "label": "induction (*induction_clause*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "induction ${(*induction_clause*)}."
+    },
+    {
+        "label": "induction (*induction_clause*) as (*induction_principle*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "induction ${(*induction_clause*)} as (*induction_principle*)."
+    },
+    {
+        "label": "induction (*induction_clause*) using (*induction_principle*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "induction ${(*induction_clause*)} using (*induction_principle*)."
+    },
+    {
+        "label": "refine (*one_term*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "refine ${(*one_term*)}."
+    },
+    {
+        "label": "enough ((*indent*) : (*term*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "enough (${(*indent*)} : ${(*term*)})."
+    },
+    {
+        "label": "enough (*one_term*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "enough ${(*one_term*)}."
+    },
+    {
+        "label": "rewrite (*oriented_rewriter*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "rewrite ${(*oriented_rewriter*)}."
+    },
+    {
+        "label": "apply (*one_term_with_bindings*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "apply ${(*one_term_with_bindings*)}."
+    },
+    {
+        "label": "apply (*one_term_with_bindings*) in (*indent*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "apply ${(*one_term_with_bindings*)} in (*indent*)."
+    },
+    {
+        "label": "unfold (*reference_occs*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "unfold ${(*reference_occs*)}."
+    },
+    {
+        "label": "unfold (*reference_occs*) in (*ocurrences*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "unfold ${(*reference_occs*)} in ${(*ocurrences*)}."
+    },
+    {
+        "label": "left.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "left."
+    },
+    {
+        "label": "right.",
+        "type": "type",
+        "detail": "tactic",
+        "template": "right."
+    }
+]

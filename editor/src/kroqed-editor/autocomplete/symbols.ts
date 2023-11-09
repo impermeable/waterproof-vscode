@@ -1,5 +1,5 @@
 import { Completion, CompletionContext, CompletionResult, CompletionSource } from "@codemirror/autocomplete";
-import symbols from "./symbols.json";
+import symbols from "../../../../shared/completions/symbols.json";
 
 // Completions for common mathematical symbols.
 const symbolCompletions: Completion[] = symbols;

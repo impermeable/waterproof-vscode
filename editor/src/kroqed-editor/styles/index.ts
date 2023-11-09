@@ -29,3 +29,6 @@ import "./spinner.css";
 
 // for the freeze effect skull
 import "./freeze.css";
+
+// For the symbol autocompletions:
+import "./autocomplete.css";

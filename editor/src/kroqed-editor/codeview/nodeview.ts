@@ -13,6 +13,7 @@ import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic } from "@codemirror/lint";
+import { Debouncer } from "./debouncer";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -29,6 +30,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
 	private _diags;
+
+	private debouncer: Debouncer;
 
 	// Compartment storing the linting information (needs to be in a comp. because of refreshing)
 	private _lintingCompartment: Compartment;
@@ -80,6 +83,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				placeholder("Empty code cell")
 			]
 		});
+
+		this.debouncer = new Debouncer(400, this.forceUpdateLinting.bind(this));
 
 		// Editors outer node is dom
 		this.dom = this._codemirror.dom;
@@ -176,7 +181,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				}
 			}]
 		});
-		this.forceUpdateLinting();		
+		this.debouncer.call();		
 	}
 
 	/**
@@ -186,10 +191,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private forceUpdateLinting() {
 		// Reconfigure the linting compartment (forces the linter to run again when editor idle)
 		this._codemirror.dispatch({
-			effects: this._lintingCompartment.reconfigure(linter(() => this._diags, {delay: 100}))
+			effects: this._lintingCompartment.reconfigure(linter(() => this._diags, {delay: 250}))
 		})
-		// Not necessary but we can force the linter to run straightaway, instead of waiting for `delay`
-		// forceLinting(this._codemirror);
 	}
 
 	/**
@@ -197,7 +200,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public clearCoqErrors() {
 		this._diags = [];
-		this.forceUpdateLinting();
+		this.debouncer.call();
 	}
 }
 

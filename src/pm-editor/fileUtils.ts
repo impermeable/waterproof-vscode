@@ -6,7 +6,7 @@ import { FileFormat } from "../../shared";
 /** Gets the file format from the text doc uri */
 export function getFormatFromExtension(doc: TextDocument): FileFormat {
     // Get the parts from uri
-    const uriParts = doc.uri.toString().split(".");
+    const uriParts = doc.uri.fsPath.split(".");
     // Get the extension
     const extension = uriParts[uriParts.length - 1];
     // Return the correct file format

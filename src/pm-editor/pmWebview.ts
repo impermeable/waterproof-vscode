@@ -1,11 +1,12 @@
 import { EventEmitter } from "stream";
-import { Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
+import { Disposable, EndOfLine, Position, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
 import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNumber } from "../../shared";
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
 import { SequentialEditor } from "./edit";
 import {getFormatFromExtension } from "./fileUtils";
+import { readFile } from "fs";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */

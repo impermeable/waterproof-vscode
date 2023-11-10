@@ -2,6 +2,13 @@
 
 The Waterproof vscode extension helps students learn how to write mathematical proofs.
 
+# Quick install instructions for Windows and Mac
+
+Install this extension and follow the installation instructions that pop up.
+
+---
+
+# More extensive installation instructions
 
 ## Installation on Windows
 

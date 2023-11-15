@@ -30,6 +30,7 @@ import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, delete
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
+import { checkPrePost, fixLessThanBug } from "./file-utils";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -128,7 +129,11 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = this.checkPrePost(this.fixLessThanBug(content));
+		let newContent = checkPrePost(fixLessThanBug(content, (msg: Message) => {
+			this.post(msg);
+		}), (msg: Message) => {
+			this.post(msg);
+		});
 		if (newContent !== content) version = version + 1;
 
 		let parsedContent = this._translator.toProsemirror(newContent);
@@ -485,44 +490,7 @@ export class Editor {
 			return ((low <= value.start) && (value.end <= high));
 		});
 	}
-
-	// TODO: Temporary fix for the bug that "<z" turns into an html tag.
-	fixLessThanBug(content: string): string {
-		const regexp = /<(?!input-area|hint)([\w\d]+)/g;
-		const matches = content.matchAll(regexp);
-		let newContent = content;
-		for (const match of matches) {
-			if (match.index === undefined) continue;
-			newContent = newContent.substring(0, match.index + 1) + " " + newContent.substring(match.index + 1);
-
-			let edit: DocChange = { startInFile: match.index+1, endInFile: match.index+1, finalText: " "};
-			this.post({type: MessageType.docChange, body: edit});
-		}
-		return newContent;
-	}
-
-
-	/**
-	 * If the file starts with a coqblock or ends with a coqblock this function adds a newline to the start for 
-	 * insertion purposes
-	 * @param content the content of the file
-	 */
-	checkPrePost(content: string): string {
-		let result = content
-		let edit1: DocChange = {startInFile: 0, endInFile: 0,finalText: ''};
-		let edit2: DocChange = {startInFile: content.length, endInFile: content.length, finalText: ''};
-		if (content.startsWith("```coq\n")) {
-			result = '\n' + result;
-			edit1.finalText = '\n';
-		} 
-		if (content.endsWith("\n```")) {
-			result = result + '\n';
-			edit2.finalText = '\n';
-		} 
-		let final: WrappingDocChange = { firstEdit: edit1, secondEdit: edit2};
-		if (edit1.finalText == '\n' || edit2.finalText == '\n') this.post({type: MessageType.docChange, body: final});
-		return result;
-	}
+	
 
 	/** Handle a message from vscode */
 	handleMessage(msg: Message) {

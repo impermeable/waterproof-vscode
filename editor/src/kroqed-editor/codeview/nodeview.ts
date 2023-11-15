@@ -14,6 +14,7 @@ import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, re
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
+import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -52,8 +53,27 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lintingCompartment = new Compartment;
 		this._diags = [];
 		
+		const outerView = this._outerView;
 
 		this._codemirror = new CodeMirror({
+			dispatch(tr, view) {
+				if (!tr.docChanged && tr.selection) {
+					// We explicitly allow selection only updates.
+					view.update([tr]);
+				} else {
+					const locked = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.locked;
+					if (locked) {
+						const pos = getPos();
+						if (pos === undefined) return;
+						const name = outerView.state.doc.resolve(pos).node(1).type.name;
+						if (name !== "input") {
+							// Not in an input area.
+							return;
+						}
+					}
+					view.update([tr]);
+				}
+			},
 			doc: this._node.textContent,
 			extensions: [
 				// Create the first linting compartment. 

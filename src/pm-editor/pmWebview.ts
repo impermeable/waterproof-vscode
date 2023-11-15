@@ -213,6 +213,51 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Apply new doc changes to the underlying file */
     private applyChangeToWorkspace(change: DocChange, edit: WorkspaceEdit) {
+
+        if (!(workspace.getConfiguration("waterproof").get("teacherMode") as boolean)) {
+            const text = this.document.getText();
+            const inputOpenTags = Array.from(text.matchAll(/<input-area>/g));
+            const inputCloseTags = Array.from(text.matchAll(/<\/input-area>/g));
+            const start = change.startInFile;
+            const end = change.endInFile;
+    
+    
+            const filteredOpen = inputOpenTags.filter(value => {
+                if (value.index === undefined) return false;
+                return value.index < start; 
+            });
+    
+            const filteredClose = inputCloseTags.filter(value => {
+                if (value.index === undefined) return false;
+                return value.index > end;
+            });
+    
+            if (filteredOpen.length === 0 || filteredClose.length === 0) { 
+                this.postMessage({
+                    type: MessageType.fatalError
+                });
+                return;
+            }
+    
+            const posOpen = filteredOpen[0].index as number;
+            const posClose = filteredClose[0].index as number;
+    
+            const found = inputCloseTags.find(value => {
+                if (value.index === undefined) return false;
+                return (value.index < posClose) && (value.index > posOpen);
+            });
+    
+            if (found) {
+                this.postMessage({
+                    type: MessageType.fatalError
+                })
+                return;
+            }
+    
+    
+        }
+        
+
         if (change.startInFile === change.endInFile) {
             edit.insert(
                 this.document.uri,

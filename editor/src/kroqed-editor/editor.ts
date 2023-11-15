@@ -540,6 +540,11 @@ export class Editor {
 		}
 	}
 
+	fatalError() {
+		if (!this._view) return;
+		this._view.dispatch(this._view.state.tr.setMeta(INPUT_AREA_PLUGIN_KEY, "ErrorMode"));
+	}
+
 	/**
 	 * Wrapper around `this._api.postMessage(msg: Message)`
 	 * @param message The message to post to the extension host

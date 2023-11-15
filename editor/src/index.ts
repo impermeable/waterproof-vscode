@@ -64,7 +64,7 @@ window.onload = () => {
 					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
 				break;
 			case MessageType.fatalError:
-				// TODO: show skull
+				theEditor.fatalError();
 				break;
 			default:
 				theEditor.handleMessage(msg);

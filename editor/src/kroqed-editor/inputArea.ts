@@ -1,5 +1,6 @@
 import { EditorState, Plugin, PluginKey, PluginSpec, Transaction } from 
 "prosemirror-state";
+import { ReplaceAroundStep, ReplaceStep } from "prosemirror-transform";
 
 /**
  * Interface describing the state of the input are plugin.
@@ -53,6 +54,25 @@ let InputAreaPluginSpec : PluginSpec<IInputAreaPluginState> = {
 			};
 		}
 	},
+
+    filterTransaction(tr, state) {
+        const locked = INPUT_AREA_PLUGIN_KEY.getState(state)?.locked;
+        if (!locked) return true;
+        let shouldBlock = false;
+        for (const step of tr.steps) {
+            if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
+                const { from, to } = step;
+                const nodeFrom = state.doc.resolve(from).node(1);
+                const nodeTo = state.doc.resolve(to).node(1);
+                if (nodeFrom.type.name !== "input" || nodeTo.type.name !== "input") {
+                    shouldBlock = true;
+                    break;
+                }
+            }
+        }
+        return !shouldBlock;
+    },
+    
 	props: {
         editable: (state) => {
             // Get locked and globalLock states from the plugin.

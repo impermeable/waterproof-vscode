@@ -128,11 +128,10 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = this.checkPrePost(content);
+		let newContent = this.checkPrePost(this.fixLessThanBug(content));
 		if (newContent !== content) version = version + 1;
 
 		let parsedContent = this._translator.toProsemirror(newContent);
-		
 		this._contentElem.innerHTML = parsedContent;
 		this._mapping = new TextDocMapping(parsedContent, version);
 		this.createProseMirrorEditor();
@@ -486,6 +485,22 @@ export class Editor {
 			return ((low <= value.start) && (value.end <= high));
 		});
 	}
+
+	// TODO: Temporary fix for the bug that "<z" turns into an html tag.
+	fixLessThanBug(content: string): string {
+		const regexp = /<(?!input-area|hint)([\w\d]+)/g;
+		const matches = content.matchAll(regexp);
+		let newContent = content;
+		for (const match of matches) {
+			if (match.index === undefined) continue;
+			newContent = newContent.substring(0, match.index + 1) + " " + newContent.substring(match.index + 1);
+
+			let edit: DocChange = { startInFile: match.index+1, endInFile: match.index+1, finalText: " "};
+			this.post({type: MessageType.docChange, body: edit});
+		}
+		return newContent;
+	}
+
 
 	/**
 	 * If the file starts with a coqblock or ends with a coqblock this function adds a newline to the start for 

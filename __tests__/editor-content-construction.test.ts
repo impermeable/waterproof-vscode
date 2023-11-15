@@ -47,6 +47,19 @@ test("TEMP: Add space between '<' and characters following it #4", () => {
     }]);
 });
 
+test("TEMP: Add space between '<' and characters following it #5", () => {
+    const pm = new PostManager();
+    expect(fixLessThanBug("<input-area>\n10<z\n</input-area>", (msg) => pm.post(msg))).toBe("<input-area>\n10< z\n</input-area>");
+    expect(pm.storage).toStrictEqual<Array<Message>>([{
+        type: MessageType.docChange, 
+        body: {
+            startInFile: 16, 
+            endInFile: 16, 
+            finalText: " "
+        }
+    }]);
+});
+
 test("TEMP: Leave <hint> untouched", () => {
     const pm = new PostManager();
     expect(fixLessThanBug("<hint>\n# Hint content\n</hint>", (msg) => pm.post(msg))).toBe("<hint>\n# Hint content\n</hint>");
@@ -59,14 +72,39 @@ test("TEMP: Leave <input-area> untouched", () => {
     expect(pm.storage).toStrictEqual<Array<Message>>([]);
 });
 
-test("TEMP: Add space between '<' and characters following it #5", () => {
+test("TEMP: Leave <br> in markdown untouched", () => {
     const pm = new PostManager();
-    expect(fixLessThanBug("<input-area>\n10<z\n</input-area>", (msg) => pm.post(msg))).toBe("<input-area>\n10< z\n</input-area>");
+    expect(fixLessThanBug("# Markdown\n<br>", (msg) => pm.post(msg))).toBe("# Markdown\n<br>");
+    expect(pm.storage).toStrictEqual<Array<Message>>([]);
+});
+
+test("TEMP: Leave <br> in markdown untouched #2", () => {
+    const pm = new PostManager();
+    expect(fixLessThanBug("# Markdown\n<br>\n10<z", (msg) => pm.post(msg))).toBe("# Markdown\n<br>\n10< z");
     expect(pm.storage).toStrictEqual<Array<Message>>([{
-        type: MessageType.docChange, 
+        type: MessageType.docChange,
         body: {
-            startInFile: 16, 
-            endInFile: 16, 
+            startInFile: 19, 
+            endInFile: 19, 
+            finalText: " "
+        }
+    }]);
+});
+
+test("TEMP: Leave <hr> in markdown untouched", () => {
+    const pm = new PostManager();
+    expect(fixLessThanBug("# Markdown\n<hr>", (msg) => pm.post(msg))).toBe("# Markdown\n<hr>");
+    expect(pm.storage).toStrictEqual<Array<Message>>([]);
+});
+
+test("TEMP: Leave <hr> in markdown untouched #2", () => {
+    const pm = new PostManager();
+    expect(fixLessThanBug("# Markdown\n<hr>\n10<z", (msg) => pm.post(msg))).toBe("# Markdown\n<hr>\n10< z");
+    expect(pm.storage).toStrictEqual<Array<Message>>([{
+        type: MessageType.docChange,
+        body: {
+            startInFile: 19, 
+            endInFile: 19, 
             finalText: " "
         }
     }]);

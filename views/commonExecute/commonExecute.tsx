@@ -213,7 +213,8 @@ export function CommonExecute() {
         <div className="info-panel-container">
             <div className="sentence">
                 <table>
-                    <tr>
+                    <tbody>
+                        <tr>
                         <td align='right'>Expand</td>
                         <td align='left'>
                             <div className="VSCodeTextField-container">
@@ -228,8 +229,10 @@ export function CommonExecute() {
                             </div>
                         </td>
                         <td></td>
-                    </tr>
-                    <tr>
+                        </tr>
+                    </tbody>
+                    <tbody>
+                        <tr>
                         <td align='right'>in</td>
                         <td align='left'>
                             <div className="VSCodeTextField-container">
@@ -248,8 +251,10 @@ export function CommonExecute() {
                                 <VSCodeButton onClick={handleExecute}>{'\u23F5'}</VSCodeButton>
                             </div>
                         </td>
-                    </tr>
-                    <tr>
+                        </tr>
+                    </tbody>
+                    <tbody>
+                        <tr>
                         <td>
                             <div className="sentence">
                                 {/* help button */}
@@ -258,8 +263,10 @@ export function CommonExecute() {
                         </td>
                         <td></td>
                         <td></td>
-                    </tr>
-                    <tr>
+                        </tr>
+                    </tbody>
+                    <tbody>
+                        <tr>
                         <td align='right'>Search</td>
                         <td align='left'>
                             <div className="VSCodeTextField-container">
@@ -279,7 +286,8 @@ export function CommonExecute() {
                                 <VSCodeButton id="search" onClick={handleSearch}><div>&#x1F50E;&#xFE0E;</div></VSCodeButton>
                             </div>
                         </td>
-                    </tr>
+                        </tr>
+                    </tbody>
                 </table>
 
             </div>
@@ -313,5 +321,7 @@ export function CommonExecute() {
     );
 
 }
+
+
 
 export default CommonExecute;

@@ -35,6 +35,12 @@ export class ProseMirrorWebview extends EventEmitter {
      */
     private _cachedMessages: Map<MessageType, Message>;
 
+    private _nonInputRegions: {
+        to: number, 
+        from: number, 
+        content: string
+     }[];
+
     /** Checks whether the document is currently being changed */
     get documentIsUpToDate() {
         return !this._workspaceEditor.isInProgress;
@@ -51,6 +57,12 @@ export class ProseMirrorWebview extends EventEmitter {
         this._cachedMessages = new Map();
         this.initWebview(extensionUri);
         this._document = doc;
+
+
+        // get all input areas. 
+        this._nonInputRegions = getNonInputRegions(doc.getText());
+
+        
     }
 
     /** Create a prosemirror webview */
@@ -213,49 +225,68 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Apply new doc changes to the underlying file */
     private applyChangeToWorkspace(change: DocChange, edit: WorkspaceEdit) {
-
-        if (!(workspace.getConfiguration("waterproof").get("teacherMode") as boolean)) {
-            const text = this.document.getText();
-            const inputOpenTags = Array.from(text.matchAll(/<input-area>/g));
-            const inputCloseTags = Array.from(text.matchAll(/<\/input-area>/g));
-            const start = change.startInFile;
-            const end = change.endInFile;
-    
-    
-            const filteredOpen = inputOpenTags.filter(value => {
-                if (value.index === undefined) return false;
-                return value.index < start; 
-            });
-    
-            const filteredClose = inputCloseTags.filter(value => {
-                if (value.index === undefined) return false;
-                return value.index > end;
-            });
-    
-            if (filteredOpen.length === 0 || filteredClose.length === 0) { 
-                this.postMessage({
-                    type: MessageType.fatalError
-                });
-                return;
+        if (!workspace.getConfiguration("waterproof").get("teacherMode") as boolean) {
+            // in student mode
+            // check whether the non input regions still have the same content. s
+            const nonInputRegions = getNonInputRegions(this._document.getText());
+            if (nonInputRegions.length !== this._nonInputRegions.length) {
+                // not good, somehow a non input region disappeared.
+                window.showErrorMessage("not good");
+            } else {
+                for (let i = 0; i < nonInputRegions.length; i ++) {
+                    // content of nonInputRegions[i] should match of this._nonInputRegions[i];
+                    if (nonInputRegions[i].content !== this._nonInputRegions[i].content) {
+                        window.showErrorMessage("very not good yes yes");
+                        break;
+                    }
+                }
             }
-    
-            const posOpen = filteredOpen[0].index as number;
-            const posClose = filteredClose[0].index as number;
-    
-            const found = inputCloseTags.find(value => {
-                if (value.index === undefined) return false;
-                return (value.index < posClose) && (value.index > posOpen);
-            });
-    
-            if (found) {
-                this.postMessage({
-                    type: MessageType.fatalError
-                })
-                return;
-            }
-    
-    
         }
+
+        // if (!(workspace.getConfiguration("waterproof").get("teacherMode") as boolean)) {
+        //     const text = this.document.getText();
+        //     const inputOpenTags = Array.from(text.matchAll(/<input-area>/g));
+        //     const inputCloseTags = Array.from(text.matchAll(/<\/input-area>/g));
+        //     const start = change.startInFile;
+        //     const end = change.endInFile;
+    
+    
+        //     const filteredOpen = inputOpenTags.filter(value => {
+        //         if (value.index === undefined) return false;
+        //         return value.index < start; 
+        //     });
+    
+        //     const filteredClose = inputCloseTags.filter(value => {
+        //         if (value.index === undefined) return false;
+        //         return value.index > end;
+        //     });
+    
+        //     if (filteredOpen.length === 0 || filteredClose.length === 0) { 
+        //         // this.postMessage({
+        //         //     type: MessageType.fatalError
+        //         // });
+        //         window.showErrorMessage("Waterproof recieved an edit outside of an input area.");
+        //         return;
+        //     }
+    
+        //     const posOpen = filteredOpen[0].index as number;
+        //     const posClose = filteredClose[0].index as number;
+    
+        //     const found = inputCloseTags.find(value => {
+        //         if (value.index === undefined) return false;
+        //         return (value.index < posClose) && (value.index > posOpen);
+        //     });
+    
+        //     if (found) {
+        //         // this.postMessage({
+        //         //     type: MessageType.fatalError
+        //         // });
+        //         window.showErrorMessage("Waterproof recieved an edit outside of an input area.");
+        //         return;
+        //     }
+    
+    
+        // }
         
 
         if (change.startInFile === change.endInFile) {
@@ -309,4 +340,57 @@ export class ProseMirrorWebview extends EventEmitter {
                 break;
         }
     }
+}
+
+function getNonInputRegions(doc: string) {
+        
+    // get all input areas: 
+    const inputOpenTags = Array.from(doc.matchAll(/<input-area>/g));
+    const inputCloseTags = Array.from(doc.matchAll(/<\/input-area>/g));
+
+    const fromString = (input: string) => {
+        return input === "<input-area>" ? "open" : "close";
+    }
+
+    const allTags = [...inputOpenTags, ...inputCloseTags].map((value) => {
+        // open     -> consider position at the start of tag. 
+        // close    -> consider position at the end of tag.
+        const type = fromString(value[0]);
+        switch (type) {
+            case "open": 
+                return {position: value.index as number + value[0].length, type}
+            case "close": 
+                return {position: value.index as number, type}
+        }
+        
+
+    }).sort((a, b) => a.position - b.position);
+
+
+    const pairsCombined = Array.from(
+        {length:allTags.length/2}, 
+        (_,i) => {
+            const open = allTags[2*i];
+            const close = allTags[2*i + 1];
+            // const content = docOnDisk.substring(open.position, close.position);
+            return {open, close};
+        }
+    );
+
+    // console.log(allTags, pairsCombined);
+
+    const outsideInputAreaRegions = Array.from({length: pairsCombined.length + 1}, (_, i) => {
+        if (i == 0) {
+            // special case
+            return { from: 0, to: pairsCombined[i].open.position }
+        } else if (i == pairsCombined.length) {
+            return { from: pairsCombined[i-1].close.position, to: doc.length }
+        } else {
+            return { from: pairsCombined[i-1].close.position, to: pairsCombined[i].open.position }
+        }
+    }).map(value => {
+        return {...value, content: doc.substring(value.from, value.to)}
+    });
+
+    return outsideInputAreaRegions;
 }

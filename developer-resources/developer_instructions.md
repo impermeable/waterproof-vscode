@@ -1,6 +1,4 @@
-# Coqnitive
-
-Version with some extra fixes for the client.
+# Waterproof
 
 ## Installing dependencies
 Run `npm install` or `npm i` in the [root](./) folder of the repository.

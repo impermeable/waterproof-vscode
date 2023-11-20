@@ -30,6 +30,7 @@ import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, delete
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
+import { checkPrePost, fixLessThanBug } from "./file-utils";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -128,11 +129,14 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = this.checkPrePost(content);
+		let newContent = checkPrePost(fixLessThanBug(content, (msg: Message) => {
+			this.post(msg);
+		}), (msg: Message) => {
+			this.post(msg);
+		});
 		if (newContent !== content) version = version + 1;
 
 		let parsedContent = this._translator.toProsemirror(newContent);
-		
 		this._contentElem.innerHTML = parsedContent;
 		this._mapping = new TextDocMapping(parsedContent, version);
 		this.createProseMirrorEditor();
@@ -486,28 +490,7 @@ export class Editor {
 			return ((low <= value.start) && (value.end <= high));
 		});
 	}
-
-	/**
-	 * If the file starts with a coqblock or ends with a coqblock this function adds a newline to the start for 
-	 * insertion purposes
-	 * @param content the content of the file
-	 */
-	checkPrePost(content: string): string {
-		let result = content
-		let edit1: DocChange = {startInFile: 0, endInFile: 0,finalText: ''};
-		let edit2: DocChange = {startInFile: content.length, endInFile: content.length, finalText: ''};
-		if (content.startsWith("```coq\n")) {
-			result = '\n' + result;
-			edit1.finalText = '\n';
-		} 
-		if (content.endsWith("\n```")) {
-			result = result + '\n';
-			edit2.finalText = '\n';
-		} 
-		let final: WrappingDocChange = { firstEdit: edit1, secondEdit: edit2};
-		if (edit1.finalText == '\n' || edit2.finalText == '\n') this.post({type: MessageType.docChange, body: final});
-		return result;
-	}
+	
 
 	/** Handle a message from vscode */
 	handleMessage(msg: Message) {

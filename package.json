@@ -40,6 +40,13 @@
     "onLanguage:coqmarkdown"
   ],
   "contributes": {
+    "iconThemes": [
+      {
+        "id": "waterproof-icons",
+        "label": "Waterproof",
+        "path": "./fileicons/waterproof-icon-theme.json"
+      }
+    ],
     "customEditors": [
       {
         "viewType": "coqEditor.coqEditor",

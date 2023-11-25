@@ -8,13 +8,11 @@ export function getFormatFromExtension(doc: TextDocument): FileFormat {
     // Get the parts from uri
     const uriParts = doc.uri.fsPath.split(".");
     // Get the extension
-    console.log(uriParts)
+    const fileName = doc.uri.fsPath.split("/");
     const extension = uriParts[uriParts.length - 1];
-    for (let i = 0; i < uriParts.length-1; i++) {
-        let substrings = [" ","-","(",")"]
-        if (substrings.some(v => uriParts[i].includes(v))) {
-            throw new Error("Filename can not include any of the following characters: \[space\],\-,\(,\)")
-        }
+    let substrings = [" ","-","(",")"]
+    if (substrings.some(v => fileName[fileName.length-1].includes(v))) {
+        throw new Error("Filename can not include any of the following characters: \[space\],\-,\(,\)")
     }
     // Return the correct file format
     if (extension === "mv") {

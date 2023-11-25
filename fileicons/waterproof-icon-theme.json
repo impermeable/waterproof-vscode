@@ -1,0 +1,10 @@
+{
+    "iconDefinitions": {
+        "_waterproof_sheet": {
+            "iconPath": "../resources/drop.png"
+        }
+    },
+    "fileExtensions": {
+        "mv": "_waterproof_sheet"
+    }
+}

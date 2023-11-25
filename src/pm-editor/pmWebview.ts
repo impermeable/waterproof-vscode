@@ -54,7 +54,13 @@ export class ProseMirrorWebview extends EventEmitter {
 
     private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
         super();
-        this._format = getFormatFromExtension(doc);
+        try {
+            this._format = getFormatFromExtension(doc);
+        } catch (error) {
+            console.error(error.message);
+            window.showErrorMessage(error.message);
+        }
+
         this._panel = webview;
         this._workspaceEditor.onFinish(() => {
             this.updateLineNumbers();

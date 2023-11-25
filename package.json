@@ -394,7 +394,7 @@
         }
       },
       {
-        "title": "Coq Editor",
+        "title": "Editor",
         "type": "object",
         "properties": {
           "waterproof.updateIgnores": {

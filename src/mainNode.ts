@@ -1,6 +1,6 @@
 import { ExtensionContext, WorkspaceConfiguration } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
-import { Coqnitive } from "./extension";
+import { Waterproof } from "./extension";
 import { CoqLspClient } from "./lsp-client/client";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
 
@@ -9,7 +9,7 @@ import { CoqLspClientFactory } from "./lsp-client/clientTypes";
  * functionality specified in the interface CoqFeatures
  *
  * @param clientOptions the options available for a LanguageClient (see vscode api)
- * @param wsConfig the workspace configuration of coqnitive
+ * @param wsConfig the workspace configuration of Waterproof
  * @returns an LSP client with the added functionality of `CoqFeatures`
  */
 const clientFactory: CoqLspClientFactory = (clientOptions: LanguageClientOptions, wsConfig: WorkspaceConfiguration) => {
@@ -18,7 +18,7 @@ const clientFactory: CoqLspClientFactory = (clientOptions: LanguageClientOptions
         args: wsConfig.args,
     };
     return new (CoqLspClient(LanguageClient))(
-        "coqnitive",
+        "waterproof",
         "Waterproof Document Checker",
         serverOptions,
         clientOptions,
@@ -27,7 +27,7 @@ const clientFactory: CoqLspClientFactory = (clientOptions: LanguageClientOptions
 
 
 export function activate(context: ExtensionContext): void {
-    let extension: Coqnitive = new Coqnitive(context, clientFactory);
+    let extension: Waterproof = new Waterproof(context, clientFactory);
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();

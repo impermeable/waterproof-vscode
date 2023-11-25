@@ -31,7 +31,7 @@ import { VersionChecker } from "./version-checker";
 import { readFile } from "fs";
 import { join as joinPath} from "path";
 import { homedir } from "os";
-import { WaterproofConfigHelper } from "./helpers";
+import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
 
 /**
  * Main extension class
@@ -178,8 +178,8 @@ export class Waterproof implements Disposable {
                 try {
                     workspace.getConfiguration().update("waterproof.path", defaultValue, ConfigurationTarget.Global).then(() => {
                         setTimeout(() => {
-                            const changedTo = workspace.getConfiguration().get("waterproof.path");
-                            window.showInformationMessage(`Waterproof Path setting succesfully updated to: "${changedTo}"`);
+                            WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.path.toString());
+                            window.showInformationMessage(`Waterproof Path setting succesfully updated!`);
                         }, 100);
                     });
                 } catch (e) {
@@ -200,7 +200,7 @@ export class Waterproof implements Disposable {
             try {
                 workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
                     setTimeout(() => {
-                        const changedTo = workspace.getConfiguration().get("waterproof.args");
+                        WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
                         
                         window.showInformationMessage(`Waterproof args setting succesfully updated!`);
                     }, 100);

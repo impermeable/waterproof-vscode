@@ -38,7 +38,7 @@ export function checkConflictingExtensions() {
  */
 export function excludeCoqFileTypes() {
     let activationConfig = workspace.getConfiguration();
-    let updateIgnores = activationConfig.get("coqnitive.updateIgnores") ?? true;
+    let updateIgnores = activationConfig.get("waterproof.updateIgnores") ?? true;
     if (updateIgnores) {
         let fexc: any = activationConfig.get("files.exclude");
         activationConfig.update("files.exclude", {

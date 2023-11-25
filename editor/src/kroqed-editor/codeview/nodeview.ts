@@ -25,7 +25,6 @@ import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	dom: HTMLElement;
 
-	// TODO:
 	private _lineNumberCompartment: Compartment;
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];

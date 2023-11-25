@@ -1,5 +1,5 @@
 import { Completion } from "@codemirror/autocomplete";
-import { Disposable, Position, TextDocument, languages, workspace } from "vscode";
+import { Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
@@ -41,6 +41,8 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
         readonly sentenceManager: SentenceManager;
         readonly fileProgressComponents: IFileProgressComponent[] = [];
+
+        readonly lspOutputChannel: OutputChannel;
 
         webviewManager: WebviewManager | undefined;
 
@@ -98,9 +100,13 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 this.fileProgressComponents.forEach(c => c.onProgress(params));
             }));
 
+            this.lspOutputChannel = window.createOutputChannel("Waterproof LSP Events (After Initialization)");
+
             // send proof statuses to editor when document checking is done
             this.disposables.push(this.onNotification(LogTraceNotification.type, params => {
-                // subscribing here prevents logs from being shown in the output?
+                // Print `params.message` to custom lsp output channel
+                this.lspOutputChannel.appendLine(params.message);
+                
                 if (params.message.includes("document fully checked")) {
                     this.onCheckingCompleted();
                 }

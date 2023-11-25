@@ -166,7 +166,7 @@ export class Editor {
 					if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
-							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update //TODO: Try and catch and set document to locked
+							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
 							this.post({type: MessageType.docChange, body: obj});
 						} catch (error) {
 							console.error(error.message);
@@ -267,17 +267,14 @@ export class Editor {
 	}
 
 	handleSnippet(template: string) {
-		// FIXME: This is not supposed to be possible.
-		if (!this._view) return;
-
-		const view = this._view;
+		const view = this._view!!;
 		// Get the first selection.
-		const from = this._view.state.selection.from;
-		const to = this._view.state.selection.to;
+		const from = view.state.selection.from;
+		const to = view.state.selection.to;
 
 		// We need to figure out to which codemirror cell this insertion belongs.
 
-		const state = this._view.state;
+		const state = view.state;
 
 		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
 		if (!nodeViews) return;
@@ -289,7 +286,7 @@ export class Editor {
 		});
 
 		let theView: CodeBlockView | undefined = undefined;
-		let pos = this._view.state.doc.content.size;
+		let pos = view.state.doc.content.size;
 		for(const obj of nodeViewsWithPositions) {
 			if (obj.pos === undefined) continue;
 			if(from - obj.pos < pos && obj.pos < from) {

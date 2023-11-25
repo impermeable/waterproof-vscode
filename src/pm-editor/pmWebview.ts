@@ -161,6 +161,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 <div id="editor" spellcheck="false">
                 </div>
             </article>
+            <div style="height: 50vh"></div>
             <!-- This div stores the editor content (not displayed) -->
             <div id="editor-content" style="display:none"></div>
         </body>

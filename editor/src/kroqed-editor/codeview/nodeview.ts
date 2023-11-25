@@ -14,6 +14,7 @@ import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, re
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
+import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -52,6 +53,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lintingCompartment = new Compartment;
 		this._diags = [];
 		
+		// Shadow this._outerView for use in the next function.
+		const outerView = this._outerView;
 
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
@@ -81,7 +84,40 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				coqSyntaxHighlighting(),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
 				placeholder("Empty code cell")
-			]
+			],
+			// We override the dispatch field to filter the transactions in the CodeMirror cells.
+			// We explicitly **allow** selection changes, so that students can select (and copy) non-input area code.
+			dispatch(tr, view) {
+				// TODO: deprecated according to reference manual? https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch 
+
+				if (!tr.docChanged && tr.selection) {
+					// In the case that the document was not changed **and** that we have a selection update
+					// we allow the transaction to update the state.
+					view.update([tr]);
+				} else {
+					// Figure out whether we are in teacher or student mode.
+					// This is a ProseMirror object, hence we need the prosemirror view (outerview) state.
+					const locked = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.locked;
+					if (locked === undefined) {
+						// if we could not get the locked state then we do not
+						// allow this transaction to update the view.
+						return;
+					}
+					
+					if (locked) {
+						// in student mode.
+						const pos = getPos();
+						if (pos === undefined) return;
+						// Resolve the position in the prosemirror document and get the node one level underneath the root.
+						// TODO: Assumption that `<input-area>`s only ever appear one level beneath the root node.
+						// TODO: Hardcoded node names.
+						const name = outerView.state.doc.resolve(pos).node(1).type.name;
+						if (name !== "input") return; // This node is not part of an input area.
+					}
+
+					view.update([tr]);
+				}
+			},
 		});
 
 		this.debouncer = new Debouncer(400, this.forceUpdateLinting.bind(this));

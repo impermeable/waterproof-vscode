@@ -24,7 +24,6 @@ import { Debouncer } from "./debouncer";
 export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	dom: HTMLElement;
 
-	// TODO:
 	private _lineNumberCompartment: Compartment;
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];

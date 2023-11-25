@@ -265,7 +265,10 @@ export class ProseMirrorWebview extends EventEmitter {
                 this._lastCorrectDocString
             )
         });
-        this.syncWebview();
+        // We save the document and call sync webview to make sure that the editor is up to date
+        this.document.save().then((value) => {
+            this.syncWebview();
+        });
     }
 
     /** Handle a doc change sent from prosemirror */
@@ -279,27 +282,25 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         });
 
-        // debugger;
         // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
         if (this._teacherMode || !this._enforceCorrectNonInputArea) {
             let foundDefect = false;
             const nonInputRegions = getNonInputRegions(this._document.getText());
             if (nonInputRegions.length !== this._nonInputRegions.length) { 
                 foundDefect = true;
-            }
-                
-
-            for (let i = 0; i < this._nonInputRegions.length; i++) {
-                if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
-                    foundDefect = true;
-                    break;
+            } else {
+                for (let i = 0; i < this._nonInputRegions.length; i++) {
+                    if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
+                        foundDefect = true;
+                        break;
+                    }
                 }
             }
 
             if (foundDefect) { 
                 showRestoreMessage(this.restore.bind(this));
             } else {
-                this._lastCorrectDocString = this.document.getText();
+                this._lastCorrectDocString = this._document.getText();
             }
         }
     }

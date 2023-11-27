@@ -42,10 +42,9 @@ class TacticCompletion {
 
   public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
     return new Promise((resolve, reject) => {
-        let before = context.matchBefore(/(?<=[ .\n\t\-\+\*]*)([^.\n\t\-\+\*]*)/gm);
+        let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
 
         if (!context.explicit && !before) resolve(null);
-        console.log(before)
         resolve({
             from: before ? before.from : context.pos,
             // non-null assertion operator "!" used to remove 'possibly null' error

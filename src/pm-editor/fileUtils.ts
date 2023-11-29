@@ -12,7 +12,7 @@ export function getFormatFromExtension(doc: TextDocument): FileFormat {
     const extension = uriParts[uriParts.length - 1];
     let substrings = [" ","-","(",")"]
     if (substrings.some(v => fileName[fileName.length-1].includes(v))) {
-        throw new Error("Filename can not include any of the following characters: \[space\],\-,\(,\)")
+        throw new Error(`The file \"${fileName[fileName.length-1]}\" cannot be opened, most likely because it either contains a space ' ', or one of the characters: \-,\(,\). Please rename the file.`)
     }
     // Return the correct file format
     if (extension === "mv") {

@@ -277,12 +277,17 @@
         }
       },
       {
-        "title": "Standard Coq Syntax",
+        "title": "Waterproof Use Case",
         "properties": {
           "waterproof.standardCoqSyntax": {
             "type": "boolean",
             "default": false,
             "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."
+          }, 
+          "waterproof.enforceCorrectNonInputArea": {
+            "type": "boolean", 
+            "default": true, 
+            "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
           }
         }
       },

@@ -2,7 +2,7 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.10",
+  "version": "0.9.13",
   "requiredCoqLspVersion": "==0.1.8",
   "requiredCoqWaterproofVersion": "==2.1.0",
   "contributors": [
@@ -40,6 +40,13 @@
     "onLanguage:coqmarkdown"
   ],
   "contributes": {
+    "iconThemes": [
+      {
+        "id": "waterproof-icons",
+        "label": "Waterproof",
+        "path": "./fileicons/waterproof-icon-theme.json"
+      }
+    ],
     "customEditors": [
       {
         "viewType": "coqEditor.coqEditor",
@@ -270,12 +277,17 @@
         }
       },
       {
-        "title": "Standard Coq Syntax",
+        "title": "Waterproof Use Case",
         "properties": {
           "waterproof.standardCoqSyntax": {
             "type": "boolean",
             "default": false,
             "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."
+          }, 
+          "waterproof.enforceCorrectNonInputArea": {
+            "type": "boolean", 
+            "default": true, 
+            "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
           }
         }
       },
@@ -394,7 +406,7 @@
         }
       },
       {
-        "title": "Coq Editor",
+        "title": "Editor",
         "type": "object",
         "properties": {
           "waterproof.updateIgnores": {

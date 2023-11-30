@@ -30,6 +30,7 @@ import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, delete
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
+import { checkPrePost, fixLessThanBug } from "./file-utils";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -128,11 +129,14 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = this.checkPrePost(content);
+		let newContent = checkPrePost(fixLessThanBug(content, (msg: Message) => {
+			this.post(msg);
+		}), (msg: Message) => {
+			this.post(msg);
+		});
 		if (newContent !== content) version = version + 1;
 
 		let parsedContent = this._translator.toProsemirror(newContent);
-		
 		this._contentElem.innerHTML = parsedContent;
 		this._mapping = new TextDocMapping(parsedContent, version);
 		this.createProseMirrorEditor();
@@ -162,7 +166,7 @@ export class Editor {
 					if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
-							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update //TODO: Try and catch and set document to locked
+							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
 							this.post({type: MessageType.docChange, body: obj});
 						} catch (error) {
 							console.error(error.message);
@@ -263,17 +267,14 @@ export class Editor {
 	}
 
 	handleSnippet(template: string) {
-		// FIXME: This is not supposed to be possible.
-		if (!this._view) return;
-
-		const view = this._view;
+		const view = this._view!!;
 		// Get the first selection.
-		const from = this._view.state.selection.from;
-		const to = this._view.state.selection.to;
+		const from = view.state.selection.from;
+		const to = view.state.selection.to;
 
 		// We need to figure out to which codemirror cell this insertion belongs.
 
-		const state = this._view.state;
+		const state = view.state;
 
 		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
 		if (!nodeViews) return;
@@ -285,7 +286,7 @@ export class Editor {
 		});
 
 		let theView: CodeBlockView | undefined = undefined;
-		let pos = this._view.state.doc.content.size;
+		let pos = view.state.doc.content.size;
 		for(const obj of nodeViewsWithPositions) {
 			if (obj.pos === undefined) continue;
 			if(from - obj.pos < pos && obj.pos < from) {
@@ -486,28 +487,7 @@ export class Editor {
 			return ((low <= value.start) && (value.end <= high));
 		});
 	}
-
-	/**
-	 * If the file starts with a coqblock or ends with a coqblock this function adds a newline to the start for 
-	 * insertion purposes
-	 * @param content the content of the file
-	 */
-	checkPrePost(content: string): string {
-		let result = content
-		let edit1: DocChange = {startInFile: 0, endInFile: 0,finalText: ''};
-		let edit2: DocChange = {startInFile: content.length, endInFile: content.length, finalText: ''};
-		if (content.startsWith("```coq\n")) {
-			result = '\n' + result;
-			edit1.finalText = '\n';
-		} 
-		if (content.endsWith("\n```")) {
-			result = result + '\n';
-			edit2.finalText = '\n';
-		} 
-		let final: WrappingDocChange = { firstEdit: edit1, secondEdit: edit2};
-		if (edit1.finalText == '\n' || edit2.finalText == '\n') this.post({type: MessageType.docChange, body: final});
-		return result;
-	}
+	
 
 	/** Handle a message from vscode */
 	handleMessage(msg: Message) {

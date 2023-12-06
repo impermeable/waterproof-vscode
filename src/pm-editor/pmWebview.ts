@@ -46,7 +46,7 @@ export class ProseMirrorWebview extends EventEmitter {
             this._format = getFormatFromExtension(doc);
         } catch (error) {
             console.error(error.message);
-            window.showErrorMessage(error.message);
+            window.showErrorMessage(error.message, { modal: true });
         }
 
         this._panel = webview;

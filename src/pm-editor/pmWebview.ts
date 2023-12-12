@@ -6,8 +6,6 @@ import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
 import { SequentialEditor } from "./edit";
 import {getFormatFromExtension } from "./fileUtils";
-import { readFile } from "fs";
-import { commands } from "vscode";
 
 const SAVE_AS = "Save As";
 import { WaterproofConfigHelper } from "../helpers";
@@ -21,7 +19,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private readonly _document: TextDocument;
 
     /** The file format of the doc associated with this ProseMirror instance */
-    private readonly _format: FileFormat;
+    private readonly _format: FileFormat = FileFormat.Unknown;
 
     /** The editor that appends changes to the document associated with this panel */
     private readonly _workspaceEditor = new SequentialEditor();

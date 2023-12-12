@@ -9,6 +9,7 @@ export class TextUpdate {
 
     /** This function is responsible for handling updates in prosemirror that happen exclusively as text edits and translating them to vscode text doc */
     static textUpdate(step: ReplaceStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
+
         // Determine operation type
         let type: OperationType = OperationType.replace;
         if (step.from == step.to) type = OperationType.insert;
@@ -56,25 +57,35 @@ export class TextUpdate {
 
         // Update the mapping to reflect change
         let newMap = new Map<number,StringCell>();
+
+        // Get offset we created
         let offset = getTextOffset(type,step);
-        // Loop through all the stringblocks
+
+        // Loop through all the stringblocks and update those after the edit
         for(let [key,value] of stringBlocks) {
             let newkey = key; let newvalue = structuredClone(value);
             if (key >= correctCellKey) {
+
+                // For keys after correct cell we add the offset to start 
                 if (key != correctCellKey) {
                     newvalue.startProse += offset;
                     newkey += offset;
                     newvalue.startText += offset;
                 }
+
+                // For keys in and after the correct cell to end
                 newvalue.endProse += offset;
                 newvalue.endText += offset;
             }
+
             newMap.set(newkey,newvalue);
         }
         
-
+        // Update the HTMLmaps
         let newHtmlMap = new Map<number,HtmlTagInfo>();
         let newHtmlMapS = new Map<number,HtmlTagInfo>();
+
+        // For the endTags
         for (let [key, value] of endHtmlMap) {
             let newkey = key; let newvalue = structuredClone(value);
             if (key > step.from) {
@@ -85,6 +96,7 @@ export class TextUpdate {
             newHtmlMap.set(newkey,newvalue);
         }
         
+        // For the startTags
         for (let [key, value] of startHtmlMap) {
             let newkey = key; let newvalue = structuredClone(value);
             if (key >= step.to) {

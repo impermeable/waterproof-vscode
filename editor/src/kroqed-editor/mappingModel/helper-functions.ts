@@ -66,6 +66,7 @@ export function parseFragment(frag: Fragment | undefined) : {proseOffset: number
     newTags = newTags.concat(inside.tags); 
     if(frag.firstChild?.type.name !== "text") newTags.push(end);
 
+    
     return {
         endtext: inside.endtext + end,
         starttext: start + inside.starttext,

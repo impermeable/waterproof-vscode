@@ -87,25 +87,34 @@ export class TextDocMapping {
 
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
+
         let correctCellKey = 0;
+
+        // Get correct key of the cell that contain the index
         for (let [key,value] of this.stringBlocks) {
             if (key > index) break;
             correctCellKey = key;
         }
         let targetCell: StringCell | undefined = this.stringBlocks.get(correctCellKey);
         if (targetCell === undefined) throw new Error(" The vscode document model index could not be found ");
+
+        // Return the correct index within the VSCODE document
         return (index - correctCellKey) + targetCell.startText;
     }
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
         let correctCellKey = 0;
+
+        // Get correct key of the cell that contain the index
         for (let [key,value] of this.invStringBlocks) {
             if (key > index) break;
             correctCellKey = key;
         }
         let targetCell: StringCell | undefined = this.invStringBlocks.get(correctCellKey);
         if (targetCell === undefined) throw new Error(" The prosemirror index could not be found ");
+
+        // Return the correct index within the PROSEMIRROR document
         return (index - correctCellKey) + targetCell.startProse;
     }
 
@@ -131,6 +140,8 @@ export class TextDocMapping {
 
         // Continue until the entire string has been parsed
         while(inputString.length > 0) { 
+
+            // Get the next HTMLtag in the input string
             const next: TagInformation = TextDocMapping.getNextHTMLtag(inputString);
             let nextCell: StringCell | undefined = undefined;
             
@@ -139,24 +150,36 @@ export class TextDocMapping {
 
             // Check whether `next` is a closing tag
             if (stack.length && stack[stack.length - 1].tag === next.content) {
+
+                // Get the most inner HTMLtag
                 let stackTag = stack.pop();
                 if (stackTag === undefined) throw new Error(" Stack returned undefined in initialization of vscode mapping");
+
+                // Create a cell
                 nextCell = { 
                     startProse: offsetProse, endProse: offsetProse + next.start, 
                     startText: offsetText, endText: offsetText + next.start,
                 };
-                if (next.content == "coqdoc") inCoqdoc = false;
+
+                // Distinction for math-display within coqdoc 
+                if (next.content == "coqdoc") inCoqdoc = true; // TODO: CHECK IF THIS BUGFIX WAS CORRECT!
                 if (next.content == "math-display" && !inCoqdoc) textCost += 1; // Two dollar signs outside coqdoc cells
+
                 textCost += stackTag.offsetPost; // Increment for the post newlines
-                textCost += getEndHtmlTagText(next.content).length;                
+                textCost += getEndHtmlTagText(next.content).length;
+
             } else { // Otherwise `next` opens a block
+
                 stack.push({ tag: next.content, offsetPost: next.postNumber}); // Push new tag to stack
+
                 // Add text offset based on tag
                 if (next.content == "hint") textCost += inputString.slice(next.start, next.end).length;
                 else textCost += getStartHtmlTagText(next.content).length;
 
+                // Increment for pre newlines
                 textCost += next.preNumber;
 
+                // Distinction for math-display within coqdoc 
                 if (next.content == "coqdoc") inCoqdoc = true;
                 if (next.content == "math-display" && !inCoqdoc) textCost += 1; // Two dollar signs outside coqdown cells
             }
@@ -174,7 +197,7 @@ export class TextDocMapping {
             // Add end information of this tag to mapping
             this.endHtmlMap.set(offsetProse,{ offsetText: offsetText, offsetProse: offsetProse, textCost: textCost});
 
-            // Check if the nextCell should be pushed
+            // Check if the nextCell should be pushed to stringblock (this means that it contains text)
             switch(next.content) {
                 case "markdown": case "coqcode": 
                 case "math-display": case "coqdown":
@@ -198,8 +221,7 @@ export class TextDocMapping {
             if (key > step.from) break;
             correctCellKey = key;
         }
-        //@ts-ignore
-        return step.to <= this.stringBlocks.get(correctCellKey)?.endProse;
+        return step.to <= this.stringBlocks.get(correctCellKey)!!.endProse;
     }
 
     /** Called whenever a step is made in the editor */
@@ -224,6 +246,7 @@ export class TextDocMapping {
         /** Update the inverse mapping */
         this.updateInvMapping();
 
+        // TODO: FINDOUT WHAT THIS DOES????
         if ('finalText' in result.result) {
             if(this.checkDocChange(result.result)) this._version++;
         } else {

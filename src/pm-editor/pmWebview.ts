@@ -7,6 +7,9 @@ import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
 import { SequentialEditor } from "./edit";
 import {getFormatFromExtension } from "./fileUtils";
 import { readFile } from "fs";
+import { commands } from "vscode";
+
+const SAVE_AS = "Save As";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -44,9 +47,9 @@ export class ProseMirrorWebview extends EventEmitter {
         super();
         try {
             this._format = getFormatFromExtension(doc);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error.message);
-            window.showErrorMessage(error.message, { modal: true });
+            window.showErrorMessage(error.message, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
         }
 
         this._panel = webview;
@@ -57,6 +60,10 @@ export class ProseMirrorWebview extends EventEmitter {
         this._cachedMessages = new Map();
         this.initWebview(extensionUri);
         this._document = doc;
+    }
+
+    private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {
+        if (value === SAVE_AS) commands.executeCommand("workbench.action.files.saveAs");
     }
 
     /** Create a prosemirror webview */

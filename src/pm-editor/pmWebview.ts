@@ -5,10 +5,10 @@ import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNum
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
 import { SequentialEditor } from "./edit";
-import {getFormatFromExtension } from "./fileUtils";
+import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
-import { WaterproofConfigHelper } from "../helpers";
+import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 
 export class ProseMirrorWebview extends EventEmitter {
@@ -19,7 +19,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private readonly _document: TextDocument;
 
     /** The file format of the doc associated with this ProseMirror instance */
-    private readonly _format: FileFormat = FileFormat.Unknown;
+    private readonly _format: FileFormat;
 
     /** The editor that appends changes to the document associated with this panel */
     private readonly _workspaceEditor = new SequentialEditor();
@@ -56,12 +56,16 @@ export class ProseMirrorWebview extends EventEmitter {
 
     private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
         super();
-        try {
-            this._format = getFormatFromExtension(doc);
-        } catch (error: any) {
-            console.error(error.message);
-            window.showErrorMessage(error.message, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
+
+        const parts = doc.uri.fsPath.split("/");
+        const fileName = parts[parts.length - 1];
+        if (isIllegalFileName(fileName)) {
+            const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "\-", "\(", "\)". Please rename the file.`
+            window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
+            WaterproofLogger.log("Error: Illegal file name encountered.");
         }
+
+        this._format = getFormatFromExtension(doc);
 
         this._panel = webview;
         this._workspaceEditor.onFinish(() => {

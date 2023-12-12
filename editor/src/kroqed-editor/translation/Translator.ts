@@ -2,6 +2,7 @@ import { Serializer } from "./types";
 import { Fragment, Node, Slice } from "prosemirror-model";
 import { translateMvToProsemirror } from "./toProsemirror";
 import { FileFormat } from "../../../../shared"
+import { testingTest } from "./testingTest";
 
 /** Class that handles the translation from .mv | .v to prosemirror and vice versa. */
 export class FileTranslator {
@@ -34,6 +35,9 @@ export class FileTranslator {
      * @returns A prosemirror compatible HTML document (as string).
      */
     public toProsemirror(inputDocument: string): string {
+
+        testingTest(inputDocument);
+
         switch (this._filef) {
             case FileFormat.MarkdownV:
                 return translateMvToProsemirror(inputDocument); // 

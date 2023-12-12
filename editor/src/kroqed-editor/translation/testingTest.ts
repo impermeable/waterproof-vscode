@@ -84,8 +84,17 @@ export function testingTest(inputDocument: string) {
     // We have the input and hint blocks at this point. 
     // Find the math_diplays and coq code blocks.
     const mathDisplayBlocks = createMathDisplayBlocks(inputDocument);
-    const coqCodeBlocks = createCoqBlocks(inputDocument);
+    const coqBlocks = createCoqBlocks(inputDocument);
 
+    // Sort the blocks
+    const sortedBlocks = sortBlocks([...inputAreaBlocks, ...hintBlocks, ...mathDisplayBlocks, ...coqBlocks]);
+    const macro = (input, f) => input.slice(1).map((v, i) => f(input.slice(i, i + 2)));
+    const ranges = macro(sortedBlocks, (blocks: Block[]) => {
+        const [blockA, blockB] = blocks;
+        console.log(blockA, blockB);
+        return {from: blockA.range.to, to: blockB.range.from};
+    });
+    console.log(ranges);
 }
 
 export function createMathDisplayBlocks(inputDocument: string) {
@@ -107,14 +116,6 @@ export function createCoqBlocks(inputDocument: string) {
     });
     return coqBlocks;
 }
-
-// // Extract the remaining document after the input area and hint blocks have been removed.
-// export function getRemainingAfterInputAndHint(docContent: string, sortedInputAndHints: Block[]) {
-//     const start = 0;
-//     const end = docContent.length;
-//     let remaining = docContent;
-
-// }
 
 const regexes = {
     coq: /```coq\n([\s\S]*?)\n```/g,

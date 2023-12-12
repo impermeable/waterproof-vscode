@@ -1,5 +1,5 @@
 import { text } from "../../editor/src/kroqed-editor/translation/prosemirror-document-helpers";
-import { BLOCK_NAME, createCoqBlocks, createMathDisplayBlocks, hintAndInputBlocks, isCoqBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock, sortBlocks } from "../../editor/src/kroqed-editor/translation/testingTest";
+import { BLOCK_NAME, createCoqBlocks, createMathDisplayBlocks, hintAndInputBlocks, isCoqBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock, sortBlocks, testingTest } from "../../editor/src/kroqed-editor/translation/testingTest";
 
 test("Identify input and hint blocks", () => {
     const document = "# Example\n<input-area>\n# Test input area\n</input-area>\n<hint title=\"hint-title-test\">\n# Test hint\n</hint>\n";
@@ -71,8 +71,8 @@ test("Parse then sort input areas and hint blocks #1", () => {
 
     const sorted = sortBlocks([ ...blocks.hintBlocks, ...blocks.inputAreaBlocks ]);
     expect(sorted.length).toBe(2);
-    expect(sorted[0].name).toBe(BLOCK_NAME.input_area);
-    expect(sorted[1].name).toBe(BLOCK_NAME.hint);
+    expect(isInputAreaBlock(sorted[0])).toBe(true);
+    expect(isHintBlock(sorted[1])).toBe(true);
 }); 
 
 test("Parse then sort input areas and hint blocks #2", () => {
@@ -124,7 +124,11 @@ test("Parse Coq blocks", () => {
 
     expect(blocks.length).toBe(1);
     expect(isCoqBlock(blocks[0])).toBe(true);
-    expect(blocks[0].content).toBe("\nLemma trivial.\n");
+    expect(blocks[0].content).toBe("Lemma trivial.");
     expect(blocks[0].range.from).toBe(10);
-    expect(blocks[0].range.to).toBe(34);
+    expect(blocks[0].range.to).toBe(35);
+});
+
+test("big boii", () => {
+    testingTest("# Example\n$$ \\frac{1}{3} $$\n$$ \\frac{1}{2} $$\n```coq\nLemma trivial.\n```");
 });

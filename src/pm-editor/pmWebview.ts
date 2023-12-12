@@ -10,6 +10,8 @@ import { readFile } from "fs";
 import { commands } from "vscode";
 
 const SAVE_AS = "Save As";
+import { WaterproofConfigHelper } from "../helpers";
+import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -29,6 +31,17 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** The latest linenumbers message */
     private _linenumber: LineNumber | undefined = undefined;
+
+    private _teacherMode: boolean;
+    private _enforceCorrectNonInputArea: boolean;
+    private _lastCorrectDocString: string;
+
+    /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
+    private _nonInputRegions: {
+        to: number, 
+        from: number, 
+        content: string
+     }[];
 
     /**
      * Collection of messages that were sent before, and should be resent if the editor
@@ -60,6 +73,12 @@ export class ProseMirrorWebview extends EventEmitter {
         this._cachedMessages = new Map();
         this.initWebview(extensionUri);
         this._document = doc;
+
+        this._nonInputRegions = getNonInputRegions(doc.getText());
+
+        this._teacherMode = WaterproofConfigHelper.teacherMode;
+        this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
+        this._lastCorrectDocString = doc.getText();
     }
 
     private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {
@@ -132,10 +151,14 @@ export class ProseMirrorWebview extends EventEmitter {
             if (e.affectsConfiguration("waterproof.teacherMode")) {
                 this.updateTeacherMode();
             }
-        }));
 
-        this._disposables.push(workspace.onDidChangeConfiguration(e => {
-            this.updateSyntaxMode();
+            if (e.affectsConfiguration("waterproof.standardCoqSyntax")) {
+                this.updateSyntaxMode();
+            }
+
+            if (e.affectsConfiguration("waterproof.enforceCorrectNonInputArea")) {
+                this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
+            }
         }));
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
@@ -211,9 +234,11 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Toggle the teacher mode */
     private updateTeacherMode() {
+        const mode = WaterproofConfigHelper.teacherMode;
+        this._teacherMode = mode;
         this.postMessage({
             type: MessageType.teacher,
-            body: workspace.getConfiguration("waterproof").get("teacherMode")
+            body: mode
         }, true);
     }
 
@@ -221,7 +246,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private updateSyntaxMode() {
         this.postMessage({
             type: MessageType.syntax,
-            body: workspace.getConfiguration("waterproof").get("standardCoqSyntax")
+            body: WaterproofConfigHelper.standardCoqSyntax
         }, true);
     }
 
@@ -247,6 +272,22 @@ export class ProseMirrorWebview extends EventEmitter {
         }
     }
 
+    // Restore the document to the last correct state, that is, a state for which the content 
+    //  outside of the <input-area> tags is correct.
+    private restore() {
+        this._workspaceEditor.edit(edit => {
+            edit.replace(
+                this.document.uri,
+                new Range(this._document.positionAt(0), this.document.positionAt(this.document.getText().length)),
+                this._lastCorrectDocString
+            )
+        });
+        // We save the document and call sync webview to make sure that the editor is up to date
+        this.document.save().then(() => {
+            this.syncWebview();
+        });
+    }
+
     /** Handle a doc change sent from prosemirror */
     private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
         this._workspaceEditor.edit(e => {
@@ -257,6 +298,28 @@ export class ProseMirrorWebview extends EventEmitter {
                 this.applyChangeToWorkspace(change, e);
             }
         });
+
+        // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
+        if (!this._teacherMode && this._enforceCorrectNonInputArea) {
+            let foundDefect = false;
+            const nonInputRegions = getNonInputRegions(this._document.getText());
+            if (nonInputRegions.length !== this._nonInputRegions.length) { 
+                foundDefect = true;
+            } else {
+                for (let i = 0; i < this._nonInputRegions.length; i++) {
+                    if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
+                        foundDefect = true;
+                        break;
+                    }
+                }
+            }
+
+            if (foundDefect) { 
+                showRestoreMessage(this.restore.bind(this));
+            } else {
+                this._lastCorrectDocString = this._document.getText();
+            }
+        }
     }
 
     /** Handle the messages received from prosemirror */

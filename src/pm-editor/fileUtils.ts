@@ -9,6 +9,7 @@ export function getFormatFromExtension(doc: TextDocument): FileFormat {
     const uriParts = doc.uri.fsPath.split(".");
     // Get the extension
     const extension = uriParts[uriParts.length - 1];
+
     // Return the correct file format
     if (extension === "mv") {
         return FileFormat.MarkdownV;
@@ -18,4 +19,13 @@ export function getFormatFromExtension(doc: TextDocument): FileFormat {
         // Unknown filed type this should not happen
         return FileFormat.Unknown;
     }
+}
+
+export function isIllegalFileName(fileName: string): boolean {
+    let substrings = [" ","-","(",")"]
+    if (substrings.some(v => fileName.includes(v))) {
+        return true;
+    }
+    // If we reach this return then that means we have not found any illegal characters in the file name.
+    return false;
 }

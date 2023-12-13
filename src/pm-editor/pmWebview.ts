@@ -5,8 +5,10 @@ import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNum
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
 import { SequentialEditor } from "./edit";
-import {getFormatFromExtension } from "./fileUtils";
-import { WaterproofConfigHelper } from "../helpers";
+import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
+
+const SAVE_AS = "Save As";
+import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 
 export class ProseMirrorWebview extends EventEmitter {
@@ -54,7 +56,17 @@ export class ProseMirrorWebview extends EventEmitter {
 
     private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
         super();
+
+        const parts = doc.uri.fsPath.split("/");
+        const fileName = parts[parts.length - 1];
+        if (isIllegalFileName(fileName)) {
+            const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "\-", "\(", "\)". Please rename the file.`
+            window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
+            WaterproofLogger.log("Error: Illegal file name encountered.");
+        }
+
         this._format = getFormatFromExtension(doc);
+
         this._panel = webview;
         this._workspaceEditor.onFinish(() => {
             this.updateLineNumbers();
@@ -69,6 +81,10 @@ export class ProseMirrorWebview extends EventEmitter {
         this._teacherMode = WaterproofConfigHelper.teacherMode;
         this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
         this._lastCorrectDocString = doc.getText();
+    }
+
+    private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {
+        if (value === SAVE_AS) commands.executeCommand("workbench.action.files.saveAs");
     }
 
     /** Create a prosemirror webview */

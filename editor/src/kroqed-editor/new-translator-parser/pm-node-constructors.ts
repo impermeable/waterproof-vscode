@@ -12,7 +12,34 @@ export const coqCode = (content: string) => {
     return TheSchema.nodes.coqcode.create({}, text(content));
 }
 
+const coqdocRegex = /\(\*\* ([\s\S]*?) \*\)/g;
+
 export const coq = (content: string) => {
+    // CAN CONTAIN MATH DISPLAYYYY
+    /*
+        Coq contains a sequence of coqcode and coqdoc nodes.
+        Eg.
+        ```coq
+        (* `regular' Coq comment *)
+        Lemma trivial.
+        
+        (** * Heading *)   
+        (** $ \text{math display} $ *)
+        (** % \text{math inline} % *)
+
+        Proof.
+        trivial.
+        Qed.
+        ```
+        excluding the ```coq and ``` at the beginning and end. 
+    */
+
+    // extract the coqdoc comments from the coq block.
+    const coqdocComments = content.matchAll(coqdocRegex);
+
+    // Then parse the contents of all the coq doc comments. 
+    
+
     // FIXME: not correct.
     return TheSchema.nodes.coq.create({}, coqCode(content));
 }

@@ -1,4 +1,5 @@
 import { CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock } from "./blocks";
+import { constructBlocks } from "./document-constructor";
 
 const regexes = {
     coq: /```coq\n([\s\S]*?)\n```/g,
@@ -60,3 +61,14 @@ export function createMarkdownBlocks(inputDocument: string, ranges: {from: numbe
     return markdownBlocks;
 }
 
+export function createInnerInputAreaBlocks(inputAreaContent: string) {
+    // Run the constructBlocks function again, but on the content of the input area, they can basically contain
+    // a new document, except for the hint and input area blocks.
+    return constructBlocks(inputAreaContent, true);
+}
+
+export function createInnerHintBlocks(hintContent: string) {
+    // Run the constructBlocks function again, but on the content of the hint, they can basically contain
+    // a new document, except for the hint and input area blocks.
+    return constructBlocks(hintContent, true);
+}

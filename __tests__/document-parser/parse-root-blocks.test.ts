@@ -92,5 +92,5 @@ test("Parse coqdoc comment", () => {
     // know whether that messes with the textdocmapping.
     const comment = "* Test\n$\\text{math display}$\n %\\text{math inline}%";
     const blocks = createCoqDoc(comment);
-    console.log(blocks);
+    // console.log(blocks);
 });

@@ -50,3 +50,9 @@ test("parse a coq block", () => {
     const blocks = constructBlocks("Lemma trivial.");
     
 });
+
+test("PARSE", () => {
+    const document = "# Example\n<input-area>\n# Test input area\n</input-area>\n<hint title=\"hint-title-test\">\n# Test hint\n</hint>\n$$ \\frac{1}{3} $$\n$$ \\frac{1}{2} $$\n```coq\nLemma trivial.\n```";
+    const blocks = constructBlocks(document);
+    console.log(blocks.map((block) => block.toProseMirror().toJSON()));
+});

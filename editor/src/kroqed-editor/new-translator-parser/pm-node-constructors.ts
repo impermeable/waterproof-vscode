@@ -1,4 +1,7 @@
 import { TheSchema } from "../kroqed-schema";
+import { Node as PNode } from "prosemirror-model";
+import { constructBlocks } from "./document-constructor";
+import { createInnerHintBlocks, createInnerInputAreaBlocks } from "./block-parsing";
 
 export const text = (content: string) => {
     return TheSchema.text(content);
@@ -41,7 +44,7 @@ export const coq = (content: string) => {
     
 
     // FIXME: not correct.
-    return TheSchema.nodes.coq.create({}, coqCode(content));
+    return TheSchema.nodes.coqblock.create({}, coqCode(content));
 }
 
 export const coqDown = (content: string) => {
@@ -53,5 +56,11 @@ export const mathDisplay = (content: string) => {
 }
 
 export const inputArea = (content: string) => {
+    const childNodes: PNode[] = createInnerInputAreaBlocks(content).map((block) => block.toProseMirror());
     return TheSchema.nodes.input.create({}, childNodes);
+}
+
+export const hint = (title: string, content: string) => {
+    const childNodes: PNode[] = createInnerHintBlocks(content).map((block) => block.toProseMirror());
+    return TheSchema.nodes.hint.create({title}, childNodes);
 }

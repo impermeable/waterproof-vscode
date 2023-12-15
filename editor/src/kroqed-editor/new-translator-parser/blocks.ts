@@ -1,5 +1,5 @@
 import { Node as PNode } from "prosemirror-model";
-import { coq, coqDown, markdown, mathDisplay, text } from "./pm-node-constructors";
+import { coq, coqDown, hint, inputArea, markdown, mathDisplay, text } from "./pm-node-constructors";
 
 export enum BLOCK_NAME {
     coq = "coq",
@@ -52,7 +52,7 @@ export class InputAreaBlock implements Block {
     constructor( public content: string, public range: BlockRange ) {};
 
     toProseMirror() {
-        return text(this.content);
+        return inputArea(this.content);
     }
 }
 
@@ -63,7 +63,7 @@ export class HintBlock implements Block {
     constructor( public content: string, public title: string, public range: BlockRange ) {};
 
     toProseMirror() {
-        return text(this.content);
+        return hint(this.title, this.content);
     }
 }
 

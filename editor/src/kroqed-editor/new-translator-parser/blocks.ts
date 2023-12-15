@@ -1,12 +1,13 @@
 import { Node as PNode } from "prosemirror-model";
-import { coq, markdown, mathDisplay, text } from "./pm-node-constructors";
+import { coq, coqDown, markdown, mathDisplay, text } from "./pm-node-constructors";
 
 export enum BLOCK_NAME {
     coq = "coq",
     math_display = "math_display", 
     input_area = "input_area",
     hint = "hint", 
-    markdown = "markdown"
+    markdown = "markdown",
+    coqdown = "coqdown"
 }
 
 interface BlockRange {
@@ -74,5 +75,17 @@ export class MarkdownBlock implements Block {
 
     toProseMirror() {
         return markdown(this.content);
+    }
+}
+
+export const isCoqDownBlock = (block: Block): block is CoqdownBlock => block.name === BLOCK_NAME.coqdown;
+
+export class CoqdownBlock implements Block {
+    public name = BLOCK_NAME.coqdown;
+
+    constructor( public content: string, public range: BlockRange ) {};
+
+    toProseMirror() {
+        return coqDown(this.content);
     }
 }

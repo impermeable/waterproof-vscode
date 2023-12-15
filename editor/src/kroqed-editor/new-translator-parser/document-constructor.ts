@@ -2,9 +2,16 @@ import { sortBlocks } from "./block-helpers";
 import { createHintBlocks, createInputBlocks, createMathDisplayBlocks, createCoqBlocks, createMarkdownBlocks } from "./block-parsing";
 import { Block } from "./blocks";
 
-export function constructBlocks(inputDocument: string) {
-    const hintBlocks = createHintBlocks(inputDocument);
-    const inputAreaBlocks = createInputBlocks(inputDocument);
+export function constructBlocks(inputDocument: string, skipHintAndInput: boolean = false) {
+    let hintBlocks: Block[] = [];
+    let inputAreaBlocks: Block[] = [];
+    if (!skipHintAndInput) {
+        hintBlocks = createHintBlocks(inputDocument);
+        inputAreaBlocks = createInputBlocks(inputDocument);
+    } else {
+        hintBlocks = [];
+        inputAreaBlocks = [];
+    }
 
     // We have the input and hint blocks at this point. 
     // Find the math_diplays and coq code blocks.

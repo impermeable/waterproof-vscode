@@ -1,5 +1,6 @@
 import { createCoqBlocks, createHintBlocks, createInputBlocks, createMarkdownBlocks, createMathDisplayBlocks } from "../../editor/src/kroqed-editor/new-translator-parser/block-parsing";
 import { isCoqBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/new-translator-parser/blocks";
+import { createCoqDoc } from "../../editor/src/kroqed-editor/new-translator-parser/inner-block-logic/coq-block";
 
 test("Identify input blocks", () => {
     const document = "# Example\n<input-area>\n# Test input area\n</input-area>\n";
@@ -84,4 +85,12 @@ test("Markdown blocks from ranges #2" , () => {
     expect(markdownBlocks.length).toBe(2);
     expect(markdownBlocks[0].content).toBe("# Title 1\n");
     expect(markdownBlocks[1].content).toBe("# Title 2");
+});
+
+test("Parse coqdoc comment", () => {
+    // TODO: We should probably remove the \n at the start and the end of the coqdown blocks, but I do not
+    // know whether that messes with the textdocmapping.
+    const comment = "* Test\n$\\text{math display}$\n %\\text{math inline}%";
+    const blocks = createCoqDoc(comment);
+    console.log(blocks);
 });

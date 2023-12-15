@@ -51,3 +51,7 @@ export const coqDown = (content: string) => {
 export const mathDisplay = (content: string) => {
     return TheSchema.nodes.math_display.create({}, text(content));
 }
+
+export const inputArea = (content: string) => {
+    return TheSchema.nodes.input.create({}, childNodes);
+}

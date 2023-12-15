@@ -31,6 +31,9 @@ export function constructBlocks(inputDocument: string, skipHintAndInput: boolean
     // Add last range if it exists
     if (sortedBlocks.length > 0 && sortedBlocks[sortedBlocks.length - 1].range.to < inputDocument.length) ranges = [...ranges, {from: sortedBlocks[sortedBlocks.length - 1].range.to, to: inputDocument.length}];
 
+    // In the case that we have markdown only we need to add them as well.
+    if (sortedBlocks.length === 0) ranges = [{from: 0, to: inputDocument.length}];
+
     const markdownBlocks = createMarkdownBlocks(inputDocument, ranges);
     const allBlocks = sortBlocks([...sortedBlocks, ...markdownBlocks]);
     return allBlocks;

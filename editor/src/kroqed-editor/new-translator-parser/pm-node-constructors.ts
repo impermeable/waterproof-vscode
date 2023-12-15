@@ -61,6 +61,8 @@ export const inputArea = (content: string) => {
 }
 
 export const hint = (title: string, content: string) => {
+    const innerBlocks = createInnerHintBlocks(content);
     const childNodes: PNode[] = createInnerHintBlocks(content).map((block) => block.toProseMirror());
+    console.log("CHILD NODES: ", childNodes, innerBlocks, content);
     return TheSchema.nodes.hint.create({title}, childNodes);
 }

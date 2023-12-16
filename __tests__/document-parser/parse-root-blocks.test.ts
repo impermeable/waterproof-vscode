@@ -1,5 +1,5 @@
 import { createCoqBlocks, createHintBlocks, createInputBlocks, createMarkdownBlocks, createMathDisplayBlocks } from "../../editor/src/kroqed-editor/new-translator-parser/block-parsing";
-import { isCoqBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/new-translator-parser/blocks";
+import { isCoqBlock, isCoqDownBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/new-translator-parser/blocks";
 import { createCoqDoc } from "../../editor/src/kroqed-editor/new-translator-parser/inner-block-logic/coq-block";
 
 test("Identify input blocks", () => {
@@ -92,5 +92,27 @@ test("Parse coqdoc comment", () => {
     // know whether that messes with the textdocmapping.
     const comment = "* Test\n$\\text{math display}$\n %\\text{math inline}%";
     const blocks = createCoqDoc(comment);
-    // console.log(blocks);
+
+    expect(blocks.length).toBe(3);
+    expect(isCoqDownBlock(blocks[0])).toBe(true);
+    expect(isMathDisplayBlock(blocks[1])).toBe(true);
+    expect(isCoqDownBlock(blocks[2])).toBe(true);
+
+    // TODO: This should be checked, since the newlines should or should not be included.
+    expect(blocks[0].content).toBe("* Test\n");
+    expect(blocks[1].content).toBe("\\text{math display}");
+    expect(blocks[2].content).toBe("\n %\\text{math inline}%");
+});
+
+test("Parse coqdoc comment only coqdown", () => {
+    // TODO: We should probably remove the \n at the start and the end of the coqdown blocks, but I do not
+    // know whether that messes with the textdocmapping.
+    const comment = "* Test";
+    const blocks = createCoqDoc(comment);
+
+    expect(blocks.length).toBe(1);
+    expect(isCoqDownBlock(blocks[0])).toBe(true);
+
+    // TODO: This should be checked, since the newlines should or should not be included.
+    expect(blocks[0].content).toBe("* Test");
 });

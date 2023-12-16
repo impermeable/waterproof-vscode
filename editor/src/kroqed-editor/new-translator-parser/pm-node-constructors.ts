@@ -2,6 +2,7 @@ import { TheSchema } from "../kroqed-schema";
 import { Node as PNode } from "prosemirror-model";
 import { constructBlocks } from "./document-constructor";
 import { createInnerHintBlocks, createInnerInputAreaBlocks } from "./block-parsing";
+import { createCoqDoc } from "./inner-block-logic/coq-block";
 
 export const text = (content: string) => {
     return TheSchema.text(content);
@@ -38,10 +39,15 @@ export const coq = (content: string) => {
     */
 
     // extract the coqdoc comments from the coq block.
-    const coqdocComments = content.matchAll(coqdocRegex);
+    const coqdocComments = Array.from(content.matchAll(coqdocRegex));
 
     // Then parse the contents of all the coq doc comments. 
-    
+    coqdocComments.map((coqdocComment) => {
+        if (coqdocComment.index === undefined) throw new Error("Index of coqdocComment is undefined");
+        const range = { from: coqdocComment.index, to: coqdocComment.index + coqdocComment[0].length };
+        const blocks = createCoqDoc(coqdocComment[1]);
+        console.log(blocks);
+    });
 
     // FIXME: not correct.
     return TheSchema.nodes.coqblock.create({}, coqCode(content));
@@ -61,8 +67,6 @@ export const inputArea = (content: string) => {
 }
 
 export const hint = (title: string, content: string) => {
-    const innerBlocks = createInnerHintBlocks(content);
     const childNodes: PNode[] = createInnerHintBlocks(content).map((block) => block.toProseMirror());
-    console.log("CHILD NODES: ", childNodes, innerBlocks, content);
     return TheSchema.nodes.hint.create({title}, childNodes);
 }

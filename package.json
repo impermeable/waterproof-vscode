@@ -113,6 +113,10 @@
       {
         "command": "waterproof.exportExerciseSheet",
         "title": "Waterproof: Save as exercise sheet"
+      },
+      {
+        "command": "waterproof.executeDevCommand",
+        "title": "Waterproof: execute test command"
       }
     ],
     "menus": {

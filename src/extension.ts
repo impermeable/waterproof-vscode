@@ -15,6 +15,7 @@ import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
 import { CoqLspClient, CoqLspClientConfig, CoqLspClientFactory, CoqLspServerConfig } from "./lsp-client/clientTypes";
 import { executeCommand } from "./lsp-client/commandExecutor";
+import { executeTestCommand, getResults } from "./lsp-client/devExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
@@ -143,6 +144,7 @@ export class Waterproof implements Disposable {
         this.registerCommand("toggle", this.toggleClient);
         this.registerCommand("stop", this.stopClient);
         this.registerCommand("exportExerciseSheet", this.exportExerciseSheet);
+        this.registerCommand("executeDevCommand", this.executeTestCommand);
 
         // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
@@ -294,6 +296,15 @@ export class Waterproof implements Disposable {
                 window.showInformationMessage(`Saved to: ${fileUri.fsPath}`);
             }
         }
+    }
+
+    /**
+     * Remove solutions from document and open save dialog for the solution-less file.
+     */
+    async executeTestCommand() {
+        const command = "Help.";
+        const response = executeTestCommand(this.client, command);
+        console.log(response);
     }
 
     /**

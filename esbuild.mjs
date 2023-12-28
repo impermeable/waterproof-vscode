@@ -111,6 +111,7 @@ var logView = viewBuild("./views/logbook/index.tsx")
 var executeView = viewBuild("./views/execute/index.tsx");
 var debugView = viewBuild("./views/debug/index.tsx");
 var commonExecuteView = viewBuild("./views/commonExecute/index.tsx");
+var expandDefinitionView = viewBuild("./views/expandDefinition/index.tsx");
 var symbolsView = viewBuild("./views/symbols/index.tsx");
 var executeView = viewBuild("./views/execute/index.tsx");
 var tacticsView = viewBuild("./views/tactics/index.tsx");

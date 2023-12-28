@@ -114,7 +114,8 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
             <body>
                 <div class="symbol-container">
                     <button class="symbol-button" id="goals">Goals</button>
-                    <button class="symbol-button" id="commonExecute">Expand definition | Help | Search</button>
+                    <button class="symbol-button" id="commonExecute">Help | Search</button>
+                    <button class="symbol-button" id="expandDefinition">Expand definition</button>
                     <button class="symbol-button" id="symbols">Symbols</button>
                     <button class="symbol-button" id="tactics">Tactics</button>
                     <button class="symbol-button" id="execute">Execute</button>
@@ -130,6 +131,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     const debugButton = document.getElementById('debug');
                     const executeButton = document.getElementById('execute');
                     const commonButton = document.getElementById('commonExecute');
+                    const expandButton = document.getElementById('expandDefinition');
                     const symbolsButton = document.getElementById('symbols');
                     const tacticsButton = document.getElementById('tactics');
 
@@ -156,6 +158,11 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     commonButton.addEventListener('click', () => {
                         // Handle commonExecute button click event by sending a message to vscode
                         vscode.postMessage({ command: 'commonExecute' });
+                    });
+
+                    expandButton.addEventListener('click', () => {
+                        // Handle expandDefinition button click event by sending a message to vscode
+                        vscode.postMessage({ command: 'expandDefinition' });
                     });
 
                     symbolsButton.addEventListener('click', () => {

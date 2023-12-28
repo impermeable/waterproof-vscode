@@ -4,14 +4,15 @@ import {
 import { CoqWebview, WebviewEvents, WebviewState } from "../coqWebview";
 import { MessageType } from "../../../shared";
 import { IExecutor } from "../../components";
+import { WebviewManagerEvents } from "../../webviewManager";
 
-export class CommonExecute extends CoqWebview implements IExecutor {
+export class ExpandDefinition extends CoqWebview implements IExecutor {
     // Initialize the data for the results
     private data: string[] = ['no results'];
 
     constructor(extensionUri: Uri) {
-        // Initialize the common execute panel with the extension Uri and the webview name
-        super(extensionUri, "commonExecute", true);
+        // Initialize the expand definition panel with the extension Uri and the webview name
+        super(extensionUri, "expandDefinition", true);
         this.readyPanel();
         // Set up an event listener for WebviewEvents.change event
         this.on(WebviewEvents.change, (e) => {
@@ -35,13 +36,10 @@ export class CommonExecute extends CoqWebview implements IExecutor {
     }
 
     setResults(results: string[]): void {
-        this.readyPanel();
-        this.activatePanel();
-        this.revealPanel();
         // Set the data property to the provided results
         this.data = results;        
         // Send a postMessage to the webview with the MessageType.command and the data
-        this.postMessage({ type: MessageType.command, body: this.data })
+        this.postMessage({ type: MessageType.command, body: this.data });
     }
 
 }

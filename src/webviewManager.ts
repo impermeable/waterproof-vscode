@@ -253,7 +253,7 @@ export class WebviewManager extends EventEmitter {
                 break;
             case MessageType.command:
                 // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
-                this.onToolsMessage("commonExecute", {type: MessageType.command, body: "Help."});
+                this.onToolsMessage("help", {type: MessageType.command, body: "Help."});
                 break;
             default:
                 console.error(`Unrecognized message type ${message.type}, not handled by webview manager`);

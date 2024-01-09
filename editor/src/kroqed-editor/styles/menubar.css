@@ -65,6 +65,7 @@ body {
     margin: 2px 2px 2px 2px;
     width: 40px;
 
+    /* min-width: 2.6rem; */
     min-width: 2rem;
     background-color: var(--button-background);
     color: var(--button-foreground);

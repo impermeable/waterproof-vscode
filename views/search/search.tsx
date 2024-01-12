@@ -80,7 +80,9 @@ export function Search() {
 
     //button press search
     const handleSearch = () => {
-        vscode.postMessage({time: date.getTime(), type: MessageType.command, body: `Search "${searchText}".`})
+        vscode.postMessage({time: date.getTime(), 
+                            type: MessageType.command, 
+                            body: `Search "${searchText.replace(/\.\s*$/s, '')}".`})
         setIsLoading(true);
     }
 

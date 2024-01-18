@@ -57,8 +57,10 @@ export class ProseMirrorWebview extends EventEmitter {
     private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
         super();
 
-        const parts = doc.uri.fsPath.split("/");
-        const fileName = parts[parts.length - 1];
+        var path = require('path')
+
+        const fileName = path.basename(doc.uri.fsPath)
+        
         if (isIllegalFileName(fileName)) {
             const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "\-", "\(", "\)". Please rename the file.`
             window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);

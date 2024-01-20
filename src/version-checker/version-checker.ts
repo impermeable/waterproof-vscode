@@ -67,7 +67,7 @@ export class VersionChecker {
 
         if (isVersionError(coqWaterproofResult) || isVersionError(coqResult)) {
             if (isVersionError(coqWaterproofResult)) {
-                this.informWaterproofLibNotFound();
+                this.informWaterproofLibNotFound(coqWaterproofResult);
             } else {
                 // TODO: Only check when default coq syntax is not set.
                 const coqWPversion = coqWaterproofResult.wpVersion;
@@ -157,8 +157,8 @@ export class VersionChecker {
     /**
      * Inform the user that we could not find the coq-waterproof library.
      */
-    private informWaterproofLibNotFound() {
-        const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.`;
+    private informWaterproofLibNotFound(err: any | VersionError) {
+        const message = `Waterproof\n\nWe could not find a required library.\n\nError Reason:\n ${err.reason}\nUse the button below to download a new installer.`;
         window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
     }
 

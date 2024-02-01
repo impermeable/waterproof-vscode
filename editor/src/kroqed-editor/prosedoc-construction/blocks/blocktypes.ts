@@ -41,3 +41,17 @@ export class CoqBlock implements Block {
         return null;
     }
 }
+
+export class MarkdownBlock implements Block {
+    public type = BLOCK_NAME.markdown;
+    public isNewLineOnly = false;
+
+    constructor( public stringContent: string, public range: BlockRange ) { 
+        if (stringContent === "\n") this.isNewLineOnly = true;
+    };
+
+    toProseMirror() {
+        // TODO
+        return null;
+    }
+}

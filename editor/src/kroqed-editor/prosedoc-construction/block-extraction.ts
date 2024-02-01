@@ -1,4 +1,5 @@
 import { CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
+import { MarkdownBlock } from "./blocks/blocktypes";
 
 const regexes = {
     coq: /```coq\n([\s\S]*?)\n```/g,
@@ -69,4 +70,17 @@ export function createCoqBlocks(inputDocument: string) {
         return new CoqBlock(coq[1], range);
     });
     return coqBlocks;
+}
+
+/**
+ * Create markdown blocks from document string.
+ * 
+ * Uses the ranges of the blocks to extract the markdown blocks.
+ */
+export function createMarkdownBlocks(inputDocument: string, ranges: {from: number, to: number}[]) {
+    const markdownBlocks = ranges.map((range) => {
+        const content = inputDocument.slice(range.from, range.to);
+        return new MarkdownBlock(content, range);
+    });
+    return markdownBlocks;
 }

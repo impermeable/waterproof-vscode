@@ -1,1 +1,1 @@
-export { createProseDocument } from "./construct-document";
+export { topLevelBlocks } from "./construct-document";

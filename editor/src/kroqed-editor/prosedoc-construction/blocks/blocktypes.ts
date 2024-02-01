@@ -5,6 +5,7 @@ export class InputAreaBlock implements Block {
     constructor( public stringContent: string, public range: BlockRange ) {};
 
     toProseMirror() {
+        // TODO
         return null;
     }
 }
@@ -16,6 +17,27 @@ export class HintBlock implements Block {
     constructor( public stringContent: string, public title: string, public range: BlockRange ) {};
 
     toProseMirror() {
+        // TODO
+        return null;
+    }
+}
+
+export class MathDisplayBlock implements Block {
+    public type = BLOCK_NAME.math_display;
+    constructor( public stringContent: string, public range: BlockRange ) {};
+
+    toProseMirror() {
+        // TODO
+        return null;
+    }
+}
+
+export class CoqBlock implements Block {
+    public type = BLOCK_NAME.coq;
+    constructor( public stringContent: string, public range: BlockRange ) {};
+
+    toProseMirror() {
+        // TODO
         return null;
     }
 }

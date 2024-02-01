@@ -1,3 +1,3 @@
 export { BlockRange, Block } from "./block";
 
-export { InputAreaBlock, HintBlock } from "./blocktypes";
+export { InputAreaBlock, HintBlock, CoqBlock, MathDisplayBlock } from "./blocktypes";

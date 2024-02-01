@@ -1,4 +1,4 @@
-import { HintBlock, InputAreaBlock } from "./blocks";
+import { CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
 
 const regexes = {
     coq: /```coq\n([\s\S]*?)\n```/g,
@@ -39,4 +39,34 @@ export function createHintBlocks(document: string) {
     });
 
     return hintBlocks;
+}
+
+/**
+ * Create math display blocks from document string.
+ * 
+ * Uses regexes to search for `$$`.
+ */
+export function createMathDisplayBlocks(inputDocument: string) {
+    const math_display = inputDocument.matchAll(regexes.math_display);
+    const mathDisplayBlocks = Array.from(math_display).map((math) => {
+        if (math.index === undefined) throw new Error("Index of math is undefined");
+        const range = { from: math.index, to: math.index + math[0].length };
+        return new MathDisplayBlock(math[1], range);
+    });
+    return mathDisplayBlocks;
+}
+
+/**
+ * Create coq blocks from document string.
+ * 
+ * Uses regexes to search for ```coq and ``` markers.	
+ */
+export function createCoqBlocks(inputDocument: string) {
+    const coq_code = inputDocument.matchAll(regexes.coq);
+    const coqBlocks = Array.from(coq_code).map((coq) => {
+        if (coq.index === undefined) throw new Error("Index of coq is undefined");
+        const range = { from: coq.index, to: coq.index + coq[0].length };
+        return new CoqBlock(coq[1], range);
+    });
+    return coqBlocks;
 }

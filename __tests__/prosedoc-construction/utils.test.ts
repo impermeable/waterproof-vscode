@@ -1,4 +1,5 @@
-import { iteratePairs, sortBlocks } from "../../editor/src/kroqed-editor/prosedoc-construction/utils";
+import { Block } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks";
+import { extractInterBlockRanges, iteratePairs, maskInputAndHints, sortBlocks } from "../../editor/src/kroqed-editor/prosedoc-construction/utils";
 
 test("Sort blocks #1", () => {
     const stringContent = "";
@@ -64,4 +65,57 @@ test("Iterate pairs (single element array)", () => {
     const expectedResult = [];
     const result = iteratePairs(input, (a, b) => b.length);
     expect(result).toEqual(expectedResult);
+});
+
+test("Mask input and hints #1", () => {
+    const inputDocument = "# Example\n<input-area>\n# Test input area\n</input-area>\n";
+    const blocks = [
+        {type: "input_area", range: {from: 10, to: 54}, stringContent: "# Test input area", toProseMirror: () => null}
+    ];
+
+    const maskedString = "# Example\n                                            \n";
+    expect(maskInputAndHints(inputDocument, blocks)).toEqual(maskedString);
+});
+
+test("Mask input and hints #2", () => {
+    const inputDocument = `<hint title="test">\nThis is a test hint\n<\\hint>\n# Example\n<input-area>\n# Test input area\n</input-area>\n`;
+    const blocks = [
+        {type: "hint", range: {from: 0, to: 47}, stringContent: "This is a test hint", toProseMirror: () => null},
+        {type: "input_area", range: {from: 58, to: 102}, stringContent: "# Test input area", toProseMirror: () => null}
+    ];
+
+    const maskedString = "                                               \n# Example\n                                            \n";
+    expect(maskInputAndHints(inputDocument, blocks)).toEqual(maskedString);
+});
+
+test("Extract inter-block ranges", () => {
+    const toProseMirror = () => null;
+    const type = "test";
+    const stringContent = "test";
+
+    const document = "Hello, this is a test document, I am testing this document. Test test test test."
+
+    const blocks: Block[] = [
+        { range: { from: 0, to: 10 }, type, stringContent, toProseMirror },
+        { range: { from: 15, to: 20 }, type, stringContent, toProseMirror },
+        { range: { from: 25, to: 30 }, type, stringContent, toProseMirror },
+    ];
+
+    const interBlockRanges = extractInterBlockRanges(blocks, document);
+
+    expect(interBlockRanges.length).toBe(3);
+    expect(interBlockRanges[0]).toEqual({ from: 10, to: 15 });
+    expect(interBlockRanges[1]).toEqual({ from: 20, to: 25 });
+    expect(interBlockRanges[2]).toEqual({ from: 30, to: document.length })
+});
+
+test("Extract inter-block ranges with no blocks", () => {
+    const document = "Hello, this is a test document, I am testing this document. Test test test test."
+
+    const blocks: Block[] = [];
+
+    const interBlockRanges = extractInterBlockRanges(blocks, document);
+
+    expect(interBlockRanges.length).toBe(1);
+    expect(interBlockRanges[0]).toEqual({ from: 0, to: document.length });
 });

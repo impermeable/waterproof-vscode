@@ -50,3 +50,11 @@ export const extractInterBlockRanges = (blocks: Array<Block>, inputDocument: str
 
     return ranges;
 }
+
+export function maskInputAndHints(inputDocument: string, blocks: Block[]): string {
+    let maskedString = inputDocument;
+    for (const block of blocks) {
+        maskedString = maskedString.substring(0, block.range.from) + " ".repeat(block.range.to - block.range.from) + maskedString.substring(block.range.to);
+    }
+    return maskedString;
+}

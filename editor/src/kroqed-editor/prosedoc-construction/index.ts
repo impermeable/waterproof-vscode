@@ -1,0 +1,1 @@
+export { createProseDocument } from "./construct-document";

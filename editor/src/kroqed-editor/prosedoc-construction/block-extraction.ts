@@ -1,5 +1,5 @@
 import { CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
-import { MarkdownBlock } from "./blocks/blocktypes";
+import { CoqDocBlock, CoqMarkdownBlock, MarkdownBlock } from "./blocks/blocktypes";
 
 const regexes = {
     coq: /```coq\n([\s\S]*?)\n```/g,
@@ -13,7 +13,7 @@ const regexes = {
  * 
  * Uses regexes to search for `<input-area>` and `</input-area>` tags.
  */
-export function createInputBlocks(document: string) {
+export function extractInputBlocks(document: string) {
     const input_areas = document.matchAll(regexes.input_area);
 
     const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
@@ -30,7 +30,7 @@ export function createInputBlocks(document: string) {
  * 
  * Uses regexes to search for `<hint>` and `</hint>` tags.
  */
-export function createHintBlocks(document: string) {
+export function extractHintBlocks(document: string) {
     const hints = document.matchAll(regexes.hint);
 
     const hintBlocks = Array.from(hints).map((hint) => {
@@ -47,7 +47,7 @@ export function createHintBlocks(document: string) {
  * 
  * Uses regexes to search for `$$`.
  */
-export function createMathDisplayBlocks(inputDocument: string) {
+export function extractMathDisplayBlocks(inputDocument: string) {
     const math_display = inputDocument.matchAll(regexes.math_display);
     const mathDisplayBlocks = Array.from(math_display).map((math) => {
         if (math.index === undefined) throw new Error("Index of math is undefined");
@@ -62,7 +62,7 @@ export function createMathDisplayBlocks(inputDocument: string) {
  * 
  * Uses regexes to search for ```coq and ``` markers.	
  */
-export function createCoqBlocks(inputDocument: string) {
+export function extractCoqBlocks(inputDocument: string) {
     const coq_code = inputDocument.matchAll(regexes.coq);
     const coqBlocks = Array.from(coq_code).map((coq) => {
         if (coq.index === undefined) throw new Error("Index of coq is undefined");
@@ -73,14 +73,46 @@ export function createCoqBlocks(inputDocument: string) {
 }
 
 /**
- * Create markdown blocks from document string.
+ * Create blocks based on ranges.
  * 
- * Uses the ranges of the blocks to extract the markdown blocks.
+ * Extracts the text content of the ranges and creates blocks from them.
  */
-export function createMarkdownBlocks(inputDocument: string, ranges: {from: number, to: number}[]) {
-    const markdownBlocks = ranges.map((range) => {
+export function extractBlocksUsingRanges<BlockType>(
+    inputDocument: string, 
+    ranges: {from: number, to: number}[], 
+    BlockConstructor: new (content: string, range: { from: number, to: number }) => BlockType ): BlockType[] 
+{
+    const blocks = ranges.map((range) => {
         const content = inputDocument.slice(range.from, range.to);
-        return new MarkdownBlock(content, range);
+        return new BlockConstructor(content, range);
     });
-    return markdownBlocks;
+    return blocks;
+}
+
+
+// Regex used for extracting the coqdoc comments from the coqdoc block.
+// Info: https://coq.inria.fr/doc/refman/using/tools/coqdoc.html
+const coqdocRegex = /\(\*\* ([\s\S]*?) \*\)/g;
+export function extractCoqDoc(input: string): CoqDocBlock[] {
+    const comments = Array.from(input.matchAll(coqdocRegex));
+    const coqDocBlocks = Array.from(comments).map((comment) => {
+        if (comment.index === undefined) throw new Error("Index of math is undefined");
+        const range = { from: comment.index, to: comment.index + comment[0].length};
+        return new CoqDocBlock(comment[1], range);
+    });
+    return coqDocBlocks;
+}
+
+// Regex for extracting the math display blocks from the coqdoc comments.
+// We need a different regex here, since coq markdown uses single dollar signs for math display :)
+const regexMathDisplay = /\$([\S\s]*?)\$/g;
+
+export function extractMathDisplayBlocksCoqDoc(input: string): MathDisplayBlock[] {
+    const mathDisplay = Array.from(input.matchAll(regexMathDisplay));
+    const mathDisplayBlocks = Array.from(mathDisplay).map((math) => {
+        if (math.index === undefined) throw new Error("Index of math is undefined");
+        const range = { from: math.index, to: math.index + math[0].length};
+        return new MathDisplayBlock(math[1], range);
+    });
+    return mathDisplayBlocks;
 }

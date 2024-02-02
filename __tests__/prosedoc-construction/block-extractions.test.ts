@@ -1,9 +1,9 @@
-import { createCoqBlocks, createHintBlocks, createInputBlocks, createMathDisplayBlocks } from "../../editor/src/kroqed-editor/prosedoc-construction/block-extraction";
-import { isCoqBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { extractCoqBlocks, extractCoqDoc, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/kroqed-editor/prosedoc-construction/block-extraction";
+import { isCoqBlock, isCoqDocBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
 
 test("Identify input blocks", () => {
     const document = "# Example\n<input-area>\n# Test input area\n</input-area>\n";
-    const blocks = createInputBlocks(document);
+    const blocks = extractInputBlocks(document);
 
     expect(blocks.length).toBe(1);
     expect(isInputAreaBlock(blocks[0])).toBe(true);
@@ -12,9 +12,20 @@ test("Identify input blocks", () => {
     expect(blocks[0].range.to).toBe(54);
 });
 
+test("Identity input blocks #2", () => {
+    const document = "\n<input-area>\n# Test input area\n</input-area>\n";
+    const blocks = extractInputBlocks(document);
+
+    expect(blocks.length).toBe(1);
+    expect(isInputAreaBlock(blocks[0])).toBe(true);
+    expect(blocks[0].stringContent).toBe("# Test input area");
+    expect(blocks[0].range.from).toBe(1);
+    expect(blocks[0].range.to).toBe(45);
+});
+
 test("Identify hint blocks", () => {
     const document = "# Example\n<hint title=\"hint-title-test\">\n# Test hint\n</hint>\n";
-    const blocks = createHintBlocks(document);
+    const blocks = extractHintBlocks(document);
 
     expect(blocks.length).toBe(1);
     expect(isHintBlock(blocks[0])).toBe(true);
@@ -26,7 +37,7 @@ test("Identify hint blocks", () => {
 
 test("Parse Math Display blocks", () => {
     const document = "# Example\n$$ \\frac{1}{2} $$\n";
-    const blocks = createMathDisplayBlocks(document);
+    const blocks = extractMathDisplayBlocks(document);
 
     expect(blocks.length).toBe(1);
     expect(isMathDisplayBlock(blocks[0])).toBe(true);
@@ -37,7 +48,7 @@ test("Parse Math Display blocks", () => {
 
 test("Parse Math Display blocks #2", () => {
     const document = "# Example\n$$ \\frac{1}{3} $$\n$$ \\frac{1}{2} $$\n";
-    const blocks = createMathDisplayBlocks(document);
+    const blocks = extractMathDisplayBlocks(document);
 
     expect(blocks.length).toBe(2);
     expect(isMathDisplayBlock(blocks[0])).toBe(true);
@@ -52,7 +63,7 @@ test("Parse Math Display blocks #2", () => {
 
 test("Parse Coq blocks #1", () => {
     const document = "# Example\n```coq\nLemma trivial.\n```";
-    const blocks = createCoqBlocks(document);
+    const blocks = extractCoqBlocks(document);
 
     expect(blocks.length).toBe(1);
     expect(isCoqBlock(blocks[0])).toBe(true);
@@ -63,7 +74,7 @@ test("Parse Coq blocks #1", () => {
 
 test("Parse Coq blocks #2", () => {
     const document = "```coq\nRequire Import ZArith.\n```\n# Example\n```coq\nLemma trivial.\n```";
-    const blocks = createCoqBlocks(document);
+    const blocks = extractCoqBlocks(document);
 
     expect(blocks.length).toBe(2);
     expect(isCoqBlock(blocks[0])).toBe(true);
@@ -76,3 +87,28 @@ test("Parse Coq blocks #2", () => {
     expect(blocks[1].range.from).toBe(44);
     expect(blocks[1].range.to).toBe(69);
 });
+
+test("Extract coqdoc blocks", () => {
+    const input = `(** * Header in coqdoc comment *)\nCoq code\n(** $\\text{math display}$ *)\nMore Coq code\n`;
+    const blocks = extractCoqDoc(input);
+
+    // console.log(blocks);
+
+    expect(blocks.length).toBe(2);
+    expect(isCoqDocBlock(blocks[0])).toBe(true);
+    expect(isCoqDocBlock(blocks[1])).toBe(true);
+
+    expect(blocks[0].stringContent).toBe("* Header in coqdoc comment");
+    expect(blocks[1].stringContent).toBe("$\\text{math display}$");
+});
+
+test("Extract math display from inside coqdoc comment", () => {
+    const input = `(** $\\text{math display}$ *)`;
+    const blocks = extractMathDisplayBlocksCoqDoc(input);
+
+    // console.log(blocks);
+
+    expect(blocks.length).toBe(1);
+    expect(isMathDisplayBlock(blocks[0])).toBe(true);
+    expect(blocks[0].stringContent).toBe("\\text{math display}");
+})

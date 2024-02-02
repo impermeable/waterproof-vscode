@@ -24,6 +24,6 @@ export interface Block {
 
     innerBlocks?: Block[];
 
-    toProseMirror(): ProseNode | null;
+    toProseMirror(): ProseNode;
     debugPrint(level: number): void;
 }

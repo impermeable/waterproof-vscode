@@ -15,8 +15,8 @@ export class InputAreaBlock implements Block {
     };
 
     toProseMirror() {
-        // TODO
-        return null;
+        const childNodes = this.innerBlocks.map(block => block.toProseMirror());
+        return inputArea(childNodes);
     }
 
     // Debug print function.
@@ -37,8 +37,9 @@ export class HintBlock implements Block {
     };
 
     toProseMirror() {
-        // TODO
-        return null;
+        // We need to construct a hint node with a title and inner blocks.
+        const childNodes = this.innerBlocks.map(block => block.toProseMirror());
+        return hint(this.title, childNodes);
     }
 
     // Debug print function.
@@ -54,8 +55,7 @@ export class MathDisplayBlock implements Block {
     constructor( public stringContent: string, public range: BlockRange ) {};
 
     toProseMirror() {
-        // TODO
-        return null;
+        return mathDisplay(this.stringContent);
     }
 
     // Debug print function.
@@ -73,8 +73,8 @@ export class CoqBlock implements Block {
     };
 
     toProseMirror() {
-        // TODO
-        return null;
+        const childNodes = this.innerBlocks.map(block => block.toProseMirror());
+        return coqblock(childNodes);
     }
 
     // Debug print function.
@@ -94,8 +94,7 @@ export class MarkdownBlock implements Block {
     };
 
     toProseMirror() {
-        // TODO
-        return null;
+        return markdown(this.stringContent);
     }
 
     // Debug print function.
@@ -113,8 +112,8 @@ export class CoqDocBlock implements Block {
     };
 
     toProseMirror() {
-        // TODO
-        return null;
+        const childNodes = this.innerBlocks.map(block => block.toProseMirror());
+        return coqDoc(childNodes);
     }
 
     // Debug print function.
@@ -131,8 +130,8 @@ export class CoqMarkdownBlock implements Block {
     constructor( public stringContent: string, public range: BlockRange ) {};
 
     toProseMirror() {
-        // TODO
-        return null;
+        // We need to do some preprocessing on the string content, since coq markdown uses % for inline math.
+        return coqMarkdown(this.stringContent);
     }
 
     // Debug print function.
@@ -147,8 +146,7 @@ export class CoqCodeBlock implements Block {
     constructor( public stringContent: string, public range: BlockRange ) {};
 
     toProseMirror() {
-        // TODO
-        return null;
+        return coqCode(this.stringContent);
     }
 
     // Debug print function.

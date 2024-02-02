@@ -36,8 +36,19 @@ export function topLevelBlocks(inputDocument: string) {
     const markdownBlocks = extractBlocksUsingRanges<MarkdownBlock>(inputDocument, markdownRanges, MarkdownBlock);
     
     // Note: Blocks parse their own inner blocks.
-    
+
     // 0.6 Sort the blocks and return.
     return sortBlocks([...blocks, ...markdownBlocks]);
 }
 
+// 1. Construct the prosemirror document from the top level blocks.
+export function constructDocument(blocks: Block[]): ProseNode {
+    const documentContent: ProseNode[] = blocks.map(block => block.toProseMirror());
+    return root(documentContent);
+}
+
+// 2. Construct the prosemirror document from the input document.
+export function createProseMirrorDocument(input: string): ProseNode {
+    const blocks = topLevelBlocks(input);
+    return constructDocument(blocks);
+}

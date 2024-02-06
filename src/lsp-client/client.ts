@@ -6,7 +6,9 @@ import {
     LogTraceNotification,
     Middleware,
     SymbolInformation,
-    VersionedTextDocumentIdentifier
+    VersionedTextDocumentIdentifier, 
+    TextDocumentIdentifier, 
+    SelectionRangeParams
 } from "vscode-languageclient";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
@@ -80,6 +82,12 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
                 const document = this.activeDocument;
                 if (!document) return;
+                const positions: Position[] = diagnostics.map(d => d.range.start);
+                const params: SelectionRangeParams = {
+                  textDocument: TextDocumentIdentifier.create(document.uri.toString()),
+                  positions: positions
+                };
+                console.log(document?.selectionRange(params));
                 const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => ({
                     message:        d.message,
                     severity:       d.severity,

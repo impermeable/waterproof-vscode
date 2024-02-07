@@ -1,1 +1,1 @@
-export { topLevelBlocks } from "./construct-document";
+export { topLevelBlocksMV, topLevelBlocksV, constructDocument,  createProseMirrorDocument } from "./construct-document";

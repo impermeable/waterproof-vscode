@@ -92,7 +92,8 @@ export function extractBlocksUsingRanges<BlockType>(
 
 // Regex used for extracting the coqdoc comments from the coqdoc block.
 // Info: https://coq.inria.fr/doc/refman/using/tools/coqdoc.html
-const coqdocRegex = /\(\*\* ([\s\S]*?) \*\)/g;
+// FIXME: This regex needs some attention. I'm especially unsure of the space before the closing `*)`.
+const coqdocRegex = /\(\*\*(?: |\n)([\s\S]*?)\*\)/g;
 export function extractCoqDoc(input: string): CoqDocBlock[] {
     const comments = Array.from(input.matchAll(coqdocRegex));
     const coqDocBlocks = Array.from(comments).map((comment) => {

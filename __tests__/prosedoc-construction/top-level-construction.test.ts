@@ -1,4 +1,4 @@
-import { topLevelBlocks } from "../../editor/src/kroqed-editor/prosedoc-construction";
+import { topLevelBlocksMV } from "../../editor/src/kroqed-editor/prosedoc-construction";
 import { isHintBlock, isInputAreaBlock, isMarkdownBlock, isMathDisplayBlock, isCoqBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
 
 const inputDocument = `# Example document
@@ -25,7 +25,7 @@ Random Markdown list:
 `;
 
 test("Parse top level blocks", () => {
-    const blocks = topLevelBlocks(inputDocument);
+    const blocks = topLevelBlocksMV(inputDocument);
 
     expect(blocks.length).toBe(9);
     expect(isMarkdownBlock(blocks[0])).toBe(true);

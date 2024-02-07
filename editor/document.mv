@@ -1,5 +1,5 @@
 #### Markdown content
-$\text{test?}$
+$\int_2^3 x dx$
 $$1028 + 23 = ?$$
 ```coq
 5<10.
@@ -18,5 +18,8 @@ input area test
 (* regular comment *)
 Compute 5 + 10.
 (** Some random text 
-$\text{display math}$ *)
+$\text{display math} $ *)
+(** 
+- Item 1
+- Item 2 *)
 ```

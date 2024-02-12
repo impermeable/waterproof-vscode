@@ -1,6 +1,6 @@
-import { Range } from "vscode";
-import { NotificationType, RequestType } from "vscode-languageclient";
-import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
+import { Range, Position } from "vscode";
+import { NotificationType, RequestType, WorkDoneProgressParams, PartialResultParams } from "vscode-languageclient";
+import { VersionedTextDocumentIdentifier, TextDocumentIdentifier } from "vscode-languageserver-types";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { CoqFileProgressKind, SimpleProgressInfo } from "../../shared";
@@ -9,6 +9,11 @@ import { CoqFileProgressKind, SimpleProgressInfo } from "../../shared";
  * LSP request to obtain the goals at a specific point in the doc.
  */
 export const goalRequestType = new RequestType<GoalRequest, GoalAnswer<PpString>, void>("proof/goals");
+
+/**
+ * LSP request to obtain the goals at a specific point in the doc.
+ */
+// export const selectionRange = new RequestType("textDocument/selectionRange");
 
 /**
  * LSP notification regarding the progress on processing the document server side
@@ -48,3 +53,30 @@ export function convertToSimple(info: CoqFileProgressProcessingInfo): SimpleProg
         kind: info.kind
     }
 }
+
+export interface SelectionRangeParams extends WorkDoneProgressParams,
+	PartialResultParams {
+	/**
+	 * The text document.
+	 */
+	textDocument: TextDocumentIdentifier;
+
+	/**
+	 * The positions inside the text document.
+	 */
+	positions: Position[];
+}
+
+export interface SelectionRange {
+	/**
+	 * The [range](#Range) of this selection range.
+	 */
+	range: Range;
+	/**
+	 * The parent selection range containing this range. Therefore
+	 * `parent.range` must contain `this.range`.
+	 */
+	parent?: SelectionRange;
+}
+
+export const selectionRangeRequest = new RequestType<SelectionRangeParams, SelectionRange[] | null, any>('textDocument/selectionRange');

@@ -4,6 +4,7 @@ import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractBlocksU
 import { Block } from "./blocks";
 import { CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock } from "./blocks/blocktypes";
 import { root } from "./blocks/schema";
+import { isMarkdownBlock } from "./blocks/typeguards";
 import { extractInterBlockRanges, maskInputAndHints, sortBlocks } from "./utils";
 import { Node as ProseNode } from "prosemirror-model";
 
@@ -38,8 +39,18 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
     
     // Note: Blocks parse their own inner blocks.
 
+    // 0A.6 Prune empty blocks.
+    const allBlocks = sortBlocks([...blocks, ...markdownBlocks]);
+    const prunedBlocks = allBlocks.filter(block => {
+        if (isMarkdownBlock(block)) {
+            if (block.isNewLineOnly) return false;
+            if (block.range.from === block.range.to) return false;
+        }
+        return true;
+    });
+
     // 0A.6 Sort the blocks and return.
-    return sortBlocks([...blocks, ...markdownBlocks]);
+    return prunedBlocks;
 }
 
 // 0B. Extract the top level blocks from the input document.
@@ -50,7 +61,7 @@ export function topLevelBlocksV(inputDocument: string): Block[] {
 
     // 0B.1 
     const range = { from: 0, to: inputDocument.length };
-    return [new CoqBlock(inputDocument, range)];
+    return [new CoqBlock(inputDocument, "", "", "", "", range)];
 }
 
 

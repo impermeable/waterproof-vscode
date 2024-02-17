@@ -1,8 +1,9 @@
-import { CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
+import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
 import { CoqDocBlock, CoqMarkdownBlock, MarkdownBlock } from "./blocks/blocktypes";
 
 const regexes = {
-    coq: /```coq\n([\s\S]*?)\n```/g,
+    // coq: /```coq\n([\s\S]*?)\n```/g,
+    coq: /(\r\n|\n)?^```coq(\r\n|\n)([^]*?)(\r\n|\n)?^```$(\r\n|\n)?/gm,
     math_display: /\$\$([\s\S]*?)\$\$/g,
     input_area: /<input-area>\n([\s\S]*?)\n<\/input-area>/g,
     hint: /<hint title="([\s\S]*?)">\n([\s\S]*?)\n<\/hint>/g
@@ -63,11 +64,30 @@ export function extractMathDisplayBlocks(inputDocument: string) {
  * Uses regexes to search for ```coq and ``` markers.	
  */
 export function extractCoqBlocks(inputDocument: string) {
-    const coq_code = inputDocument.matchAll(regexes.coq);
-    const coqBlocks = Array.from(coq_code).map((coq) => {
+
+
+    console.log("Input document: ", inputDocument);
+    const coq_code = Array.from(inputDocument.matchAll(regexes.coq));
+
+    console.log("Coq code: ", coq_code);
+
+    const coqBlocks = coq_code.map((coq) => {
         if (coq.index === undefined) throw new Error("Index of coq is undefined");
         const range = { from: coq.index, to: coq.index + coq[0].length };
-        return new CoqBlock(coq[1], range);
+        // TODO: Documentation for this: 
+        // - coq[0] the match;
+        // - coq[1] capture group 1, prePreWhite;
+        // - coq[2] ..., prePostWhite;
+        // - coq[3] ..., the content of the coq block;
+        // - coq[4] ..., postPreWhite;
+        // - coq[5] ..., postPostWhite;
+        const content = coq[3];
+        const prePreWhite = coq[1] == "\n" ? "newLine" : "";
+        const prePostWhite = coq[2] == "\n" ? "newLine" : "";
+        const postPreWhite = coq[4] == "\n" ? "newLine" : "";
+        const postPostWhite = coq[5] == "\n" ? "newLine" : "";
+
+        return new CoqBlock(content, prePreWhite, prePostWhite, postPreWhite, postPostWhite, range);
     });
     return coqBlocks;
 }
@@ -77,7 +97,7 @@ export function extractCoqBlocks(inputDocument: string) {
  * 
  * Extracts the text content of the ranges and creates blocks from them.
  */
-export function extractBlocksUsingRanges<BlockType>(
+export function extractBlocksUsingRanges<BlockType extends Block>(
     inputDocument: string, 
     ranges: {from: number, to: number}[], 
     BlockConstructor: new (content: string, range: { from: number, to: number }) => BlockType ): BlockType[] 
@@ -85,6 +105,8 @@ export function extractBlocksUsingRanges<BlockType>(
     const blocks = ranges.map((range) => {
         const content = inputDocument.slice(range.from, range.to);
         return new BlockConstructor(content, range);
+    }).filter(block => {
+        return block.range.from !== block.range.to;
     });
     return blocks;
 }
@@ -93,15 +115,30 @@ export function extractBlocksUsingRanges<BlockType>(
 // Regex used for extracting the coqdoc comments from the coqdoc block.
 // Info: https://coq.inria.fr/doc/refman/using/tools/coqdoc.html
 // FIXME: This regex needs some attention. I'm especially unsure of the space before the closing `*)`.
-const coqdocRegex = /\(\*\*(?: |\n)([\s\S]*?)\*\)/g;
+// const coqdocRegex = /\(\*\*(?: |\n)([\s\S]*?)\*\)/g;
+const coqdocRegex = /(\r\n|\n)?^\(\*\* ([^]*?)\*\)$(\r\n|\n)?/gm
 export function extractCoqDoc(input: string): CoqDocBlock[] {
+    console.log(input);
+
     const comments = Array.from(input.matchAll(coqdocRegex));
     const coqDocBlocks = Array.from(comments).map((comment) => {
         if (comment.index === undefined) throw new Error("Index of math is undefined");
         const range = { from: comment.index, to: comment.index + comment[0].length};
-        return new CoqDocBlock(comment[1], range);
+
+        const content = comment[2];
+        const preWhite = comment[1] == "\n" ? "newLine" : "";
+        const postWhite = comment[3] == "\n" ? "newLine" : "";
+
+        return new CoqDocBlock(content, preWhite, postWhite, range);
     });
-    return coqDocBlocks;
+
+
+    // TODO: Is there a better location for this?
+    const pruned = coqDocBlocks.filter(block => {
+        return block.range.from !== block.range.to; 
+    });
+
+    return pruned;
 }
 
 // Regex for extracting the math display blocks from the coqdoc comments.

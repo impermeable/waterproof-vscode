@@ -1,10 +1,11 @@
 import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
 import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
-import { DOMParser, ResolvedPos, Schema } from "prosemirror-model";
+import { DOMParser, ResolvedPos, Schema, Node as ProseNode } from "prosemirror-model";
 import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
+import { createProseMirrorDocument } from "./prosedoc-construction/construct-document";
 
 import { DocChange, FileFormat, LineNumber, Message, MessageType, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
 import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
@@ -129,34 +130,37 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = checkPrePost(fixLessThanBug(content, (msg: Message) => {
-			this.post(msg);
-		}), (msg: Message) => {
+		let newContent = checkPrePost(content, (msg: Message) => {
 			this.post(msg);
 		});
 		if (newContent !== content) version = version + 1;
 
 		let parsedContent = this._translator.toProsemirror(newContent);
-		this._contentElem.innerHTML = parsedContent;
+		// this._contentElem.innerHTML = parsedContent;
+		
+		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
+
 		this._mapping = new TextDocMapping(parsedContent, version);
-		this.createProseMirrorEditor();
+		this.createProseMirrorEditor(proseDoc);
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();
 
 		// notify extension that editor has loaded
 		this.post({ type: MessageType.editorReady });
+
+		console.log(JSON.stringify(this._view?.state.doc.toJSON()));
 	}
 
 	get state(): EditorState | undefined {
 		return this._view?.state;
 	}
 
-	createProseMirrorEditor() {
+	createProseMirrorEditor(proseDoc: ProseNode) {
 		// Shadow this variable _userOS.
 		const userOS = this._userOS;
 		let view = new EditorView(this._editorElem, {
-			state: this.createState(),
+			state: this.createState(proseDoc),
 			clipboardTextSerializer: (slice) => { return mathSerializer.serializeSlice(slice) },
 			dispatchTransaction: ((tr) => {
 				// Called on every transaction.
@@ -227,10 +231,10 @@ export class Editor {
 	}
 
 	/** Create initial prosemirror state */
-	createState(): EditorState {
+	createState(proseDoc: ProseNode): EditorState {
 		return EditorState.create({
 			schema: this._schema,
-			doc: DOMParser.fromSchema(this._schema).parse(this._contentElem),
+			doc: proseDoc,
 			plugins: this.createPluginsArray()
 		});
 	}

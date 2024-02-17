@@ -42,13 +42,13 @@ export const hint = (title: string, childNodes: ProseNode[]): ProseNode => {
 }
 
 /** Construct coq prosemirror node. */
-export const coqblock = (childNodes: ProseNode[]): ProseNode => {
-    return TheSchema.nodes.coqblock.create({}, childNodes);
+export const coqblock = (childNodes: ProseNode[], prePreWhite: string, postPostWhite: string): ProseNode => {
+    return TheSchema.nodes.coqblock.create({prePreWhite, postPostWhite}, childNodes);
 }
 
 /** Construct coqdoc prosemirror node. */
-export const coqDoc = (childNodes: ProseNode[]): ProseNode => {
-    return TheSchema.nodes.coqdoc.create({}, childNodes);
+export const coqDoc = (childNodes: ProseNode[], preWhite: string, postWhite: string): ProseNode => {
+    return TheSchema.nodes.coqdoc.create({preWhite, postWhite}, childNodes);
 }
 
 // ##### Root Node #####

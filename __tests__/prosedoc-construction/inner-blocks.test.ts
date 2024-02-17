@@ -5,14 +5,9 @@ test("Inner input area (and hint) blocks", () => {
     const inputAreaContent = "$$1028 + 23 = ?$$\n```coq\nCompute 1028 + 23.\n```";
     
     const blocks = createInputAndHintInnerBlocks(inputAreaContent);
-    
-    // FIXME: Should really be 2.
-    expect(blocks.length).toBe(3);
+    console.log(blocks);
+    expect(blocks.length).toBe(2);
     expect(isMathDisplayBlock(blocks[0])).toBe(true);
-    // FIXME: There is a markdown block here with only a newline.
-    expect(isMarkdownBlock(blocks[1])).toBe(true);
-    expect(blocks[1].stringContent).toBe("\n");
-    expect(isCoqBlock(blocks[2])).toBe(true);
 
     // Math display content:
     expect(blocks[0].stringContent).toBe("1028 + 23 = ?");

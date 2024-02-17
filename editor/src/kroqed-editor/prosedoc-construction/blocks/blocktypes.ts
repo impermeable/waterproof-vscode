@@ -68,13 +68,13 @@ export class CoqBlock implements Block {
     public type = BLOCK_NAME.COQ;
     public innerBlocks: Block[];
 
-    constructor( public stringContent: string, public range: BlockRange ) {
+    constructor( public stringContent: string, public prePreWhite: string, public prePostWhite: string, public postPreWhite: string, public postPostWhite : string, public range: BlockRange ) {
         this.innerBlocks = createCoqInnerBlocks(stringContent);
     };
 
     toProseMirror() {
         const childNodes = this.innerBlocks.map(block => block.toProseMirror());
-        return coqblock(childNodes);
+        return coqblock(childNodes, this.prePreWhite, this.postPostWhite);
     }
 
     // Debug print function.
@@ -107,13 +107,13 @@ export class CoqDocBlock implements Block {
     public type = BLOCK_NAME.COQ_DOC;
     public innerBlocks: Block[];
 
-    constructor( public stringContent: string, public range: BlockRange ) {
+    constructor( public stringContent: string, public preWhite: string, public postWhite: string, public range: BlockRange ) {
         this.innerBlocks = createCoqDocInnerBlocks(stringContent);
     };
 
     toProseMirror() {
         const childNodes = this.innerBlocks.map(block => block.toProseMirror());
-        return coqDoc(childNodes);
+        return coqDoc(childNodes, this.preWhite, this.postWhite);
     }
 
     // Debug print function.

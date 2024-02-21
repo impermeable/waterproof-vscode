@@ -51,7 +51,7 @@ export class VersionChecker {
             // window.showInformationMessage(message, { modal: true}, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
             
             
-            this.informWaterproofPathInvalid();
+            this.informWaterproofPathInvalid(version);
             
             return Promise.resolve(false);
         }
@@ -77,7 +77,7 @@ export class VersionChecker {
             }
 
             if (isVersionError(coqResult)) {
-                this.informWaterproofPathInvalid();
+                this.informWaterproofPathInvalid(coqResult);
             }
         } else {
             const wpV = coqWaterproofResult.wpVersion;
@@ -158,7 +158,7 @@ export class VersionChecker {
      * Inform the user that we could not find the coq-waterproof library.
      */
     private informWaterproofLibNotFound(err: any | VersionError) {
-        const message = `Waterproof\n\nWe could not find a required library.\n\nError Reason:\n ${err.reason}\nUse the button below to download a new installer.`;
+        const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.\n\nError Reason:\n${err.reason}`;
         window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
     }
 
@@ -195,8 +195,8 @@ export class VersionChecker {
     /**
      * Inform the user that the Waterproof path is invalid.
      */
-    private informWaterproofPathInvalid() {
-        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nFor more information on how to make the waterproof extension work, please see the installation instructions.";
+    private informWaterproofPathInvalid(err: any | VersionError) {
+        const message = `Waterproof\n\nWaterproof can not find everything it needs to properly function.\nFor more information on how to make the waterproof extension work, please see the installation instructions.\n\nError Reason:\n${err.reason}`;
         window.showErrorMessage(message, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
     }
 

@@ -77,7 +77,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             this.fileProgressComponents.push(this.sentenceManager);
             const diagnosticsCollection = languages.createDiagnosticCollection("coq");
             // send diagnostics to editor (for squiggly lines)
-            this.middleware.handleDiagnostics = (uri, diagnostics) => {
+            this.middleware.handleDiagnostics = async (uri, diagnostics) => {
                 diagnosticsCollection.set(uri, diagnostics);
 
                 const document = this.activeDocument;
@@ -87,37 +87,49 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                   textDocument: TextDocumentIdentifier.create(document.uri.toString()),
                   positions: positions
                 };
-                this.sendRequest(selectionRangeRequest, params).then(ranges => {
-                if (!ranges) return;
-                // Process each diagnostic with the corresponding range from the ranges array
-                const positionedDiagnostics = diagnostics.map((d, index) => {
-                    const selectionRange = ranges[index].range;
-                    // Convert it to a Range instance
-                    const newRangeInstance = new Range(
-                      new Position(selectionRange.start.line, selectionRange.start.character),
-                      new Position(selectionRange.end.line, selectionRange.end.character)
-                    );
-                    console.log(d.range);
-                    d.range = newRangeInstance;
-                    console.log(d.range);
-                    console.log("------");
-                    return {
-                        message: d.message,
-                        severity: d.severity,
-                        startOffset: document.offsetAt(d.range.start),
-                        endOffset: document.offsetAt(d.range.end)
-                    };
-                });
+                try {
+                    const ranges = await this.sendRequest(selectionRangeRequest, params);
+                    if (!ranges) return;
+                    // Process each diagnostic with the corresponding range from the ranges array
+                    const positionedDiagnostics = diagnostics.map((d, index) => {
+                        const selectionRange = ranges[index].range;
+                        // Convert it to a Range instance
+                        const newRangeInstance = new Range(
+                        new Position(selectionRange.start.line, selectionRange.start.character),
+                        new Position(selectionRange.end.line, selectionRange.end.character)
+                        );
+                        console.log(d.range);
+                        d.range = newRangeInstance;
+                        console.log(d.range);
+                        console.log("------");
+                        return {
+                            message: d.message,
+                            severity: d.severity,
+                            startOffset: document.offsetAt(d.range.start),
+                            endOffset: document.offsetAt(d.range.end)
+                        };
 
-                this.webviewManager!.postAndCacheMessage(document, {
+                        
+                    });
+                
+                    this.webviewManager!.postAndCacheMessage(document, {
                         type: MessageType.diagnostics,
                         body: {positionedDiagnostics, version: document.version}
                     });
+                } catch (reason) {
+                    console.log(">> This would throw");
+                    return;
+                }
+                
+                // .then(ranges => {
+                
 
-                }).catch(error => {
-                console.error("Error fetching selection ranges:", error);
-                // Handle any errors that occur during the request
-                });}
+
+            }
+                // ).catch(error => {
+                // console.error("Error fetching selection ranges:", error);
+                // // Handle any errors that occur during the request
+                // });}
 
 
             // call each file progress component when the server has processed a part

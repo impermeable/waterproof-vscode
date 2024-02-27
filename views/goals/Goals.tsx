@@ -26,9 +26,6 @@ function Goal({ goal }: GoalP) {
       FormatPrettyPrint.adjustBreaks($(ref.current));
     }
     // See Pfff.v:17160 for tests.
-    if (tyRef.current) {
-      tyRef.current.scrollIntoView();
-    }
   });
 
   return (
@@ -109,18 +106,8 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
 
   return (
     <div>
-      {/* uses GoalsList to show the goals as a list within a stack */}
-      <GoalsList
-        goals={goals}
-        header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
-        show_on_empty={false}
-        pos={pos}
-        textDoc={textDoc}
-      />
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* recursively calls itself to get the different level of goals */}
-        <StackGoals idx={idx + 1} stack={stack} pos={pos} textDoc={textDoc} />
-      </div>
+      <Box summary={`Remaining subproofs/steps (some statements/cases remain to be shown)`} pos={pos} textDox={textDoc}>
+      </Box>
     </div>
   );
 }
@@ -151,24 +138,6 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
       {/* stacking goals that are on different levels */}
       <div style={{ marginLeft: "0.5ex" }}>
         <StackGoals idx={0} stack={goals.stack} pos={pos} textDoc={textDoc} />
-      </div>
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* a list for the goals that are on the shelf */}
-        <GoalsList
-          goals={goals.shelf}
-          header={"Shelf"}
-          show_on_empty={false} // these goals are not shown if they do not exist
-          pos={pos}
-          textDoc={textDoc}
-        />
-        {/* a list for the goals that are given up */}
-        <GoalsList 
-          goals={goals.given_up}
-          header={"Given Up"}
-          show_on_empty={false} // these goals are not shown if they do not exist
-          pos={pos}
-          textDoc={textDoc}
-        />
       </div>
     </div>
   );

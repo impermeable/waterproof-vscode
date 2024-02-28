@@ -1,7 +1,7 @@
 ---
 name: New Bug Report
 about: Notify the Waterproof developers about a bug.
-title: "[Bug] "
+title: "[Bug] Title"
 labels: bug
 assignees: ''
 

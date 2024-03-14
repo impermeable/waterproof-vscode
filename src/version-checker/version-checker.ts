@@ -206,7 +206,7 @@ export class VersionChecker {
     }
 
     /**
-     * Handle the options for the invalid waterproof path message.z
+     * Handle the options for the invalid waterproof path message.
      * @param value -
      */
     private handleInvalidPath(value: typeof OPEN_INSTRUCTIONS | undefined) {

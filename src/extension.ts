@@ -32,6 +32,8 @@ import { readFile } from "fs";
 import { join as joinPath} from "path";
 import { homedir } from "os";
 import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
+import { exec } from "child_process"
+import { resolveSoa } from "dns";
 
 /**
  * Main extension class
@@ -208,6 +210,51 @@ export class Waterproof implements Disposable {
             } catch (e) {
                 console.error("Error in updating Waterproof.args setting:", e);
             }
+        });
+
+        this.registerCommand("autoInstall", () => {
+            let cmnd: string | undefined;
+            switch (process.platform) {
+                case "aix": cmnd = undefined; break;
+                case "android": cmnd = undefined; break;
+                // MACOS
+                case "darwin": cmnd = undefined; break;
+                case "freebsd": cmnd = undefined; break;
+                case "haiku": cmnd = undefined; break;
+                // LINUX
+                case "linux": cmnd = `sudo apt-get install opam\nopam init\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17\nopam install coq-waterproof`; break;
+                case "openbsd": cmnd = undefined; break;
+                case "sunos": cmnd = undefined; break;
+                // WINDOWS
+                case "win32": cmnd = undefined; break;
+                case "cygwin": cmnd = undefined; break;
+                case "netbsd": cmnd = undefined; break;
+            }
+
+            if (cmnd === undefined) {
+                window.showInformationMessage("Waterproof has no automatic installation process for this platform, please refer to the walktrough page.");
+            } else {
+                this.autoInstall(cmnd)
+            }
+        });
+    }
+
+    /**
+     * Attempts to install all required libraries
+     * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
+     */
+    private async autoInstall(command: string): Promise<Boolean> {
+        return new Promise((resolve, reject) => {
+            console.log("Attempting to install libraries on linux")
+            exec(command, (err, stdout, stderr) => {
+                console.log("Beginning")
+                if (err) {
+                    console.log("Install Failed")
+                } 
+                console.log("Install Success")
+                resolve(true)
+                // Add better error handling
+            });
         });
     }
 

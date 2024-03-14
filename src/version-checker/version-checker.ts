@@ -14,6 +14,7 @@ function isVersionError(input: any | VersionError): input is VersionError {
 }
 
 const DOWNLOAD_INSTALLER = "Download Installer";
+const AUTO_INSTALL = "Automatically Install"; //Consider a clearer message
 const OPEN_INSTRUCTIONS = "Installation Instructions";
 const OPEN_README = "Open Readme";
 
@@ -159,7 +160,7 @@ export class VersionChecker {
      */
     private informWaterproofLibNotFound() {
         const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.`;
-        window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
     }
 
     /**
@@ -189,7 +190,11 @@ export class VersionChecker {
      * @param value -
      */
     private handleDownloadInstaller(value: typeof DOWNLOAD_INSTALLER | undefined) {
-        if (value === DOWNLOAD_INSTALLER) env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
+        if (value === DOWNLOAD_INSTALLER){
+            env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
+        } else if (value === AUTO_INSTALL){
+            commands.executeCommand(`waterproof.autoInstall`);
+        } 
     }
 
     /**
@@ -201,7 +206,7 @@ export class VersionChecker {
     }
 
     /**
-     * Handle the options for the invalid waterproof path message.
+     * Handle the options for the invalid waterproof path message.z
      * @param value -
      */
     private handleInvalidPath(value: typeof OPEN_INSTRUCTIONS | undefined) {

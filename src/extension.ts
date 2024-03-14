@@ -223,7 +223,6 @@ export class Waterproof implements Disposable {
                 case "haiku": cmnd = undefined; break;
                 // LINUX
                 case "linux": cmnd = `gnome-terminal -v -e 'sh -c "sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y"'`; break;
-                //case "linux": cmnd = `gnome-terminal -v -e 'sh -c "opam init -y; eval $(opam env); opam install coq-lsp.0.1.8+8.17 -y; opam install coq-waterproof.2.1.0+8.17 -y"'`; break;
                 case "openbsd": cmnd = undefined; break;
                 case "sunos": cmnd = undefined; break;
                 // WINDOWS

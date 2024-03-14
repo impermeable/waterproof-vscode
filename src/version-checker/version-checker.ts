@@ -189,7 +189,7 @@ export class VersionChecker {
      * Helper that opens a website where the user can download a new installer.
      * @param value -
      */
-    private handleDownloadInstaller(value: typeof DOWNLOAD_INSTALLER | undefined) {
+    private handleDownloadInstaller(value: typeof AUTO_INSTALL | typeof DOWNLOAD_INSTALLER | undefined) {
         if (value === DOWNLOAD_INSTALLER){
             env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
         } else if (value === AUTO_INSTALL){

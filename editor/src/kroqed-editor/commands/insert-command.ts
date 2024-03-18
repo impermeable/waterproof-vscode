@@ -52,17 +52,19 @@ export function getMdInsertCommand(
                 trans = state.tr.insert(place == InsertionPlace.Above ? start : end, nodeType.create());
             }
 
-        } else {
+            // If the dispatch is given and transaction is not undefined dispatch it.
+            if (dispatch && trans) dispatch(trans);
+
+            // successful command.
+            return true;
+        } else if (filef === FileFormat.RegularV) {
             // This command behaves differently in the case of a .v file. 
             // But since .v files are not working atm, this case is defaulted to false.
             return false;
+        } else {
+            // This command has no expected outcome when the Fileformat is unknown.
+            return false;
         }
-
-        // If the dispatch is given and transaction is not undefined dispatch it.
-        if (dispatch && trans) dispatch(trans);
-
-        // successful command.
-        return true;
     }
 }
 
@@ -91,23 +93,28 @@ export function getLatexInsertCommand(
 
         const { name } = container.type
 
-        // FIXME: This command should behave differently in the case of a .v file, since 
-        // the math-display should then be part of a coqblock.
+        if (filef === FileFormat.MarkdownV) {
+            if (name === "input" || name === "hint" || name === "doc") {
+                // `Easy` insertion since we can just insert directly above or below the selection.
+                trans = insertionFunction(state, state.tr, latexNodeType);
+            } else if (name === "coqblock" || name === "coqdoc") {
+                // More difficult insertion since we have to `escape` the current coqblock.
+                const { start, end } = getNearestPosOutsideCoqblock(state.selection, state);
+                trans = state.tr.insert(place == InsertionPlace.Above ? start : end, latexNodeType.create());
+            }
 
-        if (name === "input" || name === "hint" || name === "doc") {
-            // `Easy` insertion since we can just insert directly above or below the selection.
-            trans = insertionFunction(state, state.tr, latexNodeType);
-        } else if (name === "coqblock" || name === "coqdoc") {
-            // More difficult insertion since we have to `escape` the current coqblock.
-            const { start, end } = getNearestPosOutsideCoqblock(state.selection, state);
-            trans = state.tr.insert(place == InsertionPlace.Above ? start : end, latexNodeType.create());
+            // Dispatch the transaction when dispatch is given and transaction is not undefined.
+            if (dispatch && trans) dispatch(trans);
+
+            // Indicate successful command.
+            return true;
+        } else if (filef === FileFormat.RegularV) {
+            // FIXME: Implement .v file case.
+            return false;
+        } else {
+            // This command has no expected outcome when the Fileformat is unknown.
+            return false;
         }
-
-        // Dispatch the transaction when dispatch is given and transaction is not undefined.
-        if (dispatch && trans) dispatch(trans);
-
-        // Indicate successful command.
-        return true;
     }
 }
 
@@ -130,28 +137,34 @@ export function getCoqInsertCommand(
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
         // Again, early return when inserting is not allowed. 
         if (!allowedToInsert(state)) return false;
-        // Retrieve the name containing node of the selection.
+        // Retrieve the name of the containing node of the selection.
         const name = getContainingNode(state.selection)?.type.name;
         if (name === undefined) return false;
         let trans: Transaction | undefined;
+        
+        if (filef === FileFormat.MarkdownV) {
+            if (name === "input" || name === "hint" || name === "doc") {
+                // Create a new coqblock *and* coqcode cell and insert Above or Underneath the current selection.
+                trans = insertionFunction(state, state.tr, coqblockNodeType, coqcodeNodeType);
+            } else if (name === "coqblock" || name === "coqdoc") {
+                // Find the position outside of the coqblock and insert a new coqblock and coqcode cell above or underneath.
+                const {start, end} = getNearestPosOutsideCoqblock(state.selection, state);
+                const pos = place == InsertionPlace.Above ? start : end;
+                trans = state.tr.insert(pos, 
+                    coqblockNodeType.create()).insert(pos + 1,coqcodeNodeType.create());
+            }
 
-        // FIXME: The insertion of a coqcell should be dependent on whether we are working with a .mv or .v file.
+            // If dispatch is given and transaction is set, dispatch the transaction.
+            if (dispatch && trans) dispatch(trans);
 
-        if (name === "input" || name === "hint" || name === "doc") {
-            // Create a new coqblock *and* coqcode cell and insert Above or Underneath the current selection.
-            trans = insertionFunction(state, state.tr, coqblockNodeType, coqcodeNodeType);
-        } else if (name === "coqblock" || name === "coqdoc") {
-            // Find the position outside of the coqblock and insert a new coqblock and coqcode cell above or underneath.
-            const {start, end} = getNearestPosOutsideCoqblock(state.selection, state);
-            const pos = place == InsertionPlace.Above ? start : end;
-            trans = state.tr.insert(pos, 
-                coqblockNodeType.create()).insert(pos + 1,coqcodeNodeType.create());
+            // Indicate that this command was successful.
+            return true;
+        } else if (filef === FileFormat.RegularV) {
+            // FIXME: Implement .v file case.
+            return false;
+        } else {
+            // This command has no expected outcome when the Fileformat is unknown.
+            return false;
         }
-
-        // If dispatch is given and transaction is set, dispatch the transaction.
-        if (dispatch && trans) dispatch(trans);
-
-        // Indicate that this command was successful.
-        return true;
     }
 }

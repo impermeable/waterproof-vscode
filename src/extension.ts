@@ -104,14 +104,18 @@ export class Waterproof implements Disposable {
             this.updateGoals(document, position);  // TODO: error handling
         });
         this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
-            executeCommand(this.client, command).then(
-                results => {
-                    source.setResults(results);
-                },
-                (error: Error) => {
-                    source.setResults(["Error: " + error.message]);  // (temp)
-                }
-            );
+            if (command == "createHelp") {
+                source.setResults(["createHelp"]);
+            } else {
+                executeCommand(this.client, command).then(
+                    results => {
+                        source.setResults(results);
+                    },
+                    (error: Error) => {
+                        source.setResults(["Error: " + error.message]);  // (temp)
+                    }
+                );
+            }
         });
 
         this.disposables.push(CoqEditorProvider.register(context, this.webviewManager));

@@ -35,13 +35,16 @@ export class Help extends CoqWebview implements IExecutor {
     }
 
     setResults(results: string[]): void {
-        this.readyPanel();
-        this.activatePanel();
-        this.revealPanel();
-        // Set the data property to the provided results
-        this.data = results;        
-        // Send a postMessage to the webview with the MessageType.command and the data
-        this.postMessage({ type: MessageType.command, body: this.data })
+        if (results[0] == "createHelp") {
+            this.readyPanel();
+            this.activatePanel();
+            this.revealPanel();
+        } else {
+            // Set the data property to the provided results
+            this.data = results;        
+            // Send a postMessage to the webview with the MessageType.command and the data
+            this.postMessage({ type: MessageType.command, body: this.data })
+        }
     }
 
 }

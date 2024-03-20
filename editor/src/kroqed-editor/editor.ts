@@ -1,7 +1,7 @@
 import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
 import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
-import { DOMParser, ResolvedPos, Schema, Node as ProseNode } from "prosemirror-model";
+import { ResolvedPos, Schema, Node as ProseNode } from "prosemirror-model";
 import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
@@ -27,7 +27,7 @@ import "prosemirror-view/style/prosemirror.css";
 import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
-import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, deleteNodeIfEmpty } from "./commands";
+import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
@@ -93,7 +93,6 @@ export class Editor {
 		
 		document.body.appendChild(theContextMenu);
 		
-		console.log(document.querySelector(".context-menu"));
 		// Setup the custom context menu
 		document.addEventListener("click", (ev) => {
 			// Handle a 'left mouse click'
@@ -148,8 +147,6 @@ export class Editor {
 
 		// notify extension that editor has loaded
 		this.post({ type: MessageType.editorReady });
-
-		console.log(JSON.stringify(this._view?.state.doc.toJSON()));
 	}
 
 	get state(): EditorState | undefined {

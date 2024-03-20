@@ -19,7 +19,7 @@ export class InputAreaBlock implements Block {
         return inputArea(childNodes);
     }
 
-    // Debug print function.
+    // Debug print function. // FIXME: Maybe remove?
     debugPrint(level: number): void {
         console.log(`${indentation(level)}InputAreaBlock {${debugInfo(this)}} [`);
         this.innerBlocks.forEach(block => block.debugPrint(level + 1));

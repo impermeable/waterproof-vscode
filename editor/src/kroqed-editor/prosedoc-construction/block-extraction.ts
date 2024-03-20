@@ -64,12 +64,7 @@ export function extractMathDisplayBlocks(inputDocument: string) {
  * Uses regexes to search for ```coq and ``` markers.	
  */
 export function extractCoqBlocks(inputDocument: string) {
-
-
-    console.log("Input document: ", inputDocument);
     const coq_code = Array.from(inputDocument.matchAll(regexes.coq));
-
-    console.log("Coq code: ", coq_code);
 
     const coqBlocks = coq_code.map((coq) => {
         if (coq.index === undefined) throw new Error("Index of coq is undefined");
@@ -118,8 +113,6 @@ export function extractBlocksUsingRanges<BlockType extends Block>(
 // const coqdocRegex = /\(\*\*(?: |\n)([\s\S]*?)\*\)/g;
 const coqdocRegex = /(\r\n|\n)?^\(\*\* ([^]*?)\*\)$(\r\n|\n)?/gm
 export function extractCoqDoc(input: string): CoqDocBlock[] {
-    console.log(input);
-
     const comments = Array.from(input.matchAll(coqdocRegex));
     const coqDocBlocks = Array.from(comments).map((comment) => {
         if (comment.index === undefined) throw new Error("Index of math is undefined");

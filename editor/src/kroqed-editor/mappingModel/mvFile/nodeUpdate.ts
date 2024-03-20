@@ -1,5 +1,5 @@
 import { ReplaceAroundStep, ReplaceStep } from "prosemirror-transform";
-import { DocChange, WrappingDocChange } from "../../../../shared";
+import { DocChange, WrappingDocChange } from "../../../../../shared";
 import { HtmlTagInfo, OperationType, ParsedStep, StringCell } from "./types";
 import { getEndHtmlTagText, getStartHtmlTagText, getTextOffset, parseFragment } from "./helper-functions";
 

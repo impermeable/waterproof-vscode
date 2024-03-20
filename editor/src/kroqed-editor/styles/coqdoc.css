@@ -10,6 +10,22 @@
 
 } */
 
+coqblock:has(coqdoc)::before {
+    display: block;
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    font-weight: var(--vscode-font-weight);
+    content: "Coq with coqdoc";
+    padding: 0.2em;
+}
+
+coqblock {
+    display: block;
+    background: var(--vscode-listFilterWidget-background);
+}
+
 .coqdoc-view-empty:before {
     display: inline;
     color: var(--vscode-errorForeground);

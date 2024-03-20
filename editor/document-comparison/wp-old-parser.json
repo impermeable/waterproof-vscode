@@ -1,0 +1,190 @@
+{
+    "type": "doc",
+    "content": [
+        {
+            "type": "markdown",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "#### Markdown content\n$\\int_2^3 x dx$\n"
+                }
+            ]
+        },
+        {
+            "type": "math_display",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "1028 + 23 = ?"
+                }
+            ]
+        },
+        {
+            "type": "coqblock",
+            "attrs": {
+                "prePreWhite": "newLine",
+                "prePostWhite": "newLine",
+                "postPreWhite": "newLine",
+                "postPostWhite": "newLine"
+            },
+            "content": [
+                {
+                    "type": "coqcode",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "5< 10.\nDefinition test := 1."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "hint",
+            "attrs": {
+                "title": "> 📦 Imports (click to open/close)",
+                "shown": false
+            },
+            "content": [
+                {
+                    "type": "coqblock",
+                    "attrs": {
+                        "prePreWhite": "newLine",
+                        "prePostWhite": "newLine",
+                        "postPreWhite": "newLine",
+                        "postPostWhite": "newLine"
+                    },
+                    "content": [
+                        {
+                            "type": "coqcode",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Require Import ZArith."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "markdown",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "\n"
+                }
+            ]
+        },
+        {
+            "type": "input",
+            "attrs": {
+                "status": null
+            },
+            "content": [
+                {
+                    "type": "markdown",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "\ninput area test\n"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "coqblock",
+            "attrs": {
+                "prePreWhite": "newLine",
+                "prePostWhite": "newLine",
+                "postPreWhite": "newLine",
+                "postPostWhite": "newLine"
+            },
+            "content": [
+                {
+                    "type": "coqdoc",
+                    "attrs": {
+                        "preWhite": "",
+                        "postWhite": "newLine"
+                    },
+                    "content": [
+                        {
+                            "type": "coqdown",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "* Coqdoc Header %2x^2 + 4  <1% "
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "coqcode",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "(* regular comment *)\nCompute 5 + 10."
+                        }
+                    ]
+                },
+                {
+                    "type": "coqdoc",
+                    "attrs": {
+                        "preWhite": "newLine",
+                        "postWhite": "newLine"
+                    },
+                    "content": [
+                        {
+                            "type": "coqdown",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Some random text \n"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "math_display",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "\\text{display math} "
+                                }
+                            ]
+                        },
+                        {
+                            "type": "coqdown",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": " "
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "coqdoc",
+                    "attrs": {
+                        "preWhite": "",
+                        "postWhite": ""
+                    },
+                    "content": [
+                        {
+                            "type": "coqdown",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "\n- Item 1\n- Item 2 "
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

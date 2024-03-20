@@ -208,6 +208,8 @@ function handleCoqBlock(match: RegExpMatchArray) {
 
     let result = ""
     allCells.forEach(cell => {
+        // TODO: What does preWhite, postWhite do?
+        // console.log(cell);
         if (cell.type === coqCellType.CoqCode) {
             // Coqcode, run .v parser
             result += `<coqcode>`.concat(cell.content as string, `</coqcode>`);

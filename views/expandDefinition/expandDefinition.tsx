@@ -9,14 +9,12 @@ import { Messages } from '../goals/Messages';
 const date = new Date();
 const vscode = acquireVsCodeApi();
 
-export function CommonExecute() {
+export function ExpandDefinition() {
     // create the states for the components that need them
     const [inputText1, setInputText1] = useState("");
     const [cursor1, setCursor1] = useState(0)
     const [inputText2, setInputText2] = useState("");
     const [cursor2, setCursor2] = useState(0)
-    const [searchText, setSearchText] = useState("");
-    const [cursorSearch, setCursorSearch] = useState(0);
     const [info, setInfo] = useState([""]);
     const [current, setCurrent] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +47,7 @@ export function CommonExecute() {
             // on dismount of component the eventlistener is removed
           window.removeEventListener('message', handleMessage);
         };
-      }, [ cursorSearch, cursor1, cursor2, searchText, inputText1, inputText2, current, info ]);
+      }, [ cursor1, cursor2, inputText1, inputText2, current, info ]);
 
       // the cursor position is updated together with the current textarea
       const setCursorPos = (textarea, cur) => {
@@ -58,11 +56,6 @@ export function CommonExecute() {
             const startPos = textarea.selectionStart;
             const val = textarea.value;
             switch (cur) {
-                // the search area
-                case "search":
-                    setCursorSearch(startPos);
-                    setSearchText(val);
-                    break;
                 // first input area of expand def in context
                 case "input1":
                     setCursor1(startPos);
@@ -83,12 +76,6 @@ export function CommonExecute() {
         var cursor = 0;
         var value = "";
         switch (current) {
-            // search area
-            case "search":
-                textarea = searchareaRef.current;
-                cursor = cursorSearch;
-                value = searchText;
-                break;
             // first input area of expand def in context
             case "input1":
                 textarea = input1Ref.current;
@@ -111,11 +98,6 @@ export function CommonExecute() {
             (textarea as HTMLTextAreaElement).focus();
             //handles the insertion in the current text area
             switch (current) {
-                // search input area
-                case "search":
-                    setSearchText(newValue);
-                    setCursorSearch(cursor +textToInsert.length);
-                    break;
                 // first input area of expand def in context
                 case "input1":
                     setInputText1(newValue);
@@ -135,22 +117,9 @@ export function CommonExecute() {
         //Send the message the execute button was pressed
         vscode.postMessage({time: date.getTime(), 
                             type: MessageType.command, 
-                            body: `_internal_ Expand the definition of ${inputText1} in (${inputText2.replace(/\.\s*$/s, '')}).`})
+                            body: `_internal_ Expand the definition of ${inputText1} in (${inputText2.replace(/(\.\s*|\s*)$/s, '')}).`})
         setIsLoading(true);
     };
-
-    //button press help
-    const handleHelp = () => {
-        //Send the message indicating the help button was pressed
-        vscode.postMessage({time: date.getTime(), type: MessageType.command, body: "Help."});
-        setIsLoading(true);
-    };
-
-    //button press search
-    const handleSearch = () => {
-        vscode.postMessage({time: date.getTime(), type: MessageType.command, body: `Search "${searchText}".`})
-        setIsLoading(true);
-    }
 
     //execute by pressing search + enter in the first input field
     const handleKeyDown = (event) => {
@@ -255,41 +224,6 @@ export function CommonExecute() {
                         </td>
                         </tr>
                     </tbody>
-                    <tbody>
-                        <tr>
-                        <td>
-                            <div className="sentence">
-                                {/* help button */}
-                                <VSCodeButton onClick={handleHelp}>Help</VSCodeButton>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td></td>
-                        </tr>
-                    </tbody>
-                    <tbody>
-                        <tr>
-                        <td align='right'>Search</td>
-                        <td align='left'>
-                            <div className="VSCodeTextField-container">
-                                <textarea
-                                    id="searcharea"
-                                    ref={searchareaRef}
-                                    className="text-area"
-                                    placeholder="term"
-                                    onKeyDown={handleKeyDownSearch}
-                                    onChange={handleChangeSearch}
-                                    onClick={onClickSearch}
-                                />
-                            </div>
-                        </td>
-                        <td>
-                            <div>
-                                <VSCodeButton id="search" onClick={handleSearch}><div>&#x1F50E;&#xFE0E;</div></VSCodeButton>
-                            </div>
-                        </td>
-                        </tr>
-                    </tbody>
                 </table>
 
             </div>
@@ -326,4 +260,4 @@ export function CommonExecute() {
 
 
 
-export default CommonExecute;
+export default ExpandDefinition;

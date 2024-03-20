@@ -73,8 +73,8 @@ export function Execute() {
 
     const handleExecute = () => {
         // Handle execute logic with the inputText here
-        console.log('Execute command:', value);
-        vscode.postMessage({ time: date.getTime(), type: MessageType.command, body: value });
+        console.log('Execute command:', value.replace(/(\s*|\s*)$/s, ''));
+        vscode.postMessage({ time: date.getTime(), type: MessageType.command, body: value.replace(/(\s*|\s*)$/s, '')});
         setIsLoading(true);
     };
 

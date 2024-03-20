@@ -12,7 +12,7 @@ import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
 import { createHintPlugin } from "./hinting";
 import { INPUT_AREA_PLUGIN_KEY, inputAreaPlugin } from "./inputArea";
 import { TheSchema } from "./kroqed-schema";
-import { TextDocMapping } from "./mappingModel/mvFile";
+import { TextDocMapping } from "./mappingModel";
 import { REAL_MARKDOWN_PLUGIN_KEY, coqdocPlugin, realMarkdownPlugin } from "./markup-views";
 import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
@@ -140,7 +140,7 @@ export class Editor {
 		
 		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
 
-		this._mapping = new TextDocMapping(parsedContent, version);
+		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
 		this.createProseMirrorEditor(proseDoc);
 
 		/** Ask for line numbers */

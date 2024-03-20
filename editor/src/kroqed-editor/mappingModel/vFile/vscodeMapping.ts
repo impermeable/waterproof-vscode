@@ -32,7 +32,7 @@ interface TagInformation {
  * This class is responsible for keeping track of the mapping between the prosemirror state and the vscode Text
  * Document model
  */
-export class TextDocMapping {
+export class TextDocMappingV {
     /** This stores the String cells of the entire document */
     private stringBlocks: Map<number, StringCell>;
     /** This stores the inverted mapping of stringBlocks  */
@@ -131,7 +131,7 @@ export class TextDocMapping {
 
         // Continue until the entire string has been parsed
         while(inputString.length > 0) { 
-            const next: TagInformation = TextDocMapping.getNextHTMLtag(inputString);
+            const next: TagInformation = TextDocMappingV.getNextHTMLtag(inputString);
             let nextCell: StringCell | undefined = undefined;
             
             /** The number of characters the tag `next` takes up in the raw vscode doc. */
@@ -230,7 +230,7 @@ export class TextDocMapping {
     }
 
     /** Constructs a map from stringBlocks that is indexed based on the vscode index instead of prose */
-    public updateInvMapping() {
+    private updateInvMapping() {
         this.invStringBlocks = new Map<number, StringCell>();
         this.stringBlocks.forEach((value, key) => {
             this.invStringBlocks.set(value.startText, value)
@@ -276,7 +276,7 @@ export class TextDocMapping {
                 let end = start + length;
 
                 // Check if the HTML tag is a valid HTML tag in our parser
-                if (TextDocMapping.HTMLtags.has(match[2])) {
+                if (TextDocMappingV.HTMLtags.has(match[2])) {
 
                     // For entry coqblocks we must extract more information about the starting and ending newline
                     if (match[2] === "coqblock" && match[1] == undefined) {

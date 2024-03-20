@@ -1,0 +1,1 @@
+export { TextDocMapping } from "./mapping";

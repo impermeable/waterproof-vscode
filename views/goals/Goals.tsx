@@ -106,7 +106,7 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
 
   return (
     <div>
-      <Box summary={`Remaining subproofs/steps (some statements/cases remain to be shown)`} pos={pos} textDox={textDoc}>
+      <Box summary={`Afterwards, we need to complete other subproofs`} pos={pos} textDox={textDoc}>
       </Box>
     </div>
   );
@@ -117,10 +117,10 @@ type GoalsParams = PropsWithChildren<{ goals?: GoalConfig<PpString>, pos: Positi
 //the component that is used by other components
 //uses both the stackgoals for the goals at different levels and the GoalsList for the goals that consist of a list
 export function Goals({ goals, pos, textDoc }: GoalsParams) {
-  //if there are no goals, the user is shown "No goals at this point."
+  //if there are no goals, the user is shown "Nothing to show at this point"
   if (!goals) {
-    return <Box summary="We need to show" pos={pos} textDox={textDoc}>
-      No goals at this point.
+    return <Box summary="We need to show:" pos={pos} textDox={textDoc}>
+      Nothing to show at this point.
     </Box>
   }
 
@@ -129,7 +129,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
       {/* primary list of goals */}
       <GoalsList
         goals={goals.goals}
-        header={"We need to show"}
+        header={"We need to show:"}
         show_on_empty={true}
         bullet_msg={goals.bullet}
         pos={pos}

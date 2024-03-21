@@ -26,9 +26,6 @@ function Goal({ goal }: GoalP) {
       FormatPrettyPrint.adjustBreaks($(ref.current));
     }
     // See Pfff.v:17160 for tests.
-    if (tyRef.current) {
-      tyRef.current.scrollIntoView();
-    }
   });
 
   return (
@@ -109,18 +106,8 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
 
   return (
     <div>
-      {/* uses GoalsList to show the goals as a list within a stack */}
-      <GoalsList
-        goals={goals}
-        header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
-        show_on_empty={false}
-        pos={pos}
-        textDoc={textDoc}
-      />
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* recursively calls itself to get the different level of goals */}
-        <StackGoals idx={idx + 1} stack={stack} pos={pos} textDoc={textDoc} />
-      </div>
+      <Box summary={`Afterwards, we need to complete other subproofs`} pos={pos} textDox={textDoc}>
+      </Box>
     </div>
   );
 }
@@ -130,10 +117,10 @@ type GoalsParams = PropsWithChildren<{ goals?: GoalConfig<PpString>, pos: Positi
 //the component that is used by other components
 //uses both the stackgoals for the goals at different levels and the GoalsList for the goals that consist of a list
 export function Goals({ goals, pos, textDoc }: GoalsParams) {
-  //if there are no goals, the user is shown "No goals at this point."
+  //if there are no goals, the user is shown "Nothing to show at this point"
   if (!goals) {
-    return <Box summary="We need to show" pos={pos} textDox={textDoc}>
-      No goals at this point.
+    return <Box summary="We need to show:" pos={pos} textDox={textDoc}>
+      Nothing to show at this point.
     </Box>
   }
 
@@ -142,7 +129,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
       {/* primary list of goals */}
       <GoalsList
         goals={goals.goals}
-        header={"We need to show"}
+        header={"We need to show:"}
         show_on_empty={true}
         bullet_msg={goals.bullet}
         pos={pos}
@@ -151,24 +138,6 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
       {/* stacking goals that are on different levels */}
       <div style={{ marginLeft: "0.5ex" }}>
         <StackGoals idx={0} stack={goals.stack} pos={pos} textDoc={textDoc} />
-      </div>
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* a list for the goals that are on the shelf */}
-        <GoalsList
-          goals={goals.shelf}
-          header={"Shelf"}
-          show_on_empty={false} // these goals are not shown if they do not exist
-          pos={pos}
-          textDoc={textDoc}
-        />
-        {/* a list for the goals that are given up */}
-        <GoalsList 
-          goals={goals.given_up}
-          header={"Given Up"}
-          show_on_empty={false} // these goals are not shown if they do not exist
-          pos={pos}
-          textDoc={textDoc}
-        />
       </div>
     </div>
   );

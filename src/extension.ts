@@ -222,13 +222,14 @@ export class Waterproof implements Disposable {
                 case "freebsd": cmnd = undefined; break;
                 case "haiku": cmnd = undefined; break;
                 // LINUX
-                case "linux": cmnd = `sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y`; break;
-                // case "linux": cmnd = `gnome-terminal -v -e 'sh -c "sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y"'`; break;
+                //case "linux": cmnd = `sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y`; break;
+                case "linux": cmnd = `gnome-terminal -v -e 'sh -c "sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y"'`; break;
                 case "openbsd": cmnd = undefined; break;
                 case "sunos": cmnd = undefined; break;
                 // WINDOWS
-                case "win32": cmnd = undefined; break;
-                case "cygwin": cmnd = undefined; break;
+                case "win32": // same as cygwin
+                case "cygwin": cmnd = `\"WATERPROOF INSTALLER\" cmd /k \"echo BEGIN INSTALLATION && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && 
+                                    echo DOWNLOADED INSTALLER && Waterproof_Installer.exe && echo INSTALLED FILES && del Waterproof_Installer.exe && echo REMOVED LEFTOVER FILES\"`; break;
                 case "netbsd": cmnd = undefined; break;
             }
 

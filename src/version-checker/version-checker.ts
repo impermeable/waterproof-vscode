@@ -173,7 +173,7 @@ export class VersionChecker {
         const platform = getPlatformHelper();
         if (platform === "macos" || platform == "windows") {
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to download a new installer.`;
-            window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
         } else {
             // We have no installer for other platforms, so we supply the user with the readme.
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to open instructions on how to update.`;
@@ -193,7 +193,8 @@ export class VersionChecker {
         if (value === DOWNLOAD_INSTALLER){
             env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
         } else if (value === AUTO_INSTALL){
-            commands.executeCommand(`waterproof.autoInstall`);
+            commands.executeCommand(`waterproof.autoInstall`); // Install libraries
+            commands.executeCommand(`waterproof.defaultPath`); // Set correct lsp path
         } 
     }
 
@@ -201,18 +202,21 @@ export class VersionChecker {
      * Inform the user that the Waterproof path is invalid.
      */
     private informWaterproofPathInvalid() {
-        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nFor more information on how to make the waterproof extension work, please see the installation instructions.";
-        window.showErrorMessage(message, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nTry running the automatic installer.\nOtherwise, for more information on how to make the waterproof extension work, please see the installation instructions.";
+        window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
     }
 
     /**
      * Handle the options for the invalid waterproof path message.
      * @param value -
      */
-    private handleInvalidPath(value: typeof OPEN_INSTRUCTIONS | undefined) {
+    private handleInvalidPath(value: typeof AUTO_INSTALL | typeof OPEN_INSTRUCTIONS | undefined) {
         if (value == OPEN_INSTRUCTIONS) {
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
-        }
+        } else if (value === AUTO_INSTALL){
+            commands.executeCommand(`waterproof.autoInstall`); // Install libraries
+            commands.executeCommand(`waterproof.defaultPath`); // Set correct lsp path
+        } 
     }
 }
 

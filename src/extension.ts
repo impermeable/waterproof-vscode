@@ -227,9 +227,8 @@ export class Waterproof implements Disposable {
                 case "openbsd": cmnd = undefined; break;
                 case "sunos": cmnd = undefined; break;
                 // WINDOWS
-                case "win32": // same as cygwin
-                case "cygwin": cmnd = `\"WATERPROOF INSTALLER\" cmd /k \"echo BEGIN INSTALLATION && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && 
-                                    echo DOWNLOADED INSTALLER && Waterproof_Installer.exe && echo INSTALLED FILES && del Waterproof_Installer.exe && echo REMOVED LEFTOVER FILES\"`; break;
+                case "win32": cmnd = `start "WATERPROOF INSTALLER" cmd /k "echo BEGIN INSTALLATION && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo DOWNLOADED INSTALLER && Waterproof_Installer.exe && echo INSTALLED FILES && del Waterproof_Installer.exe && echo REMOVED LEFTOVER FILES"`; break;
+                case "cygwin": cmnd = `start "WATERPROOF INSTALLER" cmd /k "echo BEGIN INSTALLATION && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo DOWNLOADED INSTALLER && Waterproof_Installer.exe && echo INSTALLED FILES && del Waterproof_Installer.exe && echo REMOVED LEFTOVER FILES"`; break;
                 case "netbsd": cmnd = undefined; break;
             }
 

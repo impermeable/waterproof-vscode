@@ -22,6 +22,11 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("standardCoqSyntax") as boolean;
     }
 
+    /** `waterproof.lineLongError` */
+    static get lineLongError() {
+        return config().get<boolean>("lineLongErrors") as boolean;
+    }
+
     /** `waterproof.eager_diagnostics` */
     static get eager_diagnostics() {
         return config().get<boolean>("eager_diagnostics") as boolean;

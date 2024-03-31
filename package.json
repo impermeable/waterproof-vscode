@@ -288,6 +288,11 @@
             "type": "boolean", 
             "default": true, 
             "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
+          },
+          "waterproof.lineLongErrors": {
+            "type": "boolean", 
+            "default": true, 
+            "description": "Enable line long errors; if true, position of errors will cover the whole line, if false errors will give the detailed position of where they belong to."
           }
         }
       },

@@ -19,6 +19,7 @@ import { ICoqLspClient } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType, selectionRangeRequest, SelectionRange } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
+import { WaterproofConfigHelper } from "../helpers";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -41,6 +42,8 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         activeDocument: TextDocument | undefined;
         activeCursorPosition: Position | undefined;
 
+        lineLongError: boolean;
+
         readonly sentenceManager: SentenceManager;
         readonly fileProgressComponents: IFileProgressComponent[] = [];
 
@@ -55,6 +58,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         constructor(...args: any[]) {
             super(...args);
             this.sentenceManager = new SentenceManager();
+            this.lineLongError = WaterproofConfigHelper.lineLongError;
 
             // forward progress notifications to editor
             this.fileProgressComponents.push({
@@ -82,55 +86,47 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
                 const document = this.activeDocument;
                 if (!document) return;
-                const positions: Position[] = diagnostics.map(d => d.range.start);
-                const params: SelectionRangeParams = {
-                  textDocument: TextDocumentIdentifier.create(document.uri.toString()),
-                  positions: positions
-                };
-                try {
-                    const ranges = await this.sendRequest(selectionRangeRequest, params);
-                    if (!ranges) return;
-                    // Process each diagnostic with the corresponding range from the ranges array
-                    const positionedDiagnostics = diagnostics.map((d, index) => {
-                        const selectionRange = ranges[index].range;
-                        // Convert it to a Range instance
-                        const newRangeInstance = new Range(
-                        new Position(selectionRange.start.line, selectionRange.start.character),
-                        new Position(selectionRange.end.line, selectionRange.end.character)
-                        );
-                        console.log(d.range);
-                        d.range = newRangeInstance;
-                        console.log(d.range);
-                        console.log("------");
-                        return {
-                            message: d.message,
-                            severity: d.severity,
-                            startOffset: document.offsetAt(d.range.start),
-                            endOffset: document.offsetAt(d.range.end)
+                this.lineLongError = WaterproofConfigHelper.lineLongError;
+                if (this.lineLongError) {
+                    const positionedDiagnostics: OffsetDiagnostic[] = [];
+                    for (let diag of diagnostics) {
+                        const params: SelectionRangeParams = {
+                            textDocument: TextDocumentIdentifier.create(document.uri.toString()),
+                            positions: [diag.range.start]
                         };
+                        try {
+                            const ranges = await this.sendRequest(selectionRangeRequest, params);
+                            if (!ranges) return;
+                            const selectionRange = ranges[0].range;
+                            positionedDiagnostics.push({
+                                message: diag.message,
+                                severity: diag.severity,
+                                startOffset: document.offsetAt(new Position(selectionRange.start.line, selectionRange.start.character)),
+                                endOffset: document.offsetAt(new Position(selectionRange.end.line, selectionRange.end.character))
+                            });
 
-                        
-                    });
-                
+                        } catch (reason) {
+                            console.log("Error with textDocument/selectionRange request");
+                            return;
+                        }
+                        this.webviewManager!.postAndCacheMessage(document, {
+                            type: MessageType.diagnostics,
+                            body: {positionedDiagnostics, version: document.version}
+                        });
+                    }
+                } else {
+                    const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => ({
+                        message:        d.message,
+                        severity:       d.severity,
+                        startOffset:    document.offsetAt(d.range.start),
+                        endOffset:      document.offsetAt(d.range.end)
+                    }));
                     this.webviewManager!.postAndCacheMessage(document, {
                         type: MessageType.diagnostics,
                         body: {positionedDiagnostics, version: document.version}
                     });
-                } catch (reason) {
-                    console.log(">> This would throw");
-                    return;
                 }
-                
-                // .then(ranges => {
-                
-
-
             }
-                // ).catch(error => {
-                // console.error("Error fetching selection ranges:", error);
-                // // Handle any errors that occur during the request
-                // });}
-
 
             // call each file progress component when the server has processed a part
             this.disposables.push(this.onNotification(fileProgressNotificationType, params => {
@@ -152,6 +148,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
             }));
         }
+
 
         async onCheckingCompleted(): Promise<void> {
             // ensure there is an active document
@@ -311,3 +308,4 @@ function wasCanceledByServer(reason: unknown): boolean {
         && "message" in reason
         && reason.message === "Request got old in server";  // or: code == -32802
 }
+

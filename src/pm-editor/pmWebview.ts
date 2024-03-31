@@ -163,6 +163,10 @@ export class ProseMirrorWebview extends EventEmitter {
             if (e.affectsConfiguration("waterproof.enforceCorrectNonInputArea")) {
                 this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
             }
+            
+            if (e.affectsConfiguration("waterproof.lineLongError")) {
+                this.updateLineLongErrorMode();
+            }
         }));
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
@@ -248,6 +252,14 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Toggle the syntax mode*/
     private updateSyntaxMode() {
+        this.postMessage({
+            type: MessageType.syntax,
+            body: WaterproofConfigHelper.standardCoqSyntax
+        }, true);
+    }
+
+    /** Toggle line long errors */
+    private updateLineLongErrorMode() {
         this.postMessage({
             type: MessageType.syntax,
             body: WaterproofConfigHelper.standardCoqSyntax

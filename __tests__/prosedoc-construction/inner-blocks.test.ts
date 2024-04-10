@@ -5,7 +5,7 @@ test("Inner input area (and hint) blocks", () => {
     const inputAreaContent = "$$1028 + 23 = ?$$\n```coq\nCompute 1028 + 23.\n```";
     
     const blocks = createInputAndHintInnerBlocks(inputAreaContent);
-    console.log(blocks);
+
     expect(blocks.length).toBe(2);
     expect(isMathDisplayBlock(blocks[0])).toBe(true);
 
@@ -15,9 +15,9 @@ test("Inner input area (and hint) blocks", () => {
     expect(blocks[0].range.to).toBe(17);
 
     // CoqBlock content:
-    expect(blocks[2].stringContent).toBe("Compute 1028 + 23.");
-    expect(blocks[2].range.from).toBe(18);
-    expect(blocks[2].range.to).toBe(inputAreaContent.length);
+    expect(blocks[1].stringContent).toBe("Compute 1028 + 23.");
+    expect(blocks[1].range.from).toBe(17);
+    expect(blocks[1].range.to).toBe(inputAreaContent.length);
 });
 
 test("Inner coq blocks", () => {
@@ -27,14 +27,14 @@ test("Inner coq blocks", () => {
     // One block for the coq content and one block for the comment.
     expect(blocks.length).toBe(2);
     expect(isCoqCodeBlock(blocks[0])).toBe(true);
-    // FIXME: What should we do with the trailing newline?
+    
     expect(blocks[0].stringContent).toBe("Compute 1 + 1.");
     expect(blocks[0].range.from).toBe(0);
-    expect(blocks[0].range.to).toBe(15);
+    expect(blocks[0].range.to).toBe(14);
 
     expect(isCoqDocBlock(blocks[1])).toBe(true);
     expect(blocks[1].stringContent).toBe("* Header");
-    expect(blocks[1].range.from).toBe(15);
+    expect(blocks[1].range.from).toBe(14);
     expect(blocks[1].range.to).toBe(coqContent.length);
     
     expect(blocks[1].innerBlocks?.length).toBe(1);

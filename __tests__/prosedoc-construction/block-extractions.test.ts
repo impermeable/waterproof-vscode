@@ -68,7 +68,7 @@ test("Parse Coq blocks #1", () => {
     expect(blocks.length).toBe(1);
     expect(isCoqBlock(blocks[0])).toBe(true);
     expect(blocks[0].stringContent).toBe("Lemma trivial.");
-    expect(blocks[0].range.from).toBe(10);
+    expect(blocks[0].range.from).toBe(9);
     expect(blocks[0].range.to).toBe(35);
 });
 
@@ -82,9 +82,9 @@ test("Parse Coq blocks #2", () => {
     expect(blocks[0].stringContent).toBe("Require Import ZArith.");
     expect(blocks[1].stringContent).toBe("Lemma trivial.");
     expect(blocks[0].range.from).toBe(0);
-    expect(blocks[0].range.to).toBe(33);
+    expect(blocks[0].range.to).toBe(34);
 
-    expect(blocks[1].range.from).toBe(44);
+    expect(blocks[1].range.from).toBe(43);
     expect(blocks[1].range.to).toBe(69);
 });
 

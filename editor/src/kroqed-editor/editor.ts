@@ -126,6 +126,10 @@ export class Editor {
 			this._view.dom.remove();
 		}
 
+		if (fileFormat === FileFormat.MarkdownV) {
+			document.body.classList.add("mv");
+		}
+
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 

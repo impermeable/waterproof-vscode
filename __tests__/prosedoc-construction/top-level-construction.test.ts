@@ -69,9 +69,6 @@ Qed.
 test("Parse top level blocks (V)", () => {
     const blocks = topLevelBlocksV(inputDocumentV);
     // This produces one coq block containing the coqdoc, math and coqcode blocks.
-
-    console.log(blocks);
-
     expect(blocks.length).toBe(4);
     expect(isCoqBlock(blocks[0])).toBe(true);
     expect(isHintBlock(blocks[1])).toBe(true);

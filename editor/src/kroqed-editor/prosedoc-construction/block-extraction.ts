@@ -1,3 +1,4 @@
+import { FileFormat } from "../../../../shared";
 import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
 import { CoqDocBlock, CoqMarkdownBlock, MarkdownBlock } from "./blocks/blocktypes";
 
@@ -6,15 +7,26 @@ const regexes = {
     coq: /(\r\n|\n)?^```coq(\r\n|\n)([^]*?)(\r\n|\n)?^```$(\r\n|\n)?/gm,
     math_display: /\$\$([\s\S]*?)\$\$/g,
     input_area: /<input-area>\n([\s\S]*?)\n<\/input-area>/g,
-    hint: /<hint title="([\s\S]*?)">\n([\s\S]*?)\n<\/hint>/g
+    input_areaV: /\(\* begin input \*\)\n([\s\S]*?)\n\(\* end input \*\)/gm,
+    hint: /<hint title="([\s\S]*?)">\n([\s\S]*?)\n<\/hint>/g,
+    hintV: /\(\* begin hint : ([\s\S]*?) \*\)\n([\s\S]*?)\n\(\* end hint \*\)/gm,
 }
 
 /**
  * Create input blocks from document string. 
  * 
- * Uses regexes to search for `<input-area>` and `</input-area>` tags.
+ * Uses regexes to search for 
+ * - `<input-area>` and `</input-area>` tags (mv files)
+ * - `(* begin input *)` and `(* end input *)` (v files)
  */
-export function extractInputBlocks(document: string) {
+export function extractInputBlocks(document: string, fileFormat: FileFormat = FileFormat.MarkdownV) {
+    if (fileFormat === FileFormat.RegularV) {
+        return extractInputBlocksV(document);
+    }
+    return extractInputBlocksMV(document);
+}
+
+function extractInputBlocksMV(document: string) {
     const input_areas = document.matchAll(regexes.input_area);
 
     const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
@@ -26,18 +38,53 @@ export function extractInputBlocks(document: string) {
     return inputAreaBlocks;
 }
 
+function extractInputBlocksV(document: string) {
+    const input_areas = document.matchAll(regexes.input_areaV);
+
+    const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
+        if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
+        const range = { from: input_area.index, to: input_area.index + input_area[0].length };
+        return new InputAreaBlock("```coq\n" + input_area[1] + "\n```", range);
+    });
+
+    return inputAreaBlocks;
+}
+
 /**
  * Create hint blocks from document string. 
  * 
- * Uses regexes to search for `<hint>` and `</hint>` tags.
+ * Uses regexes to search for 
+ * - `<hint title=[hint title]>` and `</hint>` tags (mv files) 
+ * - `(* begin hint : [hint title] *)` and `(* end hint *)` (v files)
  */
-export function extractHintBlocks(document: string) {
+export function extractHintBlocks(document: string, fileFormat: (FileFormat.MarkdownV | FileFormat.RegularV) = FileFormat.MarkdownV): HintBlock[] {
+
+    if (fileFormat === FileFormat.RegularV) {
+        return extractHintBlocksV(document);
+    }
+    return extractHintBlocksMV(document);
+}
+
+function extractHintBlocksMV(document: string) {
     const hints = document.matchAll(regexes.hint);
 
     const hintBlocks = Array.from(hints).map((hint) => {
         if (hint.index === undefined) throw new Error("Index of hint is undefined");
         const range = { from: hint.index, to: hint.index + hint[0].length };
         return new HintBlock(hint[2], hint[1], range);
+    });
+
+    return hintBlocks;
+}
+
+function extractHintBlocksV(document: string) {
+    const hints = document.matchAll(regexes.hintV);
+
+    const hintBlocks = Array.from(hints).map((hint) => {
+        if (hint.index === undefined) throw new Error("Index of hint is undefined");
+        const range = { from: hint.index, to: hint.index + hint[0].length };
+        // This is incorrect as we should wrap the content part in a coqblock.
+        return new HintBlock(`\`\`\`coq\n${hint[2]}\n\`\`\``, hint[1], range);
     });
 
     return hintBlocks;

@@ -1,10 +1,10 @@
 import { FileFormat } from "../../../../shared";
 import { TheSchema } from "../kroqed-schema";
 import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractBlocksUsingRanges, extractMathDisplayBlocks } from "./block-extraction";
-import { Block } from "./blocks";
+import { Block, BlockRange } from "./blocks";
 import { CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock } from "./blocks/blocktypes";
 import { root } from "./blocks/schema";
-import { isMarkdownBlock } from "./blocks/typeguards";
+import { isCoqBlock, isMarkdownBlock } from "./blocks/typeguards";
 import { extractInterBlockRanges, maskInputAndHints, sortBlocks } from "./utils";
 import { Node as ProseNode } from "prosemirror-model";
 
@@ -55,13 +55,34 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
 
 // 0B. Extract the top level blocks from the input document.
 export function topLevelBlocksV(inputDocument: string): Block[] {
-    // There are two different 'top level' blocks, 
-    // - Coqcode
-    // - Coqdoc
+    // There are three different 'top level' blocks, 
+    // - Hint
+    // - InputArea
+    // - Coq
 
-    // 0B.1 
-    const range = { from: 0, to: inputDocument.length };
-    return [new CoqBlock(inputDocument, "", "", "", "", range)];
+    // We should also allow input and hints as we do with v files.
+    // The syntax is 
+    // (* begin hint : [hint description] *) and (* end hint *)
+    // (* begin input *) and (* end input *)
+
+    const hintBlocks = extractHintBlocks(inputDocument, FileFormat.RegularV);
+    const inputAreaBlocks = extractInputBlocks(inputDocument, FileFormat.RegularV);
+    const blocks = [...hintBlocks, ...inputAreaBlocks];
+    const coqBlockRanges = extractInterBlockRanges(blocks, inputDocument);
+    
+    // Extract the coq blocks based on the ranges.
+    const coqBlocks = coqBlockRanges.map(range => {
+        const content = inputDocument.slice(range.from, range.to);
+        return new CoqBlock(content, "", "", "", "", range);
+    });
+
+    const sortedBlocks = sortBlocks([...hintBlocks, ...inputAreaBlocks, ...coqBlocks]);
+    const prunedBlocks = sortedBlocks.filter(block => {
+        if (isCoqBlock(block) && (block.stringContent === "\n")) return false;
+
+        return true;
+    });
+    return prunedBlocks;
 }
 
 

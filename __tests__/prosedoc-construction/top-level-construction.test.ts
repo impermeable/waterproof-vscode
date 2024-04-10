@@ -1,7 +1,7 @@
-import { topLevelBlocksMV } from "../../editor/src/kroqed-editor/prosedoc-construction";
-import { isHintBlock, isInputAreaBlock, isMarkdownBlock, isMathDisplayBlock, isCoqBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { topLevelBlocksMV, topLevelBlocksV } from "../../editor/src/kroqed-editor/prosedoc-construction";
+import { isHintBlock, isInputAreaBlock, isMarkdownBlock, isMathDisplayBlock, isCoqBlock, isCoqDocBlock, isCoqCodeBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
 
-const inputDocument = `# Example document
+const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">
 \`\`\`coq
 Require Import ZArith.
@@ -26,8 +26,8 @@ Random Markdown list:
 
 
 // FIXME: Add checks for prewhite and postwhite here.
-test("Parse top level blocks", () => {
-    const blocks = topLevelBlocksMV(inputDocument);
+test("Parse top level blocks (MV)", () => {
+    const blocks = topLevelBlocksMV(inputDocumentMV);
     expect(blocks.length).toBe(7);
 
     expect(isMarkdownBlock(blocks[0])).toBe(true);
@@ -50,4 +50,43 @@ test("Parse top level blocks", () => {
 
     expect(isMarkdownBlock(blocks[6])).toBe(true);
     expect(blocks[6].stringContent).toBe("Random Markdown list:\n    1. Item 3\n    2. Item 0\n    3. $1 + 1$\n");
-})
+});
+
+const inputDocumentV = `(** * Example v file *)
+(* begin hint : testing *)
+Compute 2 + 2.
+(* end hint *)
+(* begin input *)
+Lemma testing : True.
+Proof.
+exact I.
+Qed.
+(* Proof should now be finished *)
+(* end input *)
+(** *** End example v file *)
+`;
+
+test("Parse top level blocks (V)", () => {
+    const blocks = topLevelBlocksV(inputDocumentV);
+    // This produces one coq block containing the coqdoc, math and coqcode blocks.
+
+    console.log(blocks);
+
+    expect(blocks.length).toBe(4);
+    expect(isCoqBlock(blocks[0])).toBe(true);
+    expect(isHintBlock(blocks[1])).toBe(true);
+    expect(isInputAreaBlock(blocks[2])).toBe(true);
+    expect(isCoqBlock(blocks[3])).toBe(true);
+
+    expect(blocks[0].innerBlocks!.length).toBe(1);
+    expect(isCoqDocBlock(blocks[0].innerBlocks![0])).toBe(true);
+    expect(blocks[0].innerBlocks![0].stringContent).toBe("* Example v file");
+
+    expect(blocks[1].innerBlocks!.length).toBe(1);
+    expect(isCoqBlock(blocks[1].innerBlocks![0])).toBe(true);
+    expect(isCoqCodeBlock(blocks[1].innerBlocks![0].innerBlocks![0])).toBe(true);
+
+    expect(blocks[2].innerBlocks!.length).toBe(1);
+    expect(isCoqBlock(blocks[2].innerBlocks![0])).toBe(true);
+    expect(isCoqCodeBlock(blocks[2].innerBlocks![0].innerBlocks![0])).toBe(true);
+});

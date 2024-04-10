@@ -323,7 +323,7 @@ export class Waterproof implements Disposable {
             );
 
             const clientOptions: LanguageClientOptions = {
-                documentSelector: [{ language: "coqmarkdown" }],  // only `.mv` files, not `.v`
+                documentSelector: [{ language: "coqmarkdown" }, { language: "coq" }],  // both .mv and .v files
                 outputChannelName: "Waterproof LSP Events (Initial)",
                 revealOutputChannelOn: RevealOutputChannelOn.Info,
                 initializationOptions: serverOptions,

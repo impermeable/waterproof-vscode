@@ -85,7 +85,7 @@
     "commands": [
       {
         "command": "waterproof.openTutorial",
-        "category": "Waterproof", 
+        "category": "Waterproof",
         "title": "Open Tutorial"
       },
       {
@@ -252,8 +252,8 @@
             }
           },
           {
-            "title": "Waterproof Tutorial", 
-            "id": "open-tutorial", 
+            "title": "Waterproof Tutorial",
+            "id": "open-tutorial",
             "description": "Open the Waterproof tutorial to start learning.\n[Open Tutorial](command:waterproof.openTutorial)",
             "completionEvents": [
               "onCommand:waterproof.openTutorial"
@@ -283,10 +283,10 @@
             "type": "boolean",
             "default": false,
             "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."
-          }, 
+          },
           "waterproof.enforceCorrectNonInputArea": {
-            "type": "boolean", 
-            "default": true, 
+            "type": "boolean",
+            "default": true,
             "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
           }
         }
@@ -437,6 +437,7 @@
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
     "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.7.0",
     "mocha": "^10.2.0",
     "prettier": "^2.8.1",
     "ts-jest": "^29.1.0",

@@ -3,18 +3,6 @@ import * as vscode from "vscode";
 import { WebviewManager } from "../webviewManager";
 import { ProseMirrorWebview } from "./pmWebview";
 
-/**
- * Provider for cat scratch editors.
- *
- * Cat scratch editors are used for `.cscratch` files, which are just json files.
- * To get started, run this extension and open an empty `.cscratch` file in VS Code.
- *
- * This provider demonstrates:
- *
- * - Setting up the initial webview for a custom editor.
- * - Loading scripts and styles in a custom editor.
- * - Synchronizing changes between a text document and a custom editor.
- */
 export class CoqEditorProvider implements vscode.CustomTextEditorProvider {
 
     /** The vscode extension context */
@@ -51,8 +39,9 @@ export class CoqEditorProvider implements vscode.CustomTextEditorProvider {
     ): Promise<void> {
         return ProseMirrorWebview.createProseMirrorView(webviewPanel, this._context.extensionUri, document).then((pmView) => {
             this._manager.addProseMirrorWebview(pmView);
-        }).catch(() => {
-            console.error(" Failed to create pm view ");
+        }).catch((reason) => {
+            console.error(`==> Failed to create editor view. \n==> The reason should be printed below.`);
+            console.log(reason);
         });
     }
 

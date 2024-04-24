@@ -49,6 +49,7 @@ type GoalsListP = PropsWithChildren<{
   bullet_msg?: PpString;
   pos: Position
   textDoc: VersionedTextDocumentIdentifier
+  subgoals: boolean;
 }>;
 
 //function that displays a list of goals if it exists 
@@ -58,9 +59,20 @@ function GoalsList({
   show_on_empty,
   bullet_msg,
   pos,
-  textDoc
+  textDoc,
+  subgoals
 }: GoalsListP) {
   let count = goals.length;
+
+  if (subgoals) {
+    if (count > 0) {
+      return (
+        <Box summary="Remaining subproofs/steps (some statements/cases remain to be shown)" pos={pos} textDox={textDoc}></Box>
+      )
+    } else {
+      return null;
+    }
+  }
 
   //if there are no goals then this is displayed
   if (count == 0) {
@@ -76,6 +88,7 @@ function GoalsList({
       return null;
     }
   }
+
 
   //if thare are goals then this maps over the goals and display them by using the Goal component
   return (
@@ -104,8 +117,6 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
   const [l, r] = stack[idx];
   const goals = l.concat(r);
   //defines the level of the goal using idx
-  let level_indicator =
-    idx === 0 ? "the same bullet level" : `the -${idx} bullet level`;
 
   return (
     <div>
@@ -116,11 +127,8 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
         show_on_empty={false}
         pos={pos}
         textDoc={textDoc}
+        subgoals={true}
       />
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* recursively calls itself to get the different level of goals */}
-        <StackGoals idx={idx + 1} stack={stack} pos={pos} textDoc={textDoc} />
-      </div>
     </div>
   );
 }
@@ -147,6 +155,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
         bullet_msg={goals.bullet}
         pos={pos}
         textDoc={textDoc}
+        subgoals={false}
       />
       {/* stacking goals that are on different levels */}
       <div style={{ marginLeft: "0.5ex" }}>
@@ -160,6 +169,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
           show_on_empty={false} // these goals are not shown if they do not exist
           pos={pos}
           textDoc={textDoc}
+          subgoals={false}
         />
         {/* a list for the goals that are given up */}
         <GoalsList 
@@ -168,6 +178,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
           show_on_empty={false} // these goals are not shown if they do not exist
           pos={pos}
           textDoc={textDoc}
+          subgoals={false}
         />
       </div>
     </div>

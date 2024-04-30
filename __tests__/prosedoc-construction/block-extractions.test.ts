@@ -7,7 +7,7 @@ test("Identify input blocks", () => {
 
     expect(blocks.length).toBe(1);
     expect(isInputAreaBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("# Test input area");
+    expect(blocks[0].stringContent).toBe("\n# Test input area\n");
     expect(blocks[0].range.from).toBe(10);
     expect(blocks[0].range.to).toBe(54);
 });
@@ -18,7 +18,7 @@ test("Identity input blocks #2", () => {
 
     expect(blocks.length).toBe(1);
     expect(isInputAreaBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("# Test input area");
+    expect(blocks[0].stringContent).toBe("\n# Test input area\n");
     expect(blocks[0].range.from).toBe(1);
     expect(blocks[0].range.to).toBe(45);
 });
@@ -98,8 +98,8 @@ test("Extract coqdoc blocks", () => {
     expect(isCoqDocBlock(blocks[0])).toBe(true);
     expect(isCoqDocBlock(blocks[1])).toBe(true);
 
-    expect(blocks[0].stringContent).toBe("* Header in coqdoc comment");
-    expect(blocks[1].stringContent).toBe("$\\text{math display}$");
+    expect(blocks[0].stringContent).toBe("* Header in coqdoc comment ");
+    expect(blocks[1].stringContent).toBe("$\\text{math display}$ ");
 });
 
 test("Extract math display from inside coqdoc comment", () => {

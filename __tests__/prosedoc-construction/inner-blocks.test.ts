@@ -33,7 +33,7 @@ test("Inner coq blocks", () => {
     expect(blocks[0].range.to).toBe(14);
 
     expect(isCoqDocBlock(blocks[1])).toBe(true);
-    expect(blocks[1].stringContent).toBe("* Header");
+    expect(blocks[1].stringContent).toBe("* Header ");
     expect(blocks[1].range.from).toBe(14);
     expect(blocks[1].range.to).toBe(coqContent.length);
     

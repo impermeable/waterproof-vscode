@@ -12,6 +12,9 @@ import { DOMParser, Node as PNode } from "prosemirror-model";
 const inputDocument = `#### Markdown content
 $\int_2^3 x dx$
 $$1028 + 23 = ?$$
+Lol, empty coq block underneath.
+\`\`\`coq
+\`\`\`
 \`\`\`coq
 5<10.
 Definition test := 1.
@@ -34,7 +37,6 @@ $\text{display math} $ *)
 - Item 1
 - Item 2 *)
 \`\`\``;
-
 
 test("createProseMirrorDocument", () => {
     const outputNode = createProseMirrorDocument(inputDocument, FileFormat.MarkdownV);

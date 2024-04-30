@@ -6,8 +6,8 @@ const regexes = {
     // coq: /```coq\n([\s\S]*?)\n```/g,
     coq: /(\r\n|\n)?^```coq(\r\n|\n)([^]*?)(\r\n|\n)?^```$(\r\n|\n)?/gm,
     math_display: /\$\$([\s\S]*?)\$\$/g,
-    input_area: /<input-area>\n([\s\S]*?)\n<\/input-area>/g,
-    input_areaV: /\(\* begin input \*\)\n([\s\S]*?)\n\(\* end input \*\)/gm,
+    input_area: /<input-area>([\s\S]*?)<\/input-area>/g,
+    input_areaV: /\(\* begin input \*\)([\s\S]*?)\(\* end input \*\)/gm,
     hint: /<hint title="([\s\S]*?)">\n([\s\S]*?)\n<\/hint>/g,
     hintV: /\(\* begin hint : ([\s\S]*?) \*\)\n([\s\S]*?)\n\(\* end hint \*\)/gm,
 }
@@ -123,6 +123,7 @@ export function extractCoqBlocks(inputDocument: string) {
         // - coq[3] ..., the content of the coq block;
         // - coq[4] ..., postPreWhite;
         // - coq[5] ..., postPostWhite;
+        // console.log(`==========\nprePreWhite: '${coq[1] == "\n"}'\nprePostWhite: '${coq[2] == "\n"}'\ncontent: '${coq[3]}'\npostPreWhite: '${coq[4] == "\n"}'\npostPostWhite: '${coq[5] == "\n"}'\n==========\n`)
         const content = coq[3];
         const prePreWhite = coq[1] == "\n" ? "newLine" : "";
         const prePostWhite = coq[2] == "\n" ? "newLine" : "";
@@ -158,7 +159,7 @@ export function extractBlocksUsingRanges<BlockType extends Block>(
 // Info: https://coq.inria.fr/doc/refman/using/tools/coqdoc.html
 // FIXME: This regex needs some attention. I'm especially unsure of the space before the closing `*)`.
 // const coqdocRegex = /\(\*\*(?: |\n)([\s\S]*?)\*\)/g;
-const coqdocRegex = /(\r\n|\n)?^\(\*\* ([^]*?) \*\)$(\r\n|\n)?/gm
+const coqdocRegex = /(\r\n|\n)?^\(\*\* ([^]*?)\*\)$(\r\n|\n)?/gm
 export function extractCoqDoc(input: string): CoqDocBlock[] {
     const comments = Array.from(input.matchAll(coqdocRegex));
     const coqDocBlocks = Array.from(comments).map((comment) => {

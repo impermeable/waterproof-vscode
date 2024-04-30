@@ -41,16 +41,9 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
 
     // 0A.6 Prune empty blocks.
     const allBlocks = sortBlocks([...blocks, ...markdownBlocks]);
-    const prunedBlocks = allBlocks.filter(block => {
-        if (isMarkdownBlock(block)) {
-            if (block.isNewLineOnly) return false;
-            if (block.range.from === block.range.to) return false;
-        }
-        return true;
-    });
 
     // 0A.6 Sort the blocks and return.
-    return prunedBlocks;
+    return allBlocks;
 }
 
 // 0B. Extract the top level blocks from the input document.

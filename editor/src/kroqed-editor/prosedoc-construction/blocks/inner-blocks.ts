@@ -29,6 +29,12 @@ export function createCoqInnerBlocks(input: string): Block[] {
 
     // Everything in between is coq code (including regular coq comments).
     const ranges = extractInterBlockRanges(coqdocBlocks, input);
+
+    if (ranges.length === 0) {
+        // FIXME: This is a fix for the case that the coqblock is empty.
+        //        Ideally, this should be handled better and empty coq blocks should not appear.
+        return [new CoqCodeBlock("", { from: 0, to: 0 })];
+    }
     const coqCodeBlocks = extractBlocksUsingRanges<CoqCodeBlock>(input, ranges, CoqCodeBlock);
 
     // Return the sorted blocks.

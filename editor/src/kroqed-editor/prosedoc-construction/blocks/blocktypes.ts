@@ -1,3 +1,4 @@
+import { TheSchema } from "../../kroqed-schema";
 import { BLOCK_NAME, Block, BlockRange } from "./block";
 import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
 import { coqCode, coqDoc, coqMarkdown, coqblock, hint, inputArea, markdown, mathDisplay, text } from "./schema";
@@ -146,6 +147,10 @@ export class CoqCodeBlock implements Block {
     constructor( public stringContent: string, public range: BlockRange ) {};
 
     toProseMirror() {
+        if (this.stringContent === "") {
+            // If the string content is empty, we create an empty coqcode node.
+            return TheSchema.nodes.coqcode.create();
+        }
         return coqCode(this.stringContent);
     }
 

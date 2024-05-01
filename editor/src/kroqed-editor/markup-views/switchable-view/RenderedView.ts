@@ -5,6 +5,7 @@ import { EditorState, TextSelection } from "prosemirror-state";
 import MarkdownIt from "markdown-it";
 import { SwitchableView } from "./SwitchableView";
 import { markdownRenderingSchema } from "./MarkdownSchema";
+import { FileFormat } from "../../../../../shared";
 
 export class RenderedView {
     public view: EditorView;
@@ -16,12 +17,16 @@ export class RenderedView {
         content: string, 
         outerView: EditorView, 
         parent: SwitchableView, 
+        usingCoqdocSyntax: boolean,
         getPos: (() => number | undefined),
         
     ) {
         // Create a new MarkdownIt renderer with support for html (this allows 
         //  for the math-inline nodes to be passed through)
-        const mdit = new MarkdownIt({html: true});
+        const mdit = usingCoqdocSyntax 
+            // Note: We disable 'code' (ie. four space) because this does not work nicely in the .v files.
+            ? new MarkdownIt({html: true}).disable("code")
+            : new MarkdownIt({html: true});
         // Render the markdown (converts it into a HTML string)
         const mditOutput = mdit.render(content);
         // Create a container element.

@@ -42,8 +42,8 @@ export const hint = (title: string, childNodes: ProseNode[]): ProseNode => {
 }
 
 /** Construct coq prosemirror node. */
-export const coqblock = (childNodes: ProseNode[], prePreWhite: string, postPostWhite: string): ProseNode => {
-    return TheSchema.nodes.coqblock.create({prePreWhite, postPostWhite}, childNodes);
+export const coqblock = (childNodes: ProseNode[], prePreWhite: string, prePostWhite: string, postPreWhite: string, postPostWhite: string): ProseNode => {
+    return TheSchema.nodes.coqblock.create({prePreWhite, prePostWhite, postPreWhite, postPostWhite}, childNodes);
 }
 
 /** Construct coqdoc prosemirror node. */

@@ -75,7 +75,13 @@ export class CoqBlock implements Block {
 
     toProseMirror() {
         const childNodes = this.innerBlocks.map(block => block.toProseMirror());
-        return coqblock(childNodes, this.prePreWhite, this.postPostWhite);
+        return coqblock(
+            childNodes,
+            this.prePreWhite,
+            this.prePostWhite,
+            this.postPreWhite,
+            this.postPostWhite
+        );
     }
 
     // Debug print function.

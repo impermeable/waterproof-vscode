@@ -68,7 +68,7 @@ export function translateCoqDoc(entry: string) {
      * Replace quoted coq according to: 
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#coq-material-inside-documentation
      */
-    commentInside = commentInside.replaceAll(/\[([\s\S]+?)\]/g, `\`$1\``);
+    commentInside = commentInside.replaceAll(/\[([\s\S]+)\]/g, `\`$1\``);
 
     // Try to apply every pretty printing rule.
     ppTable.forEach((value: string, key: string) => {

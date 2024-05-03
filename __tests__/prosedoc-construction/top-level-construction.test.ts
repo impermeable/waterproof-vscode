@@ -35,7 +35,7 @@ test("Parse top level blocks (MV)", () => {
     expect(blocks[0].stringContent).toBe("# Example document\n");
     
     expect(isHintBlock(blocks[1])).toBe(true);
-    expect(blocks[1].stringContent).toBe("```coq\nRequire Import ZArith.\n```");
+    expect(blocks[1].stringContent).toBe("\n```coq\nRequire Import ZArith.\n```\n");
     
     expect(isMarkdownBlock(blocks[2])).toBe(true);
     expect((blocks[2] as MarkdownBlock).isNewLineOnly).toBe(true);
@@ -82,6 +82,6 @@ test("Parse top level blocks (V)", () => {
 
     expect(blocks[0].stringContent).toBe("(** * Example v file *)\n");
     expect(blocks[1].stringContent).toBe("```coq\nCompute 2 + 2.\n```");
-    expect(blocks[2].stringContent).toBe("```coq\nLemma testing : True.\nProof.\nexact I.\nQed.\n(* Proof should now be finished *)\n```\n");
-    expect(blocks[3].stringContent).toBe("(** *** End example v file *)\n");
+    expect(blocks[2].stringContent).toBe("```coq\nLemma testing : True.\nProof.\nexact I.\nQed.\n(* Proof should now be finished *)\n```");
+    expect(blocks[3].stringContent).toBe("\n(** *** End example v file *)\n");
 });

@@ -7,7 +7,7 @@ const regexes = {
     coq: /(\r\n|\n)?^```coq(\r\n|\n)([^]*?)(\r\n|\n)?^```$(\r\n|\n)?/gm,
     math_display: /\$\$([\s\S]*?)\$\$/g,
     input_area: /<input-area>([\s\S]*?)<\/input-area>/g,
-    input_areaV: /\(\* begin input \*\)([\s\S]*?)\(\* end input \*\)/gm,
+    input_areaV: /\(\* begin input \*\)\n([\s\S]*?)\n\(\* end input \*\)/gm,
     hint: /<hint title="([\s\S]*?)">([\s\S]*?)<\/hint>/g,
     hintV: /\(\* begin hint : ([\s\S]*?) \*\)\n([\s\S]*?)\n\(\* end hint \*\)/gm,
 }

@@ -30,7 +30,7 @@ test("Identify hint blocks", () => {
     expect(blocks.length).toBe(1);
     expect(isHintBlock(blocks[0])).toBe(true);
     expect(blocks[0].title).toBe("hint-title-test");
-    expect(blocks[0].stringContent).toBe("# Test hint");
+    expect(blocks[0].stringContent).toBe("\n# Test hint\n");
     expect(blocks[0].range.from).toBe(10);
     expect(blocks[0].range.to).toBe(60);
 });

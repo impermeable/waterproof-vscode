@@ -7,13 +7,13 @@ export class TextDocMapping {
     private _theMapping: TextDocMappingMV | TextDocMappingV;
     
     constructor (fileFormat: FileFormat, inputString: string, version: number) {
-        // if (fileFormat === FileFormat.RegularV) {
-        //     this._theMapping = new TextDocMappingV(inputString, version);
-        // } else if (fileFormat === FileFormat.MarkdownV) {
+        if (fileFormat === FileFormat.RegularV) {
+            this._theMapping = new TextDocMappingV(inputString, version);
+        } else if (fileFormat === FileFormat.MarkdownV) {
             this._theMapping = new TextDocMappingMV(inputString, version);
-        // } else {
-        //     throw new Error("Unsupported file format passed to TextDocMapping.");
-        // }
+        } else {
+            throw new Error("Unsupported file format passed to TextDocMapping.");
+        }
     }
 
     public getMapping() {

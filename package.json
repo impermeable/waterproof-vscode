@@ -53,7 +53,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv}"
+            "filenamePattern": "*.{mv,v}"
           }
         ]
       }

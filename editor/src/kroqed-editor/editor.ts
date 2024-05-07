@@ -1,5 +1,5 @@
 import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
-import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
+import { deleteSelection, selectParentNode } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import { ResolvedPos, Schema, Node as ProseNode } from "prosemirror-model";
 import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
@@ -31,7 +31,7 @@ import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from 
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
-import { checkPrePost, fixLessThanBug } from "./file-utils";
+import { checkPrePost } from "./file-utils";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -58,7 +58,6 @@ export class Editor {
 
 	// The editor and content html elements.
 	private _editorElem: HTMLElement;
-	private _contentElem: HTMLElement;
 
 	// The prosemirror view
 	private _view: EditorView | undefined;
@@ -75,11 +74,10 @@ export class Editor {
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 
-	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
+	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement) {
 		this._api = vscodeapi;
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
-		this._contentElem = contentElement;
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;

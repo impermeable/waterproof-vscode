@@ -15,12 +15,9 @@ interface VSCodeAPI {
 window.onload = () => {
 	// Get HTML DOM elements
 	const editorElement = document.querySelector<HTMLElement>("#editor");
-	const contentElement = document.querySelector<HTMLElement>("#editor-content");
 
 	if (editorElement == null) {
 		throw Error("Editor element cannot be null (no element with id 'editor' found)");
-	} else if (contentElement == null) {
-		throw Error("Content element cannot be null (no element with id 'editor-content' found)");
 	}
 
 	//@ts-ignore
@@ -31,7 +28,7 @@ window.onload = () => {
 	}
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
-	const theEditor = new Editor(vscode, editorElement, contentElement);
+	const theEditor = new Editor(vscode, editorElement);
 
 	window.addEventListener("message", (event: MessageEvent) => {
 		const msg = event.data as Message; // TODO: This should be error checked!

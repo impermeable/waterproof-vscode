@@ -160,7 +160,7 @@ export class VersionChecker {
      */
     private informWaterproofLibNotFound() {
         const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.`;
-        window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
     }
 
     /**
@@ -202,8 +202,8 @@ export class VersionChecker {
      * Inform the user that the Waterproof path is invalid.
      */
     private informWaterproofPathInvalid() {
-        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nTry running the automatic installer.\nOtherwise, for more information on how to make the waterproof extension work, please see the installation instructions.";
-        window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nTry running the automatic installer, or for more information on how to make the waterproof extension work see the installation instructions.";
+        window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
     }
 
     /**
@@ -214,8 +214,9 @@ export class VersionChecker {
         if (value == OPEN_INSTRUCTIONS) {
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
         } else if (value === AUTO_INSTALL){
-            commands.executeCommand(`waterproof.autoInstall`); // Install libraries
-            commands.executeCommand(`waterproof.defaultPath`); // Set correct lsp path
+            commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
+            // commands.executeCommand(`waterproof.autoInstall`); // Install libraries
+            // commands.executeCommand(`waterproof.defaultPath`); // Set correct lsp path
         } 
     }
 }

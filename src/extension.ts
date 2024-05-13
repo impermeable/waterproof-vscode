@@ -35,6 +35,11 @@ import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
 import { exec } from "child_process"
 import { resolveSoa } from "dns";
 
+
+export function activate(context: ExtensionContext): void {
+    commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
+}
+
 /**
  * Main extension class
  */
@@ -213,6 +218,11 @@ export class Waterproof implements Disposable {
         });
 
         this.registerCommand("autoInstall", () => {
+            commands.executeCommand(`waterproof.defaultPath`);
+
+            const windowsInstallationScript = `echo Begin Waterproof Installation && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo Installer Finished Downloading && Waterproof_Installer.exe && echo Files Installed && del Waterproof_Installer.exe && echo Refresh the Waterproof Checker to update libraries && echo This terminal can now be closed"`
+            const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
+
             let cmnd: string | undefined;
             switch (process.platform) {
                 case "aix": cmnd = undefined; break;
@@ -225,10 +235,10 @@ export class Waterproof implements Disposable {
                 //case "linux": cmnd = `sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y`; break;
                 case "linux": cmnd = `gnome-terminal -v -e 'sh -c "sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y"'`; break;
                 case "openbsd": cmnd = undefined; break;
-                case "sunos": cmnd = undefined; break;
+                case "sunos": cmnd = undefined; break; 
                 // WINDOWS
-                case "win32": cmnd = `start "WATERPROOF INSTALLER" cmd /k "echo BEGIN INSTALLATION && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo DOWNLOADED INSTALLER && Waterproof_Installer.exe && echo INSTALLED FILES && del Waterproof_Installer.exe && echo REMOVED LEFTOVER FILES"`; break;
-                case "cygwin": cmnd = `start "WATERPROOF INSTALLER" cmd /k "echo BEGIN INSTALLATION && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo DOWNLOADED INSTALLER && Waterproof_Installer.exe && echo INSTALLED FILES && del Waterproof_Installer.exe && echo REMOVED LEFTOVER FILES"`; break;
+                case "win32":
+                case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && ` + uninstallerLocation + `&&` + windowsInstallationScript + `) ELSE ` +  windowsInstallationScript; break;
                 case "netbsd": cmnd = undefined; break;
             }
 
@@ -236,7 +246,7 @@ export class Waterproof implements Disposable {
                 window.showInformationMessage("Waterproof has no automatic installation process for this platform, please refer to the walktrough page.");
             } else {
                 this.autoInstall(cmnd)
-            }
+            }  
         });
     }
 

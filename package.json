@@ -156,6 +156,23 @@
     },
     "walkthroughs": [
       {
+        "id": "waterproof.auto",
+        "title": "Waterproof Automatic Setup",
+        "description": "Automatic installation for all dependencies to get up and running with Waterproof",
+        "steps": [
+          {
+            "id": "install-dependencies",
+            "title": "Run Automatic Installer",
+            "description": "Waterproof needs additional software to function.\n[Run Automatic Installer](command:waterproof.autoInstall)",
+            "completionEvents": [
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/auto-installer.md"
+            }
+          }
+        ]
+      },
+      {
         "id": "waterproof.setup",
         "title": "Waterproof Initial Setup",
         "description": "Interactive guide to get up and running with Waterproof",

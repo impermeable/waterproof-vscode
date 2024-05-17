@@ -85,7 +85,7 @@
     "commands": [
       {
         "command": "waterproof.openTutorial",
-        "category": "Waterproof", 
+        "category": "Waterproof",
         "title": "Open Tutorial"
       },
       {
@@ -252,8 +252,8 @@
             }
           },
           {
-            "title": "Waterproof Tutorial", 
-            "id": "open-tutorial", 
+            "title": "Waterproof Tutorial",
+            "id": "open-tutorial",
             "description": "Open the Waterproof tutorial to start learning.\n[Open Tutorial](command:waterproof.openTutorial)",
             "completionEvents": [
               "onCommand:waterproof.openTutorial"
@@ -283,10 +283,10 @@
             "type": "boolean",
             "default": false,
             "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."
-          }, 
+          },
           "waterproof.enforceCorrectNonInputArea": {
-            "type": "boolean", 
-            "default": true, 
+            "type": "boolean",
+            "default": true,
             "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
           }
         }
@@ -444,7 +444,7 @@
     "vscode-extension-tester": "^5.6.0"
   },
   "dependencies": {
-    "@benrbray/prosemirror-math": "^0.2.2",
+    "@benrbray/prosemirror-math": "^1.0.0",
     "@codemirror/autocomplete": "^6.7.1",
     "@codemirror/commands": "^6.2.4",
     "@codemirror/language": "^6.6.0",
@@ -457,7 +457,7 @@
     "@vscode/webview-ui-toolkit": "^1.2.1",
     "eventemitter2": "6.4.9",
     "jquery": "^3.7.0",
-    "katex": "^0.13.0",
+    "katex": "^0.16.10",
     "markdown-it": "^13.0.1",
     "object-hash": "^3.0.0",
     "prosemirror-commands": "^1.1.7",

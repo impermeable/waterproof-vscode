@@ -22,7 +22,9 @@ import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 import { Logbook } from "./webviews/goalviews/logbook";
 import { SidePanelProvider, addSidePanel } from "./webviews/sidePanel";
-import { CommonExecute } from "./webviews/standardviews/commonExecute";
+import { Search } from "./webviews/standardviews/search";
+import { Help } from "./webviews/standardviews/help";
+import { ExpandDefinition } from "./webviews/standardviews/expandDefinition";
 import { ExecutePanel } from "./webviews/standardviews/execute";
 import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
@@ -102,14 +104,18 @@ export class Waterproof implements Disposable {
             this.updateGoals(document, position);  // TODO: error handling
         });
         this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
-            executeCommand(this.client, command).then(
-                results => {
-                    source.setResults(results);
-                },
-                (error: Error) => {
-                    source.setResults(["Error: " + error.message]);  // (temp)
-                }
-            );
+            if (command == "createHelp") {
+                source.setResults(["createHelp"]);
+            } else {
+                executeCommand(this.client, command).then(
+                    results => {
+                        source.setResults(results);
+                    },
+                    (error: Error) => {
+                        source.setResults(["Error: " + error.message]);  // (temp)
+                    }
+                );
+            }
         });
 
         this.disposables.push(CoqEditorProvider.register(context, this.webviewManager));
@@ -122,7 +128,9 @@ export class Waterproof implements Disposable {
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals")
         this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
-        this.webviewManager.addToolWebview("commonExecute", new CommonExecute(this.context.extensionUri));
+        this.webviewManager.addToolWebview("search", new Search(this.context.extensionUri));
+        this.webviewManager.addToolWebview("help", new Help(this.context.extensionUri));
+        this.webviewManager.addToolWebview("expandDefinition", new ExpandDefinition(this.context.extensionUri));
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));

@@ -9,7 +9,9 @@ async function main() {
     var infoView = viewBuild("./views/goals/index.tsx");
     var logView = viewBuild("./views/logbook/index.tsx");
     var executeView = viewBuild("./views/execute/index.tsx");
-    var commonExecuteView = viewBuild("./views/commonExecute/index.tsx");
+    var helpView = viewBuild("./views/help/index.tsx");
+    var searchView = viewBuild("./views/search/index.tsx");
+    var expandDefinitionView = viewBuild("./views/expandDefinition/index.tsx");
     var symbolsView = viewBuild("./views/symbols/index.tsx");
     var tacticView = viewBuild("./views/tactics/index.tsx");
 
@@ -30,7 +32,7 @@ async function main() {
 	  process.exit(1);
 	});
 
-    await Promise.all([node, browser, editor, infoView, logView, executeView, commonExecuteView, symbolsView]);
+    await Promise.all([node, browser, editor, infoView, logView, executeView, helpView, searchView, expandDefinitionView, symbolsView]);
 }
 
 async function build(input, output, platform) {

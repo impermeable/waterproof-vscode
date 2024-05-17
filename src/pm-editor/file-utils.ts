@@ -30,11 +30,15 @@ export function getNonInputRegions(doc: string) {
         (_,i) => {
             const open = allTags[2*i];
             const close = allTags[2*i + 1];
-            // const content = docOnDisk.substring(open.position, close.position);
             return {open, close};
         }
     );
 
+    // In the case that there are no input areas in 
+    // the document this is an early return.
+    if (pairsCombined.length === 0) {
+        return [];
+    }
 
     const outsideInputAreaRegions = Array.from({length: pairsCombined.length + 1}, (_, i) => {
         if (i == 0) {

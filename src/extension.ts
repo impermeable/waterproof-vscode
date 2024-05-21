@@ -223,6 +223,8 @@ export class Waterproof implements Disposable {
             const windowsInstallationScript = `echo Begin Waterproof Installation && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo Installer Finished Downloading && Waterproof_Installer.exe && echo Files Installed && del Waterproof_Installer.exe && echo Refresh the Waterproof Checker to update libraries && echo This terminal can now be closed"`
             const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
 
+            this.stopClient();
+
             let cmnd: string | undefined;
             switch (process.platform) {
                 case "aix": cmnd = undefined; break;
@@ -247,6 +249,8 @@ export class Waterproof implements Disposable {
             } else {
                 this.autoInstall(cmnd)
             }  
+
+            // this.initializeClient();
         });
     }
 
@@ -260,6 +264,7 @@ export class Waterproof implements Disposable {
                 if (err) {
                     //console.log("Install Failed")
                 } 
+                this.initializeClient();
                 resolve(true)
                 // Add better error handling
             });

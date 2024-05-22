@@ -46,14 +46,11 @@ export class TextDocMappingV {
 
     /** The different possible HTMLtags in kroqed-schema */
     private static HTMLtags: Set<string> = new Set<string>([
-        "markdown",
         "input-area",
-        "coqblock",
         "coqcode",
         "coqdoc",
         "math-display",
         "hint",
-        "coqdown",
     ]);
 
     /** 
@@ -120,6 +117,9 @@ export class TextDocMappingV {
         /** A stack to which we push starting html tags and pop them once we encounter the closing tag */
         let stack = new Array<{ tag: string, offsetPost: number}>;
 
+        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        console.log(inputString)
+
         /** The current index we are at within the prosemirror content elem */
         let offsetProse: number = 0; 
 
@@ -132,6 +132,9 @@ export class TextDocMappingV {
         // Continue until the entire string has been parsed
         while(inputString.length > 0) { 
             const next: TagInformation = TextDocMappingV.getNextHTMLtag(inputString);
+
+            console.log(next)
+
             let nextCell: StringCell | undefined = undefined;
             
             /** The number of characters the tag `next` takes up in the raw vscode doc. */
@@ -169,15 +172,6 @@ export class TextDocMappingV {
 
             // Add end information of this tag to mapping
             this.endHtmlMap.set(offsetProse,{ offsetText: offsetText, offsetProse: offsetProse, textCost: textCost});
-
-            // Check if the nextCell should be pushed
-            switch(next.content) {
-                case "coqcode": 
-                case "math-display": case "coqdown":
-                    // If the nextcell is set, push it to mapping
-                    if(!(nextCell === undefined)) this.stringBlocks.set(nextCell.startProse, nextCell);
-                    break;
-            }
             
             // Update the input string and cut off the processed text
             inputString = inputString.slice(next.end);
@@ -257,6 +251,7 @@ export class TextDocMappingV {
         // Find all html tags (this is necessary for the position and for invalid matches)
         let matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
 
+        console.log(matches)
         // Loop through all matches 
         for (let match of matches) {
 

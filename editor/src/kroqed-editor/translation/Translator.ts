@@ -1,6 +1,7 @@
 import { Serializer } from "./types";
 import { Fragment, Node, Slice } from "prosemirror-model";
 import { translateMvToProsemirror } from "./toProsemirror";
+import { translateVToProsemirror } from "./toProsemirror";
 import { FileFormat } from "../../../../shared"
 
 /** Class that handles the translation from .mv | .v to prosemirror and vice versa. */
@@ -40,8 +41,7 @@ export class FileTranslator {
             case FileFormat.RegularV:
                 // Note: This parser exists solely for the purpose of giving input to the TextDocMapping.
                 // We perform a hack here in the case of a .v file.
-                const removedMarkdownTags = translateMvToProsemirror(inputDocument).replace("<markdown>", "").replace("</markdown>", "");
-                return removedMarkdownTags;
+                return translateVToProsemirror(inputDocument);
             case FileFormat.Unknown: 
                 throw new Error("Cannot convert from unknown format");
         }

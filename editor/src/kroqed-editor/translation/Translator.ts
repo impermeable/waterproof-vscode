@@ -38,8 +38,10 @@ export class FileTranslator {
             case FileFormat.MarkdownV:
                 return translateMvToProsemirror(inputDocument); // 
             case FileFormat.RegularV:
-                // TODO: Parser for regular .v
-                return translateMvToProsemirror(inputDocument);
+                // Note: This parser exists solely for the purpose of giving input to the TextDocMapping.
+                // We perform a hack here in the case of a .v file.
+                const removedMarkdownTags = translateMvToProsemirror(inputDocument).replace("<markdown>", "").replace("</markdown>", "");
+                return removedMarkdownTags;
             case FileFormat.Unknown: 
                 throw new Error("Cannot convert from unknown format");
         }

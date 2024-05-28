@@ -17,7 +17,7 @@ export class CoqdocView extends SwitchableView {
         pluginKey: PluginKey, viewName: string
     ) {
         // Call the super constructor.
-        super(getPos, outerView, content, node, schema, pluginKey, viewName);
+        super(getPos, outerView, content, node, schema, pluginKey, viewName, true);
     }
 
     preprocessContentForEditing(input: string): string {

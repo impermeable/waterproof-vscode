@@ -42,6 +42,11 @@ export class WaterproofConfigHelper {
         return config().get<number>("max_errors") as number;
     }
 
+    /** `waterproof.send_diags_extra_data */
+    static get send_diags_extra_data() {
+        return config().get<boolean>("send_diags_extra_data") as boolean;
+    }
+
     /** `waterproof.goal_after_tactic` */
     static get goal_after_tactic() {
         return config().get<boolean>("goal_after_tactic") as boolean;

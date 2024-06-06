@@ -12,6 +12,11 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("teacherMode") as boolean;
     }
 
+    /** `waterproof.detailedErrorsMode` */
+    static get detailedErrors() {
+        return config().get<boolean>("detailedErrorsMode") as boolean;
+    }
+
     /** `waterproof.enforceCorrectNonInputArea` */
     static get enforceCorrectNonInputArea() {
         return config().get<boolean>("enforceCorrectNonInputArea") as boolean;

@@ -150,7 +150,19 @@ function handleCoqDocBlock(match: RegExpMatchArray) {
 
         let markDownType = "coqdoc"
 
-        input = `<coqdoc prePreWhite="`+ match[1] +`" prePostWhite="" postPreWhite="" postPostWhite="`+ match[3] +`">`.concat(input)
+        let match1 = match[1]
+
+        if (match1 == undefined) {
+            match1 = ""
+        }
+
+        let match3 = match[3]
+
+        if (match3 == undefined) {
+            match3 = ""
+        }
+
+        input = `<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite=""><coqdoc prePreWhite="`+ match1 +`" prePostWhite="" postPreWhite="" postPostWhite="`+ match3 +`"><coqdown>`.concat(input)
 
         // This is for markdown replacement with text
         const mathdisplayRegEx = /(?<!(?:\\|\`))(?:((?<!\$)\${1}(?!\$)))([^]*?)(?<!(?:\\|\`))(?<!\$)\1(?!\$)/gm
@@ -161,7 +173,7 @@ function handleCoqDocBlock(match: RegExpMatchArray) {
         input = input.replaceAll(mathdisplayRegEx2, `<\/${markDownType}><math-display></math-display><${markDownType}>`)
 
         //Closing markdown
-        input = input.concat(`<\/${markDownType}>`)
+        input = input.concat(`<\/coqdown><\/${markDownType}><\/coqblock>`)
 
         return input;
     } else {

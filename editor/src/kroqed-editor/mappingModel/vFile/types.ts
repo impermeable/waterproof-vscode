@@ -63,10 +63,10 @@ export type HtmlTagInfo = {
 
 
 /** This stores the characters that each 'starting' HTML tag represents in the orginal document */                                               
-export const textStartHTML: Map<string, string> = new Map<string, string>([["coqcode", ""], ["coqdoc", "(** "], ["math-display", "$"], ["input-area","(* begin input *)"], ["text",""]]);
+export const textStartHTML: Map<string, string> = new Map<string, string>([["coqdown", ""],["coqblock", ""],["coqcode", ""], ["coqdoc", "(** "], ["math-display", "$"], ["input-area","(* begin input *)"], ["text",""]]);
     
 /** This stores the characters that each 'ending' HTML tag represents the orginal document */
-export const textEndHTML: Map<string, string> = new Map<string, string>([["coqcode", ""], ["coqdoc", "*)"], ["math-display", "$"], ["input-area","(* end input *)"], ["hint", "(* end hint *)"],["text",""]]);
+export const textEndHTML: Map<string, string> = new Map<string, string>([["coqdown", ""],["coqblock", ""],["coqcode", ""], ["coqdoc", "*)"], ["math-display", "$"], ["input-area","(* end input *)"], ["hint", "(* end hint *)"],["text",""]]);
 
 // Note the hint tag represents an edge case, as it has dynamic test depending on its name
 // Note math-display is represented with '$', however this is only true in coqdoc... The mapping makes sure to include '$$' if in standard markdown

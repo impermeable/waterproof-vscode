@@ -3,7 +3,7 @@ import { FileFormat } from "../../../../shared";
 import { InsertionFunction, InsertionPlace } from "./types";
 import { NodeType } from "prosemirror-model";
 import { EditorView } from "prosemirror-view";
-import { allowedToInsert, getContainingNode, getNearestPosOutsideCoqblock } from "./command-helpers";
+import { allowedToInsert, getContainingNode, traverseUpAndReturnFirstWithName } from "./command-helpers";
 
 /**
  * Return a Markdown insertion command.
@@ -45,7 +45,7 @@ export function getMdInsertCommand(
             } else if (name === "coqblock" || name === "coqdoc") {
                 // In the case that the user has a selection within a coqblock or coqdoc cell we need to do more work and
                 // figure out where this block `starts` and `ends`.
-                const { start, end } = getNearestPosOutsideCoqblock(state.selection, state);
+                const { start, end } = traverseUpAndReturnFirstWithName(state, "coqblock");
                 trans = state.tr.insert(place == InsertionPlace.Above ? start : end, nodeType.create());
             }
 
@@ -96,7 +96,7 @@ export function getLatexInsertCommand(
                 trans = insertionFunction(state, state.tr, latexNodeType);
             } else if (name === "coqblock" || name === "coqdoc") {
                 // More difficult insertion since we have to `escape` the current coqblock.
-                const { start, end } = getNearestPosOutsideCoqblock(state.selection, state);
+                const { start, end } = traverseUpAndReturnFirstWithName(state, "coqblock");
                 trans = state.tr.insert(place == InsertionPlace.Above ? start : end, latexNodeType.create());
             }
 
@@ -145,7 +145,7 @@ export function getCoqInsertCommand(
                 trans = insertionFunction(state, state.tr, coqblockNodeType, coqcodeNodeType);
             } else if (name === "coqblock" || name === "coqdoc") {
                 // Find the position outside of the coqblock and insert a new coqblock and coqcode cell above or underneath.
-                const {start, end} = getNearestPosOutsideCoqblock(state.selection, state);
+                const {start, end} = traverseUpAndReturnFirstWithName(state, "coqblock");
                 const pos = place == InsertionPlace.Above ? start : end;
                 trans = state.tr.insert(pos, 
                     coqblockNodeType.create()).insert(pos + 1,coqcodeNodeType.create());

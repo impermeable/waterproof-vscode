@@ -1,123 +1,74 @@
-@top Program { expression* }
+@top Program { Sentence* }
 
-@skip { space | BlockComment }
+@skip { space | Comment }
 
-expression {
-    Identifier |
-    String |
-    Boolean |
-    Application { "(" expression* ")" } |
-    Vernacular |
-    Gallina |
-    tactics |
-    terminators | 
-    admitters
+Sentence {
+    WaterproofTactic
+    CoqSentence
 }
 
+
 @tokens {
-    Identifier { $[a-zA-Z_\-0-9]+ }
+    CommentOpen { "(*" }
+    CommentClose { "*)" }
+    CommentChar { !CommentClose }
 
-    String { '"' (!["\\] | "\\" _)* '"' }
+    Comment { CommentOpen CommentChar* CommentClose }
 
-    Boolean { "#t" | "#f" }
-
-    CommentChar { ![*)] }
-
-    BlockComment { "(*" CommentChar* "*)" }
-
-    space { $[ \t\n\r]+ }
-
-    "(" ")"
-
-    vernacular { "Abort" | "About"| "Add" | "All" | "Arguments" | "Asymmetric" | "Axiom" |
-        "Bind" | 
-        "Canonical" | "Check" | "Class" | "Close" | "Coercion" | "CoFixpoint" | "Comments" |
-        "CoInductive" | "Compute" | "Context" | "Constructors" | "Contextual" | "Corollary" |
-        "Defined" | "Definition" | "Delimit" |
-        "Fail" |
-        "Eval" |
-        "End" | "Example" | "Export" |
-        "Fact" | "Fixpoint" | "From" |
-        "Global" | "Goal" | "Graph" |
-        "Hint" | "Hypotheses" | "Hypothesis" |
-        "Implicit" | "Implicits" | "Import" | "Inductive" | "Infix" | "Instance" |
-        "Lemma" | "Let" | "Local" | "Ltac" |
-        "Module" | "Morphism" |
-        "Next" | "Notation" |
-        "Obligation" | "Open" |
-        "Parameter" | "Parameters" | "Prenex" | "Print" | "Printing" | "Program" |
-        "Patterns" | "Projections" | "Proof" |
-        "Proposition" |
-        "Qed" |
-        "Record" | "Relation" | "Remark" | "Require" | "Reserved" | "Resolve" | "Rewrite" |
-        "Save" | "Scope" | "Search" | "SearchAbout" | "Section" | "Set" | "Show" | "Strict" | "Structure" |
-        "Tactic" | "Time" | "Theorem" | "Types" |
-        "Unset" |
-        "Variable" | "Variables" | "View"
-        }
-
-    gallina {
-        "as" | "at" |
-        "cofix" | "crush" |
-        "else" | "end" |
-        "False" | "fix" | "for" | "forall" | "fun" |
-        "if" | "in" | "is" |
-        "let" |
-        "match" |
-        "of" |
-        "Prop" |
-        "return" |
-        "struct" |
-        "then" | "True" | "Type" |
-        "when"| "with"
-        }
-
-    interpunction { ";" | ":" | "." | "," | "?" | "<" | ">" | "=" | "+" | "!" }
-    Vernacular { "" vernacular " " | "" vernacular interpunction }
-
-    Gallina { "" gallina " "| "" gallina interpunction }
-
-    tactics {
-        "after" | "apply" | "assert" | "auto" | "autorewrite" |
-        "case" | "change"| "clear" | "compute" | "congruence" | "constructor" |
-        "congr" | "cut" | "cutrewrite" |
-        "dependent" | "destruct" |
-        "eapply" | "eassumption" | "eauto" | "econstructor" | "elim"| "exists" |
-        "field" | "firstorder" | "fold" | "fourier" |
-        "generalize" |
-        "have" | "hnf" |
-        "induction" | "injection" | "instantiate" | "intro" | "intros" | "inversion" |
-        "left" |
-        "move" |
-        "pattern" | "pose" |
-        "refine" | "remember" | "rename" | "repeat" | "replace" | "revert" | "rewrite" |
-        "right" | "ring" |
-        "set" | "simpl" | "specialize" | "split" | "subst" | "suff" | "symmetry" |
-        "transitivity" | "trivial" | "try" |
-        "unfold" | "unlock" | "using" |
-        "vm_compute" |
-        "where" | "wlog"
+    space { " " | "\t" | "\n" | "\r" }
+    
+    CoqSentence {
+        ![.]+ "."
     }
 
-    terminators {
-        "assumption" |
-        "by" |
-        "contradiction" |
-        "discriminate" |
-        "easy" |
-        "exact" |
-        "now" |
-        "omega" |
-        "reflexivity" |
-        "tauto"
+    ConstrTerm {
+        @asciiLetter+ | $[ℕℤℚℝℂ]
     }
 
-    admitters {
-        "admit" |
-        "Admitted"
+    TacticInput {
+        space? ConstrTerm space?
     }
 
-    @precedence { BlockComment, String, Gallina, Vernacular, tactics, terminators, admitters, Identifier, space }
+    WaterproofTactic {
+        "Help." | 
+        "Take " TacticInput " : (" TacticInput ")." | 
+        "We need to show that (" TacticInput ")." | 
+        "We conclude that (" TacticInput ")." | 
+        "Choose " TacticInput " := (" TacticInput ")." | 
+        "Assume that (" TacticInput ")." | 
+        "Assume that (" TacticInput ") (" TacticInput ")." | 
+        "(& " TacticInput " )." | 
+        "Obtain such a " TacticInput "." | 
+        "Obtain " TacticInput " according to (" TacticInput ")." | 
+        "It suffices to show that (" TacticInput ")." | 
+        "By (" TacticInput ") it suffices to show that (" TacticInput ")." | 
+        "It holds that (" TacticInput ") (" TacticInput ")." | 
+        "It holds that (" TacticInput ")." | 
+        "By (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
+        "By (" TacticInput ") it holds that (" TacticInput ")." | 
+        "We claim that (" TacticInput ")." | 
+        "We claim that (" TacticInput ") (" TacticInput ")." | 
+        "We argue by contradiction." | 
+        "Contradiction." | 
+        "Because (" TacticInput ") both (" TacticInput ") and (" TacticInput ")." | 
+        "Because (" TacticInput ") both (" TacticInput ") (" TacticInput ") and (" TacticInput ") (" TacticInput ")." | 
+        "Either (" TacticInput ") or (" TacticInput ")." | 
+        "Expand the definition of " TacticInput " in (" TacticInput ")." | 
+        "We show both statements." | 
+        "We show both directions." | 
+        "We use induction on " TacticInput "." | 
+        "By (" TacticInput ") we conclude that (" TacticInput ")." | 
+        "Define " TacticInput " := (" TacticInput ")." | 
+        "Since (" TacticInput ") it holds that (" TacticInput ")." | 
+        "Since (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
+        "Since (" TacticInput ") we conclude that (" TacticInput ")." | 
+        "Since (" TacticInput ") it suffices to show that (" TacticInput ")."
+    }
+
+}
+
+@precedence {
+    WaterproofTactic, CoqSentence, BlockComment
 }
 
 @detectDelim

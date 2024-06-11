@@ -48,10 +48,7 @@ export class VersionChecker {
                 this.informUpdateAvailable("coq-lsp", this._reqVersionCoqLSP, version);
             }
         } else {
-            // const message = "Waterproof\n\nThe Waterproof extension can not function without downloading additional software.\nIf you have not already done so, please download and execute the waterproof installer using the buttons below.";
-            // window.showInformationMessage(message, { modal: true}, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
-            
-            
+
             this.informWaterproofPathInvalid();
             
             return Promise.resolve(false);
@@ -75,11 +72,12 @@ export class VersionChecker {
                 if (coqWPversion.needsUpdate(this._reqVersionCoqWP)) {
                     this.informUpdateAvailable("coq-waterproof", this._reqVersionCoqWP, coqWPversion);
                 }
+
+                if (isVersionError(coqResult)) {
+                    this.informWaterproofPathInvalid();
+                }
             }
 
-            if (isVersionError(coqResult)) {
-                this.informWaterproofPathInvalid();
-            }
         } else {
             const wpV = coqWaterproofResult.wpVersion;
             if (wpV.needsUpdate(this._reqVersionCoqWP)) {

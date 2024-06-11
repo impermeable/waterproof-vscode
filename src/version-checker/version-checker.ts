@@ -193,8 +193,7 @@ export class VersionChecker {
         if (value === DOWNLOAD_INSTALLER){
             env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
         } else if (value === AUTO_INSTALL){
-            commands.executeCommand(`waterproof.autoInstall`); // Install libraries
-            commands.executeCommand(`waterproof.defaultPath`); // Set correct lsp path
+            commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
         } 
     }
 
@@ -215,8 +214,7 @@ export class VersionChecker {
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
-            // commands.executeCommand(`waterproof.autoInstall`); // Install libraries
-            // commands.executeCommand(`waterproof.defaultPath`); // Set correct lsp path
+
         } 
     }
 }

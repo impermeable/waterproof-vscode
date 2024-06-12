@@ -322,7 +322,7 @@
           },
           "waterproof.send_diags_extra_data": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "description": "Send extra diagnostics data, usually on error"
           }
         }

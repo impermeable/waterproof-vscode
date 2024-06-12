@@ -63,7 +63,7 @@ Within a WSL distribution, execute the following lines:
 sudo apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.1.8+8.17
+opam install coq-lsp.0.1.9+8.17
 opam install coq-waterproof
 ```
 
@@ -96,7 +96,7 @@ In a terminal, execute the following lines
 apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.1.8+8.17
+opam install coq-lsp.0.1.9+8.17
 opam install coq-waterproof
 ```
 
@@ -168,6 +168,6 @@ Then execute
 ```
 opam init
 eval $(opam env)
-opam install coq-lsp.0.1.8+8.17
+opam install coq-lsp.0.1.9+8.17
 opam install coq-waterproof
 ```

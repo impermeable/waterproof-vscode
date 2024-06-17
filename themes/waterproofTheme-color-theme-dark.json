@@ -1,6 +1,6 @@
 {
 	  "name": "Waterproof dark theme",
-    "type": "light",
+    "type": "dark",
     "semanticTokenColors": {
         "parameter.declaration": {
             "foreground": "#e0af68"
@@ -160,8 +160,8 @@
         "editorCursor.foreground": "#8b8b8b",
         "editorIndentGuide.background": "#1e202e",
         "editorIndentGuide.activeBackground": "#363b54",
-        "editorLineNumber.foreground": "#363b54",
-        "editorLineNumber.activeForeground": "#737aa2",
+        "editorLineNumber.foreground": "#737aa2",
+        "editorLineNumber.activeForeground": "#ffffff",
         "editor.lineHighlightBackground": "#202020",
         "editorWhitespace.foreground": "#363b54",
 
@@ -212,7 +212,7 @@
 
         "editorPane.background": "#8b8b8b",
 
-        "editorWidget.foreground": "#787c99",
+        "editorWidget.foreground": "#ffffff",
         "editorWidget.background": "#121212",
         "editorWidget.resizeBorder": "#545c7e33",
 

@@ -40,6 +40,18 @@
     "onLanguage:coqmarkdown"
   ],
   "contributes": {
+        "themes": [
+      {
+        "label": "Waterproof light theme",
+        "uiTheme": "vs",
+        "path": "./themes/waterproofTheme-color-theme-light.json"
+      },
+      {
+        "label": "Waterproof dark theme",
+        "uiTheme": "vs",
+        "path": "./themes/waterproofTheme-color-theme-dark.json"
+      }
+    ],
     "iconThemes": [
       {
         "id": "waterproof-icons",

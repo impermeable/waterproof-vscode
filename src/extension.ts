@@ -220,7 +220,10 @@ export class Waterproof implements Disposable {
         this.registerCommand("autoInstall", () => {
             commands.executeCommand(`waterproof.defaultPath`);
 
-            const windowsInstallationScript = `echo Begin Waterproof Installation && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo Installer Finished Downloading && Waterproof_Installer.exe && echo Files Installed && del Waterproof_Installer.exe && echo Refresh the Waterproof Checker to update libraries && echo This terminal can now be closed`
+            const windowsInstallationScript = `echo Begin Waterproof Installation && curl -o Waterproof_Installer.exe -L 
+                https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe 
+                && echo Installer Finished Downloading && Waterproof_Installer.exe && echo Files Installed && del Waterproof_Installer.exe 
+                && echo Refresh the Waterproof Checker to update libraries && echo This terminal can now be closed`
             const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
 
             this.stopClient();
@@ -229,20 +232,21 @@ export class Waterproof implements Disposable {
             switch (process.platform) {
                 case "aix": cmnd = undefined; break;
                 case "android": cmnd = undefined; break;
-                // MACOS
+                // MACOS - This is currently not implemented, future task
                 case "darwin": cmnd = undefined; break;
                 case "freebsd": cmnd = undefined; break;
                 case "haiku": cmnd = undefined; break;
-                // LINUX
-                //case "linux": cmnd = `sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y`; break;
-                //case "linux": cmnd = `gnome-terminal -v -e 'sh -c "sudo apt-get install opam\nopam init -y\neval $(opam env)\nopam install coq-lsp.0.1.8+8.17 -y\nopam install coq-waterproof.2.1.0+8.17 -y"'`; break;
+                // LINUX - This is currently not implemented, issues when dealing with different distros and basic packages, installation is also easy enough 
                 case "linux": cmnd = undefined; break;
                 case "openbsd": cmnd = undefined; break;
                 case "sunos": cmnd = undefined; break; 
                 // WINDOWS
                 case "win32":
-                case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && ` + uninstallerLocation + ` && ` + windowsInstallationScript + ` ) ELSE (echo No previous installation found && ` +  windowsInstallationScript + ` )"`; break;
-                //case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo exist) ELSE (echo bye && echo bye2)"`; break;
+                    // If a waterproof installation is found in the default location it is first uninstalled.
+                    // The path is updated to the default location so if an installation is present in another directory it still will not be utilised
+                    // The installer is then downloaded, run and then removed.
+                case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && ` 
+                    + uninstallerLocation + ` && ` + windowsInstallationScript + ` ) ELSE (echo No previous installation found && ` +  windowsInstallationScript + ` )"`; break;
                 case "netbsd": cmnd = undefined; break;
             }
 
@@ -251,8 +255,6 @@ export class Waterproof implements Disposable {
             } else {
                 this.autoInstall(cmnd)
             }  
-
-            // this.initializeClient();
         });
     }
 
@@ -264,11 +266,11 @@ export class Waterproof implements Disposable {
         return new Promise((resolve, reject) => {
             exec(command, (err, stdout, stderr) => {
                 if (err) {
-                    //console.log("Install Failed")
+                    // Simple fixed scripts are run, the user is able to stop these but they are not considered errors 
+                    // as the user has freedom to choose the steps and can rerun the command.
                 } 
                 this.initializeClient();
                 resolve(true)
-                // Add better error handling
             });
         });
     }

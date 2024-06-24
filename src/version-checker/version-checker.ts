@@ -14,6 +14,7 @@ function isVersionError(input: any | VersionError): input is VersionError {
 }
 
 const DOWNLOAD_INSTALLER = "Download Installer";
+const AUTO_INSTALL = "Automatically Install"; //Consider a clearer message
 const OPEN_INSTRUCTIONS = "Installation Instructions";
 const OPEN_README = "Open Readme";
 
@@ -47,10 +48,7 @@ export class VersionChecker {
                 this.informUpdateAvailable("coq-lsp", this._reqVersionCoqLSP, version);
             }
         } else {
-            // const message = "Waterproof\n\nThe Waterproof extension can not function without downloading additional software.\nIf you have not already done so, please download and execute the waterproof installer using the buttons below.";
-            // window.showInformationMessage(message, { modal: true}, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
-            
-            
+
             this.informWaterproofPathInvalid();
             
             return Promise.resolve(false);
@@ -74,11 +72,12 @@ export class VersionChecker {
                 if (coqWPversion.needsUpdate(this._reqVersionCoqWP)) {
                     this.informUpdateAvailable("coq-waterproof", this._reqVersionCoqWP, coqWPversion);
                 }
+
+                if (isVersionError(coqResult)) {
+                    this.informWaterproofPathInvalid();
+                }
             }
 
-            if (isVersionError(coqResult)) {
-                this.informWaterproofPathInvalid();
-            }
         } else {
             const wpV = coqWaterproofResult.wpVersion;
             if (wpV.needsUpdate(this._reqVersionCoqWP)) {
@@ -159,7 +158,7 @@ export class VersionChecker {
      */
     private informWaterproofLibNotFound() {
         const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.`;
-        window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
     }
 
     /**
@@ -172,7 +171,7 @@ export class VersionChecker {
         const platform = getPlatformHelper();
         if (platform === "macos" || platform == "windows") {
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to download a new installer.`;
-            window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
         } else {
             // We have no installer for other platforms, so we supply the user with the readme.
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to open instructions on how to update.`;
@@ -188,26 +187,33 @@ export class VersionChecker {
      * Helper that opens a website where the user can download a new installer.
      * @param value -
      */
-    private handleDownloadInstaller(value: typeof DOWNLOAD_INSTALLER | undefined) {
-        if (value === DOWNLOAD_INSTALLER) env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
+    private handleDownloadInstaller(value: typeof AUTO_INSTALL | typeof DOWNLOAD_INSTALLER | undefined) {
+        if (value === DOWNLOAD_INSTALLER){
+            env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
+        } else if (value === AUTO_INSTALL){
+            commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
+        } 
     }
 
     /**
      * Inform the user that the Waterproof path is invalid.
      */
     private informWaterproofPathInvalid() {
-        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nFor more information on how to make the waterproof extension work, please see the installation instructions.";
-        window.showErrorMessage(message, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nTry running the automatic installer, or for more information on how to make the waterproof extension work see the installation instructions.";
+        window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
     }
 
     /**
      * Handle the options for the invalid waterproof path message.
      * @param value -
      */
-    private handleInvalidPath(value: typeof OPEN_INSTRUCTIONS | undefined) {
+    private handleInvalidPath(value: typeof AUTO_INSTALL | typeof OPEN_INSTRUCTIONS | undefined) {
         if (value == OPEN_INSTRUCTIONS) {
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
-        }
+        } else if (value === AUTO_INSTALL){
+            commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
+
+        } 
     }
 }
 

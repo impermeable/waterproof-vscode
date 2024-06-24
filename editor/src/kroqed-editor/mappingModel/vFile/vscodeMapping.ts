@@ -51,6 +51,8 @@ export class TextDocMappingV {
         "coqdoc",
         "math-display",
         "hint",
+        "coqblock",
+        "coqdown"
     ]);
 
     /** 
@@ -131,9 +133,9 @@ export class TextDocMappingV {
 
         // Continue until the entire string has been parsed
         while(inputString.length > 0) { 
-            const next: TagInformation = TextDocMappingV.getNextHTMLtag(inputString);
 
-            console.log(next)
+            console.log(inputString)
+            const next: TagInformation = TextDocMappingV.getNextHTMLtag(inputString);
 
             let nextCell: StringCell | undefined = undefined;
             
@@ -173,10 +175,21 @@ export class TextDocMappingV {
             // Add end information of this tag to mapping
             this.endHtmlMap.set(offsetProse,{ offsetText: offsetText, offsetProse: offsetProse, textCost: textCost});
             
+            // Check if the nextCell should be pushed
+            switch(next.content) {
+                case "coqdown": case "coqcode": 
+                case "math-display": 
+                    // If the nextcell is set, push it to mapping
+                    if(!(nextCell === undefined)) this.stringBlocks.set(nextCell.startProse, nextCell);
+                    break;
+            }
+
             // Update the input string and cut off the processed text
             inputString = inputString.slice(next.end);
             
         }
+
+        console.log(this.stringBlocks)
         this.updateInvMapping();
     }
 
@@ -355,7 +368,7 @@ export class TextDocMappingV {
                         // Return the result
                         return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}            
                     } else  {
-                        
+
                         return {start: start, end: end, content: match[2], preNumber: 0, postNumber: 0}
                     }
                     

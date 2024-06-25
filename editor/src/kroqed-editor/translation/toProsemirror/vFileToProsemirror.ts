@@ -16,6 +16,7 @@ interface CoqBlock {
 
 export function translateVToProsemirror(inputDocument: string): string {
 
+
     // Get all coq blocks using there tags (```coq and ```)
     const allCoqDocBlocks = getAllCoqDocBlocks(inputDocument);
     // Get all text blocks by looking at what is left
@@ -26,8 +27,6 @@ export function translateVToProsemirror(inputDocument: string): string {
     allBlocks.sort((a, b) => {
         return a.start - b.start;
     });
-
-    console.log(allBlocks)
 
     // allBlocks is now an ordered array of all blocks (Text and Code) 
 
@@ -44,6 +43,11 @@ export function translateVToProsemirror(inputDocument: string): string {
             parsedDocument += handleCodeBlock(block.content as string);
         }
     });
+
+    //Remove all empty markdown blocks (so only those with absolutely no text)
+    const removeRegEx = new RegExp(`<\/coqblock>()<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite="">`, "gm")
+    parsedDocument = parsedDocument.replaceAll(removeRegEx, ""); 
+
     return parsedDocument;
 }
 
@@ -57,7 +61,7 @@ function getAllCoqDocBlocks(input: string): CoqBlock[] {
     // Loop through matches and replace newlines with a string to be used in html tags
     for (let i = 0; i < matches.length; i++) {
         for (let j = 0; j < matches[i].length; j++) {
-            if (j != 0 && j != 3) {
+            if (j != 0 && j != 2) {
                 if (matches[i][j] == undefined) {
                     matches[i][j] = ""
                 } else if (matches[i][j] == "\r\n" || matches[i][j] == "\n") {
@@ -198,32 +202,41 @@ function handleCodeBlock(content: string) {
  */
 function parseAsV(input: string) {
 
-    let markDownType = "coqcode"
+    console.log(input)
+
+    let preString = `<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite=""><coqcode>`
+
+    let postString = `<\/coqcode><\/coqblock>`
     
     // Add pre-markdown tag
-    input = `<${markDownType}>`.concat(input)
+    input = preString.concat(input)
     // Math-display replacement for markdown
     
     // Input areas
     const inputAreaRegEx = /\(\* begin input \*\)/gm
-    input = input.replaceAll(inputAreaRegEx, `<\/${markDownType}><input-area><${markDownType}>`)
+    input = input.replaceAll(inputAreaRegEx, `${postString}<input-area>${preString}`)
 
     const endinputAreaRegEx = /\(\* end input \*\)/gm
-    input = input.replaceAll(endinputAreaRegEx, `<\/${markDownType}><\/input-area><${markDownType}>`)
+    input = input.replaceAll(endinputAreaRegEx, `${postString}<\/input-area>${preString}`)
 
     // For hints
     const hintRegEx = /\(\* begin hint : ([^"]+?) \*\)/gm;
-    input = input.replaceAll(hintRegEx, `<\/${markDownType}><hint title=$1><${markDownType}>`);
+    input = input.replaceAll(hintRegEx, `${postString}<hint title=$1>${preString}`);
 
     const endhintRegEx = /\(\* end hint \*\)/gm;
-    input = input.replaceAll(endhintRegEx, `<\/${markDownType}><\/hint><${markDownType}>`);
+    input = input.replaceAll(endhintRegEx, `${postString}<\/hint>${preString}`);
 
     //Closing markdown
-    input = input.concat(`<\/${markDownType}>`)
+    input = input.concat(`${postString}`)
 
     //Remove all empty markdown blocks (so only those with absolutely no text)
-    const removeRegEx = new RegExp(`<${markDownType}>()<\/${markDownType}>`, "gm")
-    input = input.replaceAll(removeRegEx, "");  
+    const removeRegEx = new RegExp(`<\/coqblock>()<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite="">`, "gm")
+    input = input.replaceAll(removeRegEx, ""); 
+
+    const removeRegEx2 = new RegExp(`<coqcode>()<\/coqcode>`, "gm")
+    input = input.replaceAll(removeRegEx2, ""); 
+
+
     
     return input;
 }

@@ -119,9 +119,6 @@ export class TextDocMappingV {
         /** A stack to which we push starting html tags and pop them once we encounter the closing tag */
         let stack = new Array<{ tag: string, offsetPost: number}>;
 
-        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        console.log(inputString)
-
         /** The current index we are at within the prosemirror content elem */
         let offsetProse: number = 0; 
 
@@ -132,9 +129,9 @@ export class TextDocMappingV {
         let inCoqdoc: boolean = false; 
 
         // Continue until the entire string has been parsed
+
         while(inputString.length > 0) { 
 
-            console.log(inputString)
             const next: TagInformation = TextDocMappingV.getNextHTMLtag(inputString);
 
             let nextCell: StringCell | undefined = undefined;
@@ -155,7 +152,10 @@ export class TextDocMappingV {
             } else { // Otherwise `next` opens a block
                 stack.push({ tag: next.content, offsetPost: next.postNumber}); // Push new tag to stack
                 // Add text offset based on tag
-                if (next.content == "hint") textCost += inputString.slice(next.start, next.end).length;
+                if (next.content == "hint") {
+                    textCost += inputString.slice(next.start, next.end).length+6; // Take care of the fact that it is (* begin hint : *)
+                    console.log(inputString.slice(next.start, next.end));
+                }
                 else textCost += getStartHtmlTagText(next.content).length;
 
                 textCost += next.preNumber;
@@ -186,10 +186,9 @@ export class TextDocMappingV {
 
             // Update the input string and cut off the processed text
             inputString = inputString.slice(next.end);
-            
+
         }
 
-        console.log(this.stringBlocks)
         this.updateInvMapping();
     }
 
@@ -261,10 +260,10 @@ export class TextDocMappingV {
      */
     public static getNextHTMLtag(input: string): TagInformation { 
 
+
         // Find all html tags (this is necessary for the position and for invalid matches)
         let matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
 
-        console.log(matches)
         // Loop through all matches 
         for (let match of matches) {
 
@@ -342,6 +341,7 @@ export class TextDocMappingV {
                     // For coqdoc we repeat the same process
                     } else if ((match[2] === "coqdoc") && match[1] == undefined){
 
+
                         // Get the matches regarding whitespace
                         let whiteSpaceMatch = match[3]
 
@@ -350,15 +350,16 @@ export class TextDocMappingV {
                         let postNum = 0
 
                         // Pre coqdoc newline
-                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/preWhite="(\w*?)"/g))[0]
+                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite=\"(\w*?)\"/g))[0]
                         if (preWhiteMatch != null) {
                             if (preWhiteMatch[1] === "newLine") {
                                 preNum++;
                             }
                         }
 
+                        
                         // Post coqdoc newline
-                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postWhite="(\w*?)"/g))[0]
+                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite=\"(\w*?)\"/g))[0]
                         if (postWhiteMatch != null) {
                             if (postWhiteMatch[1] === "newLine") {
                                 postNum++;

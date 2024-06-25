@@ -41,7 +41,7 @@ export function translateCoqDoc(entry: string) {
     commentInside = commentInside.replaceAll(/(?<![.A-Za-z\d(]+)\*{1}\s+([^\n\r]+)/g, "# $1");
 
     // List (-)
-    let listMatchesPlaceHolder = Array.from(commentInside.matchAll(/(\s{2})\-/g));
+    let listMatchesPlaceHolder = Array.from(commentInside.matchAll(/( {2})\-/g));
     listMatchesPlaceHolder.forEach((match) => {
         let orig = match[0];
         commentInside = commentInside.replace(orig, `....-`);
@@ -56,13 +56,19 @@ export function translateCoqDoc(entry: string) {
      * Replace verbatim input according to:
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#verbatim
      */
-    commentInside = commentInside.replaceAll(/<<\s+?([^]+)\s+?>>/g, `\`$1\``);
-
+    commentInside = commentInside.replaceAll(/<<\s*?\n([\s\S]+?)\n>>\s*?/g, `\`\`\`\n$1\n\`\`\``);
+    
+    /**
+     * Replace "Preformatted vernacular" according to:
+     * https://coq.inria.fr/doc/v8.12/refman/using/tools/coqdoc.html#coq-material-inside-documentation
+     */
+    commentInside = commentInside.replaceAll(/\[{2}\n([^]+)\n\]{2}/g, `\`\`\`\n$1\n\`\`\``);
+    
     /** 
      * Replace quoted coq according to: 
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#coq-material-inside-documentation
      */
-    commentInside = commentInside.replaceAll(/\[([^]+)\s*\]/g, `\`$1\``);
+    commentInside = commentInside.replaceAll(/\[([\s\S]+)\]/g, `\`$1\``);
 
     // Try to apply every pretty printing rule.
     ppTable.forEach((value: string, key: string) => {

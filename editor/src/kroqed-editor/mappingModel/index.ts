@@ -1,2 +1,1 @@
-// Export the mapping
-export { TextDocMapping } from "./vscodeMapping";
+export { TextDocMapping } from "./mapping";

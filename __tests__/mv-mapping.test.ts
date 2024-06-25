@@ -1,4 +1,4 @@
-import { TextDocMapping } from "../editor/src/kroqed-editor/mappingModel/vscodeMapping";
+import { TextDocMappingMV as TextDocMapping } from "../editor/src/kroqed-editor/mappingModel/mvFile";
 import { ReplaceStep } from "prosemirror-transform";
 import { TheSchema } from "../editor/src/kroqed-editor/kroqed-schema";
 import { translateMvToProsemirror } from "../editor/src/kroqed-editor/translation/toProsemirror";
@@ -88,7 +88,6 @@ test("coqdoc 3", () => {
 test("testMapping", () => {
     let textDocMapping = new TextDocMapping(`<markdown>Hello</markdown>`, 0)
     let mapping = textDocMapping.getMapping()
-    console.log(mapping)
     if (mapping.has(3-2)) {
         //@ts-ignore
         expect(mapping.get(3-2).startProse).toBe(3-2);expect(mapping.get(3-2).endProse).toBe(8-2);expect(mapping.get(3-2).startText).toBe(0);expect(mapping.get(3-2).endText).toBe(5)

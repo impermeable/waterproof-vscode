@@ -70,12 +70,7 @@ export function topLevelBlocksV(inputDocument: string): Block[] {
     });
 
     const sortedBlocks = sortBlocks([...hintBlocks, ...inputAreaBlocks, ...coqBlocks]);
-    const prunedBlocks = sortedBlocks.filter(block => {
-        // if (isCoqBlock(block) && (block.stringContent === "\n")) return false;
-
-        return true;
-    });
-    return prunedBlocks;
+    return sortedBlocks;
 }
 
 

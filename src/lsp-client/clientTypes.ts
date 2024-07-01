@@ -1,7 +1,7 @@
 import { Position, TextDocument, WorkspaceConfiguration } from "vscode";
 import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscode-languageclient";
 
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { FlecheDocument, FlecheDocumentParams, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
 
@@ -67,6 +67,8 @@ export interface ICoqLspClient {
     requestSymbols(document: TextDocument): Promise<DocumentSymbol[]>;
     /** Sends an LSP request to retrieve the symbols in the `activeDocument`. */
     requestSymbols(): Promise<DocumentSymbol[]>;
+
+    requestAST(params: FlecheDocumentParams): Promise<FlecheDocument>;
 
     /**
      * Requests symbols and sends corresponding completions to the editor.

@@ -5,17 +5,18 @@ import {
     LanguageClientOptions,
     LogTraceNotification,
     Middleware,
+    RequestType,
     SymbolInformation,
     VersionedTextDocumentIdentifier
 } from "vscode-languageclient";
 
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { FlecheDocument, FlecheDocumentParams, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { MessageType, OffsetDiagnostic, QedStatus, SimpleProgressParams } from "../../shared";
 import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
-import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
+import { convertToSimple, docRequestType, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 
 interface TimeoutDisposable extends Disposable {
@@ -111,6 +112,10 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     this.onCheckingCompleted();
                 }
             }));
+        }
+
+        requestAST(params: FlecheDocumentParams): Promise<FlecheDocument> {
+            return this.sendRequest(docRequestType, params);
         }
 
         async onCheckingCompleted(): Promise<void> {

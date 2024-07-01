@@ -1,0 +1,1182 @@
+{
+    "spans": [
+        {
+            "range": {
+                "start": {
+                    "line": 0,
+                    "character": 0,
+                    "offset": 0
+                },
+                "end": {
+                    "line": 0,
+                    "character": 60,
+                    "offset": 60
+                }
+            },
+            "span": {
+                "v": {
+                    "control": [],
+                    "attrs": [],
+                    "expr": [
+                        "VernacRequire",
+                        {
+                            "v": [
+                                "Ser_Qualid",
+                                [
+                                    "DirPath",
+                                    []
+                                ],
+                                [
+                                    "Id",
+                                    "Waterproof"
+                                ]
+                            ],
+                            "loc": {
+                                "fname": [
+                                    "InFile",
+                                    {
+                                        "dirpath": null,
+                                        "file": "/home/dick/testfiles/testfilewp.v"
+                                    }
+                                ],
+                                "line_nb": 1,
+                                "bol_pos": 0,
+                                "line_nb_last": 1,
+                                "bol_pos_last": 0,
+                                "bp": 5,
+                                "ep": 15
+                            }
+                        },
+                        [
+                            [
+                                "Import"
+                            ],
+                            null
+                        ],
+                        [
+                            [
+                                {
+                                    "v": [
+                                        "Ser_Qualid",
+                                        [
+                                            "DirPath",
+                                            []
+                                        ],
+                                        [
+                                            "Id",
+                                            "Tactics"
+                                        ]
+                                    ],
+                                    "loc": {
+                                        "fname": [
+                                            "InFile",
+                                            {
+                                                "dirpath": null,
+                                                "file": "/home/dick/testfiles/testfilewp.v"
+                                            }
+                                        ],
+                                        "line_nb": 1,
+                                        "bol_pos": 0,
+                                        "line_nb_last": 1,
+                                        "bol_pos_last": 0,
+                                        "bp": 31,
+                                        "ep": 38
+                                    }
+                                },
+                                [
+                                    "ImportAll"
+                                ]
+                            ],
+                            [
+                                {
+                                    "v": [
+                                        "Ser_Qualid",
+                                        [
+                                            "DirPath",
+                                            []
+                                        ],
+                                        [
+                                            "Id",
+                                            "Automation"
+                                        ]
+                                    ],
+                                    "loc": {
+                                        "fname": [
+                                            "InFile",
+                                            {
+                                                "dirpath": null,
+                                                "file": "/home/dick/testfiles/testfilewp.v"
+                                            }
+                                        ],
+                                        "line_nb": 1,
+                                        "bol_pos": 0,
+                                        "line_nb_last": 1,
+                                        "bol_pos_last": 0,
+                                        "bp": 39,
+                                        "ep": 49
+                                    }
+                                },
+                                [
+                                    "ImportAll"
+                                ]
+                            ],
+                            [
+                                {
+                                    "v": [
+                                        "Ser_Qualid",
+                                        [
+                                            "DirPath",
+                                            []
+                                        ],
+                                        [
+                                            "Id",
+                                            "Notations"
+                                        ]
+                                    ],
+                                    "loc": {
+                                        "fname": [
+                                            "InFile",
+                                            {
+                                                "dirpath": null,
+                                                "file": "/home/dick/testfiles/testfilewp.v"
+                                            }
+                                        ],
+                                        "line_nb": 1,
+                                        "bol_pos": 0,
+                                        "line_nb_last": 1,
+                                        "bol_pos_last": 0,
+                                        "bp": 50,
+                                        "ep": 59
+                                    }
+                                },
+                                [
+                                    "ImportAll"
+                                ]
+                            ]
+                        ]
+                    ]
+                },
+                "loc": {
+                    "fname": [
+                        "InFile",
+                        {
+                            "dirpath": null,
+                            "file": "/home/dick/testfiles/testfilewp.v"
+                        }
+                    ],
+                    "line_nb": 1,
+                    "bol_pos": 0,
+                    "line_nb_last": 1,
+                    "bol_pos_last": 0,
+                    "bp": 0,
+                    "ep": 60
+                }
+            }
+        },
+        {
+            "range": {
+                "start": {
+                    "line": 2,
+                    "character": 0,
+                    "offset": 62
+                },
+                "end": {
+                    "line": 2,
+                    "character": 18,
+                    "offset": 80
+                }
+            },
+            "span": {
+                "v": {
+                    "control": [],
+                    "attrs": [],
+                    "expr": [
+                        "VernacDefinition",
+                        [
+                            [
+                                "NoDischarge"
+                            ],
+                            [
+                                "Definition"
+                            ]
+                        ],
+                        [
+                            {
+                                "v": [
+                                    "Anonymous"
+                                ],
+                                "loc": {
+                                    "fname": [
+                                        "InFile",
+                                        {
+                                            "dirpath": null,
+                                            "file": "/home/dick/testfiles/testfilewp.v"
+                                        }
+                                    ],
+                                    "line_nb": 3,
+                                    "bol_pos": 62,
+                                    "line_nb_last": 3,
+                                    "bol_pos_last": 62,
+                                    "bp": 62,
+                                    "ep": 79
+                                }
+                            },
+                            null
+                        ],
+                        [
+                            "ProveBody",
+                            [],
+                            {
+                                "v": [
+                                    "CNotation",
+                                    null,
+                                    [
+                                        [
+                                            "InConstrEntry"
+                                        ],
+                                        "_ -> _"
+                                    ],
+                                    [
+                                        [
+                                            {
+                                                "v": [
+                                                    "CRef",
+                                                    {
+                                                        "v": [
+                                                            "Ser_Qualid",
+                                                            [
+                                                                "DirPath",
+                                                                []
+                                                            ],
+                                                            [
+                                                                "Id",
+                                                                "True"
+                                                            ]
+                                                        ],
+                                                        "loc": {
+                                                            "fname": [
+                                                                "InFile",
+                                                                {
+                                                                    "dirpath": null,
+                                                                    "file": "/home/dick/testfiles/testfilewp.v"
+                                                                }
+                                                            ],
+                                                            "line_nb": 3,
+                                                            "bol_pos": 62,
+                                                            "line_nb_last": 3,
+                                                            "bol_pos_last": 62,
+                                                            "bp": 67,
+                                                            "ep": 71
+                                                        }
+                                                    },
+                                                    null
+                                                ],
+                                                "loc": {
+                                                    "fname": [
+                                                        "InFile",
+                                                        {
+                                                            "dirpath": null,
+                                                            "file": "/home/dick/testfiles/testfilewp.v"
+                                                        }
+                                                    ],
+                                                    "line_nb": 3,
+                                                    "bol_pos": 62,
+                                                    "line_nb_last": 3,
+                                                    "bol_pos_last": 62,
+                                                    "bp": 67,
+                                                    "ep": 71
+                                                }
+                                            },
+                                            {
+                                                "v": [
+                                                    "CRef",
+                                                    {
+                                                        "v": [
+                                                            "Ser_Qualid",
+                                                            [
+                                                                "DirPath",
+                                                                []
+                                                            ],
+                                                            [
+                                                                "Id",
+                                                                "True"
+                                                            ]
+                                                        ],
+                                                        "loc": {
+                                                            "fname": [
+                                                                "InFile",
+                                                                {
+                                                                    "dirpath": null,
+                                                                    "file": "/home/dick/testfiles/testfilewp.v"
+                                                                }
+                                                            ],
+                                                            "line_nb": 3,
+                                                            "bol_pos": 62,
+                                                            "line_nb_last": 3,
+                                                            "bol_pos_last": 62,
+                                                            "bp": 75,
+                                                            "ep": 79
+                                                        }
+                                                    },
+                                                    null
+                                                ],
+                                                "loc": {
+                                                    "fname": [
+                                                        "InFile",
+                                                        {
+                                                            "dirpath": null,
+                                                            "file": "/home/dick/testfiles/testfilewp.v"
+                                                        }
+                                                    ],
+                                                    "line_nb": 3,
+                                                    "bol_pos": 62,
+                                                    "line_nb_last": 3,
+                                                    "bol_pos_last": 62,
+                                                    "bp": 75,
+                                                    "ep": 79
+                                                }
+                                            }
+                                        ],
+                                        [],
+                                        [],
+                                        []
+                                    ]
+                                ],
+                                "loc": {
+                                    "fname": [
+                                        "InFile",
+                                        {
+                                            "dirpath": null,
+                                            "file": "/home/dick/testfiles/testfilewp.v"
+                                        }
+                                    ],
+                                    "line_nb": 3,
+                                    "bol_pos": 62,
+                                    "line_nb_last": 3,
+                                    "bol_pos_last": 62,
+                                    "bp": 67,
+                                    "ep": 79
+                                }
+                            }
+                        ]
+                    ]
+                },
+                "loc": {
+                    "fname": [
+                        "InFile",
+                        {
+                            "dirpath": null,
+                            "file": "/home/dick/testfiles/testfilewp.v"
+                        }
+                    ],
+                    "line_nb": 3,
+                    "bol_pos": 62,
+                    "line_nb_last": 3,
+                    "bol_pos_last": 62,
+                    "bp": 62,
+                    "ep": 80
+                }
+            }
+        },
+        {
+            "range": {
+                "start": {
+                    "line": 3,
+                    "character": 0,
+                    "offset": 81
+                },
+                "end": {
+                    "line": 3,
+                    "character": 6,
+                    "offset": 87
+                }
+            },
+            "span": {
+                "v": {
+                    "control": [],
+                    "attrs": [],
+                    "expr": [
+                        "VernacProof",
+                        null,
+                        null
+                    ]
+                },
+                "loc": {
+                    "fname": [
+                        "InFile",
+                        {
+                            "dirpath": null,
+                            "file": "/home/dick/testfiles/testfilewp.v"
+                        }
+                    ],
+                    "line_nb": 4,
+                    "bol_pos": 81,
+                    "line_nb_last": 4,
+                    "bol_pos_last": 81,
+                    "bp": 81,
+                    "ep": 87
+                }
+            }
+        },
+        {
+            "range": {
+                "start": {
+                    "line": 4,
+                    "character": 0,
+                    "offset": 88
+                },
+                "end": {
+                    "line": 4,
+                    "character": 19,
+                    "offset": 107
+                }
+            },
+            "span": {
+                "v": {
+                    "control": [],
+                    "attrs": [],
+                    "expr": [
+                        "VernacExtend",
+                        [
+                            "VernacLtac2",
+                            0
+                        ],
+                        [
+                            [
+                                "GenArg",
+                                [
+                                    "Rawwit",
+                                    [
+                                        "OptArg",
+                                        [
+                                            "ExtraArg",
+                                            "ltac_selector"
+                                        ]
+                                    ]
+                                ],
+                                []
+                            ],
+                            [
+                                "GenArg",
+                                [
+                                    "Rawwit",
+                                    [
+                                        "ExtraArg",
+                                        "ltac2_expr"
+                                    ]
+                                ],
+                                [
+                                    [
+                                        "v",
+                                        [
+                                            "CTacLet",
+                                            "false",
+                                            [
+                                                [
+                                                    [
+                                                        [
+                                                            "v",
+                                                            [
+                                                                "CPatVar",
+                                                                [
+                                                                    "Name",
+                                                                    [
+                                                                        "Id",
+                                                                        "x"
+                                                                    ]
+                                                                ]
+                                                            ]
+                                                        ],
+                                                        [
+                                                            "loc",
+                                                            []
+                                                        ]
+                                                    ],
+                                                    [
+                                                        [
+                                                            "v",
+                                                            [
+                                                                "CTacApp",
+                                                                [
+                                                                    [
+                                                                        "v",
+                                                                        [
+                                                                            "CTacCst",
+                                                                            [
+                                                                                "AbsKn",
+                                                                                [
+                                                                                    "Other",
+                                                                                    [
+                                                                                        "KerName",
+                                                                                        [
+                                                                                            "MPfile",
+                                                                                            [
+                                                                                                "DirPath",
+                                                                                                [
+                                                                                                    [
+                                                                                                        "Id",
+                                                                                                        "Init"
+                                                                                                    ],
+                                                                                                    [
+                                                                                                        "Id",
+                                                                                                        "Ltac2"
+                                                                                                    ]
+                                                                                                ]
+                                                                                            ]
+                                                                                        ],
+                                                                                        [
+                                                                                            "Id",
+                                                                                            "::"
+                                                                                        ]
+                                                                                    ]
+                                                                                ]
+                                                                            ]
+                                                                        ]
+                                                                    ],
+                                                                    [
+                                                                        "loc",
+                                                                        []
+                                                                    ]
+                                                                ],
+                                                                [
+                                                                    [
+                                                                        [
+                                                                            "v",
+                                                                            [
+                                                                                "CTacApp",
+                                                                                [
+                                                                                    [
+                                                                                        "v",
+                                                                                        [
+                                                                                            "CTacCst",
+                                                                                            [
+                                                                                                "AbsKn",
+                                                                                                [
+                                                                                                    "Tuple",
+                                                                                                    "2"
+                                                                                                ]
+                                                                                            ]
+                                                                                        ]
+                                                                                    ],
+                                                                                    [
+                                                                                        "loc",
+                                                                                        [
+                                                                                            [
+                                                                                                [
+                                                                                                    "fname",
+                                                                                                    [
+                                                                                                        "InFile",
+                                                                                                        [
+                                                                                                            "dirpath",
+                                                                                                            []
+                                                                                                        ],
+                                                                                                        [
+                                                                                                            "file",
+                                                                                                            "/home/dick/testfiles/testfilewp.v"
+                                                                                                        ]
+                                                                                                    ]
+                                                                                                ],
+                                                                                                [
+                                                                                                    "line_nb",
+                                                                                                    "5"
+                                                                                                ],
+                                                                                                [
+                                                                                                    "bol_pos",
+                                                                                                    "88"
+                                                                                                ],
+                                                                                                [
+                                                                                                    "line_nb_last",
+                                                                                                    "5"
+                                                                                                ],
+                                                                                                [
+                                                                                                    "bol_pos_last",
+                                                                                                    "88"
+                                                                                                ],
+                                                                                                [
+                                                                                                    "bp",
+                                                                                                    "100"
+                                                                                                ],
+                                                                                                [
+                                                                                                    "ep",
+                                                                                                    "106"
+                                                                                                ]
+                                                                                            ]
+                                                                                        ]
+                                                                                    ]
+                                                                                ],
+                                                                                [
+                                                                                    [
+                                                                                        [
+                                                                                            "v",
+                                                                                            [
+                                                                                                "CTacExt",
+                                                                                                "1061963337",
+                                                                                                "[Obj.t: ABSTRACT]"
+                                                                                            ]
+                                                                                        ],
+                                                                                        [
+                                                                                            "loc",
+                                                                                            [
+                                                                                                [
+                                                                                                    [
+                                                                                                        "fname",
+                                                                                                        [
+                                                                                                            "InFile",
+                                                                                                            [
+                                                                                                                "dirpath",
+                                                                                                                []
+                                                                                                            ],
+                                                                                                            [
+                                                                                                                "file",
+                                                                                                                "/home/dick/testfiles/testfilewp.v"
+                                                                                                            ]
+                                                                                                        ]
+                                                                                                    ],
+                                                                                                    [
+                                                                                                        "line_nb",
+                                                                                                        "5"
+                                                                                                    ],
+                                                                                                    [
+                                                                                                        "bol_pos",
+                                                                                                        "88"
+                                                                                                    ],
+                                                                                                    [
+                                                                                                        "line_nb_last",
+                                                                                                        "5"
+                                                                                                    ],
+                                                                                                    [
+                                                                                                        "bol_pos_last",
+                                                                                                        "88"
+                                                                                                    ],
+                                                                                                    [
+                                                                                                        "bp",
+                                                                                                        "101"
+                                                                                                    ],
+                                                                                                    [
+                                                                                                        "ep",
+                                                                                                        "105"
+                                                                                                    ]
+                                                                                                ]
+                                                                                            ]
+                                                                                        ]
+                                                                                    ],
+                                                                                    [
+                                                                                        [
+                                                                                            "v",
+                                                                                            [
+                                                                                                "CTacCst",
+                                                                                                [
+                                                                                                    "AbsKn",
+                                                                                                    [
+                                                                                                        "Other",
+                                                                                                        [
+                                                                                                            "KerName",
+                                                                                                            [
+                                                                                                                "MPfile",
+                                                                                                                [
+                                                                                                                    "DirPath",
+                                                                                                                    [
+                                                                                                                        [
+                                                                                                                            "Id",
+                                                                                                                            "Init"
+                                                                                                                        ],
+                                                                                                                        [
+                                                                                                                            "Id",
+                                                                                                                            "Ltac2"
+                                                                                                                        ]
+                                                                                                                    ]
+                                                                                                                ]
+                                                                                                            ],
+                                                                                                            [
+                                                                                                                "Id",
+                                                                                                                "None"
+                                                                                                            ]
+                                                                                                        ]
+                                                                                                    ]
+                                                                                                ]
+                                                                                            ]
+                                                                                        ],
+                                                                                        [
+                                                                                            "loc",
+                                                                                            []
+                                                                                        ]
+                                                                                    ]
+                                                                                ]
+                                                                            ]
+                                                                        ],
+                                                                        [
+                                                                            "loc",
+                                                                            [
+                                                                                [
+                                                                                    [
+                                                                                        "fname",
+                                                                                        [
+                                                                                            "InFile",
+                                                                                            [
+                                                                                                "dirpath",
+                                                                                                []
+                                                                                            ],
+                                                                                            [
+                                                                                                "file",
+                                                                                                "/home/dick/testfiles/testfilewp.v"
+                                                                                            ]
+                                                                                        ]
+                                                                                    ],
+                                                                                    [
+                                                                                        "line_nb",
+                                                                                        "5"
+                                                                                    ],
+                                                                                    [
+                                                                                        "bol_pos",
+                                                                                        "88"
+                                                                                    ],
+                                                                                    [
+                                                                                        "line_nb_last",
+                                                                                        "5"
+                                                                                    ],
+                                                                                    [
+                                                                                        "bol_pos_last",
+                                                                                        "88"
+                                                                                    ],
+                                                                                    [
+                                                                                        "bp",
+                                                                                        "100"
+                                                                                    ],
+                                                                                    [
+                                                                                        "ep",
+                                                                                        "106"
+                                                                                    ]
+                                                                                ]
+                                                                            ]
+                                                                        ]
+                                                                    ],
+                                                                    [
+                                                                        [
+                                                                            "v",
+                                                                            [
+                                                                                "CTacCst",
+                                                                                [
+                                                                                    "AbsKn",
+                                                                                    [
+                                                                                        "Other",
+                                                                                        [
+                                                                                            "KerName",
+                                                                                            [
+                                                                                                "MPfile",
+                                                                                                [
+                                                                                                    "DirPath",
+                                                                                                    [
+                                                                                                        [
+                                                                                                            "Id",
+                                                                                                            "Init"
+                                                                                                        ],
+                                                                                                        [
+                                                                                                            "Id",
+                                                                                                            "Ltac2"
+                                                                                                        ]
+                                                                                                    ]
+                                                                                                ]
+                                                                                            ],
+                                                                                            [
+                                                                                                "Id",
+                                                                                                "[]"
+                                                                                            ]
+                                                                                        ]
+                                                                                    ]
+                                                                                ]
+                                                                            ]
+                                                                        ],
+                                                                        [
+                                                                            "loc",
+                                                                            []
+                                                                        ]
+                                                                    ]
+                                                                ]
+                                                            ]
+                                                        ],
+                                                        [
+                                                            "loc",
+                                                            []
+                                                        ]
+                                                    ]
+                                                ]
+                                            ],
+                                            [
+                                                [
+                                                    "v",
+                                                    [
+                                                        "CTacApp",
+                                                        [
+                                                            [
+                                                                "v",
+                                                                [
+                                                                    "CTacRef",
+                                                                    [
+                                                                        "AbsKn",
+                                                                        [
+                                                                            "TacConstant",
+                                                                            [
+                                                                                "KerName",
+                                                                                [
+                                                                                    "MPfile",
+                                                                                    [
+                                                                                        "DirPath",
+                                                                                        [
+                                                                                            [
+                                                                                                "Id",
+                                                                                                "Assume"
+                                                                                            ],
+                                                                                            [
+                                                                                                "Id",
+                                                                                                "Tactics"
+                                                                                            ],
+                                                                                            [
+                                                                                                "Id",
+                                                                                                "Waterproof"
+                                                                                            ]
+                                                                                        ]
+                                                                                    ]
+                                                                                ],
+                                                                                [
+                                                                                    "Id",
+                                                                                    "assume"
+                                                                                ]
+                                                                            ]
+                                                                        ]
+                                                                    ]
+                                                                ]
+                                                            ],
+                                                            [
+                                                                "loc",
+                                                                [
+                                                                    [
+                                                                        [
+                                                                            "fname",
+                                                                            [
+                                                                                "InFile",
+                                                                                [
+                                                                                    "dirpath",
+                                                                                    [
+                                                                                        "Waterproof.Tactics.Assume"
+                                                                                    ]
+                                                                                ],
+                                                                                [
+                                                                                    "file",
+                                                                                    "./theories/Tactics/Assume.v"
+                                                                                ]
+                                                                            ]
+                                                                        ],
+                                                                        [
+                                                                            "line_nb",
+                                                                            "147"
+                                                                        ],
+                                                                        [
+                                                                            "bol_pos",
+                                                                            "6606"
+                                                                        ],
+                                                                        [
+                                                                            "line_nb_last",
+                                                                            "147"
+                                                                        ],
+                                                                        [
+                                                                            "bol_pos_last",
+                                                                            "6606"
+                                                                        ],
+                                                                        [
+                                                                            "bp",
+                                                                            "6696"
+                                                                        ],
+                                                                        [
+                                                                            "ep",
+                                                                            "6702"
+                                                                        ]
+                                                                    ]
+                                                                ]
+                                                            ]
+                                                        ],
+                                                        [
+                                                            [
+                                                                [
+                                                                    "v",
+                                                                    [
+                                                                        "CTacRef",
+                                                                        [
+                                                                            "RelId",
+                                                                            [
+                                                                                [
+                                                                                    "v",
+                                                                                    [
+                                                                                        "Ser_Qualid",
+                                                                                        [
+                                                                                            "DirPath",
+                                                                                            []
+                                                                                        ],
+                                                                                        [
+                                                                                            "Id",
+                                                                                            "x"
+                                                                                        ]
+                                                                                    ]
+                                                                                ],
+                                                                                [
+                                                                                    "loc",
+                                                                                    [
+                                                                                        [
+                                                                                            [
+                                                                                                "fname",
+                                                                                                [
+                                                                                                    "InFile",
+                                                                                                    [
+                                                                                                        "dirpath",
+                                                                                                        [
+                                                                                                            "Waterproof.Tactics.Assume"
+                                                                                                        ]
+                                                                                                    ],
+                                                                                                    [
+                                                                                                        "file",
+                                                                                                        "./theories/Tactics/Assume.v"
+                                                                                                    ]
+                                                                                                ]
+                                                                                            ],
+                                                                                            [
+                                                                                                "line_nb",
+                                                                                                "147"
+                                                                                            ],
+                                                                                            [
+                                                                                                "bol_pos",
+                                                                                                "6606"
+                                                                                            ],
+                                                                                            [
+                                                                                                "line_nb_last",
+                                                                                                "147"
+                                                                                            ],
+                                                                                            [
+                                                                                                "bol_pos_last",
+                                                                                                "6606"
+                                                                                            ],
+                                                                                            [
+                                                                                                "bp",
+                                                                                                "6703"
+                                                                                            ],
+                                                                                            [
+                                                                                                "ep",
+                                                                                                "6704"
+                                                                                            ]
+                                                                                        ]
+                                                                                    ]
+                                                                                ]
+                                                                            ]
+                                                                        ]
+                                                                    ]
+                                                                ],
+                                                                [
+                                                                    "loc",
+                                                                    [
+                                                                        [
+                                                                            [
+                                                                                "fname",
+                                                                                [
+                                                                                    "InFile",
+                                                                                    [
+                                                                                        "dirpath",
+                                                                                        [
+                                                                                            "Waterproof.Tactics.Assume"
+                                                                                        ]
+                                                                                    ],
+                                                                                    [
+                                                                                        "file",
+                                                                                        "./theories/Tactics/Assume.v"
+                                                                                    ]
+                                                                                ]
+                                                                            ],
+                                                                            [
+                                                                                "line_nb",
+                                                                                "147"
+                                                                            ],
+                                                                            [
+                                                                                "bol_pos",
+                                                                                "6606"
+                                                                            ],
+                                                                            [
+                                                                                "line_nb_last",
+                                                                                "147"
+                                                                            ],
+                                                                            [
+                                                                                "bol_pos_last",
+                                                                                "6606"
+                                                                            ],
+                                                                            [
+                                                                                "bp",
+                                                                                "6703"
+                                                                            ],
+                                                                            [
+                                                                                "ep",
+                                                                                "6704"
+                                                                            ]
+                                                                        ]
+                                                                    ]
+                                                                ]
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ],
+                                                [
+                                                    "loc",
+                                                    [
+                                                        [
+                                                            [
+                                                                "fname",
+                                                                [
+                                                                    "InFile",
+                                                                    [
+                                                                        "dirpath",
+                                                                        [
+                                                                            "Waterproof.Tactics.Assume"
+                                                                        ]
+                                                                    ],
+                                                                    [
+                                                                        "file",
+                                                                        "./theories/Tactics/Assume.v"
+                                                                    ]
+                                                                ]
+                                                            ],
+                                                            [
+                                                                "line_nb",
+                                                                "147"
+                                                            ],
+                                                            [
+                                                                "bol_pos",
+                                                                "6606"
+                                                            ],
+                                                            [
+                                                                "line_nb_last",
+                                                                "147"
+                                                            ],
+                                                            [
+                                                                "bol_pos_last",
+                                                                "6606"
+                                                            ],
+                                                            [
+                                                                "bp",
+                                                                "6696"
+                                                            ],
+                                                            [
+                                                                "ep",
+                                                                "6704"
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ],
+                                    [
+                                        "loc",
+                                        [
+                                            [
+                                                [
+                                                    "fname",
+                                                    [
+                                                        "InFile",
+                                                        [
+                                                            "dirpath",
+                                                            []
+                                                        ],
+                                                        [
+                                                            "file",
+                                                            "/home/dick/testfiles/testfilewp.v"
+                                                        ]
+                                                    ]
+                                                ],
+                                                [
+                                                    "line_nb",
+                                                    "5"
+                                                ],
+                                                [
+                                                    "bol_pos",
+                                                    "88"
+                                                ],
+                                                [
+                                                    "line_nb_last",
+                                                    "5"
+                                                ],
+                                                [
+                                                    "bol_pos_last",
+                                                    "88"
+                                                ],
+                                                [
+                                                    "bp",
+                                                    "88"
+                                                ],
+                                                [
+                                                    "ep",
+                                                    "106"
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ],
+                            [
+                                "GenArg",
+                                [
+                                    "Rawwit",
+                                    [
+                                        "ExtraArg",
+                                        "ltac_use_default"
+                                    ]
+                                ],
+                                "false"
+                            ]
+                        ]
+                    ]
+                },
+                "loc": {
+                    "fname": [
+                        "InFile",
+                        {
+                            "dirpath": null,
+                            "file": "/home/dick/testfiles/testfilewp.v"
+                        }
+                    ],
+                    "line_nb": 5,
+                    "bol_pos": 88,
+                    "line_nb_last": 5,
+                    "bol_pos_last": 88,
+                    "bp": 88,
+                    "ep": 107
+                }
+            }
+        },
+        {
+            "range": {
+                "start": {
+                    "line": 4,
+                    "character": 19,
+                    "offset": 107
+                },
+                "end": {
+                    "line": 4,
+                    "character": 19,
+                    "offset": 108
+                }
+            }
+        }
+    ],
+    "completed": {
+        "status": [
+            "Yes"
+        ],
+        "range": {
+            "start": {
+                "line": 4,
+                "character": 19,
+                "offset": 107
+            },
+            "end": {
+                "line": 4,
+                "character": 19,
+                "offset": 108
+            }
+        }
+    }
+}

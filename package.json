@@ -84,6 +84,11 @@
     ],
     "commands": [
       {
+        "command": "waterproof.ast",
+        "category": "Waterproof",
+        "title": "Print AST"
+      },
+      {
         "command": "waterproof.openTutorial",
         "category": "Waterproof",
         "title": "Open Tutorial"

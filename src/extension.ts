@@ -152,6 +152,11 @@ export class Waterproof implements Disposable {
         this.registerCommand("stop", this.stopClient);
         this.registerCommand("exportExerciseSheet", this.exportExerciseSheet);
 
+        // TODO: REMOVE
+        this.registerCommand("ast", () => {
+            this.printAST();
+        });
+
         // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
 
@@ -217,6 +222,20 @@ export class Waterproof implements Disposable {
                 console.error("Error in updating Waterproof.args setting:", e);
             }
         });
+    }
+
+    private printAST() {
+        const document = this.client.activeDocument;
+        console.log("AST REQUESTED");
+        if (document) {
+            console.log("Document exists");
+            this.client.requestAST({textDocument: {
+                uri: document.uri.toString(),
+                version: document.version
+            }}).then((response) => {
+                console.log("AST RESPONSE", JSON.stringify(response));
+            });
+        }
     }
 
     private async waterproofTutorialCommand(): Promise<void> {

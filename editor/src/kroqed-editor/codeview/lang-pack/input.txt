@@ -1,0 +1,4 @@
+Lemma test_lemma : True.
+Proof.
+Help.
+Qed.

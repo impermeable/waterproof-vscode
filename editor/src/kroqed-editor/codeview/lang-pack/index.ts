@@ -12,13 +12,15 @@ import { parser } from "./syntax"
 // Defining custom tags for specific elements of the Coq language
 let customTags = {
     waterproofTactic: Tag.define(),
+    tacticInput: Tag.define(),
     coqSentence: Tag.define(),
 }
 
 // Highlighting specific elements of the Coq language
 export let highlight = HighlightStyle.define([
     { tag: customTags.waterproofTactic, color: "#0000FF" },
-    { tag: customTags.coqSentence, color: "#FF0000" },
+    { tag: customTags.tacticInput, color: "#FF0000" },
+    { tag: customTags.coqSentence, color: "#FFFFFF" },
     { tag: t.comment, color: "#00FF00" },
 ])
 
@@ -34,6 +36,7 @@ export const coqLanguage = LRLanguage.define({
             // }),
             styleTags({
                 WaterproofTactic: customTags.waterproofTactic,
+                TacticInput: customTags.tacticInput,
                 CoqSentence: customTags.coqSentence,
                 Comment: t.comment
             })

@@ -1,13 +1,57 @@
 @top Program { Sentence* }
 
-@skip { space | Comment }
-
 Sentence {
     WaterproofTactic
     CoqSentence
 }
 
+@skip { space | Comment }
 
+// Define local token for tactics, whatever is not TacticEnd 
+// is just TacticInput
+@local tokens {
+    TacticEnd[@name='dotSpace'] { '.' space }
+    @else TacticInput
+}
+
+// Skip WaterproofTactics
+@skip {} {
+    WaterproofTactic {
+        "Help." | 
+        "Take " TacticInput " : " TacticInput TacticEnd | 
+        "We need to show that " TacticInput TacticEnd | 
+        "We conclude that " TacticInput TacticEnd | 
+        "Choose " TacticInput " :=" TacticInput TacticEnd | 
+        "Assume that " TacticInput TacticEnd | 
+        "(& " TacticInput " )." | 
+        "Obtain such a " TacticInput TacticEnd | 
+        "Obtain " TacticInput " according to " TacticInput TacticEnd | 
+        "It suffices to show that " TacticInput TacticEnd | 
+        "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
+        "It holds that " TacticInput TacticEnd | 
+        "It holds that " TacticInput TacticEnd | 
+        "By (" TacticInput ") it holds that " TacticInput TacticEnd | 
+        "We claim that " TacticInput TacticEnd | 
+        "We argue by contradiction." | 
+        "Contradiction." | 
+        "Expand the definition of " TacticInput " in " TacticInput TacticEnd | 
+        "We show both statements." | 
+        "We show both directions." | 
+        "We use induction on " TacticInput TacticEnd | 
+        "By (" TacticInput ") we conclude that " TacticInput TacticEnd | 
+        "Define " TacticInput " := " TacticInput TacticEnd | 
+        // TODO:
+        "Since (" TacticInput ") it holds that (" TacticInput ")." | 
+        "Since (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
+        "Since (" TacticInput ") we conclude that (" TacticInput ")." | 
+        "Since (" TacticInput ") it suffices to show that (" TacticInput ")."
+        "Because (" TacticInput ") both (" TacticInput ") and (" TacticInput ")." | 
+        "Because (" TacticInput ") both (" TacticInput ") (" TacticInput ") and (" TacticInput ") (" TacticInput ")." | 
+        "Either (" TacticInput ") or (" TacticInput ")."
+    }
+}
+
+// Remaining tokens
 @tokens {
     CommentOpen { "(*" }
     CommentClose { "*)" }
@@ -20,51 +64,6 @@ Sentence {
     CoqSentence {
         ![.]+ "."
     }
-
-    ConstrTerm {
-        @asciiLetter+ | $[ℕℤℚℝℂ]
-    }
-
-    TacticInput {
-        space? ConstrTerm space?
-    }
-
-    WaterproofTactic {
-        "Help." | 
-        "Take " TacticInput " : (" TacticInput ")." | 
-        "We need to show that (" TacticInput ")." | 
-        "We conclude that (" TacticInput ")." | 
-        "Choose " TacticInput " := (" TacticInput ")." | 
-        "Assume that (" TacticInput ")." | 
-        "Assume that (" TacticInput ") (" TacticInput ")." | 
-        "(& " TacticInput " )." | 
-        "Obtain such a " TacticInput "." | 
-        "Obtain " TacticInput " according to (" TacticInput ")." | 
-        "It suffices to show that (" TacticInput ")." | 
-        "By (" TacticInput ") it suffices to show that (" TacticInput ")." | 
-        "It holds that (" TacticInput ") (" TacticInput ")." | 
-        "It holds that (" TacticInput ")." | 
-        "By (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
-        "By (" TacticInput ") it holds that (" TacticInput ")." | 
-        "We claim that (" TacticInput ")." | 
-        "We claim that (" TacticInput ") (" TacticInput ")." | 
-        "We argue by contradiction." | 
-        "Contradiction." | 
-        "Because (" TacticInput ") both (" TacticInput ") and (" TacticInput ")." | 
-        "Because (" TacticInput ") both (" TacticInput ") (" TacticInput ") and (" TacticInput ") (" TacticInput ")." | 
-        "Either (" TacticInput ") or (" TacticInput ")." | 
-        "Expand the definition of " TacticInput " in (" TacticInput ")." | 
-        "We show both statements." | 
-        "We show both directions." | 
-        "We use induction on " TacticInput "." | 
-        "By (" TacticInput ") we conclude that (" TacticInput ")." | 
-        "Define " TacticInput " := (" TacticInput ")." | 
-        "Since (" TacticInput ") it holds that (" TacticInput ")." | 
-        "Since (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
-        "Since (" TacticInput ") we conclude that (" TacticInput ")." | 
-        "Since (" TacticInput ") it suffices to show that (" TacticInput ")."
-    }
-
 }
 
 @precedence {

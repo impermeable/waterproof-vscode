@@ -36,6 +36,7 @@ export abstract class SwitchableView implements NodeView {
     private _editorClassName: string;
     private _renderedClassName: string;
 
+    private _usingCoqdocSyntax: boolean;
 
     public get content() {
         return this._node.textContent;
@@ -44,7 +45,8 @@ export abstract class SwitchableView implements NodeView {
     constructor(
         getPos: (() => number | undefined), outerView: EditorView, 
         content: string, node: PNode, schema: Schema, 
-        pluginKey: PluginKey, viewName: string
+        pluginKey: PluginKey, viewName: string,
+        usingCoqdocSyntax: boolean
     ) {
         // Store parameters
         this._node = node;
@@ -53,6 +55,7 @@ export abstract class SwitchableView implements NodeView {
         this._outerSchema = schema;
         this._viewName = viewName;
         this._pluginKey = pluginKey;
+        this._usingCoqdocSyntax = usingCoqdocSyntax;
         
         // Set-up dom related things.
         const container = document.createElement("div");
@@ -75,7 +78,7 @@ export abstract class SwitchableView implements NodeView {
         }
         // We start with a rendered markdown view.
         const processedContent = this.preprocessContentForRendering(this._node.textContent);
-        this.view = new RenderedView(this._place, processedContent, this._outerView, this, this._getPos);
+        this.view = new RenderedView(this._place, processedContent, this._outerView, this, usingCoqdocSyntax, this._getPos);
 
         // eventHandler for the onclick event. 
         // Creates a new node selection that selects 'this' node. 
@@ -126,7 +129,7 @@ export abstract class SwitchableView implements NodeView {
         this.dom.classList.remove(this._editorClassName);
         this.dom.classList.add(this._renderedClassName);
         // Create the new rendered view and set it as the current view
-        this.view = new RenderedView(this._place, inputContent, this._outerView, this, this._getPos);
+        this.view = new RenderedView(this._place, inputContent, this._outerView, this, this._usingCoqdocSyntax, this._getPos);
     }
 
     /**

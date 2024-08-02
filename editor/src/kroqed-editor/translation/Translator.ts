@@ -1,6 +1,7 @@
 import { Serializer } from "./types";
 import { Fragment, Node, Slice } from "prosemirror-model";
 import { translateMvToProsemirror } from "./toProsemirror";
+import { translateVToProsemirror } from "./toProsemirror";
 import { FileFormat } from "../../../../shared"
 
 /** Class that handles the translation from .mv | .v to prosemirror and vice versa. */
@@ -38,8 +39,7 @@ export class FileTranslator {
             case FileFormat.MarkdownV:
                 return translateMvToProsemirror(inputDocument); // 
             case FileFormat.RegularV:
-                // TODO: Parser for regular .v
-                return translateMvToProsemirror(inputDocument);
+                return translateVToProsemirror(inputDocument);
             case FileFormat.Unknown: 
                 throw new Error("Cannot convert from unknown format");
         }

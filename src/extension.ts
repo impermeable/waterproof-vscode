@@ -34,6 +34,13 @@ import { readFile } from "fs";
 import { join as joinPath} from "path";
 import { homedir } from "os";
 import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
+import { exec } from "child_process"
+import { resolveSoa } from "dns";
+
+
+export function activate(context: ExtensionContext): void {
+    commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
+}
 
 /**
  * Main extension class
@@ -216,6 +223,60 @@ export class Waterproof implements Disposable {
             } catch (e) {
                 console.error("Error in updating Waterproof.args setting:", e);
             }
+        });
+
+        this.registerCommand("autoInstall", () => {
+            commands.executeCommand(`waterproof.defaultPath`);
+
+            const windowsInstallationScript = `echo Begin Waterproof Installation && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo Installer Finished Downloading && Waterproof_Installer.exe && echo Files Installed && del Waterproof_Installer.exe && echo Refresh the Waterproof Checker to update libraries && echo This terminal can now be closed`
+            const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
+
+            this.stopClient();
+
+            let cmnd: string | undefined;
+            switch (process.platform) {
+                case "aix": cmnd = undefined; break;
+                case "android": cmnd = undefined; break;
+                // MACOS - This is currently not implemented, future task
+                case "darwin": cmnd = undefined; break;
+                case "freebsd": cmnd = undefined; break;
+                case "haiku": cmnd = undefined; break;
+                // LINUX - This is currently not implemented, issues when dealing with different distros and basic packages, installation is also easy enough 
+                case "linux": cmnd = undefined; break;
+                case "openbsd": cmnd = undefined; break;
+                case "sunos": cmnd = undefined; break; 
+                // WINDOWS
+                case "win32":
+                    // If a waterproof installation is found in the default location it is first uninstalled.
+                    // The path is updated to the default location so if an installation is present in another directory it still will not be utilised
+                    // The installer is then downloaded, run and then removed.
+                case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && ` 
+                    + uninstallerLocation + ` && ` + windowsInstallationScript + ` ) ELSE (echo No previous installation found && ` +  windowsInstallationScript + ` )"`; break;
+                case "netbsd": cmnd = undefined; break;
+            }
+
+            if (cmnd === undefined) {
+                window.showInformationMessage("Waterproof has no automatic installation process for this platform, please refer to the walktrough page.");
+            } else {
+                this.autoInstall(cmnd)
+            }  
+        });
+    }
+
+    /**
+     * Attempts to install all required libraries
+     * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
+     */
+    private async autoInstall(command: string): Promise<Boolean> {
+        return new Promise((resolve, reject) => {
+            exec(command, (err, stdout, stderr) => {
+                if (err) {
+                    // Simple fixed scripts are run, the user is able to stop these but they are not considered errors 
+                    // as the user has freedom to choose the steps and can rerun the command.
+                } 
+                this.initializeClient();
+                resolve(true)
+            });
         });
     }
 

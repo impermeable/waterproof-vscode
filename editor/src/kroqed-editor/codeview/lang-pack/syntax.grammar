@@ -18,29 +18,30 @@ Sentence {
 @skip {} {
     WaterproofTactic {
         "Help." | 
-        "Take " TacticInput " : " TacticInput TacticEnd | 
+        "We argue by contradiction." | 
+        "Contradiction." | 
+        "We show both statements." | 
+        "We show both directions." | 
         "We need to show that " TacticInput TacticEnd | 
         "We conclude that " TacticInput TacticEnd | 
-        "Choose " TacticInput " :=" TacticInput TacticEnd | 
         "Assume that " TacticInput TacticEnd | 
         "(& " TacticInput " )." | 
         "Obtain such a " TacticInput TacticEnd | 
-        "Obtain " TacticInput " according to " TacticInput TacticEnd | 
         "It suffices to show that " TacticInput TacticEnd | 
-        "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
         "It holds that " TacticInput TacticEnd | 
         "It holds that " TacticInput TacticEnd | 
-        "By (" TacticInput ") it holds that " TacticInput TacticEnd | 
         "We claim that " TacticInput TacticEnd | 
-        "We argue by contradiction." | 
-        "Contradiction." | 
-        "Expand the definition of " TacticInput " in " TacticInput TacticEnd | 
-        "We show both statements." | 
-        "We show both directions." | 
         "We use induction on " TacticInput TacticEnd | 
+        // TODO: Figure out approach for tactics with 2 or more TacticInput(s)
+        "Expand the definition of " TacticInput " in " TacticInput TacticEnd | 
+        "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
+        "Obtain " TacticInput " according to " TacticInput TacticEnd | 
+        "Choose " TacticInput " :=" TacticInput TacticEnd | 
+        "Take " TacticInput " : " TacticInput TacticEnd | 
         "By (" TacticInput ") we conclude that " TacticInput TacticEnd | 
+        "By (" TacticInput ") it holds that " TacticInput TacticEnd | 
         "Define " TacticInput " := " TacticInput TacticEnd | 
-        // TODO:
+        // TODO
         "Since (" TacticInput ") it holds that (" TacticInput ")." | 
         "Since (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
         "Since (" TacticInput ") we conclude that (" TacticInput ")." | 

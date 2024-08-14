@@ -22,6 +22,9 @@ export function getMdInsertCommand(
     vNodeType: NodeType
 ): Command {
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
+        // Early return when file format is unknown
+        if (filef === FileFormat.Uknown) return false;
+
         // Early return when inserting is not allowed
         if (!allowedToInsert(state)) return false;
 
@@ -37,31 +40,27 @@ export function getMdInsertCommand(
         // Retrieve the name of the containing node.
         const { name } = container.type;
 
-        if (filef === FileFormat.MarkdownV) {
-            if (name === "input" || name === "hint" || name === "doc") {
-                // In the case of having `input`, `hint` or `doc` as parent node, we can insert directly
-                // above or below the selected node.
-                trans = insertionFunction(state, state.tr, nodeType);
-            } else if (name === "coqblock" || name === "coqdoc") {
-                // In the case that the user has a selection within a coqblock or coqdoc cell we need to do more work and
-                // figure out where this block `starts` and `ends`.
-                const { start, end } = traverseUpAndReturnFirstWithName(state, "coqblock");
-                trans = state.tr.insert(place == InsertionPlace.Above ? start : end, nodeType.create());
-            }
+        if (name === "input" || name === "hint" || name === "doc") {
+            // The following line prevents the insertion of markdown blocks in a .mv file when the cursor 
+            //   is inside of an existing markdown block. The insertion action here is ambiguous and the   
+            //   default behaviour is confusing, hence this type of insertion is disabled.
+            if (filef === FileFormat.MarkdownV) return false;
 
-            // If the dispatch is given and transaction is not undefined dispatch it.
-            if (dispatch && trans) dispatch(trans);
-
-            // successful command.
-            return true;
-        } else if (filef === FileFormat.RegularV) {
-            // This command behaves differently in the case of a .v file. 
-            // But since .v files are not working atm, this case is defaulted to false.
-            return false;
-        } else {
-            // This command has no expected outcome when the Fileformat is unknown.
-            return false;
+            // In the case of having `input`, `hint` or `doc` as parent node, we can insert directly
+            // above or below the selected node.
+            trans = insertionFunction(state, state.tr, nodeType);
+        } else if (name === "coqblock" || name === "coqdoc") {
+            // In the case that the user has a selection within a coqblock or coqdoc cell we need to do more work and
+            // figure out where this block `starts` and `ends`.
+            const { start, end } = traverseUpAndReturnFirstWithName(state, "coqblock");
+            trans = state.tr.insert(place == InsertionPlace.Above ? start : end, nodeType.create());
         }
+
+        // If the dispatch is given and transaction is not undefined dispatch it.
+        if (dispatch && trans) dispatch(trans);
+
+        // successful command.
+        return true;
     }
 }
 
@@ -80,8 +79,12 @@ export function getLatexInsertCommand(
     latexNodeType: NodeType,
 ): Command {
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
+        // Early return when file format is unknown.
+        if (filef === FileFormat.Uknown) return false;
+        
         // Early return when inserting is not allowed.
         if (!allowedToInsert(state)) return false;
+
         // Containing node.
         const container = getContainingNode(state.selection);
 
@@ -90,28 +93,20 @@ export function getLatexInsertCommand(
 
         const { name } = container.type
 
-        if (filef === FileFormat.MarkdownV) {
-            if (name === "input" || name === "hint" || name === "doc") {
-                // `Easy` insertion since we can just insert directly above or below the selection.
-                trans = insertionFunction(state, state.tr, latexNodeType);
-            } else if (name === "coqblock" || name === "coqdoc") {
-                // More difficult insertion since we have to `escape` the current coqblock.
-                const { start, end } = traverseUpAndReturnFirstWithName(state, "coqblock");
-                trans = state.tr.insert(place == InsertionPlace.Above ? start : end, latexNodeType.create());
-            }
-
-            // Dispatch the transaction when dispatch is given and transaction is not undefined.
-            if (dispatch && trans) dispatch(trans);
-
-            // Indicate successful command.
-            return true;
-        } else if (filef === FileFormat.RegularV) {
-            // FIXME: Implement .v file case.
-            return false;
-        } else {
-            // This command has no expected outcome when the Fileformat is unknown.
-            return false;
+        if (name === "input" || name === "hint" || name === "doc") {
+            // `Easy` insertion since we can just insert directly above or below the selection.
+            trans = insertionFunction(state, state.tr, latexNodeType);
+        } else if (name === "coqblock" || name === "coqdoc") {
+            // More difficult insertion since we have to `escape` the current coqblock.
+            const { start, end } = traverseUpAndReturnFirstWithName(state, "coqblock");
+            trans = state.tr.insert(place == InsertionPlace.Above ? start : end, latexNodeType.create());
         }
+
+        // Dispatch the transaction when dispatch is given and transaction is not undefined.
+        if (dispatch && trans) dispatch(trans);
+
+        // Indicate successful command.
+        return true;
     }
 }
 
@@ -132,36 +127,38 @@ export function getCoqInsertCommand(
     coqcodeNodeType: NodeType,
 ): Command {
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
-        // Again, early return when inserting is not allowed. 
+        // Early return when the file format equals unknown.
+        if (filef === FileFormat.Uknown) return false;
+        
+        // Early return when inserting is not allowed. 
         if (!allowedToInsert(state)) return false;
+
         // Retrieve the name of the containing node of the selection.
         const name = getContainingNode(state.selection)?.type.name;
         if (name === undefined) return false;
         let trans: Transaction | undefined;
         
-        if (filef === FileFormat.MarkdownV) {
-            if (name === "input" || name === "hint" || name === "doc") {
-                // Create a new coqblock *and* coqcode cell and insert Above or Underneath the current selection.
-                trans = insertionFunction(state, state.tr, coqblockNodeType, coqcodeNodeType);
-            } else if (name === "coqblock" || name === "coqdoc") {
-                // Find the position outside of the coqblock and insert a new coqblock and coqcode cell above or underneath.
-                const {start, end} = traverseUpAndReturnFirstWithName(state, "coqblock");
-                const pos = place == InsertionPlace.Above ? start : end;
-                trans = state.tr.insert(pos, 
-                    coqblockNodeType.create()).insert(pos + 1,coqcodeNodeType.create());
-            }
+        if (name === "input" || name === "hint" || name === "doc") {
+            // Create a new coqblock *and* coqcode cell and insert Above or Underneath the current selection.
+            trans = insertionFunction(state, state.tr, coqblockNodeType, coqcodeNodeType);
+        } else if (name === "coqblock" || name === "coqdoc") {
 
-            // If dispatch is given and transaction is set, dispatch the transaction.
-            if (dispatch && trans) dispatch(trans);
+            // The following line prevents the insertion of coq blocks in a .v file when the cursor 
+            //   is inside of an existing coq block. The insertion action here is ambiguous and the default
+            //   behaviour is confusing, hence this type of insertion is disabled.
+            if (filef === FileFormat.RegularV) return false;
 
-            // Indicate that this command was successful.
-            return true;
-        } else if (filef === FileFormat.RegularV) {
-            // FIXME: Implement .v file case.
-            return false;
-        } else {
-            // This command has no expected outcome when the Fileformat is unknown.
-            return false;
+            // Find the position outside of the coqblock and insert a new coqblock and coqcode cell above or underneath.
+            const {start, end} = traverseUpAndReturnFirstWithName(state, "coqblock");
+            const pos = place == InsertionPlace.Above ? start : end;
+            trans = state.tr.insert(pos, 
+                coqblockNodeType.create()).insert(pos + 1,coqcodeNodeType.create());
         }
+
+        // If dispatch is given and transaction is set, dispatch the transaction.
+        if (dispatch && trans) dispatch(trans);
+
+        // Indicate that this command was successful.
+        return true;
     }
 }

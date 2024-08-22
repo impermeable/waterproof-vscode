@@ -51,7 +51,8 @@ test("Expect mixed H1 and H3 to be replaced", () => {
 });
 
 test("Expect verbatim to be replaced", () => {
-    expect(translateCoqDoc("<< This is verbatim >>")).toBe("`This is verbatim`");
+    // Verbatim tags need to be on their own line!
+    expect(translateCoqDoc("<<\nThis is verbatim\n>>")).toBe("```\nThis is verbatim\n```");
 });
 
 test("Expect default pretty printing character to be replaced", () => {
@@ -64,6 +65,10 @@ test("Expect default pretty printing characters to be replaced", () => {
 
 test("Expect quoted coq to be replaced", () => {
     expect(translateCoqDoc("[let id := fun [T : Type] (x : t) => x in id 0]")).toBe("`let id := fun [T : Type] (x : t) ⇒ x in id 0`");
+});
+
+test("Expect preformatted vernacular to be replaced", () => {
+    expect(translateCoqDoc("[[\nDefinition test := 1.\n]]")).toBe("```\nDefinition test := 1.\n```");
 });
 
 test("Preserves whitespace inside coqdoc comment.", () => {

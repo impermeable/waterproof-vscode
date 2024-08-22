@@ -1,10 +1,11 @@
 import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
-import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
+import { deleteSelection, selectParentNode } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
-import { DOMParser, ResolvedPos, Schema } from "prosemirror-model";
+import { ResolvedPos, Schema, Node as ProseNode } from "prosemirror-model";
 import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
+import { createProseMirrorDocument } from "./prosedoc-construction/construct-document";
 
 import { DocChange, FileFormat, LineNumber, Message, MessageType, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
 import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
@@ -26,11 +27,11 @@ import "prosemirror-view/style/prosemirror.css";
 import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
-import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, deleteNodeIfEmpty } from "./commands";
+import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
-import { checkPrePost, fixLessThanBug } from "./file-utils";
+import { checkPrePost } from "./file-utils";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -57,7 +58,6 @@ export class Editor {
 
 	// The editor and content html elements.
 	private _editorElem: HTMLElement;
-	private _contentElem: HTMLElement;
 
 	// The prosemirror view
 	private _view: EditorView | undefined;
@@ -74,11 +74,10 @@ export class Editor {
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 
-	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
+	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement) {
 		this._api = vscodeapi;
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
-		this._contentElem = contentElement;
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -92,7 +91,6 @@ export class Editor {
 		
 		document.body.appendChild(theContextMenu);
 		
-		console.log(document.querySelector(".context-menu"));
 		// Setup the custom context menu
 		document.addEventListener("click", (ev) => {
 			// Handle a 'left mouse click'
@@ -126,20 +124,25 @@ export class Editor {
 			this._view.dom.remove();
 		}
 
+		if (fileFormat === FileFormat.MarkdownV) {
+			document.body.classList.add("mv");
+		}
+
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = checkPrePost(fixLessThanBug(content, (msg: Message) => {
-			this.post(msg);
-		}), (msg: Message) => {
+		let newContent = checkPrePost(content, (msg: Message) => {
 			this.post(msg);
 		});
 		if (newContent !== content) version = version + 1;
 
 		let parsedContent = this._translator.toProsemirror(newContent);
-		this._contentElem.innerHTML = parsedContent;
-		this._mapping = new TextDocMapping(parsedContent, version);
-		this.createProseMirrorEditor();
+		// this._contentElem.innerHTML = parsedContent;
+		
+		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
+
+		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
+		this.createProseMirrorEditor(proseDoc);
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();
@@ -152,11 +155,11 @@ export class Editor {
 		return this._view?.state;
 	}
 
-	createProseMirrorEditor() {
+	createProseMirrorEditor(proseDoc: ProseNode) {
 		// Shadow this variable _userOS.
 		const userOS = this._userOS;
 		let view = new EditorView(this._editorElem, {
-			state: this.createState(),
+			state: this.createState(proseDoc),
 			clipboardTextSerializer: (slice) => { return mathSerializer.serializeSlice(slice) },
 			dispatchTransaction: ((tr) => {
 				// Called on every transaction.
@@ -227,10 +230,10 @@ export class Editor {
 	}
 
 	/** Create initial prosemirror state */
-	createState(): EditorState {
+	createState(proseDoc: ProseNode): EditorState {
 		return EditorState.create({
 			schema: this._schema,
-			doc: DOMParser.fromSchema(this._schema).parse(this._contentElem),
+			doc: proseDoc,
 			plugins: this.createPluginsArray()
 		});
 	}

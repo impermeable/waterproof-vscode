@@ -17,7 +17,7 @@ export class MarkdownView extends SwitchableView{
         pluginKey: PluginKey, viewName: string
     ) {
         // Call the super constructor.
-        super(getPos, outerView, content, node, schema, pluginKey, viewName);
+        super(getPos, outerView, content, node, schema, pluginKey, viewName, false);
     }
 
     preprocessContentForEditing(input: string): string {

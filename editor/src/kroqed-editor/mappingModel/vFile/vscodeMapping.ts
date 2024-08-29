@@ -285,6 +285,8 @@ export class TextDocMappingV {
                 // Check if the HTML tag is a valid HTML tag in our parser
                 if (TextDocMappingV.HTMLtags.has(match[2])) {
 
+                    console.log(match)
+
                     // For entry coqblocks we must extract more information about the starting and ending newline
                     if (match[2] === "coqblock" && match[1] == undefined) {
 

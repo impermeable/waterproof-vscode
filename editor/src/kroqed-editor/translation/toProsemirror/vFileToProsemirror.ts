@@ -152,7 +152,7 @@ function handleCoqDocBlock(match: RegExpMatchArray) {
     if (match[2] != "") {
         let input = match[2]
 
-        let markDownType = "coqdoc"
+        let markDownType = "coqdown"
 
         let match1 = match[1]
 
@@ -177,7 +177,12 @@ function handleCoqDocBlock(match: RegExpMatchArray) {
         input = input.replaceAll(mathdisplayRegEx2, `<\/${markDownType}><math-display></math-display><${markDownType}>`)
 
         //Closing markdown
-        input = input.concat(`<\/coqdown><\/${markDownType}><\/coqblock>`)
+        input = input.concat(`<\/coqdown><\/coqdoc><\/coqblock>`)
+
+        const removeRegEx2 = new RegExp(`<coqdown><\/coqdown>`, "gm")
+        input = input.replaceAll(removeRegEx2, ""); 
+
+        console.log(input)
 
         return input;
     } else {

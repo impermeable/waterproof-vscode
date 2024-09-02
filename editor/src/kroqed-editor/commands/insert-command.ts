@@ -23,7 +23,7 @@ export function getMdInsertCommand(
 ): Command {
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
         // Early return when file format is unknown
-        if (filef === FileFormat.Uknown) return false;
+        if (filef === FileFormat.Unknown) return false;
 
         // Early return when inserting is not allowed
         if (!allowedToInsert(state)) return false;
@@ -80,7 +80,7 @@ export function getLatexInsertCommand(
 ): Command {
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
         // Early return when file format is unknown.
-        if (filef === FileFormat.Uknown) return false;
+        if (filef === FileFormat.Unknown) return false;
         
         // Early return when inserting is not allowed.
         if (!allowedToInsert(state)) return false;
@@ -128,7 +128,7 @@ export function getCoqInsertCommand(
 ): Command {
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
         // Early return when the file format equals unknown.
-        if (filef === FileFormat.Uknown) return false;
+        if (filef === FileFormat.Unknown) return false;
         
         // Early return when inserting is not allowed. 
         if (!allowedToInsert(state)) return false;

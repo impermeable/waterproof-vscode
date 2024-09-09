@@ -40,6 +40,18 @@
     "onLanguage:coqmarkdown"
   ],
   "contributes": {
+        "themes": [
+      {
+        "label": "Waterproof light theme",
+        "uiTheme": "vs",
+        "path": "./themes/waterproofTheme-color-theme-light.json"
+      },
+      {
+        "label": "Waterproof dark theme",
+        "uiTheme": "vs",
+        "path": "./themes/waterproofTheme-color-theme-dark.json"
+      }
+    ],
     "iconThemes": [
       {
         "id": "waterproof-icons",
@@ -53,7 +65,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v}"
+            "filenamePattern": "*.{mv}"
           }
         ]
       }
@@ -458,6 +470,7 @@
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
     "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.7.0",
     "mocha": "^10.2.0",
     "prettier": "^2.8.1",
     "ts-jest": "^29.1.0",
@@ -465,7 +478,7 @@
     "vscode-extension-tester": "^5.6.0"
   },
   "dependencies": {
-    "@benrbray/prosemirror-math": "^0.2.2",
+    "@benrbray/prosemirror-math": "^1.0.0",
     "@codemirror/autocomplete": "^6.7.1",
     "@codemirror/commands": "^6.2.4",
     "@codemirror/language": "^6.6.0",
@@ -478,7 +491,7 @@
     "@vscode/webview-ui-toolkit": "^1.2.1",
     "eventemitter2": "6.4.9",
     "jquery": "^3.7.0",
-    "katex": "^0.13.0",
+    "katex": "^0.16.10",
     "markdown-it": "^13.0.1",
     "object-hash": "^3.0.0",
     "prosemirror-commands": "^1.1.7",

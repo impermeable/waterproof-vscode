@@ -1,4 +1,4 @@
-import { DocChange, WrappingDocChange } from "../../../../shared";
+import { DocChange, WrappingDocChange } from "../../../../../shared";
 
 //// The types used by this module
 

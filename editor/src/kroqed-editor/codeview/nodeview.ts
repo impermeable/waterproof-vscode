@@ -12,7 +12,7 @@ import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
@@ -33,9 +33,6 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 	private debouncer: Debouncer;
 
-	// Compartment storing the linting information (needs to be in a comp. because of refreshing)
-	private _lintingCompartment: Compartment;
-
 	constructor(
 		node: Node,
 		view: EditorView,
@@ -49,7 +46,6 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = [];
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
-		this._lintingCompartment = new Compartment;
 		this._diags = [];
 		
 		// Shadow this._outerView for use in the next function.
@@ -58,8 +54,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
-				// Create the first linting compartment. 
-				this._lintingCompartment.of(linter(this.lintingFunction)),
+				// Add the linting extension for showing diagnostics (errors, warnings, etc) 
+				linter(this.lintingFunction),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 				autocompletion({
@@ -87,11 +83,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			// We override the dispatch field to filter the transactions in the CodeMirror cells.
 			// We explicitly **allow** selection changes, so that students can select (and copy) non-input area code.
 			dispatch(tr, view) {
-				// TODO: deprecated according to reference manual? https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch 
-
-				if (!tr.docChanged && tr.selection) {
-					// In the case that the document was not changed **and** that we have a selection update
-					// we allow the transaction to update the state.
+				// TODO: deprecated according to reference manual https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch 
+				if (!tr.docChanged) {
 					view.update([tr]);
 				} else {
 					// Figure out whether we are in teacher or student mode.
@@ -224,10 +217,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
 	private forceUpdateLinting() {
-		// Reconfigure the linting compartment (forces the linter to run again when editor idle)
 		this._codemirror.dispatch({
-			effects: this._lintingCompartment.reconfigure(linter(() => this._diags, {delay: 250}))
-		})
+			effects: setDiagnosticsEffect.of(this._diags)
+		});
 	}
 
 	/**

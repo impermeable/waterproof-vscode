@@ -2,7 +2,9 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.9",
+  "version": "0.9.14",
+  "requiredCoqLspVersion": "==0.1.8",
+  "requiredCoqWaterproofVersion": "==2.1.0",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",
@@ -31,16 +33,39 @@
     "url": "https://github.com/impermeable/waterproof-vscode"
   },
   "activationEvents": [
-    "onCommand:coqnitive.start"
+    "onCommand:waterproof.start",
+    "onCommand:waterproof.toggle",
+    "onCommand:waterproof.newWaterproofDocument",
+    "onLanguage:coq",
+    "onLanguage:coqmarkdown"
   ],
   "contributes": {
+        "themes": [
+      {
+        "label": "Waterproof light theme",
+        "uiTheme": "vs",
+        "path": "./themes/waterproofTheme-color-theme-light.json"
+      },
+      {
+        "label": "Waterproof dark theme",
+        "uiTheme": "vs",
+        "path": "./themes/waterproofTheme-color-theme-dark.json"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "waterproof-icons",
+        "label": "Waterproof",
+        "path": "./fileicons/waterproof-icon-theme.json"
+      }
+    ],
     "customEditors": [
       {
         "viewType": "coqEditor.coqEditor",
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v}"
+            "filenamePattern": "*.{mv}"
           }
         ]
       }
@@ -70,6 +95,16 @@
       }
     ],
     "commands": [
+      {
+        "command": "waterproof.openTutorial",
+        "category": "Waterproof",
+        "title": "Open Tutorial"
+      },
+      {
+        "command": "waterproof.pathSetting",
+        "category": "Waterproof",
+        "title": "Change Waterproof Path"
+      },
       {
         "command": "waterproof.newWaterproofDocument",
         "title": "Waterproof: Create new waterproof document",
@@ -127,6 +162,121 @@
         }
       ]
     },
+    "walkthroughs": [
+      {
+        "id": "waterproof.setup",
+        "title": "Waterproof Initial Setup",
+        "description": "Interactive guide to get up and running with Waterproof",
+        "steps": [
+          {
+            "id": "install-dependencies",
+            "when": "!(isWindows || isMac) || hasRemoteServer",
+            "title": "Installing Dependencies",
+            "description": "Waterproof needs additional software to function.\nSee the README for instructions.\n[README](https://github.com/impermeable/waterproof-vscode)",
+            "completionEvents": [
+              "onLink:https://github.com/impermeable/waterproof-vscode"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/installation-without-installer.md"
+            }
+          },
+          {
+            "id": "download-installer-windows",
+            "when": "isWindows && !hasRemoteServer",
+            "title": "Downloading the Installer",
+            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
+            "completionEvents": [
+              "onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/download-installer-windows.md"
+            }
+          },
+          {
+            "id": "download-installer-mac",
+            "when": "isMac && !hasRemoteServer",
+            "title": "Downloading the Installer",
+            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
+            "completionEvents": [
+              "onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/download-installer-mac.md"
+            }
+          },
+          {
+            "title": "Configuring Waterproof Settings (Path)",
+            "when": "isWindows && !hasRemoteServer",
+            "id": "configure-settings-windows",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "completionEvents": [
+              "onSettingChanged:waterproof.path"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/change-setting-path-windows.md"
+            }
+          },
+          {
+            "title": "Configuring Waterproof Settings (Path)",
+            "when": "isMac && !hasRemoteServer",
+            "id": "configure-settings-mac",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "completionEvents": [
+              "onSettingChanged:waterproof.path"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/change-setting-path-mac.md"
+            }
+          },
+          {
+            "title": "Configuring Waterproof Settings (Path)",
+            "when": "!(isWindows || isMac) || hasRemoteServer",
+            "id": "configure-settings-linux",
+            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "completionEvents": [
+              "onSettingChanged:waterproof.path"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/change-setting-path-linux.md"
+            }
+          },
+          {
+            "title": "Configuring Waterproof Settings (Args)",
+            "when": "isMac",
+            "id": "configure-settings-args-mac",
+            "description": "Change the [Waterproof.Args](command:waterproof.argsSetting) setting.\n[Use Default](command:waterproof.defaultArgsMac)\n[Change Setting](command:waterproof.argsSetting)",
+            "completionEvents": [
+              "onSettingChanged:waterproof.args"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/change-setting-args.md"
+            }
+          },
+          {
+            "title": "Restart Waterproof",
+            "id": "restart-waterproof",
+            "description": "To determine whether Waterproof found everything it needs we need to restart it using the button below.\n[Restart](command:waterproof.start)",
+            "completionEvents": [
+              "onCommand:waterproof.start"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/restart.md"
+            }
+          },
+          {
+            "title": "Waterproof Tutorial",
+            "id": "open-tutorial",
+            "description": "Open the Waterproof tutorial to start learning.\n[Open Tutorial](command:waterproof.openTutorial)",
+            "completionEvents": [
+              "onCommand:waterproof.openTutorial"
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/tutorial.md"
+            }
+          }
+        ]
+      }
+    ],
     "configuration": [
       {
         "title": "User Mode",
@@ -135,6 +285,21 @@
             "type": "boolean",
             "default": false,
             "description": "Enable teacher mode; if true, allows user to edit all content outside input fields."
+          }
+        }
+      },
+      {
+        "title": "Waterproof Use Case",
+        "properties": {
+          "waterproof.standardCoqSyntax": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."
+          },
+          "waterproof.enforceCorrectNonInputArea": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
           }
         }
       },
@@ -253,7 +418,7 @@
         }
       },
       {
-        "title": "Coq Editor",
+        "title": "Editor",
         "type": "object",
         "properties": {
           "waterproof.updateIgnores": {
@@ -284,6 +449,7 @@
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
     "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.7.0",
     "mocha": "^10.2.0",
     "prettier": "^2.8.1",
     "ts-jest": "^29.1.0",
@@ -291,7 +457,7 @@
     "vscode-extension-tester": "^5.6.0"
   },
   "dependencies": {
-    "@benrbray/prosemirror-math": "^0.2.2",
+    "@benrbray/prosemirror-math": "^1.0.0",
     "@codemirror/autocomplete": "^6.7.1",
     "@codemirror/commands": "^6.2.4",
     "@codemirror/language": "^6.6.0",
@@ -304,7 +470,7 @@
     "@vscode/webview-ui-toolkit": "^1.2.1",
     "eventemitter2": "6.4.9",
     "jquery": "^3.7.0",
-    "katex": "^0.13.0",
+    "katex": "^0.16.10",
     "markdown-it": "^13.0.1",
     "object-hash": "^3.0.0",
     "prosemirror-commands": "^1.1.7",

@@ -75,10 +75,24 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         if (this.state != WebviewState.ready) return; // Error handling
 
         let webviewOpts = { enableScripts: true, enableFindWidget: false };
-        if (this.name == "commonExecute") {
+        if (this.name == "help") {
             this._panel = window.createWebviewPanel(
                 this.name,
-                "Expand definition | Help | Search",
+                "Help",
+                { preserveFocus: true, viewColumn: ViewColumn.Two },
+                webviewOpts
+            );
+        } else if (this.name == "search") {
+            this._panel = window.createWebviewPanel(
+                this.name,
+                "Search",
+                { preserveFocus: true, viewColumn: ViewColumn.Two },
+                webviewOpts
+            );
+        } else if (this.name == "expandDefinition") {
+            this._panel = window.createWebviewPanel(
+                this.name,
+                "Expand definition",
                 { preserveFocus: true, viewColumn: ViewColumn.Two },
                 webviewOpts
             );
@@ -191,7 +205,9 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      * @returns boolean on whether message was sent successfully
      */
     public postMessage(msg: Message) : boolean {
-        if (this.state != WebviewState.visible) return false;
+        if (this.state != WebviewState.visible) {
+            this.changeState(WebviewState.visible);
+        }
         this._panel?.webview.postMessage(msg);
         return true;
     }

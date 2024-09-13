@@ -50,8 +50,6 @@ class MenuView implements PluginView {
         // Create menubar dom container.
         this.menubarDOM = document.createElement("div");
         this.menubarDOM.classList.add("menubar");
-        this.menubarDOM.style.display = "flex"
-        this.menubarDOM.style.justifyContent = "space-between"
         
         for(const item of items) {
             // Append the menu item to the menubar DOM element.
@@ -143,11 +141,11 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os
     // Create the list of menu entries.
     let items: MenuEntry[] = [
         // Insert Coq command
-        createMenuItem("Math ↓", `Insert new verified math block underneath (${keyBinding("q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Math ↑", `Insert new verified math block above (${keyBinding("Q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Math↓", `Insert new verified math block underneath (${keyBinding("q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Math↑", `Insert new verified math block above (${keyBinding("Q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
         // Insert Markdown
-        createMenuItem("Text ↓", `Insert new text block underneath (${keyBinding("m")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Text ↑", `Insert new text block above (${keyBinding("M")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Text↓", `Insert new text block underneath (${keyBinding("m")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Text↑", `Insert new text block above (${keyBinding("M")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
         // Insert LaTeX
         createMenuItem(`${LaTeX_SVG} <div>↓</div>`, `Insert new LaTeX block underneath (${keyBinding("l")})`, cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
         createMenuItem(`${LaTeX_SVG} <div>↑</div>`, `Insert new LaTeX block above (${keyBinding("L")})`, cmdInsertLatex(schema, filef, InsertionPlace.Above), false),

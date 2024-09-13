@@ -29,3 +29,9 @@ import "./spinner.css";
 
 // for the freeze effect skull
 import "./freeze.css";
+
+// for the custom context menu
+import "./context-menu.css";
+
+// For the symbol autocompletions:
+import "./autocomplete.css";

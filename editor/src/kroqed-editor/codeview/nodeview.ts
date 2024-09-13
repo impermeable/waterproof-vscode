@@ -1,5 +1,5 @@
-import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion } from "@codemirror/autocomplete";
-import { defaultKeymap, indentWithTab } from "@codemirror/commands";
+import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet } from "@codemirror/autocomplete";
+import { indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
@@ -10,9 +10,11 @@ import {
 import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
-import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource } from "./autocomplete";
+import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic, forceLinting } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
+import { Debouncer } from "./debouncer";
+import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -23,15 +25,13 @@ import { linter, LintSource, Diagnostic, forceLinting } from "@codemirror/lint";
 export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	dom: HTMLElement;
 
-	// TODO:
 	private _lineNumberCompartment: Compartment;
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
 	private _diags;
 
-	// Compartment storing the linting information (needs to be in a comp. because of refreshing)
-	private _lintingCompartment: Compartment;
+	private debouncer: Debouncer;
 
 	constructor(
 		node: Node,
@@ -46,15 +46,16 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = [];
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
-		this._lintingCompartment = new Compartment;
 		this._diags = [];
 		
+		// Shadow this._outerView for use in the next function.
+		const outerView = this._outerView;
 
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
-				// Create the first linting compartment. 
-				this._lintingCompartment.of(linter(this.lintingFunction)),
+				// Add the linting extension for showing diagnostics (errors, warnings, etc) 
+				linter(this.lintingFunction),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 				autocompletion({
@@ -63,12 +64,13 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 						this.dynamicCompletionSource, 
 						symbolCompletionSource, 
 						coqCompletionSource
-					]
+					], 
+					icons: false,
+					addToOptions: [renderIcon]
 				}),
 				cmKeymap.of([
 					indentWithTab,
-					...this.embeddedCodeMirrorKeymap(),
-					...defaultKeymap,
+					...this.embeddedCodeMirrorKeymap()
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),
@@ -77,8 +79,40 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				coqSyntaxHighlighting(),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
 				placeholder("Empty code cell")
-			]
+			],
+			// We override the dispatch field to filter the transactions in the CodeMirror cells.
+			// We explicitly **allow** selection changes, so that students can select (and copy) non-input area code.
+			dispatch(tr, view) {
+				// TODO: deprecated according to reference manual https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch 
+				if (!tr.docChanged) {
+					view.update([tr]);
+				} else {
+					// Figure out whether we are in teacher or student mode.
+					// This is a ProseMirror object, hence we need the prosemirror view (outerview) state.
+					const locked = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.locked;
+					if (locked === undefined) {
+						// if we could not get the locked state then we do not
+						// allow this transaction to update the view.
+						return;
+					}
+					
+					if (locked) {
+						// in student mode.
+						const pos = getPos();
+						if (pos === undefined) return;
+						// Resolve the position in the prosemirror document and get the node one level underneath the root.
+						// TODO: Assumption that `<input-area>`s only ever appear one level beneath the root node.
+						// TODO: Hardcoded node names.
+						const name = outerView.state.doc.resolve(pos).node(1).type.name;
+						if (name !== "input") return; // This node is not part of an input area.
+					}
+
+					view.update([tr]);
+				}
+			},
 		});
+
+		this.debouncer = new Debouncer(400, this.forceUpdateLinting.bind(this));
 
 		// Editors outer node is dom
 		this.dom = this._codemirror.dom;
@@ -91,6 +125,14 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 		this.updating = false;
 		this.handleNewComplete([]);
+	}
+
+	public handleSnippet(template: string, posFrom: number, posTo: number) {
+		this._codemirror.focus();
+		snippet(template)({
+			state: this._codemirror.state,
+			dispatch: this._codemirror.dispatch
+		}, null, posFrom, posTo);
 	}
 
 	private lintingFunction: LintSource = (view: CodeMirror): readonly Diagnostic[] => {
@@ -167,7 +209,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				}
 			}]
 		});
-		this.forceUpdateLinting();		
+		this.debouncer.call();		
 	}
 
 	/**
@@ -175,12 +217,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
 	private forceUpdateLinting() {
-		// Reconfigure the linting compartment (forces the linter to run again when editor idle)
 		this._codemirror.dispatch({
-			effects: this._lintingCompartment.reconfigure(linter(() => this._diags, {delay: 100}))
-		})
-		// Not necessary but we can force the linter to run straightaway, instead of waiting for `delay`
-		// forceLinting(this._codemirror);
+			effects: setDiagnosticsEffect.of(this._diags)
+		});
 	}
 
 	/**
@@ -188,7 +227,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public clearCoqErrors() {
 		this._diags = [];
-		this.forceUpdateLinting();
+		this.debouncer.call();
 	}
 }
 

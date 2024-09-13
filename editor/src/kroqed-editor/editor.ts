@@ -1,10 +1,11 @@
 import { mathPlugin, mathSerializer } from "@benrbray/prosemirror-math";
-import { chainCommands, createParagraphNear, deleteSelection, liftEmptyBlock, newlineInCode, selectParentNode, splitBlock } from "prosemirror-commands";
+import { deleteSelection, selectParentNode } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
-import { DOMParser, ResolvedPos, Schema } from "prosemirror-model";
+import { ResolvedPos, Schema, Node as ProseNode } from "prosemirror-model";
 import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
+import { createProseMirrorDocument } from "./prosedoc-construction/construct-document";
 
 import { DocChange, FileFormat, LineNumber, Message, MessageType, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
 import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
@@ -17,6 +18,8 @@ import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
+import { createContextMenuHTML } from "./context-menu";
+import { initializeTacticCompletion } from "./autocomplete/tactics";
 
 // CSS imports
 import "katex/dist/katex.min.css";
@@ -24,10 +27,11 @@ import "prosemirror-view/style/prosemirror.css";
 import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
-import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, deleteNodeIfEmpty } from "./commands";
+import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
+import { checkPrePost } from "./file-utils";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -54,7 +58,6 @@ export class Editor {
 
 	// The editor and content html elements.
 	private _editorElem: HTMLElement;
-	private _contentElem: HTMLElement;
 
 	// The prosemirror view
 	private _view: EditorView | undefined;
@@ -71,11 +74,10 @@ export class Editor {
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
 
-	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement, contentElement: HTMLElement) {
+	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement) {
 		this._api = vscodeapi;
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
-		this._contentElem = contentElement;
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -83,6 +85,31 @@ export class Editor {
 		if (userAgent.includes("Mac")) this._userOS = OS.MacOS;
 		if (userAgent.includes("X11")) this._userOS = OS.Unix;
 		if (userAgent.includes("Linux")) this._userOS = OS.Linux;
+
+		const theContextMenu = createContextMenuHTML(this);
+
+		
+		document.body.appendChild(theContextMenu);
+		
+		// Setup the custom context menu
+		document.addEventListener("click", (ev) => {
+			// Handle a 'left mouse click'
+			// console.log("LMB");
+			theContextMenu.style.display = "none";
+		});
+
+		document.addEventListener("contextmenu", (ev) => {
+			// Handle a 'right mouse click'
+			// We call preventDefault to prevent the default context menu from showing
+			ev.preventDefault();
+			// After this we display our own context menu
+			const x: string = `${ev.pageX}px`; 
+			const y: string = `${ev.pageY}px`;
+			theContextMenu.style.position = "absolute"; 
+			theContextMenu.style.left = x;
+			theContextMenu.style.top = y;
+			theContextMenu.style.display = "block";
+		})
 	}
 
 	init(content: string, fileFormat: FileFormat, version: number = 1) {
@@ -97,17 +124,25 @@ export class Editor {
 			this._view.dom.remove();
 		}
 
+		if (fileFormat === FileFormat.MarkdownV) {
+			document.body.classList.add("mv");
+		}
+
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = this.checkPrePost(content);
+		let newContent = checkPrePost(content, (msg: Message) => {
+			this.post(msg);
+		});
 		if (newContent !== content) version = version + 1;
 
 		let parsedContent = this._translator.toProsemirror(newContent);
+		// this._contentElem.innerHTML = parsedContent;
 		
-		this._contentElem.innerHTML = parsedContent;
-		this._mapping = new TextDocMapping(parsedContent, version);
-		this.createProseMirrorEditor();
+		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
+
+		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
+		this.createProseMirrorEditor(proseDoc);
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();
@@ -120,11 +155,11 @@ export class Editor {
 		return this._view?.state;
 	}
 
-	createProseMirrorEditor() {
+	createProseMirrorEditor(proseDoc: ProseNode) {
 		// Shadow this variable _userOS.
 		const userOS = this._userOS;
 		let view = new EditorView(this._editorElem, {
-			state: this.createState(),
+			state: this.createState(proseDoc),
 			clipboardTextSerializer: (slice) => { return mathSerializer.serializeSlice(slice) },
 			dispatchTransaction: ((tr) => {
 				// Called on every transaction.
@@ -134,7 +169,7 @@ export class Editor {
 					if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
-							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update //TODO: Try and catch and set document to locked
+							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
 							this.post({type: MessageType.docChange, body: obj});
 						} catch (error) {
 							console.error(error.message);
@@ -195,10 +230,10 @@ export class Editor {
 	}
 
 	/** Create initial prosemirror state */
-	createState(): EditorState {
+	createState(proseDoc: ProseNode): EditorState {
 		return EditorState.create({
 			schema: this._schema,
-			doc: DOMParser.fromSchema(this._schema).parse(this._contentElem),
+			doc: proseDoc,
 			plugins: this.createPluginsArray()
 		});
 	}
@@ -216,6 +251,10 @@ export class Editor {
 			progressBarPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
+				"Mod-h": () => {
+					this.post({type: MessageType.command, body: "Help.", time: (new Date()).getTime()});
+					return true;
+				},
 				"Backspace": deleteSelection,
 				"Delete": deleteSelection,
 				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),
@@ -228,6 +267,40 @@ export class Editor {
 				"Mod-.": selectParentNode
 			})
 		];
+	}
+
+	handleSnippet(template: string) {
+		const view = this._view!!;
+		// Get the first selection.
+		const from = view.state.selection.from;
+		const to = view.state.selection.to;
+
+		// We need to figure out to which codemirror cell this insertion belongs.
+
+		const state = view.state;
+
+		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
+		if (!nodeViews) return;
+		const nodeViewsWithPositions = Array.from(nodeViews).map((codeblock) => {
+			return {
+				codeblock,
+				pos: codeblock._getPos()
+			}
+		});
+
+		let theView: CodeBlockView | undefined = undefined;
+		let pos = view.state.doc.content.size;
+		for(const obj of nodeViewsWithPositions) {
+			if (obj.pos === undefined) continue;
+			if(from - obj.pos < pos && obj.pos < from) {
+				pos = from - obj.pos;
+				theView = obj.codeblock;
+			}
+		}
+		if (!theView) return;
+		const insertionPosFrom 	= state.selection.$from.parentOffset;
+		const insertionPosTo 	= state.selection.$to.parentOffset;
+		theView.handleSnippet(template, insertionPosFrom, insertionPosTo);
 	}
 
 	/** Called on every selection update. */
@@ -417,28 +490,7 @@ export class Editor {
 			return ((low <= value.start) && (value.end <= high));
 		});
 	}
-
-	/**
-	 * If the file starts with a coqblock or ends with a coqblock this function adds a newline to the start for 
-	 * insertion purposes
-	 * @param content the content of the file
-	 */
-	checkPrePost(content: string): string {
-		let result = content
-		let edit1: DocChange = {startInFile: 0, endInFile: 0,finalText: ''};
-		let edit2: DocChange = {startInFile: content.length, endInFile: content.length, finalText: ''};
-		if (content.startsWith("```coq\n")) {
-			result = '\n' + result;
-			edit1.finalText = '\n';
-		} 
-		if (content.endsWith("\n```")) {
-			result = result + '\n';
-			edit2.finalText = '\n';
-		} 
-		let final: WrappingDocChange = { firstEdit: edit1, secondEdit: edit2};
-		if (edit1.finalText == '\n' || edit2.finalText == '\n') this.post({type: MessageType.docChange, body: final});
-		return result;
-	}
+	
 
 	/** Handle a message from vscode */
 	handleMessage(msg: Message) {
@@ -461,6 +513,9 @@ export class Editor {
 				const diagnostics = msg.body;
 				this.parseCoqDiagnostics(diagnostics);
 				break;
+            case MessageType.syntax:
+                initializeTacticCompletion(msg.body as boolean);
+                break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

@@ -38,11 +38,13 @@ function getAllCoqBlocks(input: string): CoqBlock[] {
     // Loop through matches and replace newlines with a string to be used in html tags
     for (let i = 0; i < matches.length; i++) {
         for (let j = 0; j < matches[i].length; j++) {
-            if (matches[i][j] == undefined) {
-                matches[i][j] = ""
-            } else if (matches[i][j] == "\r\n" || matches[i][j] == "\n") {
-                matches[i][j] = "newLine"
-            }
+            if (j != 0 && j != 3) {
+                if (matches[i][j] == undefined) {
+                    matches[i][j] = ""
+                } else if (matches[i][j] == "\r\n" || matches[i][j] == "\n") {
+                    matches[i][j] = "newLine"
+                }
+            }     
         }
     }
 
@@ -206,6 +208,8 @@ function handleCoqBlock(match: RegExpMatchArray) {
 
     let result = ""
     allCells.forEach(cell => {
+        // TODO: What does preWhite, postWhite do?
+        // console.log(cell);
         if (cell.type === coqCellType.CoqCode) {
             // Coqcode, run .v parser
             result += `<coqcode>`.concat(cell.content as string, `</coqcode>`);
@@ -221,8 +225,8 @@ function handleCoqBlock(match: RegExpMatchArray) {
     } else {
         result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`">` + result + `<\/coqblock>`
     }
-    
 
+    
     return result;
 }
 

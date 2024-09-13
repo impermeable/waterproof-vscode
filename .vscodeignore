@@ -13,8 +13,6 @@ views/
 .gitignore
 .nra.cache
 .lia.cache
-all-vscode-css-properties.css
-docs.md
 esbuild-test.mjs
 esbuild-unit-tests.mjs
 esbuild.mjs
@@ -23,3 +21,4 @@ tsconfig-base.json
 tsconfig.json
 .github/
 ExampleFiles/
+developer-resources/

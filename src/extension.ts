@@ -6,7 +6,9 @@ import {
     WorkspaceConfiguration,
     commands,
     workspace,
-    window} from "vscode";
+    window,
+    ConfigurationTarget,
+    Uri} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -20,17 +22,23 @@ import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 import { Logbook } from "./webviews/goalviews/logbook";
 import { SidePanelProvider, addSidePanel } from "./webviews/sidePanel";
-import { CommonExecute } from "./webviews/standardviews/commonExecute";
+import { Search } from "./webviews/standardviews/search";
+import { Help } from "./webviews/standardviews/help";
+import { ExpandDefinition } from "./webviews/standardviews/expandDefinition";
 import { ExecutePanel } from "./webviews/standardviews/execute";
 import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
-import { newFileContent } from "./constants";
+import { VersionChecker } from "./version-checker";
+import { readFile } from "fs";
+import { join as joinPath} from "path";
+import { homedir } from "os";
+import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
 
 /**
  * Main extension class
  */
-export class Coqnitive implements Disposable {
+export class Waterproof implements Disposable {
 
     /** The extension context */
     private readonly context: ExtensionContext;
@@ -61,10 +69,6 @@ export class Coqnitive implements Disposable {
 
     private sidePanelProvider: SidePanelProvider;
 
-    private get configuration(): WorkspaceConfiguration {
-        return workspace.getConfiguration("waterproof");
-    }
-
     /**
      * Constructs the extension lifecycle object.
      *
@@ -89,8 +93,7 @@ export class Coqnitive implements Disposable {
                 this.client.activeDocument = document;
                 this.client.activeCursorPosition = undefined;
                 for (const g of this.goalsComponents) g.updateGoals(undefined);
-            } 
-            console.log("focus")
+            }
             this.webviewManager.open("goals")
             // this.webviewManager.reveal("goals")
         });
@@ -101,14 +104,18 @@ export class Coqnitive implements Disposable {
             this.updateGoals(document, position);  // TODO: error handling
         });
         this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
-            executeCommand(this.client, command).then(
-                results => {
-                    source.setResults(results);
-                },
-                (error: Error) => {
-                    source.setResults(["Error: " + error.message]);  // (temp)
-                }
-            );
+            if (command == "createHelp") {
+                source.setResults(["createHelp"]);
+            } else {
+                executeCommand(this.client, command).then(
+                    results => {
+                        source.setResults(results);
+                    },
+                    (error: Error) => {
+                        source.setResults(["Error: " + error.message]);  // (temp)
+                    }
+                );
+            }
         });
 
         this.disposables.push(CoqEditorProvider.register(context, this.webviewManager));
@@ -116,19 +123,21 @@ export class Coqnitive implements Disposable {
 
         // make relevant gui components
         this.statusBar = new CoqnitiveStatusBar();
-        var goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(this.configuration))
+        var goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals")
         this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
-        this.webviewManager.addToolWebview("commonExecute", new CommonExecute(this.context.extensionUri));
+        this.webviewManager.addToolWebview("search", new Search(this.context.extensionUri));
+        this.webviewManager.addToolWebview("help", new Help(this.context.extensionUri));
+        this.webviewManager.addToolWebview("expandDefinition", new ExpandDefinition(this.context.extensionUri));
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
-        var logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(this.configuration));
+        var logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("logbook", logbook);
         this.goalsComponents.push(logbook);
-        var debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(this.configuration));
+        var debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("debug", debug);
         this.goalsComponents.push(debug);
 
@@ -145,6 +154,94 @@ export class Coqnitive implements Disposable {
 
         // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
+
+        // FIXME: Move command handlers to their own location.
+
+        this.registerCommand("openTutorial", this.waterproofTutorialCommand);
+
+        this.registerCommand("pathSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.path");});
+        this.registerCommand("argsSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.args");});
+        this.registerCommand("defaultPath", () => {
+            let defaultValue: string | undefined;
+            switch (process.platform) {
+                case "aix": defaultValue = undefined; break;
+                case "android": defaultValue = undefined; break;
+                // MACOS
+                case "darwin": defaultValue = "/Applications/Waterproof_Background.app/Contents/Resources/bin/coq-lsp"; break;
+                case "freebsd": defaultValue = undefined; break;
+                case "haiku": defaultValue = undefined; break;
+                // LINUX
+                case "linux": defaultValue = "coq-lsp"; break;
+                case "openbsd": defaultValue = undefined; break;
+                case "sunos": defaultValue = undefined; break;
+                // WINDOWS
+                case "win32": defaultValue = "C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\bin\\coq-lsp.exe"; break;
+                case "cygwin": defaultValue = undefined; break;
+                case "netbsd": defaultValue = undefined; break;
+            }
+            if (defaultValue === undefined) {
+                window.showInformationMessage("Waterproof has no known default value for this platform, please update the setting manually.");
+                commands.executeCommand("workbench.action.openSettings", "waterproof.path");
+            } else {
+                try {
+                    workspace.getConfiguration().update("waterproof.path", defaultValue, ConfigurationTarget.Global).then(() => {
+                        setTimeout(() => {
+                            WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.path.toString());
+                            window.showInformationMessage(`Waterproof Path setting succesfully updated!`);
+                        }, 100);
+                    });
+                } catch (e) {
+                    console.error("Error in updating Waterproof.path setting:", e);
+                }
+            }
+        });
+
+        this.registerCommand("defaultArgsMac", () => {
+            // If we are not on a mac platform, this is a no-op.
+            // if (process.platform !== "darwin") { window.showErrorMessage("Waterproof: This setting should only be used on Mac platforms."); return; }
+
+            const defaultArgs = [
+                "--ocamlpath=/Applications/Waterproof_Background.app/Contents/Resources/lib",
+                "--coqcorelib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq-core",
+                "--coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq"
+            ];
+            try {
+                workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
+                    setTimeout(() => {
+                        WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
+                        
+                        window.showInformationMessage(`Waterproof args setting succesfully updated!`);
+                    }, 100);
+                });
+            } catch (e) {
+                console.error("Error in updating Waterproof.args setting:", e);
+            }
+        });
+    }
+
+    private async waterproofTutorialCommand(): Promise<void> {
+        const defaultUri = workspace.workspaceFolders ? 
+            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "waterproof_tutorial.mv")) : 
+            Uri.file(joinPath(homedir(), "waterproof_tutorial.mv"));
+        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
+            if (!uri) {
+                window.showErrorMessage("Something went wrong in saving the Waterproof tutorial file");
+                return;
+            }
+            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "waterproof_tutorial.mv").fsPath;
+            readFile(newFilePath, (err, data) => {
+                if (err) {
+                    window.showErrorMessage("Could not a new Waterproof file.");
+                    console.error(`Could not read Waterproof tutorial file: ${err}`);
+                    return;
+                }
+                workspace.fs.writeFile(uri, data).then(() => {
+                    // Open the file using the waterproof editor
+                    // TODO: Hardcoded `coqEditor.coqEditor`.
+                    commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+                });
+            })
+        });
     }
 
     /**
@@ -153,18 +250,27 @@ export class Coqnitive implements Disposable {
      * or by using the File -> New File... option. 
      */
     private async newFileCommand(): Promise<void> {
-
-        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document"}).then((uri) => {
+        const defaultUri = workspace.workspaceFolders ? 
+            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "new_waterproof_document.mv")) : 
+            Uri.file(joinPath(homedir(), "new_waterproof_document.mv"));
+        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in creating a new waterproof document");
                 return;
             }
-
-            workspace.fs.writeFile(uri, Buffer.from(newFileContent)).then(() => {
-                // Open the file using the waterproof editor
-                // TODO: Hardcoded `coqEditor.coqEditor`.
-                commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-            });
+            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "empty_waterproof_document.mv").fsPath;
+            readFile(newFilePath, (err, data) => {
+                if (err) {
+                    window.showErrorMessage("Could not a new Waterproof file.");
+                    console.error(`Could not read Waterproof tutorial file: ${err}`);
+                    return;
+                }
+                workspace.fs.writeFile(uri, data).then(() => {
+                    // Open the file using the waterproof editor
+                    // TODO: Hardcoded `coqEditor.coqEditor`.
+                    commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+                });
+            })
         });
     }
 
@@ -201,35 +307,53 @@ export class Coqnitive implements Disposable {
     /**
      * Create the lsp client and update relevant status components
      */
-    initializeClient(): Promise<void> {
-        if (this.client?.isRunning()) {
-            return Promise.reject(new Error("Cannot initialize client; one is already running."))
-        }
+    async initializeClient(): Promise<void> {
 
-        const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "coqmarkdown" }],  // only `.mv` files, not `.v`
-            outputChannelName: "Waterproof LSP Events",
-            revealOutputChannelOn: RevealOutputChannelOn.Info,
-            initializationOptions: CoqLspServerConfig.create(
-                this.context.extension.packageJSON.version,
-                this.configuration
-            ),
-            markdown: { isTrusted: true, supportHtml: true },
-        };
+        // Run the version checker.
+        const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
+        const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
+        const versionChecker = new VersionChecker(WaterproofConfigHelper.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
+        // 
+        const foundServer = await versionChecker.prelaunchChecks();
 
-        this.client = this.clientFactory(clientOptions, this.configuration);
-        return this.client.startWithHandlers(this.webviewManager).then(
-            () => {
-                // show user that LSP is working
-                this.statusBar.update(true);
-            },
-            reason => {
-                const message = reason.toString();
-                console.error(`Error during client initialization: ${message}`);
-                this.statusBar.failed(message);
-                throw reason;  // keep chain rejected
+        if (foundServer) {
+
+            versionChecker.run();
+            
+            if (this.client?.isRunning()) {
+                return Promise.reject(new Error("Cannot initialize client; one is already running."))
             }
-        );
+
+            const serverOptions = CoqLspServerConfig.create(
+                // TODO: Support +coqversion versions.
+                this.context.extension.packageJSON.requiredCoqLspVersion.slice(2),
+                WaterproofConfigHelper.configuration
+            );
+
+            const clientOptions: LanguageClientOptions = {
+                documentSelector: [{ language: "coqmarkdown" }, { language: "coq" }],  // both .mv and .v files
+                outputChannelName: "Waterproof LSP Events (Initial)",
+                revealOutputChannelOn: RevealOutputChannelOn.Info,
+                initializationOptions: serverOptions,
+                markdown: { isTrusted: true, supportHtml: true },
+            };
+
+            this.client = this.clientFactory(clientOptions, WaterproofConfigHelper.configuration);
+            return this.client.startWithHandlers(this.webviewManager).then(
+                () => {
+                    // show user that LSP is working
+                    this.statusBar.update(true);
+                },
+                reason => {
+                    const message = reason.toString();
+                    console.error(`Error during client initialization: ${message}`);
+                    this.statusBar.failed(message);
+                    throw reason;  // keep chain rejected
+                }
+            );
+        } else {
+            this.statusBar.failed("LSP not found");
+        }
     }
 
     /**
@@ -245,7 +369,7 @@ export class Coqnitive implements Disposable {
      * otherwise initialize it.
      */
     private toggleClient(): Promise<void> {
-        if (this.client.isRunning()) {
+        if (this.client?.isRunning()) {
             return this.stopClient();
         } else {
             return this.initializeClient();

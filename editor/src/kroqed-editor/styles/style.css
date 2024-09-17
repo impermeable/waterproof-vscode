@@ -21,7 +21,7 @@
 
 .ProseMirror ::selection {
   color: var(--vscode-editor-selectionForeground);
-  background-color: var(--vscode-list-activeSelectionBackground);
+  background-color: var(--vscode-editor-selectionBackground);
 }
 
 .ProseMirror-selectednode {

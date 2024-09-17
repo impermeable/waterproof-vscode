@@ -89,4 +89,5 @@ test("Parse top level blocks (V)", () => {
     expect(blocks[1].stringContent).toBe("```coq\n\nCompute 2 + 2.\n\n```");
     expect(blocks[3].stringContent).toBe("```coq\n\nLemma testing : True.\nProof.\nexact I.\nQed.\n(* Proof should now be finished *)\n\n```");
     expect(blocks[4].stringContent).toBe("\n(** *** End example v file *)\n");
+
 });

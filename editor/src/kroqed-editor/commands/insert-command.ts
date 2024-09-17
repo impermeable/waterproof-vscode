@@ -55,12 +55,6 @@ export function getMdInsertCommand(
             const { start, end } = traverseUpAndReturnFirstWithName(state, "coqblock");
             trans = state.tr.insert(place == InsertionPlace.Above ? start : end, nodeType.create());
         }
-
-        // If the dispatch is given and transaction is not undefined dispatch it.
-        if (dispatch && trans) dispatch(trans);
-
-        // successful command.
-        return true;
     }
 }
 
@@ -102,11 +96,18 @@ export function getLatexInsertCommand(
             trans = state.tr.insert(place == InsertionPlace.Above ? start : end, latexNodeType.create());
         }
 
-        // Dispatch the transaction when dispatch is given and transaction is not undefined.
-        if (dispatch && trans) dispatch(trans);
+            // Dispatch the transaction when dispatch is given and transaction is not undefined.
+            if (dispatch && trans) dispatch(trans);
 
-        // Indicate successful command.
-        return true;
+            // Indicate successful command.
+            return true;
+        } else if (filef === FileFormat.RegularV) {
+            // FIXME: Implement .v file case.
+            return false;
+        } else {
+            // This command has no expected outcome when the Fileformat is unknown.
+            return false;
+        }
     }
 }
 
@@ -158,7 +159,14 @@ export function getCoqInsertCommand(
         // If dispatch is given and transaction is set, dispatch the transaction.
         if (dispatch && trans) dispatch(trans);
 
-        // Indicate that this command was successful.
-        return true;
+            // Indicate that this command was successful.
+            return true;
+        } else if (filef === FileFormat.RegularV) {
+            // FIXME: Implement .v file case.
+            return false;
+        } else {
+            // This command has no expected outcome when the Fileformat is unknown.
+            return false;
+        }
     }
 }

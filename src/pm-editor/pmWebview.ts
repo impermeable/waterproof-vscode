@@ -10,6 +10,7 @@ import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 const SAVE_AS = "Save As";
 import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
+import { isDeleteDocChange, isInsertDocChange, isWrappingDocChange, NormalDocChange } from "../../shared/DocChange";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -255,14 +256,15 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Apply new doc changes to the underlying file */
-    private applyChangeToWorkspace(change: DocChange, edit: WorkspaceEdit) {
-        if (change.startInFile === change.endInFile) {
+    private applyChangeToWorkspace(change: NormalDocChange, edit: WorkspaceEdit) {
+
+        if (isInsertDocChange(change)) {
             edit.insert(
                 this.document.uri,
                 this.document.positionAt(change.startInFile),
                 change.finalText
             );
-        } else if (change.finalText.length === 0) {
+        } else if (isDeleteDocChange(change)) {
             edit.delete(
                 this.document.uri,
                 new Range(this._document.positionAt(change.startInFile), this.document.positionAt(change.endInFile))
@@ -293,9 +295,9 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Handle a doc change sent from prosemirror */
-    private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
+    private handleChangeFromEditor(change: DocChange) {
         this._workspaceEditor.edit(e => {
-            if ("firstEdit" in change) {
+            if (isWrappingDocChange(change)) {
                 this.applyChangeToWorkspace(change.firstEdit, e);
                 this.applyChangeToWorkspace(change.secondEdit, e);
             } else {

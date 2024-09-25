@@ -8,10 +8,10 @@
   content: "";
   position: absolute;
   top: 0;
-  left: -4px;
+  left: 0px;
   height: 100%;
-  width: 4px; 
-  background-color: var(--vscode-button-background); 
+  width: 8px; 
+  background-color: var(--vscode-terminal-ansiRed); 
   /* we add a border for some high contrast themes */
   outline: 1px solid var(--vscode-button-border); 
 }

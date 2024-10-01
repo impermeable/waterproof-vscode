@@ -1,4 +1,5 @@
 @top Program { Sentence* }
+@external tokens TakeInput from "./externalTokens" { TakeInput }
 
 Sentence {
     WaterproofTactic
@@ -17,6 +18,7 @@ Sentence {
 // Skip WaterproofTactics
 @skip {} {
     WaterproofTactic {
+        "Take" TakeInput ":" TacticInput TacticEnd | 
         "Help." | 
         "We argue by contradiction." | 
         "Contradiction." | 
@@ -37,7 +39,6 @@ Sentence {
         "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
         "Obtain " TacticInput " according to " TacticInput TacticEnd | 
         "Choose " TacticInput " :=" TacticInput TacticEnd | 
-        "Take " TacticInput " : " TacticInput TacticEnd | 
         "By (" TacticInput ") we conclude that " TacticInput TacticEnd | 
         "By (" TacticInput ") it holds that " TacticInput TacticEnd | 
         "Define " TacticInput " := " TacticInput TacticEnd | 

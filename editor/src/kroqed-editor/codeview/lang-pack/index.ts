@@ -13,6 +13,7 @@ import { parser } from "./syntax"
 let customTags = {
     waterproofTactic: Tag.define(),
     tacticInput: Tag.define(),
+    takeInput: Tag.define(),
     coqSentence: Tag.define(),
 }
 
@@ -20,6 +21,7 @@ let customTags = {
 export let highlight = HighlightStyle.define([
     { tag: customTags.waterproofTactic, color: "#0000FF" },
     { tag: customTags.tacticInput, color: "#FF0000" },
+    { tag: customTags.takeInput, color: "#338FFF" },
     { tag: customTags.coqSentence, color: "#FFFFFF" },
     { tag: t.comment, color: "#00FF00" },
 ])
@@ -37,6 +39,7 @@ export const coqLanguage = LRLanguage.define({
             styleTags({
                 WaterproofTactic: customTags.waterproofTactic,
                 TacticInput: customTags.tacticInput,
+                TakeInput: customTags.takeInput,
                 CoqSentence: customTags.coqSentence,
                 Comment: t.comment
             })

@@ -1,12 +1,27 @@
 # Automatic Installer
 
-When running the automatic installer, a terminal window will appear and automatically download the necessary installer/packages onto your machine.
+The Waterproof checker will also restart automatically, this might take a few seconds.
 
-If an instance of waterproof has already been installed on the machine, it will first be uninstalled and a pop-up will request permission for this.
+**Starting the Installation**
 
-Use all default locations and prompts for the easiest installation experience.
+When running the installer, a terminal window will open. The system will automatically download the required installer. Depending on your machine, this may take a few moments.
 
-This installer is then run before being deleted once all libraries have been successfully installed.
-The lsp path is also updated in the Waterproof settings according to the operating system being used.
+**Uninstalling Previous Versions (If Needed)**
 
-Close the terminal when the installation is complete to continue using Waterproof.
+If you already have Waterproof installed, the installer will first uninstall it. A pop-up will ask for your permission before proceeding with the uninstallation.
+
+**Installer Execution**
+
+After downloading, the installer will automatically run. Once the libraries are successfully installed, the installer will delete itself.
+
+**Note: Use Default Settings**
+
+To keep things simple, follow the default prompts and locations during the installation. This ensures the smoothest process.
+
+**Updating Paths**
+
+Waterproof will automatically update the necessary paths for your operating system in its settings.
+
+**Final Steps**
+
+Once the installation is complete, close the terminal to continue using Waterproof. The Waterproof checker will restart on its own, and this may take a few seconds.

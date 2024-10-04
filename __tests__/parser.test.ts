@@ -64,7 +64,19 @@ test("Expect default pretty printing characters to be replaced", () => {
 });
 
 test("Expect quoted coq to be replaced", () => {
+    expect(translateCoqDoc("[Compute 3 + 3.]")).toBe("`Compute 3 + 3.`");
+});
+
+test("Expect nested quoted coq to be replaced", () => {
     expect(translateCoqDoc("[let id := fun [T : Type] (x : t) => x in id 0]")).toBe("`let id := fun [T : Type] (x : t) ⇒ x in id 0`");
+});
+
+test("Expect quoted coq with floating closing bracket to be replaced", () => {
+    expect(translateCoqDoc("[Compute 3 + 3.]]")).toBe("`Compute 3 + 3.`]");
+});
+
+test("Expect quoted coq with floating opening bracket to be invalid", () => {
+    expect(translateCoqDoc("[[Compute 3 + 3.]")).toBe("[[Compute 3 + 3.]");
 });
 
 test("Expect preformatted vernacular to be replaced", () => {

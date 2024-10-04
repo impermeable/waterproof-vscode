@@ -260,7 +260,6 @@ export class TextDocMappingV {
      */
     public static getNextHTMLtag(input: string): TagInformation { 
 
-
         // Find all html tags (this is necessary for the position and for invalid matches)
         let matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
 
@@ -284,8 +283,6 @@ export class TextDocMappingV {
 
                 // Check if the HTML tag is a valid HTML tag in our parser
                 if (TextDocMappingV.HTMLtags.has(match[2])) {
-
-                    console.log(match)
 
                     // For entry coqblocks we must extract more information about the starting and ending newline
                     if (match[2] === "coqblock" && match[1] == undefined) {
@@ -343,7 +340,6 @@ export class TextDocMappingV {
                     // For coqdoc we repeat the same process
                     } else if ((match[2] === "coqdoc") && match[1] == undefined){
 
-
                         // Get the matches regarding whitespace
                         let whiteSpaceMatch = match[3]
 
@@ -371,7 +367,7 @@ export class TextDocMappingV {
                         // Return the result
                         return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}            
                     } else  {
-
+                        
                         return {start: start, end: end, content: match[2], preNumber: 0, postNumber: 0}
                     }
                     

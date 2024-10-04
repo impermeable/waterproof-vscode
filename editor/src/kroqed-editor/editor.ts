@@ -141,8 +141,6 @@ export class Editor {
 		
 		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
 
-		console.log(proseDoc)
-
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
 		this.createProseMirrorEditor(proseDoc);
 

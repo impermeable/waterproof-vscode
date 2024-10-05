@@ -34,6 +34,13 @@ import { readFile } from "fs";
 import { join as joinPath} from "path";
 import { homedir } from "os";
 import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
+import { exec } from "child_process"
+import { resolveSoa } from "dns";
+
+
+export function activate(context: ExtensionContext): void {
+    commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
+}
 
 /**
  * Main extension class
@@ -86,7 +93,7 @@ export class Waterproof implements Disposable {
             this.client.updateCompletions(document);
         });
         this.webviewManager.on(WebviewManagerEvents.focus, (document: TextDocument) => {
-            
+
             // update active document
             // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
             if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
@@ -209,7 +216,7 @@ export class Waterproof implements Disposable {
                 workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
                     setTimeout(() => {
                         WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
-                        
+
                         window.showInformationMessage(`Waterproof args setting succesfully updated!`);
                     }, 100);
                 });
@@ -217,11 +224,65 @@ export class Waterproof implements Disposable {
                 console.error("Error in updating Waterproof.args setting:", e);
             }
         });
+
+        this.registerCommand("autoInstall", () => {
+            commands.executeCommand(`waterproof.defaultPath`);
+
+            const windowsInstallationScript = `echo Begin Waterproof Installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
+            const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
+
+            this.stopClient();
+
+            let cmnd: string | undefined;
+            switch (process.platform) {
+                case "aix": cmnd = undefined; break;
+                case "android": cmnd = undefined; break;
+                // MACOS - This is currently not implemented, future task
+                case "darwin": cmnd = undefined; break;
+                case "freebsd": cmnd = undefined; break;
+                case "haiku": cmnd = undefined; break;
+                // LINUX - This is currently not implemented, issues when dealing with different distros and basic packages, installation is also easy enough
+                case "linux": cmnd = undefined; break;
+                case "openbsd": cmnd = undefined; break;
+                case "sunos": cmnd = undefined; break;
+                // WINDOWS
+                case "win32":
+                    // If a waterproof installation is found in the default location it is first uninstalled.
+                    // The path is updated to the default location so if an installation is present in another directory it still will not be utilised
+                    // The installer is then downloaded, run and then removed.
+                case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && `
+                    + uninstallerLocation + ` && ` + windowsInstallationScript + ` ) ELSE (echo No previous installation found && ` +  windowsInstallationScript + ` )"`; break;
+                case "netbsd": cmnd = undefined; break;
+            }
+
+            if (cmnd === undefined) {
+                window.showInformationMessage("Waterproof has no automatic installation process for this platform, please refer to the walktrough page.");
+            } else {
+                this.autoInstall(cmnd)
+            }
+        });
+    }
+
+    /**
+     * Attempts to install all required libraries
+     * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
+     */
+    private async autoInstall(command: string): Promise<Boolean> {
+        return new Promise((resolve, reject) => {
+            exec(command, (err, stdout, stderr) => {
+                if (err) {
+                    // Simple fixed scripts are run, the user is able to stop these but they are not considered errors
+                    // as the user has freedom to choose the steps and can rerun the command.
+                }
+                this.initializeClient();
+                resolve(true)
+            });
+        });
     }
 
     private async waterproofTutorialCommand(): Promise<void> {
-        const defaultUri = workspace.workspaceFolders ? 
-            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "waterproof_tutorial.mv")) : 
+        const defaultUri = workspace.workspaceFolders ?
+            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "waterproof_tutorial.mv")) :
             Uri.file(joinPath(homedir(), "waterproof_tutorial.mv"));
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
             if (!uri) {
@@ -245,13 +306,13 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Handle the newWaterproofDocument command. 
-     * This command can be either activated by the user via the 'command palette' 
-     * or by using the File -> New File... option. 
+     * Handle the newWaterproofDocument command.
+     * This command can be either activated by the user via the 'command palette'
+     * or by using the File -> New File... option.
      */
     private async newFileCommand(): Promise<void> {
-        const defaultUri = workspace.workspaceFolders ? 
-            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "new_waterproof_document.mv")) : 
+        const defaultUri = workspace.workspaceFolders ?
+            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "new_waterproof_document.mv")) :
             Uri.file(joinPath(homedir(), "new_waterproof_document.mv"));
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document", defaultUri}).then((uri) => {
             if (!uri) {
@@ -293,7 +354,7 @@ export class Waterproof implements Disposable {
         const document = this.client.activeDocument;
         if (document) {
             let content = document.getText();
-            const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g; 
+            const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g;
             const replacement = `<input-area>\n\`\`\`coq\n(* Type your proof here *)\n\`\`\`\n</input-area>`;
             content = content.replace(pattern, replacement);
             const fileUri = await window.showSaveDialog();
@@ -313,13 +374,13 @@ export class Waterproof implements Disposable {
         const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
         const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
         const versionChecker = new VersionChecker(WaterproofConfigHelper.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-        // 
+        //
         const foundServer = await versionChecker.prelaunchChecks();
 
         if (foundServer) {
 
             versionChecker.run();
-            
+
             if (this.client?.isRunning()) {
                 return Promise.reject(new Error("Cannot initialize client; one is already running."))
             }

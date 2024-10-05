@@ -47,7 +47,7 @@
         "label": "Choose (*name_var*) := ((*expression*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Choose ${x} := (${ 0}).",
+        "template": "Choose ${0:x} := (${1:0}).",
         "description": "You can use this tactic when you need to show that there exists an x such that a certain property holds. You do this by proposing (*expression*) as a choice for x, giving it the name (*name_var*).",
         "boost": 2,
         "example": "Lemma example_choose : \n  there exists y : ℝ,\n    y < 3.\nProof.\nChoose y := (2).\nWe conclude that (& y = 2 < 3).\nQed."
@@ -71,10 +71,18 @@
         "example": "Lemma example_assume :\n  ∀ a : ℝ, a < 0 ⇒ - a > 0.\nProof.\nTake a : (ℝ).\nAssume that (a < 0) (a_less_than_0).\nWe conclude that (- a > 0).\nQed."
     },
     {
-        "label": "Chain of inequalities: (& 3 < 5 = 2 + 3 ≤ 7 )",
+        "label": "(& 3 < 5 = 2 + 3 ≤ 7) (chain of (in)equalities, with opening parenthesis)",
         "type": "type",
         "detail": "tactic",
-        "template": "(& ${3 < 5 = 2 + 3 ≤ 7} )",
+        "template": "(& ${3 < 5 = 2 + 3 ≤ 7}",
+        "description": "Example of a chain of (in)equalities in which every inequality should.",
+        "example": "Lemma example_inequalities :\n  ∀ ε : ℝ, ε > 0 ⇒ Rmin(ε,1) < 2.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nWe conclude that (& Rmin(ε,1) ≤ 1 < 2).\nQed."
+    },
+    {
+        "label": "& 3 < 5 = 2 + 3 ≤ 7 (chain of (in)equalities)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "& ${3 < 5 = 2 + 3 ≤ 7}",
         "description": "Example of a chain of (in)equalities in which every inequality should.",
         "example": "Lemma example_inequalities :\n  ∀ ε : ℝ, ε > 0 ⇒ Rmin(ε,1) < 2.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nWe conclude that (& Rmin(ε,1) ≤ 1 < 2).\nQed."
     },
@@ -266,7 +274,7 @@
         "label": "Define (*name*) := ((*expression*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Define ${s} := (${0}).",
+        "template": "Define ${0:s} := (${1:0}).",
         "description": "Temporarily give the name (*name*) to the expression (*expression*)",
         "boost": 2
     },

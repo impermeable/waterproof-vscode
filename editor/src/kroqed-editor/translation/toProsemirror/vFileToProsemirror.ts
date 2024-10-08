@@ -16,6 +16,34 @@ interface CoqBlock {
 
 export function translateVToProsemirror(inputDocument: string): string {
 
+    // Input areas
+
+    // Regex to find all coq blocks
+    const regex = /(\r\n|\n)?\(\* begin input \*\)([^]*?)\(\* end input \*\)(\r\n|\n)?/gm;
+
+    // Get all the matchings
+    const matches: RegExpMatchArray[] = Array.from(inputDocument.matchAll(regex));
+
+
+    // Loop through matches and replace newlines with a string to be used in html tags
+    for (let i = 0; i < matches.length; i++) {
+        for (let j = 0; j < matches[i].length; j++) {
+            if (j != 0 && j != 2) {
+                if (matches[i][j] == undefined) {
+                    matches[i][j] = ""
+                } else if (matches[i][j] == "\r\n" || matches[i][j] == "\n") {
+                    matches[i][j] = "newLine"
+                }
+            }     
+        }
+    }
+
+    matches.forEach(match => {
+        inputDocument = inputDocument.replace(/(\r\n|\n)?\(\* begin input \*\)([^]*?)\(\* end input \*\)(\r\n|\n)?/gm, `<input-area preWhite=${match[1]} postWhite=${match[3]}>$2<\/input-area>`)
+    });
+
+    console.log(inputDocument)
+
 
     // Get all coq blocks using there tags (```coq and ```)
     const allCoqDocBlocks = getAllCoqDocBlocks(inputDocument);
@@ -168,6 +196,8 @@ function handleCoqDocBlock(match: RegExpMatchArray) {
 
         input = `<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite=""><coqdoc prePreWhite="`+ match1 +`" prePostWhite="" postPreWhite="" postPostWhite="`+ match3 +`"><coqdown>`.concat(input)
 
+
+
         // This is for markdown replacement with text
         const mathdisplayRegEx = /(?<!(?:\\|\`))(?:((?<!\$)\${1}(?!\$)))([^]*?)(?<!(?:\\|\`))(?<!\$)\1(?!\$)/gm
         input = input.replaceAll(mathdisplayRegEx, `<\/${markDownType}><math-display>$2</math-display><${markDownType}>`)
@@ -182,7 +212,7 @@ function handleCoqDocBlock(match: RegExpMatchArray) {
         const removeRegEx2 = new RegExp(`<coqdown><\/coqdown>`, "gm")
         input = input.replaceAll(removeRegEx2, ""); 
 
-        console.log(input)
+
 
         return input;
     } else {
@@ -207,8 +237,6 @@ function handleCodeBlock(content: string) {
  */
 function parseAsV(input: string) {
 
-    console.log(input)
-
     let preString = `<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite=""><coqcode>`
 
     let postString = `<\/coqcode><\/coqblock>`
@@ -216,13 +244,13 @@ function parseAsV(input: string) {
     // Add pre-markdown tag
     input = preString.concat(input)
     // Math-display replacement for markdown
-    
-    // Input areas
-    const inputAreaRegEx = /\(\* begin input \*\)/gm
-    input = input.replaceAll(inputAreaRegEx, `${postString}<input-area>${preString}`)
 
-    const endinputAreaRegEx = /\(\* end input \*\)/gm
-    input = input.replaceAll(endinputAreaRegEx, `${postString}<\/input-area>${preString}`)
+    // Input areas
+    const inputAreaRegEx = /(<(input-area)?([\w-]+)( [^]*?)?)>/gm
+    input = input.replaceAll(inputAreaRegEx, `${postString}$1${preString}`)
+
+    const endinputAreaRegEx = /(<\/input-area>)/gm
+    input = input.replaceAll(endinputAreaRegEx, `${postString}$1${preString}`)
 
     // For hints
     const hintRegEx = /\(\* begin hint : ([^"]+?) \*\)/gm;

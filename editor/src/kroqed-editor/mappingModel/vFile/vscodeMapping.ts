@@ -129,6 +129,7 @@ export class TextDocMappingV {
         let inCoqdoc: boolean = false; 
 
         // Continue until the entire string has been parsed
+        console.log(inputString)
 
         while(inputString.length > 0) { 
 
@@ -154,7 +155,6 @@ export class TextDocMappingV {
                 // Add text offset based on tag
                 if (next.content == "hint") {
                     textCost += inputString.slice(next.start, next.end).length+6; // Take care of the fact that it is (* begin hint : *)
-                    console.log(inputString.slice(next.start, next.end));
                 }
                 else textCost += getStartHtmlTagText(next.content).length;
 
@@ -260,6 +260,7 @@ export class TextDocMappingV {
      */
     public static getNextHTMLtag(input: string): TagInformation { 
 
+
         // Find all html tags (this is necessary for the position and for invalid matches)
         let matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
 
@@ -340,6 +341,7 @@ export class TextDocMappingV {
                     // For coqdoc we repeat the same process
                     } else if ((match[2] === "coqdoc") && match[1] == undefined){
 
+
                         // Get the matches regarding whitespace
                         let whiteSpaceMatch = match[3]
 
@@ -365,9 +367,38 @@ export class TextDocMappingV {
                         } 
 
                         // Return the result
-                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}            
-                    } else  {
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}       
+                    } else if ((match[2] === "input-area") && match[1] == undefined){
+
+                        console.log(match)
+                        // Get the matches regarding whitespace
+                        let whiteSpaceMatch = match[3]
+
+                        // Helper variables
+                        let preNum = 0
+                        let postNum = 0
+
+                        // Pre coqdoc newline
+                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/preWhite=\"(\w*?)\"/g))[0]
+                        if (preWhiteMatch != null) {
+                            if (preWhiteMatch[1] === "newLine") {
+                                preNum++;
+                            }
+                        }
+
                         
+                        // Post coqdoc newline
+                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postWhite=\"(\w*?)\"/g))[0]
+                        if (postWhiteMatch != null) {
+                            if (postWhiteMatch[1] === "newLine") {
+                                postNum++;
+                            }
+                        } 
+
+                        // Return the result
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}           
+                    } else  {
+
                         return {start: start, end: end, content: match[2], preNumber: 0, postNumber: 0}
                     }
                     

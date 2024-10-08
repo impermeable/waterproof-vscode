@@ -46,14 +46,13 @@ export class TextDocMappingV {
 
     /** The different possible HTMLtags in kroqed-schema */
     private static HTMLtags: Set<string> = new Set<string>([
-        "markdown",
         "input-area",
-        "coqblock",
         "coqcode",
         "coqdoc",
         "math-display",
         "hint",
-        "coqdown",
+        "coqblock",
+        "coqdown"
     ]);
 
     /** 
@@ -130,8 +129,12 @@ export class TextDocMappingV {
         let inCoqdoc: boolean = false; 
 
         // Continue until the entire string has been parsed
+        console.log(inputString)
+
         while(inputString.length > 0) { 
+
             const next: TagInformation = TextDocMappingV.getNextHTMLtag(inputString);
+
             let nextCell: StringCell | undefined = undefined;
             
             /** The number of characters the tag `next` takes up in the raw vscode doc. */
@@ -150,7 +153,9 @@ export class TextDocMappingV {
             } else { // Otherwise `next` opens a block
                 stack.push({ tag: next.content, offsetPost: next.postNumber}); // Push new tag to stack
                 // Add text offset based on tag
-                if (next.content == "hint") textCost += inputString.slice(next.start, next.end).length;
+                if (next.content == "hint") {
+                    textCost += inputString.slice(next.start, next.end).length+6; // Take care of the fact that it is (* begin hint : *)
+                }
                 else textCost += getStartHtmlTagText(next.content).length;
 
                 textCost += next.preNumber;
@@ -169,20 +174,21 @@ export class TextDocMappingV {
 
             // Add end information of this tag to mapping
             this.endHtmlMap.set(offsetProse,{ offsetText: offsetText, offsetProse: offsetProse, textCost: textCost});
-
+            
             // Check if the nextCell should be pushed
             switch(next.content) {
-                case "coqcode": 
-                case "math-display": case "coqdown":
+                case "coqdown": case "coqcode": 
+                case "math-display": 
                     // If the nextcell is set, push it to mapping
                     if(!(nextCell === undefined)) this.stringBlocks.set(nextCell.startProse, nextCell);
                     break;
             }
-            
+
             // Update the input string and cut off the processed text
             inputString = inputString.slice(next.end);
-            
+
         }
+
         this.updateInvMapping();
     }
 
@@ -253,6 +259,7 @@ export class TextDocMappingV {
      * @returns The first valid html tag in the string and the position of this tag in the string
      */
     public static getNextHTMLtag(input: string): TagInformation { 
+
 
         // Find all html tags (this is necessary for the position and for invalid matches)
         let matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
@@ -334,6 +341,7 @@ export class TextDocMappingV {
                     // For coqdoc we repeat the same process
                     } else if ((match[2] === "coqdoc") && match[1] == undefined){
 
+
                         // Get the matches regarding whitespace
                         let whiteSpaceMatch = match[3]
 
@@ -342,15 +350,16 @@ export class TextDocMappingV {
                         let postNum = 0
 
                         // Pre coqdoc newline
-                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/preWhite="(\w*?)"/g))[0]
+                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite=\"(\w*?)\"/g))[0]
                         if (preWhiteMatch != null) {
                             if (preWhiteMatch[1] === "newLine") {
                                 preNum++;
                             }
                         }
 
+                        
                         // Post coqdoc newline
-                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postWhite="(\w*?)"/g))[0]
+                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite=\"(\w*?)\"/g))[0]
                         if (postWhiteMatch != null) {
                             if (postWhiteMatch[1] === "newLine") {
                                 postNum++;
@@ -358,9 +367,38 @@ export class TextDocMappingV {
                         } 
 
                         // Return the result
-                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}            
-                    } else  {
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}       
+                    } else if ((match[2] === "input-area") && match[1] == undefined){
+
+                        console.log(match)
+                        // Get the matches regarding whitespace
+                        let whiteSpaceMatch = match[3]
+
+                        // Helper variables
+                        let preNum = 0
+                        let postNum = 0
+
+                        // Pre coqdoc newline
+                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/preWhite=\"(\w*?)\"/g))[0]
+                        if (preWhiteMatch != null) {
+                            if (preWhiteMatch[1] === "newLine") {
+                                preNum++;
+                            }
+                        }
+
                         
+                        // Post coqdoc newline
+                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postWhite=\"(\w*?)\"/g))[0]
+                        if (postWhiteMatch != null) {
+                            if (postWhiteMatch[1] === "newLine") {
+                                postNum++;
+                            }
+                        } 
+
+                        // Return the result
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}           
+                    } else  {
+
                         return {start: start, end: end, content: match[2], preNumber: 0, postNumber: 0}
                     }
                     

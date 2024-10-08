@@ -301,8 +301,11 @@ export class ProseMirrorWebview extends EventEmitter {
             } else {
                 this.applyChangeToWorkspace(change, e);
             }
+            
         });
 
+        console.log(this.document.getText())
+        
         // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
         if (!this._teacherMode && this._enforceCorrectNonInputArea) {
             let foundDefect = false;

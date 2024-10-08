@@ -368,9 +368,59 @@ export class TextDocMappingV {
 
                         // Return the result
                         return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}       
-                    } else if ((match[2] === "input-area") && match[1] == undefined){
+                    } else if ((match[2] === "hint") && match[1] == undefined){
 
-                        console.log(match)
+                       // Get the matches regarding whitespace
+                       let whiteSpaceMatch = match[3]
+
+                       // Helper variables
+                       let preNum = 0
+                       let postNum = 0
+
+                       // We check for the pre whiteline in front of the first coqblock tag
+                       let prePreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite="(\w*?)"/g))[0]
+                       if (prePreWhiteMatch != null) {
+
+                           // If there is a newline tage we include this in preNum
+                           if (prePreWhiteMatch[1] === "newLine") {
+                               preNum++;
+                           }
+                       }
+
+                       // We check for the post whiteline after the first coqblock tag
+                       let postPreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePostWhite="(\w*?)"/g))[0]
+                       if (postPreWhiteMatch != null) {
+
+                           // If there is a newline tage we include this in preNum
+                           if (postPreWhiteMatch[1] === "newLine") {
+                               preNum++;
+                           }
+                       }   
+
+                       // We check for the pre whiteline in front of the closing coqblock tag
+                       let prePostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPreWhite="(\w*?)"/g))[0]
+                       if (prePostWhiteMatch != null) {
+
+                           // If there is a newline tage we include this in postNum
+                           if (prePostWhiteMatch[1] === "newLine") {
+                               postNum++;
+                           }
+                       }
+
+                       // We check for the post whiteline after the closing coqblock tag
+                       let postPostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite="(\w*?)"/g))[0]
+                       if (postPostWhiteMatch != null) {
+
+                           // If there is a newline tage we include this in postNum
+                           if (postPostWhiteMatch[1] === "newLine") {
+                               postNum++;
+                           }
+                       }
+
+                       //return the resulting object
+                       return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}          
+                    } else if (match[2] === "coqblock" && match[1] == undefined) {
+
                         // Get the matches regarding whitespace
                         let whiteSpaceMatch = match[3]
 
@@ -378,26 +428,49 @@ export class TextDocMappingV {
                         let preNum = 0
                         let postNum = 0
 
-                        // Pre coqdoc newline
-                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/preWhite=\"(\w*?)\"/g))[0]
-                        if (preWhiteMatch != null) {
-                            if (preWhiteMatch[1] === "newLine") {
+                        // We check for the pre whiteline in front of the first coqblock tag
+                        let prePreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite="(\w*?)"/g))[0]
+                        if (prePreWhiteMatch != null) {
+
+                            // If there is a newline tage we include this in preNum
+                            if (prePreWhiteMatch[1] === "newLine") {
                                 preNum++;
                             }
                         }
 
-                        
-                        // Post coqdoc newline
-                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postWhite=\"(\w*?)\"/g))[0]
-                        if (postWhiteMatch != null) {
-                            if (postWhiteMatch[1] === "newLine") {
+                        // We check for the post whiteline after the first coqblock tag
+                        let postPreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePostWhite="(\w*?)"/g))[0]
+                        if (postPreWhiteMatch != null) {
+
+                            // If there is a newline tage we include this in preNum
+                            if (postPreWhiteMatch[1] === "newLine") {
+                                preNum++;
+                            }
+                        }   
+
+                        // We check for the pre whiteline in front of the closing coqblock tag
+                        let prePostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPreWhite="(\w*?)"/g))[0]
+                        if (prePostWhiteMatch != null) {
+
+                            // If there is a newline tage we include this in postNum
+                            if (prePostWhiteMatch[1] === "newLine") {
                                 postNum++;
                             }
-                        } 
+                        }
 
-                        // Return the result
-                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}           
-                    } else  {
+                        // We check for the post whiteline after the closing coqblock tag
+                        let postPostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite="(\w*?)"/g))[0]
+                        if (postPostWhiteMatch != null) {
+
+                            // If there is a newline tage we include this in postNum
+                            if (postPostWhiteMatch[1] === "newLine") {
+                                postNum++;
+                            }
+                        }
+
+                        //return the resulting object
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}   
+                     } else {
 
                         return {start: start, end: end, content: match[2], preNumber: 0, postNumber: 0}
                     }

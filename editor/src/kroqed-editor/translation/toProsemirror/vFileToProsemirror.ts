@@ -17,9 +17,8 @@ interface CoqBlock {
 export function translateVToProsemirror(inputDocument: string): string {
 
     // Input areas
-
     // Regex to find all coq blocks
-    const regex = /(\r\n|\n)?\(\* begin input \*\)([^]*?)\(\* end input \*\)(\r\n|\n)?/gm;
+    const regex = /(\r\n|\n)?\(\* begin input \*\)(\r\n|\n)?([^]*?)(\r\n|\n)?\(\* end input \*\)(\r\n|\n)?/gm;
 
     // Get all the matchings
     const matches: RegExpMatchArray[] = Array.from(inputDocument.matchAll(regex));
@@ -39,10 +38,42 @@ export function translateVToProsemirror(inputDocument: string): string {
     }
 
     matches.forEach(match => {
-        inputDocument = inputDocument.replace(/(\r\n|\n)?\(\* begin input \*\)([^]*?)\(\* end input \*\)(\r\n|\n)?/gm, `<input-area preWhite=${match[1]} postWhite=${match[3]}>$2<\/input-area>`)
+        inputDocument = inputDocument.replace(/(\r\n|\n)?\(\* begin input \*\)(\r\n|\n)?([^]*?)(\r\n|\n)?\(\* end input \*\)(\r\n|\n)?/gm, `\<input-area prePreWhite=${match[1]} prePostWhite=${match[2]} postPreWhite=${match[4]} postPostWhite=${match[5]}\>$3<\/input-area>`)
     });
 
-    console.log(inputDocument)
+    // For hints
+    const hintRegEx = /\(\* begin hint : ([^"]+?) \*\)/gm;
+    inputDocument = inputDocument.replaceAll(hintRegEx, `<hint title=$1>`);
+
+    const endhintRegEx = /\(\* end hint \*\)/gm;
+    inputDocument = inputDocument.replaceAll(endhintRegEx, `<\/hint>`);
+
+    const regex2 = /(\r\n|\n)?<hint title=([^"]+?)>(\r\n|\n)?([^]*?)(\r\n|\n)?<\/hint>(\r\n|\n)?/gm;
+
+    // Get all the matchings
+    const matches2: RegExpMatchArray[] = Array.from(inputDocument.matchAll(regex2));
+
+
+
+    // Loop through matches and replace newlines with a string to be used in html tags
+    for (let i = 0; i < matches2.length; i++) {
+        for (let j = 0; j < matches2[i].length; j++) {
+            if (j != 0 && j != 2 && j != 4) {
+                if (matches2[i][j] == undefined) {
+                    matches2[i][j] = ""
+                } else if (matches2[i][j] == "\r\n" || matches2[i][j] == "\n") {
+                    matches2[i][j] = "newLine"
+                }
+            }     
+        }
+    }
+
+    
+    matches2.forEach(match => {
+        inputDocument = inputDocument.replace(/(\r\n|\n)?<hint title=([^"]+?)>(\r\n|\n)?([^]*?)(\r\n|\n)?<\/hint>(\r\n|\n)?/gm, `\<hint title=${match[2]} prePreWhite=${match[1]} prePostWhite=${match[3]} postPreWhite=${match[5]} postPostWhite=${match[6]}\>$4<\/hint>`)
+    });
+
+    
 
 
     // Get all coq blocks using there tags (```coq and ```)
@@ -76,6 +107,7 @@ export function translateVToProsemirror(inputDocument: string): string {
     const removeRegEx = new RegExp(`<\/coqblock>()<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite="">`, "gm")
     parsedDocument = parsedDocument.replaceAll(removeRegEx, ""); 
 
+    console.log(parsedDocument)
     return parsedDocument;
 }
 
@@ -246,17 +278,19 @@ function parseAsV(input: string) {
     // Math-display replacement for markdown
 
     // Input areas
-    const inputAreaRegEx = /(<(input-area)?([\w-]+)( [^]*?)?)>/gm
+    const inputAreaRegEx = /(<(input-area)?([\w-]+)( [^]*?)?>)/gm
     input = input.replaceAll(inputAreaRegEx, `${postString}$1${preString}`)
 
     const endinputAreaRegEx = /(<\/input-area>)/gm
     input = input.replaceAll(endinputAreaRegEx, `${postString}$1${preString}`)
 
-    // For hints
-    const hintRegEx = /\(\* begin hint : ([^"]+?) \*\)/gm;
-    input = input.replaceAll(hintRegEx, `${postString}<hint title=$1>${preString}`);
+    console.log(input)
 
-    const endhintRegEx = /\(\* end hint \*\)/gm;
+    // For hints
+    const hintRegEx = /<hint ([^"]+?)>/gm;
+    input = input.replaceAll(hintRegEx, `${postString}<hint $1>${preString}`);
+
+    const endhintRegEx = /<\/hint>/gm;
     input = input.replaceAll(endhintRegEx, `${postString}<\/hint>${preString}`);
 
     //Closing markdown
@@ -269,7 +303,7 @@ function parseAsV(input: string) {
     const removeRegEx2 = new RegExp(`<coqcode>()<\/coqcode>`, "gm")
     input = input.replaceAll(removeRegEx2, ""); 
 
-
+    
     
     return input;
 }

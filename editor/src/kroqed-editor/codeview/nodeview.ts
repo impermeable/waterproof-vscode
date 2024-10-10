@@ -204,8 +204,20 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			severity: severityToString(severity),
 			actions: [{
 				name: "Copy 📋", 
-				apply(view: EditorView, from: number, to: number) {
+				apply(view: CodeMirror, from: number, to: number) {
 					navigator.clipboard.writeText(message);
+				}
+			},
+			{
+				name: "Apply Suggested Action 🔨",
+				apply(view: CodeMirror, from: number, to: number) {
+					view.dispatch({
+						changes: {
+							from: to, to,
+							insert: `\n${message}`
+						},
+						selection: {anchor: from + 1}
+					});
 				}
 			}]
 		});

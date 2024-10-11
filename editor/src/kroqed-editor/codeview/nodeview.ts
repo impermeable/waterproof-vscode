@@ -198,28 +198,47 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * @param severity The severity attached to this error.
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
-		this._diags.push({
-			from, to, 
-			message, 
-			severity: severityToString(severity),
-			actions: [{
+		const severityString = severityToString(severity);
+		const actions = [
+			{
 				name: "Copy 📋", 
 				apply(view: CodeMirror, from: number, to: number) {
 					navigator.clipboard.writeText(message);
 				}
-			},
-			{
-				name: "Apply Suggested Action 🔨",
+			}
+		];
+
+		if (true) {
+			actions.push({
+				name: "Apply Fix 🛠️",
 				apply(view: CodeMirror, from: number, to: number) {
+					// Get the variables that are expected and found.
+					const match = message.match(/Expected variable name ([\w]+) instead of ([\w]+)\./); // standard variable miss name.
+					if (match === null) return;
+
+					const expected = match[1];
+					const found = match[2];
+
+
+					// Get the text between `from` and `to` in the document.
+					const text = view.state.doc.sliceString(from, to);
+					const fixedText = text.replace(found, expected);
+
 					view.dispatch({
 						changes: {
-							from: to, to,
-							insert: `\n${message}`
-						},
-						selection: {anchor: from + 1}
+							from, to,
+							insert: fixedText
+						}
 					});
-				}
-			}]
+				}}
+			);
+		}
+
+		this._diags.push({
+			from, to, 
+			message, 
+			severity: severityString,
+			actions
 		});
 		this.debouncer.call();		
 	}

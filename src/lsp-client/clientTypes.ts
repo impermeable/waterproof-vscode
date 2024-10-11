@@ -1,4 +1,4 @@
-import { Position, TextDocument, WorkspaceConfiguration } from "vscode";
+import { ExtensionContext, Position, TextDocument, WorkspaceConfiguration } from "vscode";
 import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscode-languageclient";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
@@ -83,6 +83,7 @@ export type CoqLspClient = BaseLanguageClient & ICoqLspClient;
  * Type of file language client factory
  */
 export type CoqLspClientFactory = (
+    context: ExtensionContext,
     clientOptions: LanguageClientOptions,
     wsConfig: WorkspaceConfiguration
 ) => CoqLspClient;

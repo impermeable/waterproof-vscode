@@ -30,9 +30,7 @@ import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
-import { readFile } from "fs";
-import { join as joinPath} from "path";
-import { homedir } from "os";
+import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
 import { exec } from "child_process"
 import { resolveSoa } from "dns";
@@ -282,26 +280,27 @@ export class Waterproof implements Disposable {
 
     private async waterproofTutorialCommand(): Promise<void> {
         const defaultUri = workspace.workspaceFolders ?
-            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "waterproof_tutorial.mv")) :
-            Uri.file(joinPath(homedir(), "waterproof_tutorial.mv"));
+            Utils.joinPath(workspace.workspaceFolders[0].uri, "waterproof_tutorial.mv") :
+            // FIXME: Was based on homedir
+            Uri.parse("waterproof_tutorial.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in saving the Waterproof tutorial file");
                 return;
             }
-            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "waterproof_tutorial.mv").fsPath;
-            readFile(newFilePath, (err, data) => {
-                if (err) {
+            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "waterproof_tutorial.mv");
+            workspace.fs.readFile(newFilePath)
+                .then((data) => {
+                    workspace.fs.writeFile(uri, data).then(() => {
+                        // Open the file using the waterproof editor
+                        // TODO: Hardcoded `coqEditor.coqEditor`.
+                        commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+                    });                    
+                }, (err) => {
                     window.showErrorMessage("Could not a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
-                    return;
-                }
-                workspace.fs.writeFile(uri, data).then(() => {
-                    // Open the file using the waterproof editor
-                    // TODO: Hardcoded `coqEditor.coqEditor`.
-                    commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-                });
-            })
+                    return;                   
+                })
         });
     }
 
@@ -312,26 +311,27 @@ export class Waterproof implements Disposable {
      */
     private async newFileCommand(): Promise<void> {
         const defaultUri = workspace.workspaceFolders ?
-            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "new_waterproof_document.mv")) :
-            Uri.file(joinPath(homedir(), "new_waterproof_document.mv"));
+            Utils.joinPath(workspace.workspaceFolders[0].uri, "new_waterproof_document.mv") :
+            // FIXME: Was based on homedir
+            Uri.parse("waterproof_tutorial.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in creating a new waterproof document");
                 return;
             }
-            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "empty_waterproof_document.mv").fsPath;
-            readFile(newFilePath, (err, data) => {
-                if (err) {
+            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "empty_waterproof_document.mv");
+            workspace.fs.readFile(newFilePath)
+                .then((data) => {
+                    workspace.fs.writeFile(uri, data).then(() => {
+                        // Open the file using the waterproof editor
+                        // TODO: Hardcoded `coqEditor.coqEditor`.
+                        commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+                    });                    
+                }, (err) => {
                     window.showErrorMessage("Could not a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
-                    return;
-                }
-                workspace.fs.writeFile(uri, data).then(() => {
-                    // Open the file using the waterproof editor
-                    // TODO: Hardcoded `coqEditor.coqEditor`.
-                    commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-                });
-            })
+                    return;                   
+                })
         });
     }
 
@@ -399,7 +399,7 @@ export class Waterproof implements Disposable {
                 markdown: { isTrusted: true, supportHtml: true },
             };
 
-            this.client = this.clientFactory(clientOptions, WaterproofConfigHelper.configuration);
+            this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
             return this.client.startWithHandlers(this.webviewManager).then(
                 () => {
                     // show user that LSP is working

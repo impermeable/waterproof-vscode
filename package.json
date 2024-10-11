@@ -40,7 +40,7 @@
     "onLanguage:coqmarkdown"
   ],
   "contributes": {
-        "themes": [
+    "themes": [
       {
         "label": "Waterproof light theme",
         "uiTheme": "vs",
@@ -176,8 +176,7 @@
             "id": "install-dependencies",
             "title": "Run Automatic Installer",
             "description": "Waterproof needs additional software to function.\n[Run Automatic Installer](command:waterproof.autoInstall)",
-            "completionEvents": [
-            ],
+            "completionEvents": [],
             "media": {
               "markdown": "walkthrough-data/initial-setup/auto-installer.md"
             }
@@ -509,7 +508,8 @@
     "react-tooltip": "^5.13.1",
     "throttle-debounce": "^5.0.0",
     "vscode-languageclient": "^8.1.0",
-    "vscode-languageserver-types": "^3.17.3"
+    "vscode-languageserver-types": "^3.17.3",
+    "vscode-uri": "^3.0.8"
   },
   "main": "./out/src/mainNode.js",
   "browser": "/out/src/mainBrowser.js",

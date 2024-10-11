@@ -223,11 +223,16 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					// Get the text between `from` and `to` in the document.
 					const text = view.state.doc.sliceString(from, to);
 					const fixedText = text.replace(found, expected);
-
+					
+					const cursorPosition = view.state.selection.main;
 					view.dispatch({
 						changes: {
 							from, to,
 							insert: fixedText
+						},
+						selection: {
+							head: cursorPosition.head,
+							anchor: cursorPosition.anchor
 						}
 					});
 				}}

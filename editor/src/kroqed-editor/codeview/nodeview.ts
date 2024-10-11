@@ -222,7 +222,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 					// Get the text between `from` and `to` in the document.
 					const text = view.state.doc.sliceString(from, to);
-					const fixedText = text.replace(found, expected);
+					const fixedText = text.replace(new RegExp(`(\\W)${found}(\\W)`), `$1${expected}$2`);
 					
 					const cursorPosition = view.state.selection.main;
 					view.dispatch({

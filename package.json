@@ -40,6 +40,18 @@
     "onLanguage:coqmarkdown"
   ],
   "contributes": {
+        "themes": [
+      {
+        "label": "Waterproof light theme",
+        "uiTheme": "vs",
+        "path": "./themes/waterproofTheme-color-theme-light.json"
+      },
+      {
+        "label": "Waterproof dark theme",
+        "uiTheme": "vs",
+        "path": "./themes/waterproofTheme-color-theme-dark.json"
+      }
+    ],
     "iconThemes": [
       {
         "id": "waterproof-icons",
@@ -53,7 +65,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v}"
+            "filenamePattern": "*.{mv}"
           }
         ]
       }
@@ -113,6 +125,10 @@
       {
         "command": "waterproof.exportExerciseSheet",
         "title": "Waterproof: Save as exercise sheet"
+      },
+      {
+        "command": "waterproof.autoInstall",
+        "title": "Waterproof: Automatically installs all required libraries."
       }
     ],
     "menus": {
@@ -151,6 +167,23 @@
       ]
     },
     "walkthroughs": [
+      {
+        "id": "waterproof.auto",
+        "title": "Waterproof Automatic Setup",
+        "description": "Automatic installation for all dependencies to get up and running with Waterproof",
+        "steps": [
+          {
+            "id": "install-dependencies",
+            "title": "Run Automatic Installer",
+            "description": "Waterproof needs additional software to function.\n[Run Automatic Installer](command:waterproof.autoInstall)",
+            "completionEvents": [
+            ],
+            "media": {
+              "markdown": "walkthrough-data/initial-setup/auto-installer.md"
+            }
+          }
+        ]
+      },
       {
         "id": "waterproof.setup",
         "title": "Waterproof Initial Setup",
@@ -303,17 +336,17 @@
           "waterproof.eager_diagnostics": {
             "type": "boolean",
             "default": true,
-            "description": "Send diagnostics as document is processed; if false, diagnostics are only sent when Coq finishes processing the file"
+            "description": "Send diagnostics as document is processed; if false, diagnostics are only sent when Waterproof finishes processing the file"
           },
-          "waterproof.show_coq_info_messages": {
+          "waterproof.show_waterproof_info_messages": {
             "type": "boolean",
             "default": false,
-            "description": "Show Coq's \"Info\" messages as diagnostics, such as 'foo has been defined.' and miscellaneous operational messages."
+            "description": "Show Waterproof's Info messages as diagnostics: use 'false' for the recommended user experience."
           },
           "waterproof.show_notices_as_diagnostics": {
             "type": "boolean",
-            "default": false,
-            "description": "Show Coq's \"Notice\" messages as diagnostics, such as `About` and `Search` output."
+            "default": true,
+            "description": "Show Waterproof's Notice messages as diagnostics: use 'true' for the recommended user experience."
           },
           "waterproof.max_errors": {
             "type": "number",
@@ -443,10 +476,11 @@
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.0",
     "@vscode/vsce": "^2.21.0",
-    "esbuild": "^0.16.13",
+    "esbuild": "^0.16.17",
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
     "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.7.0",
     "mocha": "^10.2.0",
     "prettier": "^2.8.1",
     "ts-jest": "^29.1.0",

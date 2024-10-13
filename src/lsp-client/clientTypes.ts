@@ -141,7 +141,7 @@ export namespace CoqLspServerConfig {
             client_version: client_version,
             eager_diagnostics: wsConfig.eager_diagnostics,
             goal_after_tactic: wsConfig.goal_after_tactic,
-            show_coq_info_messages: wsConfig.show_coq_info_messages,
+            show_coq_info_messages: wsConfig.show_waterproof_info_messages,
             show_notices_as_diagnostics: wsConfig.show_notices_as_diagnostics,
             admit_on_bad_qed: wsConfig.admit_on_bad_qed,
             debug: wsConfig.debug,

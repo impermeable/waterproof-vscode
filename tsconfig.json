@@ -7,6 +7,7 @@
     { "path": "editor"}
   ],
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"]
+    "lib": ["ESNext", "DOM"],
+    "esModuleInterop": true
   }
 }

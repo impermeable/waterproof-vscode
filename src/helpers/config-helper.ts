@@ -32,9 +32,9 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("eager_diagnostics") as boolean;
     }
 
-    /** `waterproof.show_coq_info_messages` */
-    static get show_coq_info_messages() {
-        return config().get<boolean>("show_coq_info_messages") as boolean;
+    /** `waterproof.show_waterproof_info_messages` */
+    static get show_waterproof_info_messages() {
+        return config().get<boolean>("show_waterproof_info_messages") as boolean;
     }
 
     /** `waterproof.show_notices_as_diagnostics` */

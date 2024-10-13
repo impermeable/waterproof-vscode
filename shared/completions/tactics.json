@@ -12,7 +12,7 @@
         "label": "Take (*name*) : ((*set*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Take ${(*name*)} : (${(*set*)}).",
+        "template": "Take ${x} : (${ℝ}).",
         "description": "Take an arbitrary element from (*set*) and call it (*name*).",
         "example": "Lemma example_take :\n  for all x : ℝ,\n    x = x.\nProof.\nTake x : (ℝ).\nWe conclude that (x = x).\nQed.",
         "boost": 2
@@ -21,7 +21,7 @@
         "label": "We need to show that ((*(alternative) formulation of current goal*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "We need to show that (${(*(alternative) formulation of current goal*)}).",
+        "template": "We need to show that (${0 = 0}).",
         "description": "Generally makes a proof more readable. Has the additional functionality that you can write a slightly different but equivalent formulation of the goal: you can for instance change names of certain variables.",
         "example": "Lemma example_we_need_to_show_that :\n  0 = 0.\nProof.\nWe need to show that (0 = 0).\nWe conclude that (0 = 0).\nQed.",
         "boost": 2
@@ -30,7 +30,7 @@
         "label": "We conclude that ((*current goal*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "We conclude that (${(*current goal*)}).",
+        "template": "We conclude that (${0 = 0}).",
         "description": "Tries to automatically prove the current goal.",
         "example": "Lemma example_we_conclude_that :\n  0 = 0.\nProof.\nWe conclude that (0 = 0).\nQed."
     },
@@ -38,7 +38,7 @@
         "label": "We conclude that ((*(alternative) formulation of current goal*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "We conclude that (${(*(alternative) formulation of current goal*)}).",
+        "template": "We conclude that (${0 = 0}).",
         "description": "Tries to automatically prove the current goal.",
         "example": "Lemma example_we_conclude_that :\n  0 = 0.\nProof.\nWe conclude that (0 = 0).\nQed.",
         "boost": 2
@@ -47,7 +47,7 @@
         "label": "Choose (*name_var*) := ((*expression*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Choose ${(*name_var*)} := (${(*expression*)}).",
+        "template": "Choose ${0:x} := (${1:0}).",
         "description": "You can use this tactic when you need to show that there exists an x such that a certain property holds. You do this by proposing (*expression*) as a choice for x, giving it the name (*name_var*).",
         "boost": 2,
         "example": "Lemma example_choose : \n  there exists y : ℝ,\n    y < 3.\nProof.\nChoose y := (2).\nWe conclude that (& y = 2 < 3).\nQed."
@@ -56,7 +56,7 @@
         "label": "Assume that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Assume that (${(*statement*)}).",
+        "template": "Assume that (${0 = 0}).",
         "description": "If you need to prove (*statement*) ⇒ B, this allows you to assume that (*statement*) holds, giving it the label (*optional_label*). You can leave out ((*optional_label*)) if you don't wish to name your assumption.",
         "boost": 2,
         "example": "Lemma example_assume :\n  ∀ a : ℝ, a < 0 ⇒ - a > 0.\nProof.\nTake a : (ℝ).\nAssume that (a < 0).\nWe conclude that (- a > 0).\nQed."
@@ -65,16 +65,24 @@
         "label": "Assume that ((*statement*)) ((*optional_label*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Assume that (${(*statement*)}) (${(*optional_label*)}).",
+        "template": "Assume that (${0 = 0}) (${i}).",
         "description": "If you need to prove (*statement*) ⇒ B, this allows you to assume that (*statement*) holds, giving it the label (*optional_label*). You can leave out ((*optional_label*)) if you don't wish to name your assumption.",
         "boost": 1,
         "example": "Lemma example_assume :\n  ∀ a : ℝ, a < 0 ⇒ - a > 0.\nProof.\nTake a : (ℝ).\nAssume that (a < 0) (a_less_than_0).\nWe conclude that (- a > 0).\nQed."
     },
     {
-        "label": "Chain of inequalities: (& 3 < 5 = 2 + 3 ≤ 7 )",
+        "label": "(& 3 < 5 = 2 + 3 ≤ 7) (chain of (in)equalities, with opening parenthesis)",
         "type": "type",
         "detail": "tactic",
-        "template": "(& ${3 < 5 = 2 + 3 ≤ 7} )",
+        "template": "(& ${3 < 5 = 2 + 3 ≤ 7}",
+        "description": "Example of a chain of (in)equalities in which every inequality should.",
+        "example": "Lemma example_inequalities :\n  ∀ ε : ℝ, ε > 0 ⇒ Rmin(ε,1) < 2.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nWe conclude that (& Rmin(ε,1) ≤ 1 < 2).\nQed."
+    },
+    {
+        "label": "& 3 < 5 = 2 + 3 ≤ 7 (chain of (in)equalities)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "& ${3 < 5 = 2 + 3 ≤ 7}",
         "description": "Example of a chain of (in)equalities in which every inequality should.",
         "example": "Lemma example_inequalities :\n  ∀ ε : ℝ, ε > 0 ⇒ Rmin(ε,1) < 2.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nWe conclude that (& Rmin(ε,1) ≤ 1 < 2).\nQed."
     },
@@ -82,7 +90,7 @@
         "label": "Obtain such a (*name_var*)",
         "type": "type",
         "detail": "tactic",
-        "template": "Obtain such a ${(*name_var*)}.",
+        "template": "Obtain such a ${k}.",
         "description": "In case a hypothesis that you just proved starts with 'there exists' s.t. some property holds, then you can use this tactic to select such a variable. The variable will be named (*name_var*).",
         "boost": 2,
         "example": "Lemma example_obtain :\n  ∀ x : ℝ,\n    (∃ y : ℝ, 10 < y ∧ y < x) ⇒\n      10 < x.\nProof.\nTake x : (ℝ).\nAssume that (∃ y : ℝ, 10 < y ∧ y < x) (i).\nObtain such a y.\nQed."
@@ -91,7 +99,7 @@
         "label": "Obtain (*name_var*) according to ((*name_hyp*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Obtain ${(*name_var*)} according to (${(*name_hyp*)}).",
+        "template": "Obtain ${k} according to (${i}).",
         "description": "In case the hypothesis with name (*name_hyp*) starts with 'there exists' s.t. some property holds, then you can use this tactic to select such a variable. The variable will be named (*name_var*).",
         "boost": 2,
         "example": "Lemma example_obtain :\n  ∀ x : ℝ,\n    (∃ y : ℝ, 10 < y ∧ y < x) ⇒\n      10 < x.\nProof.\nTake x : (ℝ).\nAssume that (∃ y : ℝ, 10 < y ∧ y < x) (i).\nObtain y according to (i).\nQed."
@@ -100,7 +108,7 @@
         "label": "It suffices to show that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "It suffices to show that (${(*statement*)}).",
+        "template": "It suffices to show that (${0 = 0}).",
         "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal. If so, (*statement*) becomes the new goal.",
         "boost": 2,
         "example": "Lemma example_it_suffices_to_show_that :\n  ∀ ε : ℝ,\n    ε > 0 ⇒\n      3 + Rmax(ε,2) ≥ 3.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nIt suffices to show that (Rmax(ε,2) ≥ 0).\nWe conclude that (& Rmax(ε,2) ≥ 2 ≥ 0).\nQed.",
@@ -111,7 +119,7 @@
         "type": "type",
         "detail": "tactic",
         "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal, using (*lemma or assumption*). If so, (*statement*) becomes the new goal.",
-        "template": "By (${(*lemma or assumption*)}) it suffices to show that (${(*statement*)}).",
+        "template": "By (${i}) it suffices to show that (${0 = 0}).",
         "boost": 2,
         "example": "Lemma example_it_suffices_to_show_that :\n  ∀ ε : ℝ,\n    ε > 0 ⇒\n      3 + Rmax(ε,2) ≥ 3.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0) (i).\nBy (i) it suffices to show that (Rmax(ε,2) ≥ 0).\nWe conclude that (& Rmax(ε,2) ≥ 2 ≥ 0).\nQed.",
         "advanced": false
@@ -120,7 +128,7 @@
         "label": "It holds that ((*statement*)) ((*label*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "It holds that (${(*statement*)}) (${(*label*)}).",
+        "template": "It holds that (${0 = 0}) (${i}).",
         "description": "Tries to automatically prove (*statement*). If that works, (*statement*) is added as a hypothesis with name (*optional_label*).",
         "example": "Lemma example_it_holds_that :\n  ∀ ε : ℝ, ε > 0 ⇒\n    4 - Rmax(ε,1) ≤ 3.\n    \nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nIt holds that (Rmax(ε,1) ≥ 1) (i).\nWe conclude that (4 - Rmax(ε,1) ≤ 3).\nQed.",
         "boost": 1
@@ -129,7 +137,7 @@
         "label": "It holds that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "It holds that (${(*statement*)}).",
+        "template": "It holds that (${0 = 0}).",
         "description": "Tries to automatically prove (*statement*). If that works, (*statement*) is added as a hypothesis.",
         "example": "Lemma example_it_holds_that :\n  ∀ ε : ℝ, ε > 0 ⇒\n    4 - Rmax(ε,1) ≤ 3.\n    \nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nIt holds that (Rmax(ε,1) ≥ 1).\nWe conclude that (4 - Rmax(ε,1) ≤ 3).\nQed.",
         "boost": 2
@@ -138,7 +146,7 @@
         "label": "By ((*lemma or assumption*)) it holds that ((*statement*)) ((*label*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}) (${(*label*)}).",
+        "template": "By (${i}) it holds that (${0 = 0}) (${ii}).",
         "description": "Tries to prove (*statement*) using (*lemma*) or (*assumption*). If that works, (*statement*) is added as a hypothesis with name (*optional_label*). You can leave out ((*optional_label*)) if you don't wish to name the statement.",
         "example": "Lemma example_by_it_holds_that :\n  ∀ x : ℝ, ∀ y : ℝ,\n    (∀ δ : ℝ, δ > 0 ⇒ x < δ) ⇒\n      (∀ ε : ℝ, ε > 0 ⇒ y < ε) ⇒\n        x + y < 1.\nProof.\nTake x : (ℝ). Take y : (ℝ).\nAssume that (∀ δ : ℝ, δ > 0 ⇒ x < δ) (i).\nAssume that (∀ ε : ℝ, ε > 0 ⇒ y < ε) (ii).\nBy (i) it holds that (x < 1/2).\nBy ((ii) (1/2)) it holds that (y < 1/2).\n\nWe conclude that (x + y < 1).\n\nQed.",
         "boost": 1
@@ -147,7 +155,7 @@
         "label": "By ((*lemma or assumption*)) it holds that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "By (${(*lemma or assumption*)}) it holds that (${(*statement*)}).",
+        "template": "By (${i}) it holds that (${0 = 0}).",
         "description": "Tries to prove (*statement*) using (*lemma*) or (*assumption*). If that works, (*statement*) is added as a hypothesis with name (*optional_label*). You can leave out ((*optional_label*)) if you don't wish to name the statement.",
         "example": "Lemma example_by_it_holds_that :\n  ∀ x : ℝ, ∀ y : ℝ,\n    (∀ δ : ℝ, δ > 0 ⇒ x < δ) ⇒\n      (∀ ε : ℝ, ε > 0 ⇒ y < ε) ⇒\n        x + y < 1.\nProof.\nTake x : (ℝ). Take y : (ℝ).\nAssume that (∀ δ : ℝ, δ > 0 ⇒ x < δ) (i).\nAssume that (∀ ε : ℝ, ε > 0 ⇒ y < ε) (ii).\nBy (i) it holds that (x < 1/2).\nBy ((ii) (1/2)) it holds that (y < 1/2).\n\nWe conclude that (x + y < 1).\n\nQed.",
         "boost": 2
@@ -156,7 +164,7 @@
         "label": "We claim that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "We claim that (${(*statement*)}).",
+        "template": "We claim that (${0 = 0}).",
         "description": "Lets you first show (*statement*) before continuing with the rest of the proof. After you showed (*statement*), it will be available as a hypothesis with name (*optional_name*).",
         "example": "We claim that (2 = 2) (two_is_two).",
         "boost": 2
@@ -165,8 +173,8 @@
         "label": "We claim that ((*statement*)) ((*label*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "We claim that (${(*statement*)}) (${(*label*)}).",
-        "description": "Lets you first show (*statement*) before continuing with the rest of the proof. After you showed (*statement*), it will be available as a hypothesis with name (*optional_name*).",
+        "template": "We claim that (${0 = 0}) (${i}).",
+        "description": "Lets you first show (*statement*) before continuing with the rest of the proof. After you showed (*statement*), it will be available as a hypothesis with name (*label*).",
         "example": "We claim that (2 = 2) (two_is_two).",
         "boost": 1
     },
@@ -192,7 +200,7 @@
         "label": "Because ((*name_combined_hyp*)) both ((*statement_1*)) and ((*statement_2*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Because (${(*name_combined_hyp*)}) both (${(*name_hyp_1*)}) and (${(*name_hyp_2*)}).",
+        "template": "Because (${i}) both (${0 = 0}) and (${1 = 1}).",
         "description": "If you currently have a hypothesis with name (*name_combined_hyp*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses.",
         "example": "Lemma and_example : for all A B : Prop, A ∧ B ⇒ A.\nTake A : Prop. Take B : Prop.\nAssume that (A ∧ B) (i). Because (i) both (A) (ii) and (B) (iii).",
         "advanced": true,
@@ -202,7 +210,7 @@
         "label": "Because ((*name_combined_hyp*)) both ((*statement_1*)) ((*label_1*)) and ((*statement_2*)) ((*label_2*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Because (${(*name_combined_hyp*)}) both (${(*name_hyp_1*)}) (${(*label_1*)}) and (${(*name_hyp_2*)}) (${(*label_2*)}).",
+        "template": "Because (${i}) both (${0 = 0}) (${ii}) and (${1 = 1}) (${iii}).",
         "description": "If you currently have a hypothesis with name (*name_combined_hyp*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses.",
         "example": "Lemma and_example : for all A B : Prop, A ∧ B ⇒ A.\nTake A : Prop. Take B : Prop.\nAssume that (A ∧ B) (i). Because (i) both (A) (ii) and (B) (iii).",
         "advanced": true,
@@ -212,7 +220,7 @@
         "label": "Either ((*case_1*)) or ((*case_2*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Either (${(*case_1*)}) or (${(*case_2*)}).",
+        "template": "Either (${0 = 1}) or (${0 ≠ 1}).",
         "description": "Split in two cases (*case_1*) and (*case_2*).",
         "example": "Lemma example_cases : \n  ∀ x : ℝ, ∀ y : ℝ,\n    Rmax(x,y) = x ∨ Rmax(x,y) = y.\nProof. \nTake x : ℝ. Take y : ℝ.\nEither (x < y) or (x ≥ y).\n- Case (x < y).\n  It suffices to show that (Rmax(x,y) = y).\n  We conclude that (Rmax(x,y) = y).\n- Case (x ≥ y).\n  It suffices to show that (Rmax(x,y) = x).\n  We conclude that (Rmax(x,y) = x).\nQed.",
         "boost": 2
@@ -221,7 +229,7 @@
         "label": "Expand the definition of (*name_kw*) in ((*expression*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Expand the definition of ${(*name_kw*)} in (${(*expression*)}).",
+        "template": "Expand the definition of ${infimum} in (${0 = 0}).",
         "description": "Expands the definition of the keyword (*name_kw*) in the statement (*expression*).",
         "example": "Expand the definition of upper bound in (4 is an upper bound for [0, 3)).",
         "advanced": false,
@@ -249,7 +257,7 @@
         "label": "We use induction on (*name_var*).",
         "type": "type",
         "detail": "tactic",
-        "template": "We use induction on ${(*name_var*)}.",
+        "template": "We use induction on ${n}.",
         "description": "Prove a statement by induction on the variable with (*name_var*).",
         "example": "Lemma example_induction :\n  ∀ n : ℕ → ℕ, (∀ k : ℕ, n(k) < n(k + 1))%nat ⇒\n    ∀ k : ℕ, (k ≤ n(k))%nat.\nProof.\nTake n : (ℕ → ℕ).\nAssume that (∀ k : ℕ, n(k) < n(k + 1))%nat (i).\nWe use induction on k.\n- We first show the base case, namely (0 ≤ n(0))%nat.\n  We conclude that (0 ≤ n(0))%nat.\n- We now show the induction step.\n  Assume that (k ≤ n(k))%nat.\n  By (i) it holds that (n(k) < n(k + 1))%nat.\n  We conclude that (& k + 1 ≤ n(k) + 1 ≤ n(k + 1))%nat.\nQed.",
         "boost": 2
@@ -258,7 +266,7 @@
         "label": "By ((*lemma or assumption*)) we conclude that ((*(alternative) formulation of current goal*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "By (${(*lemma or assumption*)}) we conclude that (${(*(alternative) formulation of current goal*)}).",
+        "template": "By (${i}) we conclude that (${0 = 0}).",
         "description": "Tries to directly prove the goal using (*lemma or assumption*) when the goal corresponds to (*statement*).",
         "boost": 2
     },
@@ -266,7 +274,7 @@
         "label": "Define (*name*) := ((*expression*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Define ${(*name*)} := (${(*expression*)}).",
+        "template": "Define ${0:s} := (${1:0}).",
         "description": "Temporarily give the name (*name*) to the expression (*expression*)",
         "boost": 2
     },
@@ -274,7 +282,7 @@
         "label": "Since ((*extra_statement*)) it holds that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Since (${(*extra_statement*)}) it holds that (${(*statement*)}).",
+        "template": "Since (${1 = 1}) it holds that (${0 = 0}).",
         "description": "Tries to first verify (*extra_statement*) after it uses that to verify (*statement*). The statement gets added as a hypothesis.",
         "example": "Since (x = y) it holds that (x = z).",
         "boost": 2
@@ -283,7 +291,7 @@
         "label": "Since ((*extra_statement*)) it holds that ((*statement*)) ((*label*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Since (${(*extra_statement*)}) it holds that (${(*statement*)}) (${(*label*)}).",
+        "template": "Since (${1 = 1}) it holds that (${0 = 0}) (${i}).",
         "description": "Tries to first verify (*extra_statement*) after it uses that to verify (*statement*). The statement gets added as a hypothesiwe need to show{s, optionally with the name (*optional_label*).",
         "example": "Since (x = y) it holds that (x = z).",
         "boost": 1
@@ -292,7 +300,7 @@
         "label": "Since ((*extra_statement*)) we conclude that ((*(alternative) formulation of current goal*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Since (${(*extra_statement*)}) we conclude that (${(*(alternative) formulation of current goal*)}).",
+        "template": "Since (${1 = 1}) we conclude that (${0 = 0}).",
         "description": "Tries to automatically prove the current goal, after first trying to prove (*extra_statement*).",
         "example": "Since (x = y) we conclude that (x = z).",
         "boost": 2
@@ -301,7 +309,7 @@
         "label": "Since ((*extra_statement*)) it suffices to show that ((*statement*)).",
         "type": "type",
         "detail": "tactic",
-        "template": "Since (${(*extra_statement*)}) it suffices to show that (${(*statement*)}).",
+        "template": "Since (${1 = 1}) it suffices to show that (${0 =  0}).",
         "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal, after first trying to prove (*extra_statement*). If so, (*statement*) becomes the new goal.",
         "example": "Lemma example_it_suffices_to_show_that :\n  ∀ ε : ℝ,\n    ε > 0 ⇒\n      3 + Rmax(ε,2) ≥ 3.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nSince (ε > 0) it suffices to show that (Rmax(ε,2) ≥ 0).\nWe conclude that (& Rmax(ε,2) ≥ 2 ≥ 0).\nQed.",
         "advanced": false,

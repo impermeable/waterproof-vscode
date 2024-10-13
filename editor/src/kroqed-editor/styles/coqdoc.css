@@ -10,7 +10,7 @@
 
 } */
 
-coqblock:has(coqdoc)::before {
+.mv coqblock:has(coqdoc)::before {
     display: block;
     color: var(--vscode-input-foreground);
     background-color: var(--vscode-input-background);

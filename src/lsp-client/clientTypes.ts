@@ -127,6 +127,8 @@ export interface CoqLspServerConfig {
     max_errors: number;
     pp_type: 0 | 1 | 2;
     show_stats_on_hover: boolean;
+    show_stats_on_hover: boolean;
+    send_diags_extra_data: boolean;
 }
 
 
@@ -147,6 +149,7 @@ export namespace CoqLspServerConfig {
             max_errors: wsConfig.max_errors,
             pp_type: wsConfig.pp_type,
             show_stats_on_hover: wsConfig.show_stats_on_hover,
+            send_diags_extra_data: wsConfig.send_diags_extra_data,
         };
     }
 }

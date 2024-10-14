@@ -4,6 +4,7 @@ import { getEndHtmlTagText, getStartHtmlTagText} from "./helper-functions";
 import { StringCell, HtmlTagInfo, ParsedStep} from "./types";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
+import { NormalDocChange } from "../../../../../shared/DocChange";
 
 /**
  * A type to specify an HTML tag in the prosemirror content elem.
@@ -244,7 +245,7 @@ export class TextDocMappingMV {
      * This checks if the doc change actually changed the document, since vscode
      * does not register empty changes 
      */
-    private checkDocChange(change: DocChange) : boolean {
+    private checkDocChange(change: NormalDocChange) : boolean {
         if (change.endInFile === change.startInFile && change.finalText.length == 0) return false;
         return true;
     }

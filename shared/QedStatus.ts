@@ -1,7 +1,7 @@
 /**
  * The proof status of an input area.
  */
-export enum QedStatus {
+export const enum QedStatus {
     /** The proof is correct. */
     Proven = "proven",
     /** The proof is unfinished or contains an error. */

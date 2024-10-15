@@ -28,7 +28,6 @@ export const TheSchema: Schema = new Schema({
 		markdown: {
 			block: true,
 			content: "text*",
-			parseDOM: [{tag: "markdown", preserveWhitespace: "full"}],
 			atom: true,
 			toDOM(node) {
 				return ["markdown", 0];
@@ -48,11 +47,6 @@ export const TheSchema: Schema = new Schema({
 				title: {default: "💡 Hint"},
 				shown: {default: false}
 			},
-			parseDOM: [{tag: "hint", getAttrs(dom) {
-				return {
-					title: (dom as HTMLElement).getAttribute("title") ?? "💡 Hint"
-				}
-			}}],
 			toDOM(node: PNode) {
 				return ["div", {class: "hint", shown: node.attrs.shown}, 0];
 			}
@@ -64,16 +58,10 @@ export const TheSchema: Schema = new Schema({
 		input: {
 			content: `${containercontent}*`,
 			attrs: {
-			status: {default: null}
+				status: {default: null}
 			},
-			parseDOM: [{tag: "input-area", getAttrs(dom) {
-			let statusAttr = (dom as HTMLElement).getAttribute("status");
-			return {
-				status: statusAttr && statusAttr in QedStatus && statusAttr !== "invalid" ? statusAttr : null
-			};
-			}}],
 			toDOM: (node: PNode) => {
-			return ["input-area", {class: "inputarea"}, 0];
+				return ["input-area", {class: "inputarea"}, 0];
 			}
 		},
 		//#endregion
@@ -90,15 +78,7 @@ export const TheSchema: Schema = new Schema({
 			},
 			toDOM: () => {
 				return ["coqblock", 0];
-			},
-			parseDOM: [{tag: "coqblock", getAttrs(dom) {
-				return {
-					prePreWhite: (dom as HTMLElement).getAttribute("prePreWhite") ?? "newLine",
-					prePostWhite: (dom as HTMLElement).getAttribute("prePostWhite") ?? "newLine",
-					postPreWhite: (dom as HTMLElement).getAttribute("postPreWhite") ?? "newLine",
-					postPostWhite: (dom as HTMLElement).getAttribute("postPostWhite") ?? "newLine"
-				}
-			}}]
+			}
 		},
 
 		coqdoc: {
@@ -109,13 +89,7 @@ export const TheSchema: Schema = new Schema({
 			},
 			toDOM: () => {
 				return ["coqdoc", 0];
-			},
-			parseDOM: [{tag: "coqdoc", getAttrs(dom) {
-				return {
-					preWhite: (dom as HTMLElement).getAttribute("preWhite") ?? "newLine",
-					postWhite: (dom as HTMLElement).getAttribute("postWhite") ?? "newLine"
-				}
-			}}]
+			}
 		},
 
 		coqdown: {
@@ -124,15 +98,13 @@ export const TheSchema: Schema = new Schema({
 			atom: true,
 			toDOM: () => {
 				return ["coqdown", 0];
-			},
-			parseDOM: [{tag: "coqdown", preserveWhitespace: "full"}]
+			}
 		},
 
 		coqcode: {
 			content: "text*",// content is of type text
 			code: true,
 			atom: true, // doesn't have directly editable content (content is edited through codemirror)
-			parseDOM: [{tag: "coqcode", preserveWhitespace: "full"}],
 			toDOM(node) { return ["coqcode", node.attrs, 0] } // <coqcode></coqcode> cells
 		},
 		//#endregion
@@ -145,20 +117,15 @@ export const TheSchema: Schema = new Schema({
 			atom: true,
 			code: true,
 			toDOM(node) { return ["math-display", {...{ class: "math-node" }, ...node.attrs}, 0]; },
-			parseDOM: [{
-				tag: "math-display", preserveWhitespace: "full"
-			}]
 		},
 		//#endregion
 	},
 	marks: {
 		em: {
-		  parseDOM: [{tag: "i"}, {tag: "em"}],
 		  toDOM() { return ["em"] }
 		},
 
 		strong: {
-		  parseDOM: [{tag: "b"}, {tag: "strong"}],
 		  toDOM() { return ["strong"] }
 		},
 
@@ -168,14 +135,10 @@ export const TheSchema: Schema = new Schema({
 			title: {default: null}
 		  },
 		  inclusive: false,
-		  parseDOM: [{tag: "a[href]", getAttrs(dom) {
-			return {href: (dom as HTMLElement).getAttribute("href"), title: (dom as HTMLElement).getAttribute("title")}
-		  }}],
 		  toDOM(node) { return ["a", node.attrs] }
 		},
 
 		code: {
-		  parseDOM: [{tag: "code"}],
 		  toDOM() { return ["code"] }
 		}
 	}

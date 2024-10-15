@@ -32,7 +32,6 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
-import { exec } from "child_process"
 import { resolveSoa } from "dns";
 
 
@@ -267,22 +266,23 @@ export class Waterproof implements Disposable {
      */
     private async autoInstall(command: string): Promise<Boolean> {
         return new Promise((resolve, reject) => {
-            exec(command, (err, stdout, stderr) => {
-                if (err) {
-                    // Simple fixed scripts are run, the user is able to stop these but they are not considered errors
-                    // as the user has freedom to choose the steps and can rerun the command.
+            const myTerm = window.createTerminal(`AutoInstall Waterproof`)
+            window.onDidChangeTerminalShellIntegration(async ({ terminal, shellIntegration}) => {
+                if (terminal === myTerm) {
+                    const execution = shellIntegration.executeCommand(command);
+                    window.onDidEndTerminalShellExecution(event => {
+                        if (event.execution === execution) {
+                            this.initializeClient();
+                            resolve(true);
+                        }
+                    })
                 }
-                this.initializeClient();
-                resolve(true)
-            });
+            })
         });
     }
 
     private async waterproofTutorialCommand(): Promise<void> {
-        const defaultUri = workspace.workspaceFolders ?
-            Utils.joinPath(workspace.workspaceFolders[0].uri, "waterproof_tutorial.mv") :
-            // FIXME: Was based on homedir
-            Uri.parse("waterproof_tutorial.mv");
+        const defaultUri = Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in saving the Waterproof tutorial file");
@@ -310,10 +310,7 @@ export class Waterproof implements Disposable {
      * or by using the File -> New File... option.
      */
     private async newFileCommand(): Promise<void> {
-        const defaultUri = workspace.workspaceFolders ?
-            Utils.joinPath(workspace.workspaceFolders[0].uri, "new_waterproof_document.mv") :
-            // FIXME: Was based on homedir
-            Uri.parse("waterproof_tutorial.mv");
+        const defaultUri = Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in creating a new waterproof document");

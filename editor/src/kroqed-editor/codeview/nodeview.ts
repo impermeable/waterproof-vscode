@@ -1,5 +1,5 @@
 import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet } from "@codemirror/autocomplete";
-import { indentWithTab } from "@codemirror/commands";
+import { deleteToLineStart, indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
@@ -199,6 +199,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
 		const severityString = severityToString(severity);
+
+		// For now populate the actions using the standard Copy message.
 		const actions = [
 			{
 				name: "Copy 📋", 
@@ -208,35 +210,23 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			}
 		];
 
-		if (true) {
+		// Severity > 0 means that it only works for everything except "error".
+		if (severity > 0) {
 			actions.push({
-				name: "Apply Fix 🛠️",
-				apply(view: CodeMirror, from: number, to: number) {
-					// Get the variables that are expected and found.
-					const match = message.match(/Expected variable name ([\w]+) instead of ([\w]+)\./); // standard variable miss name.
-					if (match === null) return;
-
-					const expected = match[1];
-					const found = match[2];
-
-
-					// Get the text between `from` and `to` in the document.
-					const text = view.state.doc.sliceString(from, to);
-					const fixedText = text.replace(new RegExp(`(\\W)${found}(\\W)`), `$1${expected}$2`);
-					
-					const cursorPosition = view.state.selection.main;
+				name: "Insert ↓",
+				apply(view, from, to) {
+					const textAtErrorLine = view.state.doc.lineAt(from).text;
+					const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
+					const toInsert = "\n".concat(idents, message);
 					view.dispatch({
 						changes: {
-							from, to,
-							insert: fixedText
+							from: to, to,
+							insert: toInsert
 						},
-						selection: {
-							head: cursorPosition.head,
-							anchor: cursorPosition.anchor
-						}
+						selection: {anchor: to + toInsert.length}
 					});
-				}}
-			);
+				},
+			});
 		}
 
 		this._diags.push({

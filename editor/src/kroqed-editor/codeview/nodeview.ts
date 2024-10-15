@@ -1,5 +1,5 @@
 import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet } from "@codemirror/autocomplete";
-import { indentWithTab } from "@codemirror/commands";
+import { deleteToLineStart, indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
@@ -198,16 +198,42 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * @param severity The severity attached to this error.
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
+		const severityString = severityToString(severity);
+
+		// For now populate the actions using the standard Copy message.
+		const actions = [
+			{
+				name: "Copy 📋", 
+				apply(view: CodeMirror, from: number, to: number) {
+					navigator.clipboard.writeText(message);
+				}
+			}
+		];
+
+		// Severity > 0 means that it only works for everything except "error".
+		if (severity > 0) {
+			actions.push({
+				name: "Insert ↓",
+				apply(view, from, to) {
+					const textAtErrorLine = view.state.doc.lineAt(from).text;
+					const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
+					const toInsert = "\n".concat(idents, message);
+					view.dispatch({
+						changes: {
+							from: to, to,
+							insert: toInsert
+						},
+						selection: {anchor: to + toInsert.length}
+					});
+				},
+			});
+		}
+
 		this._diags.push({
 			from, to, 
 			message, 
-			severity: severityToString(severity),
-			actions: [{
-				name: "Copy 📋", 
-				apply(view: EditorView, from: number, to: number) {
-					navigator.clipboard.writeText(message);
-				}
-			}]
+			severity: severityString,
+			actions
 		});
 		this.debouncer.call();		
 	}

@@ -52,4 +52,5 @@ p.num-goals + p.aside {
   padding-bottom: 1ex;
   white-space: pre;
   font-size: var(--vscode-editor-font-size);
+  border-style: none none solid none;
 }

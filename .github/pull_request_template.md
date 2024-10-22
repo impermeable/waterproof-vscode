@@ -1,4 +1,3 @@
-# Title
 
 ### Description
 Short description for this Pull Request.

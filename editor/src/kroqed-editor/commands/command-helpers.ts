@@ -18,11 +18,18 @@ export function selectionType(sel: Selection) {
     }
 }
 
-export function getNearestPosOutsideCoqblock(sel: Selection, state: EditorState) {
+/**
+ * Traverse up the tree (decreasing depth) and return the first node with a given name. 
+ * @param state The current editor state.
+ * @param name The name of the node we are interested in.
+ * @returns The start and end position of the node with name `name`.
+ */
+export function traverseUpAndReturnFirstWithName(state: EditorState, name: string) {
+    const sel= state.selection;
     const depth = sel.$from.depth;
     let foundDepth = 0;
     for (let i = depth; i >= 0; i--) {
-        if (sel.$from.node(i).type.name === 'coqblock') {
+        if (sel.$from.node(i).type.name === name) {
             foundDepth = i;
             break;
         }

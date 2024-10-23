@@ -23,7 +23,6 @@
 
 coqblock {
     display: block;
-    background: var(--vscode-listFilterWidget-background);
 }
 
 .coqdoc-view-empty:before {

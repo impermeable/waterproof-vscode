@@ -9,12 +9,39 @@
         "boost": 2
     },
     {
-        "label": "Take (*name*) : ((*set*)).",
+        "label": "Take (*name*) : ((*type*)).",
         "type": "type",
         "detail": "tactic",
         "template": "Take ${x} : (${ℝ}).",
-        "description": "Take an arbitrary element from (*set*) and call it (*name*).",
+        "description": "Take an arbitrary element from (*type*) and call it (*name*).",
         "example": "Lemma example_take :\n  for all x : ℝ,\n    x = x.\nProof.\nTake x : (ℝ).\nWe conclude that (x = x).\nQed.",
+        "boost": 2
+    },
+    {
+        "label": "Take (*name*) ∈ ((*set*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Take ${x} ∈ (${ℝ}).",
+        "description": "Take an arbitrary element from (*set*) and call it (*name*).",
+        "example": "Lemma example_take :\n  ∀ x ∈ ℝ,\n    x = x.\nProof.\nTake x ∈ (ℝ).\nWe conclude that (x = x).\nQed.",
+        "boost": 2
+    },
+    {
+        "label": "Take (*name*) > ((*number*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Take ${0:x} > (${1:0}).",
+        "description": "Take an arbitrary element larger than (*number*) and call it (*name*).",
+        "example": "Lemma example_take :\n  ∀ x > 3,\n    x = x.\nProof.\nTake x > (3).\nWe conclude that (x = x).\nQed.",
+        "boost": 2
+    },
+    {
+        "label": "Take (*name*) ≥ ((*number*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Take ${0:x} ≥ (${1:0}).",
+        "description": "Take an arbitrary element larger than or equal to (*number*) and call it (*name*).",
+        "example": "Lemma example_take :\n  ∀ x ≥ 5,\n    x = x.\nProof.\nTake x ≥ (5).\nWe conclude that (x = x).\nQed.",
         "boost": 2
     },
     {
@@ -57,16 +84,16 @@
         "type": "type",
         "detail": "tactic",
         "template": "Assume that (${0 = 0}).",
-        "description": "If you need to prove (*statement*) ⇒ B, this allows you to assume that (*statement*) holds, giving it the label (*optional_label*). You can leave out ((*optional_label*)) if you don't wish to name your assumption.",
+        "description": "If you need to prove (*statement*) ⇒ B, this allows you to assume that (*statement*) holds.",
         "boost": 2,
         "example": "Lemma example_assume :\n  ∀ a : ℝ, a < 0 ⇒ - a > 0.\nProof.\nTake a : (ℝ).\nAssume that (a < 0).\nWe conclude that (- a > 0).\nQed."
     },
     {
-        "label": "Assume that ((*statement*)) ((*optional_label*)).",
+        "label": "Assume that ((*statement*)) ((*label*)).",
         "type": "type",
         "detail": "tactic",
         "template": "Assume that (${0 = 0}) (${i}).",
-        "description": "If you need to prove (*statement*) ⇒ B, this allows you to assume that (*statement*) holds, giving it the label (*optional_label*). You can leave out ((*optional_label*)) if you don't wish to name your assumption.",
+        "description": "If you need to prove (*statement*) ⇒ B, this allows you to assume that (*statement*) holds, giving it the label (*label*). You can leave out ((*label*)) if you don't wish to name your assumption.",
         "boost": 1,
         "example": "Lemma example_assume :\n  ∀ a : ℝ, a < 0 ⇒ - a > 0.\nProof.\nTake a : (ℝ).\nAssume that (a < 0) (a_less_than_0).\nWe conclude that (- a > 0).\nQed."
     },
@@ -226,6 +253,16 @@
         "boost": 2
     },
     {
+        "label": "Expand the definition of (*name_kw*).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Expand the definition of ${infimum}.",
+        "description": "Expands the definition of the keyword (*name_kw*) in relevant statements in the proof, and gives suggestions how to use them.",
+        "example": "Expand the definition of upper bound in (4 is an upper bound for [0, 3)).",
+        "advanced": false,
+        "boost": 1
+    },
+    {
         "label": "Expand the definition of (*name_kw*) in ((*expression*)).",
         "type": "type",
         "detail": "tactic",
@@ -233,7 +270,7 @@
         "description": "Expands the definition of the keyword (*name_kw*) in the statement (*expression*).",
         "example": "Expand the definition of upper bound in (4 is an upper bound for [0, 3)).",
         "advanced": false,
-        "boost": 2
+        "boost": 1
     },
     {
         "label": "We show both statements.",
@@ -241,7 +278,7 @@
         "detail": "tactic",
         "template": "We show both statements.",
         "description": "Splits the goal in two separate goals, if it is of the form A ∧ B",
-        "example": "Lemma example_both_statements:\n  ∀ x : ℝ, (x^2 ≥ 0) ∧ (| x | ≥ 0).\nProof.\nTake x : (ℝ).\nWe show both statements.\n- We conclude that (x^2 ≥ 0).\n- We conclude that (| x | ≥ 0).\nQed.",
+        "example": "Lemma example_both_statements:\n  ∀ x ∈ ℝ, (x^2 ≥ 0) ∧ (| x | ≥ 0).\nProof.\nTake x ∈ (ℝ).\nWe show both statements.\n- We conclude that (x^2 ≥ 0).\n- We conclude that (| x | ≥ 0).\nQed.",
         "boost": 2
     },
     {
@@ -250,7 +287,7 @@
         "detail": "tactic",
         "template": "We show both directions.",
         "description": "Splits a goal of the form A ⇔ B, into the goals (A ⇒ B) and (B ⇒ A)",
-        "example": "Lemma example_both_directions:\n  ∀ x : ℝ, ∀ y : ℝ,\n    x < y ⇔ y > x.\nProof.\nTake x : (ℝ). Take y : (ℝ).\nWe show both directions.\n- We need to show that (x < y ⇒ y > x).\n  Assume that (x < y).\n  We conclude that (y > x).\n- We need to show that (y > x ⇒ x < y).\n  Assume that (y > x).\n  We conclude that (x < y).\nQed.",
+        "example": "Lemma example_both_directions:\n  ∀ x ∈ ℝ, ∀ y ∈ ℝ,\n    x < y ⇔ y > x.\nProof.\nTake x ∈ (ℝ). Take y ∈ (ℝ).\nWe show both directions.\n- We need to show that (x < y ⇒ y > x).\n  Assume that (x < y).\n  We conclude that (y > x).\n- We need to show that (y > x ⇒ x < y).\n  Assume that (y > x).\n  We conclude that (x < y).\nQed.",
         "boost": 2
     },
     {
@@ -259,7 +296,7 @@
         "detail": "tactic",
         "template": "We use induction on ${n}.",
         "description": "Prove a statement by induction on the variable with (*name_var*).",
-        "example": "Lemma example_induction :\n  ∀ n : ℕ → ℕ, (∀ k : ℕ, n(k) < n(k + 1))%nat ⇒\n    ∀ k : ℕ, (k ≤ n(k))%nat.\nProof.\nTake n : (ℕ → ℕ).\nAssume that (∀ k : ℕ, n(k) < n(k + 1))%nat (i).\nWe use induction on k.\n- We first show the base case, namely (0 ≤ n(0))%nat.\n  We conclude that (0 ≤ n(0))%nat.\n- We now show the induction step.\n  Assume that (k ≤ n(k))%nat.\n  By (i) it holds that (n(k) < n(k + 1))%nat.\n  We conclude that (& k + 1 ≤ n(k) + 1 ≤ n(k + 1))%nat.\nQed.",
+        "example": "Lemma example_induction :\n  ∀ n : ℕ → ℕ, (∀ k ∈ ℕ, n(k) < n(k + 1))%nat ⇒\n    ∀ k ∈ ℕ, (k ≤ n(k))%nat.\nProof.\nTake n : (ℕ → ℕ).\nAssume that (∀ k ∈ ℕ, n(k) < n(k + 1))%nat (i).\nWe use induction on k.\n- We first show the base case, namely (0 ≤ n(0))%nat.\n  We conclude that (0 ≤ n(0))%nat.\n- We now show the induction step.\n  Assume that (k ≤ n(k))%nat.\n  By (i) it holds that (n(k) < n(k + 1))%nat.\n  We conclude that (& k + 1 ≤ n(k) + 1 ≤ n(k + 1))%nat.\nQed.",
         "boost": 2
     },
     {
@@ -311,7 +348,17 @@
         "detail": "tactic",
         "template": "Since (${1 = 1}) it suffices to show that (${0 =  0}).",
         "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal, after first trying to prove (*extra_statement*). If so, (*statement*) becomes the new goal.",
-        "example": "Lemma example_it_suffices_to_show_that :\n  ∀ ε : ℝ,\n    ε > 0 ⇒\n      3 + Rmax(ε,2) ≥ 3.\nProof.\nTake ε : (ℝ).\nAssume that (ε > 0).\nSince (ε > 0) it suffices to show that (Rmax(ε,2) ≥ 0).\nWe conclude that (& Rmax(ε,2) ≥ 2 ≥ 0).\nQed.",
+        "example": "Lemma example_it_suffices_to_show_that :\n  ∀ ε > 0,\n      3 + Rmax(ε,2) ≥ 3.\nProof.\nTake ε > 0.\nSince (ε > 0) it suffices to show that (Rmax(ε,2) ≥ 0).\nWe conclude that (& Rmax(ε,2) ≥ 2 ≥ 0).\nQed.",
+        "advanced": false,
+        "boost": 2
+    },
+    {
+        "label": "Use (*name*) := ((*expression*)) in ((*label*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Use ${0:x} := (${1:0}) in (${2:i}).",
+        "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal, after first trying to prove (*extra_statement*). If so, (*statement*) becomes the new goal.",
+        "example": "Lemma example_use_for_all :\n  ∀ x ∈ ℝ,\n    (∀ ε > 0, x < ε) ⇒\n       x + 1/2 < 1.\nProof.\nTake x ∈ ℝ.\nAssume that (∀ ε > 0, x < ε) (i).\nUse ε := (1/2) in (i).\n* Indeed, (1 / 2 > 0).\n* It holds that  (x < 1 / 2).\n  We conclude that (x + 1/2 < 1).\nQed.",
         "advanced": false,
         "boost": 2
     }

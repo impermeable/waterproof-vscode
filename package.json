@@ -3,8 +3,8 @@
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
   "version": "0.9.14",
-  "requiredCoqLspVersion": "==0.1.9",
-  "requiredCoqWaterproofVersion": "==2.1.1",
+  "requiredCoqLspVersion": "==0.2.0",
+  "requiredCoqWaterproofVersion": "==2.2.0",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",
@@ -308,8 +308,8 @@
             "description": "Enable teacher mode; if true, allows user to edit all content outside input fields."
           },
           "waterproof.detailedErrorsMode": {
-            "type": "boolean", 
-            "default": true, 
+            "type": "boolean",
+            "default": true,
             "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
           }
         }

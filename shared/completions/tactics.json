@@ -15,7 +15,7 @@
         "template": "Take ${x} : (${ℝ}).",
         "description": "Take an arbitrary element from (*type*) and call it (*name*).",
         "example": "Lemma example_take :\n  for all x : ℝ,\n    x = x.\nProof.\nTake x : (ℝ).\nWe conclude that (x = x).\nQed.",
-        "boost": 2
+        "boost": 1
     },
     {
         "label": "Take (*name*) ∈ ((*set*)).",
@@ -257,10 +257,10 @@
         "type": "type",
         "detail": "tactic",
         "template": "Expand the definition of ${infimum}.",
-        "description": "Expands the definition of the keyword (*name_kw*) in relevant statements in the proof, and gives suggestions how to use them.",
+        "description": "Expands the definition of the keyword (*name_kw*) in relevant statements in the proof, and gives suggestions on how to use them.",
         "example": "Expand the definition of upper bound in (4 is an upper bound for [0, 3)).",
         "advanced": false,
-        "boost": 1
+        "boost": 2
     },
     {
         "label": "Expand the definition of (*name_kw*) in ((*expression*)).",
@@ -357,7 +357,7 @@
         "type": "type",
         "detail": "tactic",
         "template": "Use ${0:x} := (${1:0}) in (${2:i}).",
-        "description": "Waterproof tries to verify automatically whether it is indeed enough to show (*statement*) to prove the current goal, after first trying to prove (*extra_statement*). If so, (*statement*) becomes the new goal.",
+        "description": "Use a forall statement, i.e. apply it to a particular expression.",
         "example": "Lemma example_use_for_all :\n  ∀ x ∈ ℝ,\n    (∀ ε > 0, x < ε) ⇒\n       x + 1/2 < 1.\nProof.\nTake x ∈ ℝ.\nAssume that (∀ ε > 0, x < ε) (i).\nUse ε := (1/2) in (i).\n* Indeed, (1 / 2 > 0).\n* It holds that  (x < 1 / 2).\n  We conclude that (x + 1/2 < 1).\nQed.",
         "advanced": false,
         "boost": 2

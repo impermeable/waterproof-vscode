@@ -146,6 +146,18 @@
         "key": "alt+enter",
         "mac": "meta+enter",
         "when": "editorTextFocus && editorLangId == coq || editorTextFocus && editorLangId == coqmarkdown"
+      },
+      {
+        "command": "waterproof.undo", 
+        "key": "ctrl+z",
+        "mac": "cmd+z",
+        "when": "editorFocus && activeCustomEditorId == coqEditor.coqEditor"
+      },
+      {
+        "command": "waterproof.redo", 
+        "key": "ctrl+y",
+        "mac": "cmd+y",
+        "when": "editorFocus && activeCustomEditorId == coqEditor.coqEditor"
       }
     ],
     "viewsContainers": {

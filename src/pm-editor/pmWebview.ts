@@ -11,6 +11,11 @@ const SAVE_AS = "Save As";
 import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 
+const enum HistoryChange {
+    undo,
+    redo
+}
+
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
     private _panel: WebviewPanel;
@@ -184,6 +189,9 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         }));
 
+        this._disposables.push(commands.registerCommand("waterproof.undo", () => this.handleChangeFromEditor(HistoryChange.undo)));
+        this._disposables.push(commands.registerCommand("waterproof.redo", () => this.handleChangeFromEditor(HistoryChange.redo)));
+
         // Get the nonce.
         const nonce = getNonce();
 
@@ -293,35 +301,45 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Handle a doc change sent from prosemirror */
-    private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
-        this._workspaceEditor.edit(e => {
-            if ("firstEdit" in change) {
-                this.applyChangeToWorkspace(change.firstEdit, e);
-                this.applyChangeToWorkspace(change.secondEdit, e);
-            } else {
-                this.applyChangeToWorkspace(change, e);
-            }
-        });
+    private handleChangeFromEditor(change: DocChange | WrappingDocChange | HistoryChange) {
+        if (change === HistoryChange.undo) {
+            this._workspaceEditor.edit((e) => {
+                commands.executeCommand("undo");
+            });
+        } else if (change === HistoryChange.redo) {
+            this._workspaceEditor.edit((e) => {
+                commands.executeCommand("redo");
+            });
+        } else {
+            this._workspaceEditor.edit(e => {
+                if ("firstEdit" in change) {
+                    this.applyChangeToWorkspace(change.firstEdit, e);
+                    this.applyChangeToWorkspace(change.secondEdit, e);
+                } else {
+                    this.applyChangeToWorkspace(change, e);
+                }
+            });
 
-        // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
-        if (!this._teacherMode && this._enforceCorrectNonInputArea) {
-            let foundDefect = false;
-            const nonInputRegions = getNonInputRegions(this._document.getText());
-            if (nonInputRegions.length !== this._nonInputRegions.length) { 
-                foundDefect = true;
-            } else {
-                for (let i = 0; i < this._nonInputRegions.length; i++) {
-                    if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
-                        foundDefect = true;
-                        break;
+            // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
+            if (!this._teacherMode && this._enforceCorrectNonInputArea) {
+                let foundDefect = false;
+                const nonInputRegions = getNonInputRegions(this._document.getText());
+                if (nonInputRegions.length !== this._nonInputRegions.length) { 
+                    foundDefect = true;
+                } else {
+                    for (let i = 0; i < this._nonInputRegions.length; i++) {
+                        if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
+                            foundDefect = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (foundDefect) { 
-                showRestoreMessage(this.restore.bind(this));
-            } else {
-                this._lastCorrectDocString = this._document.getText();
+                if (foundDefect) { 
+                    showRestoreMessage(this.restore.bind(this));
+                } else {
+                    this._lastCorrectDocString = this._document.getText();
+                }
             }
         }
     }

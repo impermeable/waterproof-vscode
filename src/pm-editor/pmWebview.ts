@@ -184,12 +184,6 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         }));
 
-        this._disposables.push(workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration("waterproof.detailedErrorsMode")) {
-                this.updateDetailedErrorsMode();
-            }
-        }));
-
         // Get the nonce.
         const nonce = getNonce();
 
@@ -257,14 +251,6 @@ export class ProseMirrorWebview extends EventEmitter {
         this.postMessage({
             type: MessageType.syntax,
             body: WaterproofConfigHelper.standardCoqSyntax
-        }, true);
-    }
-
-    /** Toggle the detailed errors mode */
-    private updateDetailedErrorsMode() {
-        this.postMessage({
-            type: MessageType.errorDetail,
-            body: workspace.getConfiguration("waterproof").get("detailedErrorsMode")
         }, true);
     }
 

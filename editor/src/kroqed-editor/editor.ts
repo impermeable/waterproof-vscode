@@ -29,7 +29,7 @@ import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
 import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage } from "../../../shared/Messages";
-import { DiagnosticSeverity } from "vscode";
+import { DiagnosticSeverity, ThemeIcon } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
 
@@ -72,7 +72,7 @@ export class Editor {
 	private readonly _userOS;
 	private _filef: any;
 
-	private currentProseDiagnostics: Array<DiagnosticObjectProse>; 
+	private currentProseDiagnostics: Array<DiagnosticObjectProse>;
 
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement) {
 		this._api = vscodeapi;
@@ -88,9 +88,9 @@ export class Editor {
 
 		const theContextMenu = createContextMenuHTML(this);
 
-		
+
 		document.body.appendChild(theContextMenu);
-		
+
 		// Setup the custom context menu
 		document.addEventListener("click", (ev) => {
 			// Handle a 'left mouse click'
@@ -103,9 +103,9 @@ export class Editor {
 			// We call preventDefault to prevent the default context menu from showing
 			ev.preventDefault();
 			// After this we display our own context menu
-			const x: string = `${ev.pageX}px`; 
+			const x: string = `${ev.pageX}px`;
 			const y: string = `${ev.pageY}px`;
-			theContextMenu.style.position = "absolute"; 
+			theContextMenu.style.position = "absolute";
 			theContextMenu.style.left = x;
 			theContextMenu.style.top = y;
 			theContextMenu.style.display = "block";
@@ -138,7 +138,7 @@ export class Editor {
 
 		let parsedContent = this._translator.toProsemirror(newContent);
 		// this._contentElem.innerHTML = parsedContent;
-		
+
 		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
 
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
@@ -213,11 +213,11 @@ export class Editor {
 				if (view.state.selection instanceof NodeSelection) {
 					e.preventDefault();
 				}
-			}, 
+			},
 			handleDOMEvents: {
 				// This function will handle some DOM events before ProseMirror does.
 				// 	We use it here to cancel the 'drag' and 'drop' events, since these can
-				//  break the editor. 
+				//  break the editor.
 				"dragstart": (view, event) => {
 					event.preventDefault();
 				},
@@ -355,18 +355,18 @@ export class Editor {
 		const trans = state.tr;
 
 		/* TODO: The check that makes sure we are allowed to insert is pretty much the
-			same as in `inputArea.ts` and could maybe be improved. */ 
+			same as in `inputArea.ts` and could maybe be improved. */
 
 		const inputAreaPluginState = INPUT_AREA_PLUGIN_KEY.getState(state);
-		
+
 		// Early return if the plugin state is undefined.
 		if (inputAreaPluginState === undefined) return false;
 		const { locked, globalLock } = inputAreaPluginState;
-		// Early return if we are in the global locked mode 
+		// Early return if we are in the global locked mode
 		// 	(nothing should be editable anymore)
 		if (globalLock) return false;
 
-		// If we are in teacher mode (ie. not locked) than 
+		// If we are in teacher mode (ie. not locked) than
 		// 	 we are always able to insert.
 		if (!locked) {
 			this.createAndDispatchInsertionTransaction(trans, symbolUnicode, from, to);
@@ -392,7 +392,7 @@ export class Editor {
 
 	private createAndDispatchInsertionTransaction(
 		trans: Transaction, textToInsert: string, from: number, to: number) {
-		
+
 		trans = trans.insertText(textToInsert, from, to);
 		this._view?.dispatch(trans);
 	}
@@ -456,32 +456,28 @@ export class Editor {
 			});
 		}
 
-		// Create a view with pos array
-		const viewsWithPos = new Array<{pos: number | undefined, view: CodeBlockView}>();
-		for (let view of views) viewsWithPos.push({pos: view._getPos(), view});
-
-
-		for (const diag of this.currentProseDiagnostics) {
-			if (!diag.$start.sameParent(diag.$end)) {
-				console.error("We do not support multi line errors");
-				continue;
-			}
+	    for (const diag of this.currentProseDiagnostics) {
 			if (diag.start > diag.end) {
 				console.error("We do not support errors for which the start position is greater than the end postion.");
 				continue;
 			}
-			let theView: CodeBlockView | undefined = undefined;
-			let pos = this._view.state.doc.content.size;
-			for(const obj of viewsWithPos) {
-				if (obj.pos === undefined) continue;
-				if(diag.start - obj.pos < pos && obj.pos < diag.start) {
-					pos = diag.start - obj.pos;
-					theView = obj.view;
+
+			let viewFound : boolean = false;
+			for (const view of views) {
+				const pos : number | undefined = view._getPos();
+				if (pos === undefined) continue;
+				const viewSize : number | undefined = this._view.state.doc.nodeAt(pos)?.nodeSize
+				if (viewSize === undefined) continue;
+				const endPos : number = pos + viewSize - 1;
+				if (diag.start < endPos && diag.end > pos) {
+					viewFound = true;
+					const startPos = Math.max(diag.start, pos + 1);
+					const finalPos = Math.min(diag.end, endPos);
+					view.addCoqError(startPos - pos - 1, finalPos - pos - 1, diag.message, diag.severity);
 				}
 			}
 
-			if (theView === undefined) throw new Error("Diagnostic message does not match any coqblock");
-			theView.addCoqError(diag.$start.parentOffset, diag.$end.parentOffset, diag.message, diag.severity);
+			if (!viewFound) throw new Error("Diagnostic message does not match any coqblock");
 		}
 	}
 
@@ -490,7 +486,7 @@ export class Editor {
 			return ((low <= value.start) && (value.end <= high));
 		});
 	}
-	
+
 
 	/** Handle a message from vscode */
 	handleMessage(msg: Message) {

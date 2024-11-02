@@ -182,15 +182,34 @@ export class ProseMirrorWebview extends EventEmitter {
             this.emit(WebviewEvents.dispose);
         }));
 
+        // Handlers for undo and redo actions. 
+        // These can either be triggered by the user via a keybinding or by the undo/redo command
+        //     under `edit > edit` and `edit > undo` in the menubar.
+        const undoHandler = async () => {
+            this.handleChangeFromEditor(HistoryChange.undo);
+            
+        };
+        const redoHandler = async () => {
+            this.handleChangeFromEditor(HistoryChange.redo);
+        };
+
+        let overwriteUndoCommand: Disposable = commands.registerCommand("undo", undoHandler);
+        let overwriteRedoCommand: Disposable = commands.registerCommand("redo", redoHandler);
+
         this._disposables.push(this._panel.onDidChangeViewState((e) => {
             if (e.webviewPanel.active) {
                 this.syncWebview();
                 this.emit(WebviewEvents.change, WebviewState.focus);
+                
+                // Overwrite the undo and redo commands
+                overwriteUndoCommand = commands.registerCommand("undo", undoHandler);
+                overwriteRedoCommand = commands.registerCommand("redo", redoHandler);
+            } else {
+                // Dispose of the overwritten undo and redo commands when the editor is not active.
+                overwriteUndoCommand.dispose();
+                overwriteRedoCommand.dispose();
             }
         }));
-
-        this._disposables.push(commands.registerCommand("waterproof.undo", () => this.handleChangeFromEditor(HistoryChange.undo)));
-        this._disposables.push(commands.registerCommand("waterproof.redo", () => this.handleChangeFromEditor(HistoryChange.redo)));
 
         // Get the nonce.
         const nonce = getNonce();
@@ -304,11 +323,11 @@ export class ProseMirrorWebview extends EventEmitter {
     private handleChangeFromEditor(change: DocChange | WrappingDocChange | HistoryChange) {
         if (change === HistoryChange.undo) {
             this._workspaceEditor.edit((e) => {
-                commands.executeCommand("undo");
+                commands.executeCommand("default:undo");
             });
         } else if (change === HistoryChange.redo) {
             this._workspaceEditor.edit((e) => {
-                commands.executeCommand("redo");
+                commands.executeCommand("default:redo");
             });
         } else {
             this._workspaceEditor.edit(e => {

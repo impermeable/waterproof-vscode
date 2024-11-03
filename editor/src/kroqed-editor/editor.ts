@@ -456,6 +456,7 @@ export class Editor {
 			});
 		}
 
+		// TODO: the below code can probably be optimized a bit
 	    for (const diag of this.currentProseDiagnostics) {
 			if (diag.start > diag.end) {
 				console.error("We do not support errors for which the start position is greater than the end postion.");

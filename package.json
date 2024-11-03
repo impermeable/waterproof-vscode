@@ -309,7 +309,7 @@
           },
           "waterproof.detailedErrorsMode": {
             "type": "boolean",
-            "default": true,
+            "default": false,
             "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
           }
         }

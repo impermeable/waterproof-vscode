@@ -473,7 +473,13 @@ export class Editor {
 					viewFound = true;
 					const startPos = Math.max(diag.start, pos + 1);
 					const finalPos = Math.min(diag.end, endPos);
-					view.addCoqError(startPos - pos - 1, finalPos - pos - 1, diag.message, diag.severity);
+					try {
+						view.addCoqError(startPos - pos - 1, finalPos - pos - 1, diag.message, diag.severity);
+					}
+					catch (e) {
+						console.error(`Could not display diagnostic information for codeview at position ${pos}:`);
+						console.error(e);
+					}
 				}
 			}
 

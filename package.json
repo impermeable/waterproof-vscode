@@ -3,8 +3,8 @@
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
   "version": "0.9.15",
-  "requiredCoqLspVersion": "==0.1.8",
-  "requiredCoqWaterproofVersion": "==2.1.1",
+  "requiredCoqLspVersion": "==0.2.2",
+  "requiredCoqWaterproofVersion": "==2.2.0",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",
@@ -306,6 +306,11 @@
             "type": "boolean",
             "default": false,
             "description": "Enable teacher mode; if true, allows user to edit all content outside input fields."
+          },
+          "waterproof.detailedErrorsMode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
           }
         }
       },
@@ -347,6 +352,11 @@
             "type": "number",
             "default": 150,
             "description": "Maximum number of errors per file, after that, coq-lsp will stop checking the file."
+          },
+          "waterproof.send_diags_extra_data": {
+            "type": "boolean",
+            "default": true,
+            "description": "Send extra diagnostics data, usually on error"
           }
         }
       },

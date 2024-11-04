@@ -64,12 +64,12 @@ let UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginSta
             if (statusUpdate[index] !== undefined) {
               let newStatusUpdate = statusUpdate[index];
               if (inputNode.node.attrs.status !== newStatusUpdate) {
-                // This is (probably) the place where we check for errors in the proof. 
+                // This is (probably) the place where we check for errors in the proof.
                 // A proof should not be accepted if it includes a faulty coq statement.
 
                 const start = inputNode.pos;
                 const end = start + inputNode.node.nodeSize;
-                const thingies = editor.getDiagnosticsInRange(start, end);
+                const thingies = editor.getDiagnosticsInRange(start, end, 1);
                 let className = statusToDecoration(newStatusUpdate);
                 if (thingies.length > 0) {
                   if (thingies.find((value) => value.severity == 0)) {

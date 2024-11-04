@@ -490,7 +490,7 @@ export class Editor {
 
 	public getDiagnosticsInRange(low: number, high: number): Array<DiagnosticObjectProse> {
 		return this.currentProseDiagnostics.filter((value) => {
-			return ((low <= value.end) && (value.start <= high));
+			return ((low <= value.end) && (value.start <= high) && (value.severity) <= 1);
 		});
 	}
 

@@ -10,6 +10,7 @@ import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 const SAVE_AS = "Save As";
 import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
+import { CoqEditorProvider } from "./coqEditor";
 
 const enum HistoryChange {
     undo,
@@ -39,6 +40,8 @@ export class ProseMirrorWebview extends EventEmitter {
     private _enforceCorrectNonInputArea: boolean;
     private _lastCorrectDocString: string;
 
+    private _provider: CoqEditorProvider;
+
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
         to: number, 
@@ -59,8 +62,10 @@ export class ProseMirrorWebview extends EventEmitter {
         return !this._workspaceEditor.isInProgress;
     }
 
-    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
+    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         super();
+
+        this._provider = provider;
 
         var path = require('path')
 
@@ -95,7 +100,7 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Create a prosemirror webview */
-    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
+    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         // Check if the line endings of file are windows
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
@@ -111,7 +116,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 window.showErrorMessage("Failed to open document for conversion");
             }
         }
-        return new ProseMirrorWebview(webview, extensionUri, doc);
+        return new ProseMirrorWebview(webview, extensionUri, doc, provider);
     }
 
     /**
@@ -185,16 +190,18 @@ export class ProseMirrorWebview extends EventEmitter {
         // Handlers for undo and redo actions. 
         // These can either be triggered by the user via a keybinding or by the undo/redo command
         //     under `edit > edit` and `edit > undo` in the menubar.
-        const undoHandler = async () => {
+        const undoHandler = () => {
+            console.log("Undoing");
             this.handleChangeFromEditor(HistoryChange.undo);
             
         };
-        const redoHandler = async () => {
+        const redoHandler = () => {
+            console.log("Redoing");
             this.handleChangeFromEditor(HistoryChange.redo);
         };
 
-        let overwriteUndoCommand: Disposable = commands.registerCommand("undo", undoHandler);
-        let overwriteRedoCommand: Disposable = commands.registerCommand("redo", redoHandler);
+        this._provider.disposeHistoryCommandListeners();
+        this._provider.registerHistoryCommandListeners(undoHandler, redoHandler);
 
         this._disposables.push(this._panel.onDidChangeViewState((e) => {
             if (e.webviewPanel.active) {
@@ -202,12 +209,10 @@ export class ProseMirrorWebview extends EventEmitter {
                 this.emit(WebviewEvents.change, WebviewState.focus);
                 
                 // Overwrite the undo and redo commands
-                overwriteUndoCommand = commands.registerCommand("undo", undoHandler);
-                overwriteRedoCommand = commands.registerCommand("redo", redoHandler);
+                this._provider.registerHistoryCommandListeners(undoHandler, redoHandler);
             } else {
                 // Dispose of the overwritten undo and redo commands when the editor is not active.
-                overwriteUndoCommand.dispose();
-                overwriteRedoCommand.dispose();
+                this._provider.disposeHistoryCommandListeners();
             }
         }));
 

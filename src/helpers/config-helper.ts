@@ -12,6 +12,11 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("teacherMode") as boolean;
     }
 
+    /** `waterproof.detailedErrorsMode` */
+    static get detailedErrors() {
+        return config().get<boolean>("detailedErrorsMode") as boolean;
+    }
+
     /** `waterproof.enforceCorrectNonInputArea` */
     static get enforceCorrectNonInputArea() {
         return config().get<boolean>("enforceCorrectNonInputArea") as boolean;
@@ -40,6 +45,11 @@ export class WaterproofConfigHelper {
     /** `waterproof.max_errors` */
     static get max_errors() {
         return config().get<number>("max_errors") as number;
+    }
+
+    /** `waterproof.send_diags_extra_data */
+    static get send_diags_extra_data() {
+        return config().get<boolean>("send_diags_extra_data") as boolean;
     }
 
     /** `waterproof.goal_after_tactic` */

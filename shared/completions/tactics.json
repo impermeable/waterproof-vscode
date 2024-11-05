@@ -417,5 +417,14 @@
         "boost": 2,
         "example": "Lemma example_backwards :\n  3 < f(0) ⇒ 2 < f(5).\nProof.\nAssume that (3 < f(0)).\nBy magic it suffices to show that (f(0) ≤ f(5)).\nBy (f_increasing) we conclude that (f(0) ≤ f(5)).\nQed.",
         "advanced": false
+    },
+    {
+        "label": "Case ((*statement*)).",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Case (${0 = 0}).",
+        "description": "Used to indicate the case after an \"Either\" sentence.",
+        "example": "Lemma example_cases : \n  ∀ x ∈ ℝ, ∀ y ∈ ℝ,\n    Rmax(x,y) = x ∨ Rmax(x,y) = y.\nProof. \nTake x ∈ ℝ. Take y ∈ ℝ.\nEither (x < y) or (x ≥ y).\n- Case (x < y).\n  It suffices to show that (Rmax(x,y) = y).\n  We conclude that (Rmax(x,y) = y).\n- Case (x ≥ y).\n  It suffices to show that (Rmax(x,y) = x).\n  We conclude that (Rmax(x,y) = x).\nQed.",
+        "boost": 1
     }
 ]

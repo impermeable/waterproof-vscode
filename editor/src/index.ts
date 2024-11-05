@@ -63,6 +63,9 @@ window.onload = () => {
 			case MessageType.fatalError:
 				// TODO: show skull
 				break;
+			case MessageType.editorHistoryChange:
+				theEditor.handleHistoryChange(msg.body);
+				break;
 			default:
 				theEditor.handleMessage(msg);
 				break;

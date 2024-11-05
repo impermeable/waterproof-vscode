@@ -230,7 +230,7 @@ export class Waterproof implements Disposable {
             commands.executeCommand(`waterproof.defaultPath`);
             commands.executeCommand(`waterproof.setDefaultArgsWin`);
 
-            const windowsInstallationScript = `echo Begin Waterproof Installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.1.0%2B8.17/Waterproof-dependencies-installer-v2.1.0+8.17.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
+            const windowsInstallationScript = `echo Begin Waterproof Installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.2.0%2B8.17/Waterproof-dependencies-installer-v2.2.0+8.17.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
             const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
 
             this.stopClient();

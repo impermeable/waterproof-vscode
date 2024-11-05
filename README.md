@@ -13,7 +13,7 @@ Install this extension and follow the installation instructions that pop up.
 ## Installation on Windows
 
 ### Step 1: Dependencies installer
-Download and execute the bundled installer `Waterproof-dependencies-installer-v2.1.0+8.17.exe` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v2.1.0%2B8.17)
+Download and execute the bundled installer `Waterproof-dependencies-installer-v2.2.0+8.17.exe` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v2.2.0%2B8.17)
 **Note:** do not change the default installation location, otherwise Waterproof will not work.
 
 ### Step 2: Install the vscode extension
@@ -21,7 +21,7 @@ Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/
 
 ### Step 3: Update the settings for Waterproof
 Within vscode, go to the Extensions tab (Ctrl+Shift+X) and search for the installed Waterproof extension. Once the extension is found, click on the gear icon and enter the 'Extension Settings'.
-Within the setting 'Waterproof: Path' enter the following line: 
+Within the setting 'Waterproof: Path' enter the following line:
 
 ```
 C:\cygwin_wp\home\runneradmin\.opam\wp\bin\coq-lsp
@@ -63,7 +63,7 @@ Within a WSL distribution, execute the following lines:
 sudo apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.1.8+8.17
+opam install coq-lsp.0.2.2+8.17
 opam install coq-waterproof
 ```
 
@@ -96,7 +96,7 @@ In a terminal, execute the following lines
 apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.1.8+8.17
+opam install coq-lsp.0.2.2+8.17
 opam install coq-waterproof
 ```
 
@@ -105,7 +105,7 @@ opam install coq-waterproof
 ## Installation on Mac
 
 ### Step 1: Dependencies installer
-Download and execute the bundled installer `Waterproof_Background.dmg` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v2.1.0%2B8.17)
+Download and execute the bundled installer `Waterproof_Background.dmg` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v2.2.0%2B8.17)
 
 Open the `Waterproof_Background.dmg` and drag `Waterproof_Background.app` into the "Applications". You may need to provide administrative access to do this.
 
@@ -115,15 +115,15 @@ Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/
 
 ### Step 3: Update the path settings for Waterproof
 Within vscode, go to the Extensions tab (Shift+Command+X) and search for the installed Waterproof extension. Once the extension is found, click on the gear icon and enter the `Extension Settings`.
-Within the setting `Waterproof: Path` enter the following line: 
+Within the setting `Waterproof: Path` enter the following line:
 
 ```
 /Applications/Waterproof_Background.app/Contents/Resources/bin/coq-lsp
 ```
 
 ### Step 4: Update the args settings for Waterproof
-Still in the 'Extension Settings' within the setting `Waterproof: Args`. Click on the 'Add Item' button and   
-For each of the following lines, click on the 'Add Item' button and enter the line. 
+Still in the 'Extension Settings' within the setting `Waterproof: Args`. Click on the 'Add Item' button and
+For each of the following lines, click on the 'Add Item' button and enter the line.
 **Each of the lines should be added inividually.**
 
 ```
@@ -168,6 +168,6 @@ Then execute
 ```
 opam init
 eval $(opam env)
-opam install coq-lsp.0.1.8+8.17
+opam install coq-lsp.0.2.2+8.17
 opam install coq-waterproof
 ```

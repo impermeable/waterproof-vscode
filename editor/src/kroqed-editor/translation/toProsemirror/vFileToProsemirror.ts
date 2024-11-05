@@ -23,11 +23,10 @@ export function translateVToProsemirror(inputDocument: string): string {
     // Get all the matchings
     const matches: RegExpMatchArray[] = Array.from(inputDocument.matchAll(regex));
 
-
     // Loop through matches and replace newlines with a string to be used in html tags
     for (let i = 0; i < matches.length; i++) {
         for (let j = 0; j < matches[i].length; j++) {
-            if (j != 0 && j != 2) {
+            if (j != 0 && j != 3) {
                 if (matches[i][j] == undefined) {
                     matches[i][j] = ""
                 } else if (matches[i][j] == "\r\n" || matches[i][j] == "\n") {
@@ -38,7 +37,7 @@ export function translateVToProsemirror(inputDocument: string): string {
     }
 
     matches.forEach(match => {
-        inputDocument = inputDocument.replace(/(\r\n|\n)?\(\* begin input \*\)(\r\n|\n)?([^]*?)(\r\n|\n)?\(\* end input \*\)(\r\n|\n)?/gm, `\<input-area prePreWhite=${match[1]} prePostWhite=${match[2]} postPreWhite=${match[4]} postPostWhite=${match[5]}\>$3<\/input-area>`)
+        inputDocument = inputDocument.replace(/(\r\n|\n)?\(\* begin input \*\)(\r\n|\n)?([^]*?)(\r\n|\n)?\(\* end input \*\)(\r\n|\n)?/gm, `\<input-area prePreWhite="${match[1]}" prePostWhite="${match[2]}" postPreWhite="${match[4]}" postPostWhite="${match[5]}"\>$3<\/input-area>`)
     });
 
     // For hints
@@ -70,10 +69,9 @@ export function translateVToProsemirror(inputDocument: string): string {
 
     
     matches2.forEach(match => {
-        inputDocument = inputDocument.replace(/(\r\n|\n)?<hint title=([^"]+?)>(\r\n|\n)?([^]*?)(\r\n|\n)?<\/hint>(\r\n|\n)?/gm, `\<hint title=${match[2]} prePreWhite=${match[1]} prePostWhite=${match[3]} postPreWhite=${match[5]} postPostWhite=${match[6]}\>$4<\/hint>`)
+        inputDocument = inputDocument.replace(/(\r\n|\n)?<hint title=([^"]+?)>(\r\n|\n)?([^]*?)(\r\n|\n)?<\/hint>(\r\n|\n)?/gm, `\<hint title=${match[2]} prePreWhite="${match[1]}" prePostWhite="${match[3]}" postPreWhite="${match[5]}" postPostWhite="${match[6]}"\>$4<\/hint>`)
     });
 
-    
 
 
     // Get all coq blocks using there tags (```coq and ```)
@@ -104,16 +102,18 @@ export function translateVToProsemirror(inputDocument: string): string {
     });
 
     //Remove all empty markdown blocks (so only those with absolutely no text)
-    const removeRegEx = new RegExp(`<\/coqblock>()<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite="">`, "gm")
+    const removeRegEx = new RegExp(`<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite="">()<\/coqblock>`, "gm")
     parsedDocument = parsedDocument.replaceAll(removeRegEx, ""); 
-
+    //Remove all empty markdown blocks (so only those with absolutely no text)
+    const removeRegEx1 = new RegExp(`<\/coqblock>()<coqblock prePreWhite="" prePostWhite="" postPreWhite="" postPostWhite="">`, "gm")
+    parsedDocument = parsedDocument.replaceAll(removeRegEx1, ""); 
     console.log(parsedDocument)
     return parsedDocument;
 }
 
 function getAllCoqDocBlocks(input: string): CoqBlock[] {
     // Regex to find all coq blocks
-    const regex = /(\r\n|\n)?^\(\*\* ([^]*?)\*\)$(\r\n|\n)?/gm;
+    const regex = /(\r\n|\n)?\(\*\* ([^]*?)\*\)(\r\n|\n)?/gm;
 
     // Get all the matchings
     const matches: RegExpMatchArray[] = Array.from(input.matchAll(regex));
@@ -278,16 +278,14 @@ function parseAsV(input: string) {
     // Math-display replacement for markdown
 
     // Input areas
-    const inputAreaRegEx = /(<(input-area)?([\w-]+)( [^]*?)?>)/gm
+    const inputAreaRegEx = /(<input-area ([^]*?)?>)/gm
     input = input.replaceAll(inputAreaRegEx, `${postString}$1${preString}`)
 
     const endinputAreaRegEx = /(<\/input-area>)/gm
     input = input.replaceAll(endinputAreaRegEx, `${postString}$1${preString}`)
 
-    console.log(input)
-
     // For hints
-    const hintRegEx = /<hint ([^"]+?)>/gm;
+    const hintRegEx = /<hint ([^]*?)?>/gm;
     input = input.replaceAll(hintRegEx, `${postString}<hint $1>${preString}`);
 
     const endhintRegEx = /<\/hint>/gm;
@@ -303,7 +301,6 @@ function parseAsV(input: string) {
     const removeRegEx2 = new RegExp(`<coqcode>()<\/coqcode>`, "gm")
     input = input.replaceAll(removeRegEx2, ""); 
 
-    
     
     return input;
 }

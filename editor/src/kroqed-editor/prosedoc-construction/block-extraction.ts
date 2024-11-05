@@ -7,9 +7,9 @@ const regexes = {
     coq: /(\r\n|\n)?^```coq(\r\n|\n)([^]*?)(\r\n|\n)?^```$(\r\n|\n)?/gm,
     math_display: /\$\$([\s\S]*?)\$\$/g,
     input_area: /<input-area>([\s\S]*?)<\/input-area>/g,
-    input_areaV: /\(\* begin input \*\)([\s\S]*?)\(\* end input \*\)/g,
+    input_areaV: /(\r\n|\n)?\(\* begin input \*\)(\r\n|\n)?([\s\S]*?)(\r\n|\n)?\(\* end input \*\)(\r\n|\n)?/g,
     hint: /<hint title="([\s\S]*?)">([\s\S]*?)<\/hint>/g,
-    hintV: /\(\* begin hint : ([\s\S]*?) \*\)([\s\S]*?)\(\* end hint \*\)/g,
+    hintV: /(\r\n|\n)?\(\* begin hint : ([^"]+?) \*\)(\r\n|\n)?([^]*?)(\r\n|\n)?\(\* end hint \*\)(\r\n|\n)?/gm,
 }
 
 /**
@@ -32,7 +32,7 @@ function extractInputBlocksMV(document: string) {
     const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
-        return new InputAreaBlock(input_area[1], range);
+        return new InputAreaBlock(input_area[1], range, "", "", "", "");
     });
 
     return inputAreaBlocks;
@@ -40,13 +40,18 @@ function extractInputBlocksMV(document: string) {
 
 function extractInputBlocksV(document: string) {
     const input_areas = document.matchAll(regexes.input_areaV);
-
     const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
-        return new InputAreaBlock("```coq\n" + input_area[1] + "\n```", range);
-    });
 
+        const content = "```coq\n" + input_area[3] + "\n```";
+        const prePreWhite = input_area[1] == "\n" ? "newLine" : "";
+        const prePostWhite = input_area[2] == "\n" ? "newLine" : "";
+        const postPreWhite = input_area[4] == "\n" ? "newLine" : "";
+        const postPostWhite = input_area[5] == "\n" ? "newLine" : "";
+        return new InputAreaBlock(content, range, prePreWhite, prePostWhite, postPreWhite, postPostWhite);
+    });
+    console.log(inputAreaBlocks)
     return inputAreaBlocks;
 }
 
@@ -71,7 +76,7 @@ function extractHintBlocksMV(document: string) {
     const hintBlocks = Array.from(hints).map((hint) => {
         if (hint.index === undefined) throw new Error("Index of hint is undefined");
         const range = { from: hint.index, to: hint.index + hint[0].length };
-        return new HintBlock(hint[2], hint[1], range);
+        return new HintBlock(hint[2], hint[1],"","","","", range);
     });
 
     return hintBlocks;
@@ -79,14 +84,23 @@ function extractHintBlocksMV(document: string) {
 
 function extractHintBlocksV(document: string) {
     const hints = document.matchAll(regexes.hintV);
-
+    console.log("TEST!")
+    console.log(document)
     const hintBlocks = Array.from(hints).map((hint) => {
         if (hint.index === undefined) throw new Error("Index of hint is undefined");
         const range = { from: hint.index, to: hint.index + hint[0].length };
-        // This is incorrect as we should wrap the content part in a coqblock.
-        return new HintBlock(`\`\`\`coq\n${hint[2]}\n\`\`\``, hint[1], range);
+        
+        const content = "```coq\n" + hint[4] + "\n```";
+        console.log(content)
+        const title = hint[2];
+        const prePreWhite = hint[1] == "\n" ? "newLine" : "";
+        const prePostWhite = hint[3] == "\n" ? "newLine" : "";
+        const postPreWhite = hint[5] == "\n" ? "newLine" : "";
+        const postPostWhite = hint[6] == "\n" ? "newLine" : "";
+        return new HintBlock(content,title, prePreWhite, prePostWhite, postPreWhite, postPostWhite, range);
     });
 
+    console.log(hintBlocks)
     return hintBlocks;
 }
 
@@ -100,6 +114,7 @@ export function extractMathDisplayBlocks(inputDocument: string) {
     const mathDisplayBlocks = Array.from(math_display).map((math) => {
         if (math.index === undefined) throw new Error("Index of math is undefined");
         const range = { from: math.index, to: math.index + math[0].length };
+        
         return new MathDisplayBlock(math[1], range);
     });
     return mathDisplayBlocks;

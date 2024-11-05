@@ -32,13 +32,13 @@ export const coqCode = (content: string): ProseNode => {
 // ##### With inner blocks #####
 
 /** Construct input area prosemirror node. */
-export const inputArea = (childNodes: ProseNode[]): ProseNode => {
-    return TheSchema.nodes.input.create({}, childNodes);
+export const inputArea = (childNodes: ProseNode[], prePreWhite: string, prePostWhite: string, postPreWhite: string, postPostWhite: string): ProseNode => {
+    return TheSchema.nodes.input.create({prePreWhite, prePostWhite, postPreWhite, postPostWhite}, childNodes);
 }
 
 /** Construct hint prosemirror node. */
-export const hint = (title: string, childNodes: ProseNode[]): ProseNode => {
-    return TheSchema.nodes.hint.create({title}, childNodes);
+export const hint = (title: string, childNodes: ProseNode[], prePreWhite: string, prePostWhite: string, postPreWhite: string, postPostWhite: string): ProseNode => {
+    return TheSchema.nodes.hint.create({title, prePreWhite, prePostWhite, postPreWhite, postPostWhite}, childNodes);
 }
 
 /** Construct coq prosemirror node. */

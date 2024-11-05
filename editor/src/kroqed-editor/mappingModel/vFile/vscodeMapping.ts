@@ -4,6 +4,7 @@ import { getEndHtmlTagText, getStartHtmlTagText} from "./helper-functions";
 import { StringCell, HtmlTagInfo, ParsedStep} from "./types";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
+import { post } from "jquery";
 
 
 /**
@@ -129,7 +130,6 @@ export class TextDocMappingV {
         let inCoqdoc: boolean = false; 
 
         // Continue until the entire string has been parsed
-        console.log(inputString)
 
         while(inputString.length > 0) { 
 
@@ -154,7 +154,13 @@ export class TextDocMappingV {
                 stack.push({ tag: next.content, offsetPost: next.postNumber}); // Push new tag to stack
                 // Add text offset based on tag
                 if (next.content == "hint") {
-                    textCost += inputString.slice(next.start, next.end).length+6; // Take care of the fact that it is (* begin hint : *)
+                    // We check for the post whiteline after the first coqblock tag
+                    console.log(inputString)
+                    let test = inputString.slice(next.start, next.end)
+                    console.log(test)
+                    let postPreWhiteMatch = Array.from(test.matchAll(/title=(\w*)/g))[0]
+                    console.log(postPreWhiteMatch)
+                    textCost += postPreWhiteMatch[1].length + 19; // Take care of the fact that it is (* begin hint : *)
                 }
                 else textCost += getStartHtmlTagText(next.content).length;
 
@@ -189,6 +195,7 @@ export class TextDocMappingV {
 
         }
 
+        console.log(this.startHtmlMap)
         this.updateInvMapping();
     }
 
@@ -279,6 +286,7 @@ export class TextDocMappingV {
                     throw new Error("Index cannot be null");
                 }
 
+                console.log(match)
                 // Compute the end position of the tag
                 let end = start + length;
 
@@ -419,7 +427,7 @@ export class TextDocMappingV {
 
                        //return the resulting object
                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}          
-                    } else if (match[2] === "coqblock" && match[1] == undefined) {
+                    } else if (match[2] === "input-area" && match[1] == undefined) {
 
                         // Get the matches regarding whitespace
                         let whiteSpaceMatch = match[3]
@@ -430,6 +438,7 @@ export class TextDocMappingV {
 
                         // We check for the pre whiteline in front of the first coqblock tag
                         let prePreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite="(\w*?)"/g))[0]
+
                         if (prePreWhiteMatch != null) {
 
                             // If there is a newline tage we include this in preNum

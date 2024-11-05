@@ -46,11 +46,19 @@ export const TheSchema: Schema = new Schema({
 			content: `${containercontent}*`,
 			attrs: {
 				title: {default: "💡 Hint"},
-				shown: {default: false}
+				shown: {default: false},
+				prePreWhite:{default:"newLine"},
+				prePostWhite:{default:"newLine"},
+				postPreWhite:{default:"newLine"},
+				postPostWhite:{default:"newLine"}
 			},
 			parseDOM: [{tag: "hint", getAttrs(dom) {
 				return {
-					title: (dom as HTMLElement).getAttribute("title") ?? "💡 Hint"
+					title: (dom as HTMLElement).getAttribute("title") ?? "💡 Hint",
+					prePreWhite: (dom as HTMLElement).getAttribute("prePreWhite") ?? "newLine",
+					prePostWhite: (dom as HTMLElement).getAttribute("prePostWhite") ?? "newLine",
+					postPreWhite: (dom as HTMLElement).getAttribute("postPreWhite") ?? "newLine",
+					postPostWhite: (dom as HTMLElement).getAttribute("postPostWhite") ?? "newLine"
 				}
 			}}],
 			toDOM(node: PNode) {
@@ -64,12 +72,20 @@ export const TheSchema: Schema = new Schema({
 		input: {
 			content: `${containercontent}*`,
 			attrs: {
-			status: {default: null}
+				status: {default: null},
+				prePreWhite:{default:"newLine"},
+				prePostWhite:{default:"newLine"},
+				postPreWhite:{default:"newLine"},
+				postPostWhite:{default:"newLine"}
 			},
 			parseDOM: [{tag: "input-area", getAttrs(dom) {
 			let statusAttr = (dom as HTMLElement).getAttribute("status");
 			return {
-				status: statusAttr && statusAttr in QedStatus && statusAttr !== "invalid" ? statusAttr : null
+				status: statusAttr && statusAttr in QedStatus && statusAttr !== "invalid" ? statusAttr : null,
+				prePreWhite: (dom as HTMLElement).getAttribute("prePreWhite") ?? "newLine",
+				prePostWhite: (dom as HTMLElement).getAttribute("prePostWhite") ?? "newLine",
+				postPreWhite: (dom as HTMLElement).getAttribute("postPreWhite") ?? "newLine",
+				postPostWhite: (dom as HTMLElement).getAttribute("postPostWhite") ?? "newLine"
 			};
 			}}],
 			toDOM: (node: PNode) => {

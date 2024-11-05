@@ -45,26 +45,19 @@ export const keybindings: KeyBinding[] = [
 
 
 
-function changeBySelectedLineCustom(state: EditorState, f: (line: Line, changes: ChangeSpec[], range: SelectionRange) => void) {
-	let atLine = 2
-	return state.changeByRange(range => {
-	  let changes: ChangeSpec[] = []
-	  for (let pos = range.from; pos <= range.to;) {
-		let line = state.doc.lineAt(pos)
-		if (line.number < atLine && (range.empty || range.to > line.from)) {
-		  f(line, changes, range)
-		  atLine = line.number
-		}
-		pos = line.to + 1
-	  }
-	  let changeSet = state.changes(changes)
-	  return {changes,
-			  range: EditorSelection.range(changeSet.mapPos(range.anchor, 1), changeSet.mapPos(range.head, 1))}
-	})
+  function changeFirstLine(state: EditorState, f: (line: Line, changes: ChangeSpec[], range: SelectionRange) => void) {
+    return state.changeByRange(range => {
+      let changes: ChangeSpec[] = []
+      let line = state.doc.lineAt(range.from)
+      f(line, changes, range)
+      let changeSet = state.changes(changes)
+      return {changes,
+        range: EditorSelection.range(changeSet.mapPos(range.anchor, 1), changeSet.mapPos(range.head, 1))}
+    })
   }
 export const indentMoreCustom: StateCommand = ({state, dispatch}) => {
 	if (state.readOnly) return false
-	dispatch(state.update(changeBySelectedLineCustom(state, (line, changes) => {
+	dispatch(state.update(changeFirstLine(state, (line, changes) => {
 	  changes.push({from: line.from, insert: state.facet(indentUnit)})
 	}), {userEvent: "input.indent"}))
 	return true

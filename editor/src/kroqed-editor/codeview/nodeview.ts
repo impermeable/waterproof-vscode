@@ -1,7 +1,7 @@
-import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet, completionKeymap, acceptCompletion } from "@codemirror/autocomplete";
+import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet, completionKeymap } from "@codemirror/autocomplete";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
-import { Compartment, EditorState, Extension, StateCommand, SelectionRange, ChangeSpec, Line, EditorSelection } from "@codemirror/state"
+import { Compartment, EditorState, Extension } from "@codemirror/state"
 import {
 	EditorView as CodeMirror, keymap as cmKeymap,
 	highlightActiveLine,
@@ -14,44 +14,13 @@ import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
-import { indentUnit } from "@codemirror/language";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
  * Corresponds with the example as can be found here:
  * https://prosemirror.net/examples/codemirror/
  */
-function changeBySelectedLineCustom(state: EditorState, f: (line: Line, changes: ChangeSpec[], range: SelectionRange) => void) {
-	let atLine = 2
-	return state.changeByRange(range => {
-	  let changes: ChangeSpec[] = []
-	  for (let pos = range.from; pos <= range.to;) {
-		let line = state.doc.lineAt(pos)
-		if (line.number < atLine && (range.empty || range.to > line.from)) {
-		  f(line, changes, range)
-		  atLine = line.number
-		}
-		pos = line.to + 1
-	  }
-	  let changeSet = state.changes(changes)
-	  return {changes,
-			  range: EditorSelection.range(changeSet.mapPos(range.anchor, 1), changeSet.mapPos(range.head, 1))}
-	})
-  }
-export const indentMoreCustom: StateCommand = ({state, dispatch}) => {
-	if (state.readOnly) return false
-	dispatch(state.update(changeBySelectedLineCustom(state, (line, changes) => {
-	  changes.push({from: line.from, insert: state.facet(indentUnit)})
-	}), {userEvent: "input.indent"}))
-	return true
-  }
-function customTab(view: CodeMirror){	
-	if (acceptCompletion(view)) {
-        return true; 
-    }
-	return indentMoreCustom(view)
 
-}
 export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	dom: HTMLElement;
 

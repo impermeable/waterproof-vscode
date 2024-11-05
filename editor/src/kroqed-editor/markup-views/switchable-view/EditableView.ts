@@ -1,4 +1,4 @@
-import { indentWithTab, indentMore, indentLess } from "@codemirror/commands"
+import { indentMore, indentLess } from "@codemirror/commands"
 import {
 	EditorView as CodeMirror, ViewUpdate, keymap as cmKeymap,
 	placeholder
@@ -19,13 +19,6 @@ import { EmbeddedCodeMirrorEditor } from "../../embedded-codemirror"
  * https://prosemirror.net/examples/codemirror/
  */
 
-function customTab(view: CodeMirror){
-	if (acceptCompletion(view)) {
-        return true; 
-    }
-	return indentMore(view)
-
-}
 export class EditableView extends EmbeddedCodeMirrorEditor {
     public view: CodeMirror;
 	private _parent: SwitchableView;
@@ -50,12 +43,7 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 		this.view = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
-				cmKeymap.of([{
-					key: "Tab",
-					run: customTab, 
-					shift: indentLess,
-					preventDefault: false 
-				},
+				cmKeymap.of([
 					...this.embeddedCodeMirrorKeymap(),
 				]),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),

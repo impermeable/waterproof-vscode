@@ -15,10 +15,9 @@ export class CoqEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly _manager: WebviewManager;
 
     registeredHistoryCommands: boolean = false;
-    _undoListener: (() => void) | undefined = undefined;
-    _redoListener: (() => void) | undefined = undefined;
     _undoCommand: vscode.Disposable | undefined = undefined;
     _redoCommand: vscode.Disposable | undefined = undefined;
+    _lastRegistered: ProseMirrorWebview | undefined = undefined;
 
     public static register(context: vscode.ExtensionContext, manager: WebviewManager): vscode.Disposable {
         const provider = new CoqEditorProvider(context, manager);
@@ -52,35 +51,36 @@ export class CoqEditorProvider implements vscode.CustomTextEditorProvider {
     }
 
 
-    public registerHistoryCommandListeners(undoListener: () => void, redoListener: () => void) {
-        this._undoListener = undoListener;
-        this._redoListener = redoListener;
-
+    public registerHistoryCommandListeners(wantsToRegister: ProseMirrorWebview, undoListener: () => void, redoListener: () => void) {
         if (!this.registeredHistoryCommands) {
             this._context.subscriptions.push(
-                this._undoCommand = vscode.commands.registerCommand('undo', () => {
-                    if (this._undoListener) {
-                        this._undoListener();
-                    }
-                }),
-                this._redoCommand = vscode.commands.registerCommand('redo', () => {
-                    if (this._redoListener) {
-                        this._redoListener();
-                    }
-                })
+                this._undoCommand = vscode.commands.registerCommand("undo", undoListener),
+                this._redoCommand = vscode.commands.registerCommand("redo", redoListener)
             );
-            this.registeredHistoryCommands = true;
+        } else {
+            // Update commands
+            this.disposeHistoryCommandListeners(undefined); // force dispose
+            this._context.subscriptions.push(
+                this._undoCommand = vscode.commands.registerCommand("undo", undoListener),
+                this._redoCommand = vscode.commands.registerCommand("redo", redoListener)
+            );
         }
+        this.registeredHistoryCommands = true;
+        this._lastRegistered = wantsToRegister;
     }
 
-    public disposeHistoryCommandListeners() {
-        // Improvement: We don't need to dispose of the command if we switch from Waterproof editor to 
-        //              Waterproof editor. In that case updating the listeners suffices.
-        this._undoCommand?.dispose();
-        this._redoCommand?.dispose();
+    /**
+     * Dispose the history command listeners.
+     * @param wantsToDispose The webview that wants to dispose the listeners. If undefined, we force dispose of the listeners.
+     */
+    public disposeHistoryCommandListeners(wantsToDispose?: ProseMirrorWebview) {
+        if ((wantsToDispose === undefined) || (this._lastRegistered == wantsToDispose)) {
+            // Improvement: We don't need to dispose of the command if we switch from Waterproof editor to 
+            //              Waterproof editor. In that case updating the listeners suffices.
+            this._undoCommand?.dispose();
+            this._redoCommand?.dispose();
 
-        this._undoListener = undefined;
-        this._redoListener = undefined;
-        this.registeredHistoryCommands = false;
+            this.registeredHistoryCommands = false;
+        }
     }
 }

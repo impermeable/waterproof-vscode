@@ -62,10 +62,27 @@ export class ProseMirrorWebview extends EventEmitter {
         return !this._workspaceEditor.isInProgress;
     }
 
+    
+    // Handlers for undo and redo actions. 
+    // These can either be triggered by the user via a keybinding or by the undo/redo command
+    //     under `edit > edit` and `edit > undo` in the menubar.
+    private undoHandler() {
+        this.handleChangeFromEditor(HistoryChange.undo);
+        
+    };
+    private redoHandler() {
+        this.handleChangeFromEditor(HistoryChange.redo);
+    };
+
     private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         super();
 
         this._provider = provider;
+        this._provider.disposeHistoryCommandListeners(this);
+        this._provider.registerHistoryCommandListeners(this, 
+            this.undoHandler.bind(this), 
+            this.redoHandler.bind(this));
+
 
         var path = require('path')
 
@@ -187,32 +204,19 @@ export class ProseMirrorWebview extends EventEmitter {
             this.emit(WebviewEvents.dispose);
         }));
 
-        // Handlers for undo and redo actions. 
-        // These can either be triggered by the user via a keybinding or by the undo/redo command
-        //     under `edit > edit` and `edit > undo` in the menubar.
-        const undoHandler = () => {
-            console.log("Undoing");
-            this.handleChangeFromEditor(HistoryChange.undo);
-            
-        };
-        const redoHandler = () => {
-            console.log("Redoing");
-            this.handleChangeFromEditor(HistoryChange.redo);
-        };
-
-        this._provider.disposeHistoryCommandListeners();
-        this._provider.registerHistoryCommandListeners(undoHandler, redoHandler);
-
         this._disposables.push(this._panel.onDidChangeViewState((e) => {
             if (e.webviewPanel.active) {
                 this.syncWebview();
                 this.emit(WebviewEvents.change, WebviewState.focus);
                 
                 // Overwrite the undo and redo commands
-                this._provider.registerHistoryCommandListeners(undoHandler, redoHandler);
+                this._provider.registerHistoryCommandListeners(
+                    this, 
+                    this.undoHandler.bind(this), 
+                    this.redoHandler.bind(this));
             } else {
                 // Dispose of the overwritten undo and redo commands when the editor is not active.
-                this._provider.disposeHistoryCommandListeners();
+                this._provider.disposeHistoryCommandListeners(this);
             }
         }));
 

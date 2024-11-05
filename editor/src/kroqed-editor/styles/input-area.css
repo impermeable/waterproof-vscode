@@ -11,7 +11,7 @@
   left: 0px;
   height: 100%;
   width: 8px; 
-  background-color: var(--vscode-terminal-ansiRed); 
+  background-color: var(--vscode-button-background);
   /* we add a border for some high contrast themes */
   outline: 1px solid var(--vscode-button-border); 
 }

@@ -377,7 +377,7 @@ export class Waterproof implements Disposable {
         if (document) {
             let content = document.getText();
             const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g;
-            const replacement = `<input-area>\n\`\`\`coq\n(* Type your proof here *)\n\`\`\`\n</input-area>`;
+            const replacement = `<input-area>\n\`\`\`coq\n\n\`\`\`\n</input-area>`;
             content = content.replace(pattern, replacement);
             const fileUri = await window.showSaveDialog();
             if (fileUri) {

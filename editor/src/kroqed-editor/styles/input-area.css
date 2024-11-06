@@ -33,3 +33,7 @@
   width: 8px;
   background-color: var(--vscode-terminal-ansiRed);
 }
+
+.empty-proof-placeholder {
+  color: #940;
+}

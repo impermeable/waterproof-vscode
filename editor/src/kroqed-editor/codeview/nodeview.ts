@@ -50,6 +50,32 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		// Shadow this._outerView for use in the next function.
 		const outerView = this._outerView;
 
+		// Helper function to create the placeholder content for the codemirror cells.
+		const placeholderContent = (): HTMLDivElement => {
+			const div = document.createElement("div");
+			const pos = getPos();
+			if (pos === undefined) {
+				div.innerText = "Empty code cell";
+				return div;
+			}
+			const name = outerView.state.doc.resolve(pos).node(1).type.name;
+			if (name === "input") {
+				// This codemirror cell is part of an input area, we change
+				// the placeholder to `(* Type your proof here *)` and apply
+				// the appropriate styling.
+				div.innerText = "(* Type your proof here *)";
+				// The styling of this class is 
+				// defined in `editor/src/kroqed-editor/styles/input-area.css`.
+				div.classList.add("empty-proof-placeholder");
+			} else {
+				// This codemirror cell is not part of an input area, use the
+				// `Empty code cell` placeholder.
+				div.innerText = "Empty code cell";
+			}
+
+			return div;
+		}
+
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
@@ -83,7 +109,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
                 highlightActiveLine(),
 				coqSyntaxHighlighting(),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
-				placeholder("Empty code cell")
+				placeholder(placeholderContent())
 			],
 			// We override the dispatch field to filter the transactions in the CodeMirror cells.
 			// We explicitly **allow** selection changes, so that students can select (and copy) non-input area code.

@@ -5,6 +5,7 @@ import { ResolvedPos, Schema, Node as ProseNode } from "prosemirror-model";
 import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelection, Transaction } from "prosemirror-state";
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
+import { undo, redo, history } from "prosemirror-history";
 import { createProseMirrorDocument } from "./prosedoc-construction/construct-document";
 
 import { DocChange, FileFormat, LineNumber, Message, MessageType, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
@@ -28,7 +29,7 @@ import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
 import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
-import { DiagnosticMessage } from "../../../shared/Messages";
+import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
 import { DiagnosticSeverity, ThemeIcon } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
@@ -241,6 +242,7 @@ export class Editor {
 	/** Create the array of plugins used by the prosemirror editor */
 	createPluginsArray(): Plugin[] {
 		return [
+			history(),
 			createHintPlugin(this._schema),
 			inputAreaPlugin,
 			updateStatusPlugin(this),
@@ -330,6 +332,13 @@ export class Editor {
 		if (!state) return;
 		const tr = this._view.state.tr.setMeta(COQ_CODE_PLUGIN_KEY, msg);
 		this._view.dispatch(tr);
+	}
+
+	handleHistoryChange(type: HistoryChangeType) {
+		const view = this._view;
+		if (!view) return;
+		const func = type === HistoryChangeType.Undo ? undo : redo;
+		const ret = func(view.state, view.dispatch, view);
 	}
 
 	/**

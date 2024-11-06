@@ -10,6 +10,12 @@ import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 const SAVE_AS = "Save As";
 import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
+import { CoqEditorProvider } from "./coqEditor";
+
+const enum HistoryChange {
+    undo,
+    redo
+}
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -34,6 +40,8 @@ export class ProseMirrorWebview extends EventEmitter {
     private _enforceCorrectNonInputArea: boolean;
     private _lastCorrectDocString: string;
 
+    private _provider: CoqEditorProvider;
+
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
         to: number, 
@@ -54,8 +62,27 @@ export class ProseMirrorWebview extends EventEmitter {
         return !this._workspaceEditor.isInProgress;
     }
 
-    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
+    
+    // Handlers for undo and redo actions. 
+    // These can either be triggered by the user via a keybinding or by the undo/redo command
+    //     under `edit > edit` and `edit > undo` in the menubar.
+    private undoHandler() {
+        this.handleChangeFromEditor(HistoryChange.undo);
+        
+    };
+    private redoHandler() {
+        this.handleChangeFromEditor(HistoryChange.redo);
+    };
+
+    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         super();
+
+        this._provider = provider;
+        this._provider.disposeHistoryCommandListeners(this);
+        this._provider.registerHistoryCommandListeners(this, 
+            this.undoHandler.bind(this), 
+            this.redoHandler.bind(this));
+
 
         var path = require('path')
 
@@ -90,7 +117,7 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Create a prosemirror webview */
-    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
+    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         // Check if the line endings of file are windows
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
@@ -106,7 +133,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 window.showErrorMessage("Failed to open document for conversion");
             }
         }
-        return new ProseMirrorWebview(webview, extensionUri, doc);
+        return new ProseMirrorWebview(webview, extensionUri, doc, provider);
     }
 
     /**
@@ -181,6 +208,15 @@ export class ProseMirrorWebview extends EventEmitter {
             if (e.webviewPanel.active) {
                 this.syncWebview();
                 this.emit(WebviewEvents.change, WebviewState.focus);
+                
+                // Overwrite the undo and redo commands
+                this._provider.registerHistoryCommandListeners(
+                    this, 
+                    this.undoHandler.bind(this), 
+                    this.redoHandler.bind(this));
+            } else {
+                // Dispose of the overwritten undo and redo commands when the editor is not active.
+                this._provider.disposeHistoryCommandListeners(this);
             }
         }));
 
@@ -293,35 +329,45 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Handle a doc change sent from prosemirror */
-    private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
-        this._workspaceEditor.edit(e => {
-            if ("firstEdit" in change) {
-                this.applyChangeToWorkspace(change.firstEdit, e);
-                this.applyChangeToWorkspace(change.secondEdit, e);
-            } else {
-                this.applyChangeToWorkspace(change, e);
-            }
-        });
+    private handleChangeFromEditor(change: DocChange | WrappingDocChange | HistoryChange) {
+        if (change === HistoryChange.undo) {
+            this._workspaceEditor.edit((e) => {
+                commands.executeCommand("default:undo");
+            });
+        } else if (change === HistoryChange.redo) {
+            this._workspaceEditor.edit((e) => {
+                commands.executeCommand("default:redo");
+            });
+        } else {
+            this._workspaceEditor.edit(e => {
+                if ("firstEdit" in change) {
+                    this.applyChangeToWorkspace(change.firstEdit, e);
+                    this.applyChangeToWorkspace(change.secondEdit, e);
+                } else {
+                    this.applyChangeToWorkspace(change, e);
+                }
+            });
 
-        // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
-        if (!this._teacherMode && this._enforceCorrectNonInputArea) {
-            let foundDefect = false;
-            const nonInputRegions = getNonInputRegions(this._document.getText());
-            if (nonInputRegions.length !== this._nonInputRegions.length) { 
-                foundDefect = true;
-            } else {
-                for (let i = 0; i < this._nonInputRegions.length; i++) {
-                    if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
-                        foundDefect = true;
-                        break;
+            // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
+            if (!this._teacherMode && this._enforceCorrectNonInputArea) {
+                let foundDefect = false;
+                const nonInputRegions = getNonInputRegions(this._document.getText());
+                if (nonInputRegions.length !== this._nonInputRegions.length) { 
+                    foundDefect = true;
+                } else {
+                    for (let i = 0; i < this._nonInputRegions.length; i++) {
+                        if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
+                            foundDefect = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (foundDefect) { 
-                showRestoreMessage(this.restore.bind(this));
-            } else {
-                this._lastCorrectDocString = this._document.getText();
+                if (foundDefect) { 
+                    showRestoreMessage(this.restore.bind(this));
+                } else {
+                    this._lastCorrectDocString = this._document.getText();
+                }
             }
         }
     }

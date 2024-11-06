@@ -11,11 +11,7 @@ const SAVE_AS = "Save As";
 import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
-
-const enum HistoryChange {
-    undo,
-    redo
-}
+import { HistoryChangeType } from "../../shared/Messages";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -67,11 +63,11 @@ export class ProseMirrorWebview extends EventEmitter {
     // These can either be triggered by the user via a keybinding or by the undo/redo command
     //     under `edit > edit` and `edit > undo` in the menubar.
     private undoHandler() {
-        this.handleChangeFromEditor(HistoryChange.undo);
+        this.sendHistoryChangeToEditor(HistoryChangeType.Undo);
         
     };
     private redoHandler() {
-        this.handleChangeFromEditor(HistoryChange.redo);
+        this.sendHistoryChangeToEditor(HistoryChangeType.Redo);
     };
 
     private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
@@ -329,47 +325,44 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Handle a doc change sent from prosemirror */
-    private handleChangeFromEditor(change: DocChange | WrappingDocChange | HistoryChange) {
-        if (change === HistoryChange.undo) {
-            this._workspaceEditor.edit((e) => {
-                commands.executeCommand("default:undo");
-            });
-        } else if (change === HistoryChange.redo) {
-            this._workspaceEditor.edit((e) => {
-                commands.executeCommand("default:redo");
-            });
-        } else {
-            this._workspaceEditor.edit(e => {
-                if ("firstEdit" in change) {
-                    this.applyChangeToWorkspace(change.firstEdit, e);
-                    this.applyChangeToWorkspace(change.secondEdit, e);
-                } else {
-                    this.applyChangeToWorkspace(change, e);
-                }
-            });
+    private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
+        this._workspaceEditor.edit(e => {
+            if ("firstEdit" in change) {
+                this.applyChangeToWorkspace(change.firstEdit, e);
+                this.applyChangeToWorkspace(change.secondEdit, e);
+            } else {
+                this.applyChangeToWorkspace(change, e);
+            }
+        });
 
-            // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
-            if (!this._teacherMode && this._enforceCorrectNonInputArea) {
-                let foundDefect = false;
-                const nonInputRegions = getNonInputRegions(this._document.getText());
-                if (nonInputRegions.length !== this._nonInputRegions.length) { 
-                    foundDefect = true;
-                } else {
-                    for (let i = 0; i < this._nonInputRegions.length; i++) {
-                        if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
-                            foundDefect = true;
-                            break;
-                        }
+        // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
+        if (!this._teacherMode && this._enforceCorrectNonInputArea) {
+            let foundDefect = false;
+            const nonInputRegions = getNonInputRegions(this._document.getText());
+            if (nonInputRegions.length !== this._nonInputRegions.length) { 
+                foundDefect = true;
+            } else {
+                for (let i = 0; i < this._nonInputRegions.length; i++) {
+                    if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
+                        foundDefect = true;
+                        break;
                     }
                 }
+            }
 
-                if (foundDefect) { 
-                    showRestoreMessage(this.restore.bind(this));
-                } else {
-                    this._lastCorrectDocString = this._document.getText();
-                }
+            if (foundDefect) { 
+                showRestoreMessage(this.restore.bind(this));
+            } else {
+                this._lastCorrectDocString = this._document.getText();
             }
         }
+    }
+
+    private sendHistoryChangeToEditor(type: HistoryChangeType) {
+        this.postMessage({
+            type: MessageType.editorHistoryChange,
+            body: type
+        });
     }
 
     /** Handle the messages received from prosemirror */

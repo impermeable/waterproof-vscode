@@ -129,6 +129,10 @@
       {
         "command": "waterproof.autoInstall",
         "title": "Waterproof: Automatically installs all required libraries."
+      },
+      {
+        "command": "waterproof.setDefaultArgsWin",
+        "title": "Waterproof: Set default arguments for Windows"
       }
     ],
     "menus": {

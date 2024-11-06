@@ -325,35 +325,45 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Handle a doc change sent from prosemirror */
-    private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
-        this._workspaceEditor.edit(e => {
-            if ("firstEdit" in change) {
-                this.applyChangeToWorkspace(change.firstEdit, e);
-                this.applyChangeToWorkspace(change.secondEdit, e);
-            } else {
-                this.applyChangeToWorkspace(change, e);
-            }
-        });
+    private handleChangeFromEditor(change: DocChange | WrappingDocChange | HistoryChangeType) {
+        if (change === HistoryChangeType.Undo) {
+            this._workspaceEditor.edit((e) => {
+                commands.executeCommand("default:undo");
+            });
+        } else if (change === HistoryChangeType.Redo) {
+            this._workspaceEditor.edit((e) => {
+                commands.executeCommand("default:redo");
+            });
+        } else {
+            this._workspaceEditor.edit(e => {
+                if ("firstEdit" in change) {
+                    this.applyChangeToWorkspace(change.firstEdit, e);
+                    this.applyChangeToWorkspace(change.secondEdit, e);
+                } else {
+                    this.applyChangeToWorkspace(change, e);
+                }
+            });
 
-        // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
-        if (!this._teacherMode && this._enforceCorrectNonInputArea) {
-            let foundDefect = false;
-            const nonInputRegions = getNonInputRegions(this._document.getText());
-            if (nonInputRegions.length !== this._nonInputRegions.length) { 
-                foundDefect = true;
-            } else {
-                for (let i = 0; i < this._nonInputRegions.length; i++) {
-                    if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
-                        foundDefect = true;
-                        break;
+            // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
+            if (!this._teacherMode && this._enforceCorrectNonInputArea) {
+                let foundDefect = false;
+                const nonInputRegions = getNonInputRegions(this._document.getText());
+                if (nonInputRegions.length !== this._nonInputRegions.length) { 
+                    foundDefect = true;
+                } else {
+                    for (let i = 0; i < this._nonInputRegions.length; i++) {
+                        if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
+                            foundDefect = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (foundDefect) { 
-                showRestoreMessage(this.restore.bind(this));
-            } else {
-                this._lastCorrectDocString = this._document.getText();
+                if (foundDefect) { 
+                    showRestoreMessage(this.restore.bind(this));
+                } else {
+                    this._lastCorrectDocString = this._document.getText();
+                }
             }
         }
     }

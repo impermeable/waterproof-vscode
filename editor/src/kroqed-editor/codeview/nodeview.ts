@@ -1,5 +1,4 @@
-import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet } from "@codemirror/autocomplete";
-import { indentWithTab } from "@codemirror/commands";
+import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet, completionKeymap } from "@codemirror/autocomplete";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
@@ -84,6 +83,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				linter(this.lintingFunction),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
+
 				autocompletion({
 					override: [
 						tacticCompletionSource, 
@@ -92,11 +92,16 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 						coqCompletionSource
 					], 
 					icons: false,
-					addToOptions: [renderIcon]
+					addToOptions: [renderIcon],
+					defaultKeymap: false,
+					
+					
+			
 				}),
 				cmKeymap.of([
-					indentWithTab,
-					...this.embeddedCodeMirrorKeymap()
+				...completionKeymap,
+						...this.embeddedCodeMirrorKeymap()
+					
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),

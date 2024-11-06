@@ -202,6 +202,7 @@ export class Waterproof implements Disposable {
                 }
             }
         });
+        this.registerCommand("setDefaultArgsWin", () => this.setDefaultArgsWin());
 
         this.registerCommand("defaultArgsMac", () => {
             // If we are not on a mac platform, this is a no-op.
@@ -227,6 +228,7 @@ export class Waterproof implements Disposable {
 
         this.registerCommand("autoInstall", () => {
             commands.executeCommand(`waterproof.defaultPath`);
+            commands.executeCommand(`waterproof.setDefaultArgsWin`);
 
             const windowsInstallationScript = `echo Begin Waterproof Installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.2.0%2B8.17/Waterproof-dependencies-installer-v2.2.0+8.17.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
             const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
@@ -278,6 +280,26 @@ export class Waterproof implements Disposable {
                 resolve(true)
             });
         });
+    }
+
+    /**
+     * Sets the default args for the Waterproof extension on Windows, for when the installer is used with the default location
+     */
+    private async setDefaultArgsWin() : Promise<void> {
+        const defaultArgs = [
+            "--ocamlpath=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib",
+            "--coqcorelib=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib\\coq-core",
+            "--coqlib=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib\\coq"
+        ];
+        try {
+            workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
+                setTimeout(() => {
+                    WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
+                }, 100);
+            });
+        } catch (e) {
+            console.error("Error in updating Waterproof.args setting:", e);
+        }
     }
 
     private async waterproofTutorialCommand(): Promise<void> {

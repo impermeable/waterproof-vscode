@@ -68,7 +68,7 @@
         "template": "We conclude that (${0 = 0}).",
         "description": "Tries to automatically prove the current goal.",
         "example": "Lemma example_we_conclude_that :\n  0 = 0.\nProof.\nWe conclude that (0 = 0).\nQed.",
-        "boost": 2
+        "boost": 1
     },
     {
         "label": "Choose (*name_var*) := ((*expression*)).",

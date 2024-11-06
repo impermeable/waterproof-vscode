@@ -509,7 +509,8 @@ We use induction on k.
   Take k ∈ ℕ.
   Assume that (k ≤ n(k))%nat.
   It holds that (n(k) < n(k+1))%nat.
-  We conclude that (k + 1 ≤ n(k + 1))%nat.
+  It holds that (n(k) + 1 ≤ n(k+1))%nat.
+  We conclude that (& k + 1 ≤ n(k) + 1 ≤ n(k + 1))%nat.
 Qed.
 ```
 ### Try it yourself

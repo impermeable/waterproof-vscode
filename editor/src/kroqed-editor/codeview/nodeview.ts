@@ -207,12 +207,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				apply(view: CodeMirror, from: number, to: number) {
 					navigator.clipboard.writeText(message);
 				}
-			}
-		];
-
-		// Severity > 0 means that it only works for everything except "error".
-		if (severity > 0) {
-			actions.push({
+			},
+			{
 				name: "Insert ↓",
 				apply(view, from, to) {
 					const textAtErrorLine = view.state.doc.lineAt(from).text;
@@ -226,16 +222,16 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 						selection: {anchor: to + toInsert.length}
 					});
 				},
-			});
-		}
+			}
+		];
 
 		this._diags.push({
-			from, to, 
-			message, 
+			from, to,
+			message,
 			severity: severityString,
 			actions
 		});
-		this.debouncer.call();		
+			this.debouncer.call();
 	}
 
 	/**

@@ -2,7 +2,7 @@
 
 The Waterproof vscode extension helps students learn how to write mathematical proofs.
 
-# Quick install instructions for Windows and Mac
+# Quick install instructions for Windows
 
 Install this extension and follow the installation instructions that pop up.
 
@@ -99,49 +99,6 @@ eval $(opam env)
 opam install coq-lsp.0.2.2+8.17
 opam install coq-waterproof
 ```
-
-
-
-## Installation on Mac
-
-### Step 1: Dependencies installer
-Download and execute the bundled installer `Waterproof_Background.dmg` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v2.2.0%2B8.17)
-
-Open the `Waterproof_Background.dmg` and drag `Waterproof_Background.app` into the "Applications". You may need to provide administrative access to do this.
-
-
-### Step 2: Install the vscode extension
-Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
-
-### Step 3: Update the path settings for Waterproof
-Within vscode, go to the Extensions tab (Shift+Command+X) and search for the installed Waterproof extension. Once the extension is found, click on the gear icon and enter the `Extension Settings`.
-Within the setting `Waterproof: Path` enter the following line:
-
-```
-/Applications/Waterproof_Background.app/Contents/Resources/bin/coq-lsp
-```
-
-### Step 4: Update the args settings for Waterproof
-Still in the 'Extension Settings' within the setting `Waterproof: Args`. Click on the 'Add Item' button and
-For each of the following lines, click on the 'Add Item' button and enter the line.
-**Each of the lines should be added inividually.**
-
-```
---ocamlpath=/Applications/Waterproof_Background.app/Contents/Resources/lib
-```
-```
---coqcorelib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq-core
-```
-```
---coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq
-```
-
-You may have to restart vscode before these settings are implemented.
-
-### Warning
-Upon opening a .mv file for the first time, a pop-up about verifying the developer may appear.
-
-To fix this issue, click 'Show in Finder', Control click on the Coq-Platform application and press open. Click 'open' again if a pop-up appears. You may close the application once it has opened. This will ensure that the application is now trusted when using the Waterproof extension in the future.
 
 ## Manual Installation on Mac
 

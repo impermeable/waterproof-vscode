@@ -1,5 +1,4 @@
-import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet } from "@codemirror/autocomplete";
-import { deleteToLineStart, indentWithTab } from "@codemirror/commands";
+import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet, completionKeymap } from "@codemirror/autocomplete";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
@@ -47,30 +46,62 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
 		this._diags = [];
-		
+
 		// Shadow this._outerView for use in the next function.
 		const outerView = this._outerView;
+
+		// Helper function to create the placeholder content for the codemirror cells.
+		const placeholderContent = (): HTMLDivElement => {
+			const div = document.createElement("div");
+			const pos = getPos();
+			if (pos === undefined) {
+				div.innerText = "Empty code cell";
+				return div;
+			}
+			const name = outerView.state.doc.resolve(pos).node(1).type.name;
+			if (name === "input") {
+				// This codemirror cell is part of an input area, we change
+				// the placeholder to `(* Type your proof here *)` and apply
+				// the appropriate styling.
+				div.innerText = "(* Type your proof here *)";
+				// The styling of this class is
+				// defined in `editor/src/kroqed-editor/styles/input-area.css`.
+				div.classList.add("empty-proof-placeholder");
+			} else {
+				// This codemirror cell is not part of an input area, use the
+				// `Empty code cell` placeholder.
+				div.innerText = "Empty code cell";
+			}
+
+			return div;
+		}
 
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
-				// Add the linting extension for showing diagnostics (errors, warnings, etc) 
+				// Add the linting extension for showing diagnostics (errors, warnings, etc)
 				linter(this.lintingFunction),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
+
 				autocompletion({
 					override: [
-						tacticCompletionSource, 
-						this.dynamicCompletionSource, 
-						symbolCompletionSource, 
+						tacticCompletionSource,
+						this.dynamicCompletionSource,
+						symbolCompletionSource,
 						coqCompletionSource
-					], 
+					],
 					icons: false,
-					addToOptions: [renderIcon]
+					addToOptions: [renderIcon],
+					defaultKeymap: false,
+
+
+
 				}),
 				cmKeymap.of([
-					indentWithTab,
-					...this.embeddedCodeMirrorKeymap()
+				...completionKeymap,
+						...this.embeddedCodeMirrorKeymap()
+
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),
@@ -78,12 +109,12 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
                 highlightActiveLine(),
 				coqSyntaxHighlighting(),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
-				placeholder("Empty code cell")
+				placeholder(placeholderContent())
 			],
 			// We override the dispatch field to filter the transactions in the CodeMirror cells.
 			// We explicitly **allow** selection changes, so that students can select (and copy) non-input area code.
 			dispatch(tr, view) {
-				// TODO: deprecated according to reference manual https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch 
+				// TODO: deprecated according to reference manual https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch
 				if (!tr.docChanged) {
 					view.update([tr]);
 				} else {
@@ -95,7 +126,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 						// allow this transaction to update the view.
 						return;
 					}
-					
+
 					if (locked) {
 						// in student mode.
 						const pos = getPos();
@@ -203,7 +234,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		// For now populate the actions using the standard Copy message.
 		const actions = [
 			{
-				name: "Copy 📋", 
+				name: "Copy 📋",
 				apply(view: CodeMirror, from: number, to: number) {
 					navigator.clipboard.writeText(message);
 				}
@@ -235,7 +266,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	}
 
 	/**
-	 * Helper function that forces the linter function to run. 
+	 * Helper function that forces the linter function to run.
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
 	private forceUpdateLinting() {
@@ -255,15 +286,15 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 const severityToString = (sv: number) => {
 	switch (sv) {
-		case 0: 
+		case 0:
 			return "error";
-		case 1: 
+		case 1:
 			return "warning";
-		case 2: 
+		case 2:
 			return "info";
-		case 3: 
+		case 3:
 			return "hint";
-		default: 
+		default:
 			return "error";
 	}
 }

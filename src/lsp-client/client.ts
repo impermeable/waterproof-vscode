@@ -1,5 +1,5 @@
 import { Completion } from "@codemirror/autocomplete";
-import { Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
+import { DiagnosticSeverity, Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
@@ -13,10 +13,11 @@ import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { MessageType, OffsetDiagnostic, QedStatus, SimpleProgressParams } from "../../shared";
 import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
-import { ICoqLspClient } from "./clientTypes";
+import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
+import { WaterproofConfigHelper } from "../helpers";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -35,6 +36,8 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
         /** The resources that must be released when this extension is disposed of */
         readonly disposables: Disposable[] = [];
+
+        detailedErrors: boolean = false;
 
         activeDocument: TextDocument | undefined;
         activeCursorPosition: Position | undefined;
@@ -74,18 +77,60 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             // deduce (end) positions of sentences from progress notifications
             this.fileProgressComponents.push(this.sentenceManager);
             const diagnosticsCollection = languages.createDiagnosticCollection("coq");
-            // send diagnostics to editor (for squiggly lines)
-            this.middleware.handleDiagnostics = (uri, diagnostics) => {
-                diagnosticsCollection.set(uri, diagnostics);
+            
+            // Set detailedErrors to the value of the `Waterproof.detailedErrorsMode` setting.
+            this.detailedErrors = WaterproofConfigHelper.detailedErrors;
+            // Update `detailedErrors` when the setting changes.
+            this.disposables.push(workspace.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration("waterproof.detailedErrorsMode")) {
+                    this.detailedErrors = WaterproofConfigHelper.detailedErrors;
+                }
+            }));
 
+            // send diagnostics to editor (for squiggly lines)
+            this.middleware.handleDiagnostics = (uri, diagnostics_) => {
+                diagnosticsCollection.set(uri, diagnostics_);
+
+                // Note: Here we typecast diagnostics_ to WpDiagnostic[], the new type includes the custom data field 
+                //      added by coq-lsp required for the detailed error mode.
+                const diagnostics = (diagnostics_ as WpDiagnostic[]);
                 const document = this.activeDocument;
                 if (!document) return;
-                const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => ({
-                    message:        d.message,
-                    severity:       d.severity,
-                    startOffset:    document.offsetAt(d.range.start),
-                    endOffset:      document.offsetAt(d.range.end)
-                }));
+                const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
+                    if (this.detailedErrors) {
+                        return {
+                            message:        d.message,
+                            severity:       d.severity,
+                            startOffset:    document.offsetAt(d.range.start),
+                            endOffset:      document.offsetAt(d.range.end)
+                        };
+                    } else {
+                        if (d.data !== undefined && d.data.sentenceRange !== undefined) {
+                            // Compute line-long start and end positions
+                            const newStart = new Position(
+                                d.data.sentenceRange.start.line,
+                                d.data.sentenceRange.start.character
+                            );
+                            const newEnd = new Position(
+                                d.data.sentenceRange.end.line,
+                                d.data.sentenceRange.end.character
+                            );
+                            return {
+                                message:        d.message,
+                                severity:       d.severity,
+                                startOffset:    document.offsetAt(newStart),
+                                endOffset:      document.offsetAt(newEnd)
+                            };
+                        } else {
+                            return {
+                                message:        d.message,
+                                severity:       d.severity,
+                                startOffset:    document.offsetAt(d.range.start),
+                                endOffset:      document.offsetAt(d.range.end)
+                            };
+                        }
+                    }
+                });
                 this.webviewManager!.postAndCacheMessage(document, {
                     type: MessageType.diagnostics,
                     body: {positionedDiagnostics, version: document.version}

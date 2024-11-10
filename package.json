@@ -220,10 +220,7 @@
             "id": "download-installer-mac",
             "when": "isMac && !hasRemoteServer",
             "title": "Downloading the Installer",
-            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
-            "completionEvents": [
-              "onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"
-            ],
+            "description": "Currently only a manual installation is available for Mac, please follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
             "media": {
               "markdown": "walkthrough-data/initial-setup/download-installer-mac.md"
             }

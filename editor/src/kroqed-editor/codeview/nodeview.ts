@@ -262,7 +262,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			severity: severityString,
 			actions
 		});
-			this.debouncer.call();
+		this.debouncer.call();
 	}
 
 	/**

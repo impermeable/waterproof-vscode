@@ -100,6 +100,10 @@ opam install coq-lsp.0.2.2+8.17
 opam install coq-waterproof
 ```
 
+If vscode cannot detect the installation, set the coq-lsp path to the output of `which coq-lsp`. This can be done
+using ctrl+shift+p and selecting "Waterproof: Change Waterproof path".
+Alternatively, make sure that the `PATH` available to vscode contains the coq-lsp binary.
+
 ## Manual Installation on Mac
 
 If the above method did not work for Mac, it is possible to instead install the dependencies manually using opam.

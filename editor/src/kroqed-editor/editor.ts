@@ -32,7 +32,7 @@ import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from 
 import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
 import { DiagnosticSeverity, ThemeIcon } from "vscode";
 import { OS } from "./osType";
-import { checkPrePost } from "./file-utils";
+import { checkPrePost, fixLessThanBug } from "./file-utils";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -132,7 +132,9 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = checkPrePost(content, (msg: Message) => {
+		let newContent = checkPrePost(fixLessThanBug(content, (msg: Message) => {
+			this.post(msg);
+		}), (msg: Message) => {
 			this.post(msg);
 		});
 		if (newContent !== content) version = version + 1;

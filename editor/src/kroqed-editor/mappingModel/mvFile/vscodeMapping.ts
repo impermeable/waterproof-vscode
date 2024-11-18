@@ -258,6 +258,7 @@ export class TextDocMappingMV {
     public static getNextHTMLtag(input: string): TagInformation { 
 
         // Find all html tags (this is necessary for the position and for invalid matches)
+        // TODO: This RegEx matches <5 in the editor, which causes the mapping to fail!
         let matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
 
         // Loop through all matches 

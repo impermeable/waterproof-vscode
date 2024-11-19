@@ -158,7 +158,20 @@ export class VersionChecker {
      */
     private informWaterproofLibNotFound() {
         const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.`;
-        window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        this.installationPopUp(message,this.handleDownloadInstaller)
+        //window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+    }
+
+    private installationPopUp(message: string, handler: any) {
+        const platform = getPlatformHelper();
+        if (platform == "windows") {
+            console.log("AUTO")
+            window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(handler);
+        } else {
+            console.log("NOT AUTO")
+            console.log(handler)
+            window.showInformationMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(handler);
+        }
     }
 
     /**
@@ -171,7 +184,8 @@ export class VersionChecker {
         const platform = getPlatformHelper();
         if (platform === "macos" || platform == "windows") {
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to download a new installer.`;
-            window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            //window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            this.installationPopUp(message,this.handleDownloadInstaller)
         } else {
             // We have no installer for other platforms, so we supply the user with the readme.
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to open instructions on how to update.`;
@@ -189,6 +203,7 @@ export class VersionChecker {
      */
     private handleDownloadInstaller(value: typeof AUTO_INSTALL | typeof DOWNLOAD_INSTALLER | undefined) {
         if (value === DOWNLOAD_INSTALLER){
+            console.log("DOWNLOAD INSTALLER")
             env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
@@ -200,7 +215,8 @@ export class VersionChecker {
      */
     private informWaterproofPathInvalid() {
         const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nTry running the automatic installer, or for more information on how to make the waterproof extension work see the installation instructions.";
-        window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+        this.installationPopUp(message,this.handleInvalidPath)
+        //window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
     }
 
     /**
@@ -208,11 +224,11 @@ export class VersionChecker {
      * @param value -
      */
     private handleInvalidPath(value: typeof AUTO_INSTALL | typeof OPEN_INSTRUCTIONS | undefined) {
+        console.log("Invalid Path Handler")
         if (value == OPEN_INSTRUCTIONS) {
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
-
         } 
     }
 }

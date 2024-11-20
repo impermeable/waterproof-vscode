@@ -25,14 +25,16 @@ export function checkPrePost(content: string, post: (Message) => void): string {
 // TODO: Temporary fix for the bug that "<z" turns into an html tag.
 export function fixLessThanBug(content: string, post: (Message) => void): string {
     const regexp = /<(?!input-area|hint|br|hr)([\w\d]+)/g;
-    const matches = content.matchAll(regexp);
+    const matches = content.matchAll(regexp).toArray().toSorted((a, b) => a.index - b.index);
     let newContent = content;
+    let counter = 0;
+    console.log(matches);
     for (const match of matches) {
         if (match.index === undefined) continue;
-        newContent = newContent.substring(0, match.index + 1) + " " + newContent.substring(match.index + 1);
-
-        let edit: DocChange = { startInFile: match.index+1, endInFile: match.index+1, finalText: " "};
+        newContent = newContent.substring(0, match.index + 1 + counter) + " " + newContent.substring(match.index + 1 + counter);
+        let edit: DocChange = { startInFile: match.index+1+counter, endInFile: match.index+1+counter, finalText: " "};
         post({type: MessageType.docChange, body: edit});
+        counter++;
     }
     return newContent;
 }

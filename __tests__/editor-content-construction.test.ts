@@ -110,6 +110,30 @@ test("TEMP: Leave <hr> in markdown untouched #2", () => {
     }]);
 });
 
+test("TEMP: Works with multiple < signs", () => {
+    const pm = new PostManager();
+
+    expect(fixLessThanBug("```coq\n10<z\n```<input-area>\n10<z\n</input-area>", (msg) => pm.post(msg))).toBe("```coq\n10< z\n```<input-area>\n10< z\n</input-area>");
+    expect(pm.storage).toStrictEqual<Array<Message>>([
+        {
+            type: MessageType.docChange,
+            body: {
+                startInFile: 10,
+                endInFile: 10,
+                finalText: " "
+            }
+        },
+        {
+            type: MessageType.docChange,
+            body: {
+                startInFile: 31 + 1,
+                endInFile: 31 + 1,
+                finalText: " "
+            }
+        }
+    ])
+});
+
 test("checkPrePost #1", () => {
     const pm = new PostManager();
     expect(checkPrePost("```coq\nLemma.\n```", (msg) => pm.post(msg))).toBe("\n```coq\nLemma.\n```\n");

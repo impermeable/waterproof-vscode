@@ -258,7 +258,7 @@ export class TextDocMappingMV {
     public static getNextHTMLtag(input: string): TagInformation {
 
         // Find all html tags (this is necessary for the position and for invalid matches)
-        let matches = Array.from(input.matchAll(/<(\/)?(input-area|coqblock|coqcode|markdown|math-display|hint)( [^>]*)?>/g));
+        let matches = Array.from(input.matchAll(/<(\/)?(input-area|coqblock|coqcode|markdown|math-display|hint|coqdoc|coqdown)( [^>]*)?>/g));
 
         // Loop through all matches 
         for (let match of matches) {

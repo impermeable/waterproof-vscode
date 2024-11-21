@@ -11,13 +11,17 @@ export class InputAreaBlock implements Block {
     public type = BLOCK_NAME.INPUT_AREA;
     public innerBlocks: Block[];
 
-    constructor( public stringContent: string, public range: BlockRange ) {
+    constructor( public stringContent: string, public range: BlockRange, public prePreWhite: string, public prePostWhite: string, public postPreWhite: string, public postPostWhite : string ) {
         this.innerBlocks = createInputAndHintInnerBlocks(stringContent);
     };
 
     toProseMirror() {
         const childNodes = this.innerBlocks.map(block => block.toProseMirror());
-        return inputArea(childNodes);
+        return inputArea(childNodes,
+            this.prePreWhite,
+            this.prePostWhite,
+            this.postPreWhite,
+            this.postPostWhite);
     }
 
     // Debug print function. // FIXME: Maybe remove?
@@ -33,14 +37,19 @@ export class HintBlock implements Block {
     public innerBlocks: Block[];
 
     // Note: Hint blocks have a title attribute.
-    constructor( public stringContent: string, public title: string, public range: BlockRange ) {
-        this.innerBlocks = createInputAndHintInnerBlocks(stringContent); 
+    constructor( public stringContent: string, public title: string, public prePreWhite: string, public prePostWhite: string, public postPreWhite: string, public postPostWhite : string, public range: BlockRange ) {
+        this.innerBlocks = createInputAndHintInnerBlocks(stringContent);
     };
 
     toProseMirror() {
         // We need to construct a hint node with a title and inner blocks.
         const childNodes = this.innerBlocks.map(block => block.toProseMirror());
-        return hint(this.title, childNodes);
+        return hint(this.title,
+            childNodes,
+            this.prePreWhite,
+            this.prePostWhite,
+            this.postPreWhite,
+            this.postPostWhite);
     }
 
     // Debug print function.

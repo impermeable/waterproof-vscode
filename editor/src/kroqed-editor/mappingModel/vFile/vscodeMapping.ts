@@ -4,6 +4,7 @@ import { getEndHtmlTagText, getStartHtmlTagText} from "./helper-functions";
 import { StringCell, HtmlTagInfo, ParsedStep} from "./types";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
+import { post } from "jquery";
 
 
 /**
@@ -46,14 +47,13 @@ export class TextDocMappingV {
 
     /** The different possible HTMLtags in kroqed-schema */
     private static HTMLtags: Set<string> = new Set<string>([
-        "markdown",
         "input-area",
-        "coqblock",
         "coqcode",
         "coqdoc",
         "math-display",
         "hint",
-        "coqdown",
+        "coqblock",
+        "coqdown"
     ]);
 
     /** 
@@ -130,8 +130,11 @@ export class TextDocMappingV {
         let inCoqdoc: boolean = false; 
 
         // Continue until the entire string has been parsed
+
         while(inputString.length > 0) { 
+
             const next: TagInformation = TextDocMappingV.getNextHTMLtag(inputString);
+
             let nextCell: StringCell | undefined = undefined;
             
             /** The number of characters the tag `next` takes up in the raw vscode doc. */
@@ -150,7 +153,15 @@ export class TextDocMappingV {
             } else { // Otherwise `next` opens a block
                 stack.push({ tag: next.content, offsetPost: next.postNumber}); // Push new tag to stack
                 // Add text offset based on tag
-                if (next.content == "hint") textCost += inputString.slice(next.start, next.end).length;
+                if (next.content == "hint") {
+                    // We check for the post whiteline after the first coqblock tag
+                    console.log(inputString)
+                    let test = inputString.slice(next.start, next.end)
+                    console.log(test)
+                    let postPreWhiteMatch = Array.from(test.matchAll(/title=(\w*)/g))[0]
+                    console.log(postPreWhiteMatch)
+                    textCost += postPreWhiteMatch[1].length + 19; // Take care of the fact that it is (* begin hint : *)
+                }
                 else textCost += getStartHtmlTagText(next.content).length;
 
                 textCost += next.preNumber;
@@ -169,20 +180,22 @@ export class TextDocMappingV {
 
             // Add end information of this tag to mapping
             this.endHtmlMap.set(offsetProse,{ offsetText: offsetText, offsetProse: offsetProse, textCost: textCost});
-
+            
             // Check if the nextCell should be pushed
             switch(next.content) {
-                case "coqcode": 
-                case "math-display": case "coqdown":
+                case "coqdown": case "coqcode": 
+                case "math-display": 
                     // If the nextcell is set, push it to mapping
                     if(!(nextCell === undefined)) this.stringBlocks.set(nextCell.startProse, nextCell);
                     break;
             }
-            
+
             // Update the input string and cut off the processed text
             inputString = inputString.slice(next.end);
-            
+
         }
+
+        console.log(this.startHtmlMap)
         this.updateInvMapping();
     }
 
@@ -254,6 +267,7 @@ export class TextDocMappingV {
      */
     public static getNextHTMLtag(input: string): TagInformation { 
 
+
         // Find all html tags (this is necessary for the position and for invalid matches)
         let matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
 
@@ -272,6 +286,7 @@ export class TextDocMappingV {
                     throw new Error("Index cannot be null");
                 }
 
+                console.log(match)
                 // Compute the end position of the tag
                 let end = start + length;
 
@@ -334,6 +349,7 @@ export class TextDocMappingV {
                     // For coqdoc we repeat the same process
                     } else if ((match[2] === "coqdoc") && match[1] == undefined){
 
+
                         // Get the matches regarding whitespace
                         let whiteSpaceMatch = match[3]
 
@@ -342,15 +358,16 @@ export class TextDocMappingV {
                         let postNum = 0
 
                         // Pre coqdoc newline
-                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/preWhite="(\w*?)"/g))[0]
+                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite=\"(\w*?)\"/g))[0]
                         if (preWhiteMatch != null) {
                             if (preWhiteMatch[1] === "newLine") {
                                 preNum++;
                             }
                         }
 
+                        
                         // Post coqdoc newline
-                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postWhite="(\w*?)"/g))[0]
+                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite=\"(\w*?)\"/g))[0]
                         if (postWhiteMatch != null) {
                             if (postWhiteMatch[1] === "newLine") {
                                 postNum++;
@@ -358,9 +375,112 @@ export class TextDocMappingV {
                         } 
 
                         // Return the result
-                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}            
-                    } else  {
-                        
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}       
+                    } else if ((match[2] === "hint") && match[1] == undefined){
+
+                       // Get the matches regarding whitespace
+                       let whiteSpaceMatch = match[3]
+
+                       // Helper variables
+                       let preNum = 0
+                       let postNum = 0
+
+                       // We check for the pre whiteline in front of the first coqblock tag
+                       let prePreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite="(\w*?)"/g))[0]
+                       if (prePreWhiteMatch != null) {
+
+                           // If there is a newline tage we include this in preNum
+                           if (prePreWhiteMatch[1] === "newLine") {
+                               preNum++;
+                           }
+                       }
+
+                       // We check for the post whiteline after the first coqblock tag
+                       let postPreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePostWhite="(\w*?)"/g))[0]
+                       if (postPreWhiteMatch != null) {
+
+                           // If there is a newline tage we include this in preNum
+                           if (postPreWhiteMatch[1] === "newLine") {
+                               preNum++;
+                           }
+                       }   
+
+                       // We check for the pre whiteline in front of the closing coqblock tag
+                       let prePostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPreWhite="(\w*?)"/g))[0]
+                       if (prePostWhiteMatch != null) {
+
+                           // If there is a newline tage we include this in postNum
+                           if (prePostWhiteMatch[1] === "newLine") {
+                               postNum++;
+                           }
+                       }
+
+                       // We check for the post whiteline after the closing coqblock tag
+                       let postPostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite="(\w*?)"/g))[0]
+                       if (postPostWhiteMatch != null) {
+
+                           // If there is a newline tage we include this in postNum
+                           if (postPostWhiteMatch[1] === "newLine") {
+                               postNum++;
+                           }
+                       }
+
+                       //return the resulting object
+                       return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}          
+                    } else if (match[2] === "input-area" && match[1] == undefined) {
+
+                        // Get the matches regarding whitespace
+                        let whiteSpaceMatch = match[3]
+
+                        // Helper variables
+                        let preNum = 0
+                        let postNum = 0
+
+                        // We check for the pre whiteline in front of the first coqblock tag
+                        let prePreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite="(\w*?)"/g))[0]
+
+                        if (prePreWhiteMatch != null) {
+
+                            // If there is a newline tage we include this in preNum
+                            if (prePreWhiteMatch[1] === "newLine") {
+                                preNum++;
+                            }
+                        }
+
+                        // We check for the post whiteline after the first coqblock tag
+                        let postPreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePostWhite="(\w*?)"/g))[0]
+                        if (postPreWhiteMatch != null) {
+
+                            // If there is a newline tage we include this in preNum
+                            if (postPreWhiteMatch[1] === "newLine") {
+                                preNum++;
+                            }
+                        }   
+
+                        // We check for the pre whiteline in front of the closing coqblock tag
+                        let prePostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPreWhite="(\w*?)"/g))[0]
+                        if (prePostWhiteMatch != null) {
+
+                            // If there is a newline tage we include this in postNum
+                            if (prePostWhiteMatch[1] === "newLine") {
+                                postNum++;
+                            }
+                        }
+
+                        // We check for the post whiteline after the closing coqblock tag
+                        let postPostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite="(\w*?)"/g))[0]
+                        if (postPostWhiteMatch != null) {
+
+                            // If there is a newline tage we include this in postNum
+                            if (postPostWhiteMatch[1] === "newLine") {
+                                postNum++;
+                            }
+                        }
+
+                        //return the resulting object
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}   
+                     } else {
+
                         return {start: start, end: end, content: match[2], preNumber: 0, postNumber: 0}
                     }
                     

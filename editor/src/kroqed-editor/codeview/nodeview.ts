@@ -232,7 +232,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				apply: (view: CodeMirror, from: number, to: number) => {
 					navigator.clipboard.writeText(diag.message);
 					diag.copied = true;
-					this.updateDiagnostics(from, to, message, true);
+					this.updateDiagnostics(from, to, diag.message, true);
            		}
 			}];
 			if (diag.from === from && diag.to === to) {

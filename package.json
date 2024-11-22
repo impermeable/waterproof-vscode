@@ -33,9 +33,7 @@
     "url": "https://github.com/impermeable/waterproof-vscode"
   },
   "activationEvents": [
-    "onCommand:waterproof.start",
     "onCommand:waterproof.toggle",
-    "onCommand:waterproof.newWaterproofDocument",
     "onLanguage:coq",
     "onLanguage:coqmarkdown"
   ],

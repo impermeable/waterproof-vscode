@@ -60,6 +60,7 @@ export function Symbols() {
     const mathButtons = generateButtons(2);
     const arrowButtons = generateButtons(3);
     const numberButtons = generateButtons(4);
+    const supSubButtons = generateButtons(5);
 
     return (
         <div className="info-panel-container">
@@ -100,6 +101,14 @@ export function Symbols() {
             </div>
             <div>
                 {numberButtons}
+            </div>
+            <VSCodeDivider />
+            {/* And the superscript and subscript buttons */}
+            <div id="view-6">
+                <p>Superscript and Subscript</p>
+            </div>
+            <div>
+                {supSubButtons}
             </div>
         </div>
     );

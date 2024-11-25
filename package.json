@@ -2,7 +2,7 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.16",
+  "version": "0.9.17",
   "requiredCoqLspVersion": "==0.2.2",
   "requiredCoqWaterproofVersion": "==2.2.0",
   "contributors": [
@@ -40,7 +40,7 @@
     "onLanguage:coqmarkdown"
   ],
   "contributes": {
-        "themes": [
+    "themes": [
       {
         "label": "Waterproof light theme",
         "uiTheme": "vs",
@@ -180,8 +180,7 @@
             "id": "install-dependencies",
             "title": "Run Automatic Installer",
             "description": "Waterproof needs additional software to function.\n[Run Automatic Installer](command:waterproof.autoInstall)",
-            "completionEvents": [
-            ],
+            "completionEvents": [],
             "media": {
               "markdown": "walkthrough-data/initial-setup/auto-installer.md"
             }

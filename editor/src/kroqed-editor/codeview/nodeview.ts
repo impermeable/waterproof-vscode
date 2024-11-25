@@ -46,7 +46,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
 		this._diags = [];
-		
+
 		// Shadow this._outerView for use in the next function.
 		const outerView = this._outerView;
 
@@ -64,7 +64,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				// the placeholder to `(* Type your proof here *)` and apply
 				// the appropriate styling.
 				div.innerText = "(* Type your proof here *)";
-				// The styling of this class is 
+				// The styling of this class is
 				// defined in `editor/src/kroqed-editor/styles/input-area.css`.
 				div.classList.add("empty-proof-placeholder");
 			} else {
@@ -79,29 +79,25 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
-				// Add the linting extension for showing diagnostics (errors, warnings, etc) 
+				// Add the linting extension for showing diagnostics (errors, warnings, etc)
 				linter(this.lintingFunction),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 
 				autocompletion({
 					override: [
-						tacticCompletionSource, 
-						this.dynamicCompletionSource, 
-						symbolCompletionSource, 
+						tacticCompletionSource,
+						this.dynamicCompletionSource,
+						symbolCompletionSource,
 						coqCompletionSource
-					], 
+					],
 					icons: false,
 					addToOptions: [renderIcon],
 					defaultKeymap: false,
-					
-					
-			
 				}),
 				cmKeymap.of([
 				...completionKeymap,
 						...this.embeddedCodeMirrorKeymap()
-					
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),
@@ -114,7 +110,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			// We override the dispatch field to filter the transactions in the CodeMirror cells.
 			// We explicitly **allow** selection changes, so that students can select (and copy) non-input area code.
 			dispatch(tr, view) {
-				// TODO: deprecated according to reference manual https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch 
+				// TODO: deprecated according to reference manual https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch
 				if (!tr.docChanged) {
 					view.update([tr]);
 				} else {
@@ -126,7 +122,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 						// allow this transaction to update the view.
 						return;
 					}
-					
+
 					if (locked) {
 						// in student mode.
 						const pos = getPos();
@@ -229,22 +225,44 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * @param severity The severity attached to this error.
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
-		this._diags.push({
-			from, to, 
-			message, 
-			severity: severityToString(severity),
-			actions: [{
-				name: "Copy 📋", 
-				apply(view: EditorView, from: number, to: number) {
+		const severityString = severityToString(severity);
+
+		// For now populate the actions using the standard Copy message.
+		const actions = [
+			{
+				name: "Copy 📋",
+				apply(view: CodeMirror, from: number, to: number) {
 					navigator.clipboard.writeText(message);
 				}
-			}]
+			},
+			{
+				name: "Insert ↓",
+				apply(view, from, to) {
+					const textAtErrorLine = view.state.doc.lineAt(from).text;
+					const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
+					const toInsert = "\n".concat(idents, message);
+					view.dispatch({
+						changes: {
+							from: to, to,
+							insert: toInsert
+						},
+						selection: {anchor: to + toInsert.length}
+					});
+				},
+			}
+		];
+
+		this._diags.push({
+			from, to,
+			message,
+			severity: severityString,
+			actions
 		});
-		this.debouncer.call();		
+		this.debouncer.call();
 	}
 
 	/**
-	 * Helper function that forces the linter function to run. 
+	 * Helper function that forces the linter function to run.
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
 	private forceUpdateLinting() {
@@ -264,15 +282,15 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 const severityToString = (sv: number) => {
 	switch (sv) {
-		case 0: 
+		case 0:
 			return "error";
-		case 1: 
+		case 1:
 			return "warning";
-		case 2: 
+		case 2:
 			return "info";
-		case 3: 
+		case 3:
 			return "hint";
-		default: 
+		default:
 			return "error";
 	}
 }

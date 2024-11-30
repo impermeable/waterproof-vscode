@@ -4,7 +4,7 @@ import { EditorState, Transaction } from "prosemirror-state";
 /**
  * Enum for the insertion place, can be either `Above` or `Underneath` the currently selected cell.
  */
-export enum InsertionPlace {
+export const enum InsertionPlace {
     Above, 
     Underneath,
 }

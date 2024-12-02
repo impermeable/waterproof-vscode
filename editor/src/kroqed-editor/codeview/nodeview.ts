@@ -227,12 +227,12 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 public addCoqError(from: number, to: number, message: string, severity: number) {
 	const severityString = severityToString(severity);
 	
-
+	const messageAndSeverity = message ;
 	// Add the new diagnostic to _diags 
 	this._diags.push({
 		from:from,
 		to:to,
-		message:message,
+		message:messageAndSeverity,
 		copied: false,
 		severity: severityString,
 		actions:[]
@@ -246,7 +246,7 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 	const diagCopy = this._diags.slice();
 	const copiedDiags = [];
 	this.clearCoqErrors();
-	let toggle = false;
+	let toggle = true;
 	for (const diag of diagCopy) {
 		let copyMessage = '';
 		if (diag.message === message && wasCopied) {
@@ -302,7 +302,7 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 							}
 						});
 					}
-					toggle = !toggle; // Toggle the flag for the next warning
+					//toggle = !toggle; // Toggle the flag for the next warning
 				}
 			} else {
 				actions.push({
@@ -316,7 +316,8 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 							},
 							selection: { anchor: from }
 						});
-						this.forceUpdateLinting();						}
+						this.forceUpdateLinting();							
+					}
 				});
 			}
 

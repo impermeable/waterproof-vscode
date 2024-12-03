@@ -87,6 +87,38 @@ function GoalsList({
     </Box>
   );
 }
+
+function GoalsRemaining({
+  goals,
+  header,
+  show_on_empty,
+  bullet_msg,
+  pos,
+  textDoc
+}: GoalsListP) {
+  let count = goals.length;
+
+  //if there are no goals then this is displayed
+  if (count == 0) {
+    if (show_on_empty) {
+      return (
+        <Box summary="Proof finished" pos={pos} textDox={textDoc}>{bullet_msg ? (
+          <div className="aside">
+            <CoqPp content={bullet_msg} inline={true} />
+          </div>
+        ) : null}</Box>
+      );
+    } else {
+      return null;
+    }
+  }
+
+  //if thare are goals then this maps over the goals and display them by using the Goal component
+  return (
+    <Box summary={`${header}`} pos={pos} textDox={textDoc}>
+    </Box>
+  );
+}
 //type that has an id, position, document, and the stacked goal that also takes its parents
 type StackSummaryP = PropsWithChildren<{
   idx: number;
@@ -107,23 +139,35 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
   let level_indicator =
     idx === 0 ? "the same bullet level" : `the -${idx} bullet level`;
 
-  return (
-    <div>
-      {/* uses GoalsList to show the goals as a list within a stack */}
-      <GoalsList
-        goals={goals}
-        header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
-        show_on_empty={false}
-        pos={pos}
-        textDoc={textDoc}
-      />
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* recursively calls itself to get the different level of goals */}
-        <StackGoals idx={idx + 1} stack={stack} pos={pos} textDoc={textDoc} />
+  console.log(idx)
+  if (idx == 0) {
+    return (
+      <div>
+        {/* uses GoalsList to show the goals as a list within a stack */}
+        <GoalsRemaining
+          goals={goals}
+          header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
+          show_on_empty={false}
+          pos={pos}
+          textDoc={textDoc}
+        />
       </div>
-    </div>
-  );
-}
+    );
+  } else {
+    return (
+      <div>
+        {/* uses GoalsList to show the goals as a list within a stack */}
+        <GoalsRemaining
+          goals={goals}
+          header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
+          show_on_empty={false}
+          pos={pos}
+          textDoc={textDoc}
+        />
+      </div>  
+    )
+    }
+  }
 //type that has goals, position and textdocument and takes its children 
 type GoalsParams = PropsWithChildren<{ goals?: GoalConfig<PpString>, pos: Position, textDoc: VersionedTextDocumentIdentifier }>;
 
@@ -136,6 +180,8 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
       No goals at this point.
     </Box>
   }
+  console.log("test")
+  console.log(goals)
 
   return (
     <div className="goal-panel">

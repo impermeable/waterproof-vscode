@@ -1,4 +1,4 @@
-import { indentWithTab } from "@codemirror/commands"
+import { indentMore, indentLess } from "@codemirror/commands"
 import {
 	EditorView as CodeMirror, ViewUpdate, keymap as cmKeymap,
 	placeholder
@@ -10,7 +10,7 @@ import { Decoration, EditorView } from "prosemirror-view"
 import { SwitchableView } from "./SwitchableView"
 import { editorTheme } from "./EditorTheme"
 import { renderIcon, symbolCompletionSource } from "../../autocomplete"
-import { autocompletion } from "@codemirror/autocomplete"
+import { autocompletion, acceptCompletion } from "@codemirror/autocomplete"
 import { EmbeddedCodeMirrorEditor } from "../../embedded-codemirror"
 
 /**
@@ -18,6 +18,7 @@ import { EmbeddedCodeMirrorEditor } from "../../embedded-codemirror"
  * Corresponds with the example as can be found here:
  * https://prosemirror.net/examples/codemirror/
  */
+
 export class EditableView extends EmbeddedCodeMirrorEditor {
     public view: CodeMirror;
 	private _parent: SwitchableView;
@@ -43,7 +44,6 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 			doc: this._node.textContent,
 			extensions: [
 				cmKeymap.of([
-					indentWithTab,
 					...this.embeddedCodeMirrorKeymap(),
 				]),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),

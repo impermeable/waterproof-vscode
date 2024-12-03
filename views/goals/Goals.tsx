@@ -25,10 +25,6 @@ function Goal({ goal }: GoalP) {
     if (ref.current) {
       FormatPrettyPrint.adjustBreaks($(ref.current));
     }
-    // See Pfff.v:17160 for tests.
-    if (tyRef.current) {
-      tyRef.current.scrollIntoView();
-    }
   });
 
   return (

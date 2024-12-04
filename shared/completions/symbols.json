@@ -375,7 +375,7 @@
         "label": "\\leq",
         "type": "symbol",
         "apply": "≤",
-        "symbolPanelCategory": 5
+        "symbolPanelCategory": 99
     },
     {
         "label": "\\greater-or-equal",
@@ -387,7 +387,7 @@
         "label": "\\geq",
         "type": "symbol",
         "apply": "≥",
-        "symbolPanelCategory": 5
+        "symbolPanelCategory": 99
     },
     {
         "label": "\\not-equal",
@@ -399,7 +399,7 @@
         "label": "\\neq",
         "type": "symbol",
         "apply": "≠",
-        "symbolPanelCategory": 5
+        "symbolPanelCategory": 99
     },
     {
         "label": "\\not",
@@ -441,7 +441,7 @@
         "label": "\\to",
         "type": "symbol",
         "apply": "→",
-        "symbolPanelCategory": 5
+        "symbolPanelCategory": 99
     },
     {
         "label": "\\arrow-down",
@@ -532,5 +532,125 @@
         "type": "symbol",
         "apply": "°",
         "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\^1",
+        "type": "symbol",
+        "apply": "¹",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^2",
+        "type": "symbol",
+        "apply": "²",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^3",
+        "type": "symbol",
+        "apply": "³",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^4",
+        "type": "symbol",
+        "apply": "⁴",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^5",
+        "type": "symbol",
+        "apply": "⁵",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^6",
+        "type": "symbol",
+        "apply": "⁶",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^7",
+        "type": "symbol",
+        "apply": "⁷",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^8",
+        "type": "symbol",
+        "apply": "⁸",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^9",
+        "type": "symbol",
+        "apply": "⁹",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^0",
+        "type": "symbol",
+        "apply": "⁰",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_1",
+        "type": "symbol",
+        "apply": "₁",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_2",
+        "type": "symbol",
+        "apply": "₂",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_3",
+        "type": "symbol",
+        "apply": "₃",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_4",
+        "type": "symbol",
+        "apply": "₄",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_5",
+        "type": "symbol",
+        "apply": "₅",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_6",
+        "type": "symbol",
+        "apply": "₆",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_7",
+        "type": "symbol",
+        "apply": "₇",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_8",
+        "type": "symbol",
+        "apply": "₈",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_9",
+        "type": "symbol",
+        "apply": "₉",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_0",
+        "type": "symbol",
+        "apply": "₀",
+        "symbolPanelCategory": 5
     }
 ]

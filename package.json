@@ -492,7 +492,7 @@
     "@codemirror/autocomplete": "6.18.1",
     "@codemirror/commands": "6.6.2",
     "@codemirror/language": "6.10.3",
-    "@codemirror/lint": "6.8.2",
+    "@codemirror/lint": "^6.8.4",
     "@codemirror/view": "6.27.0",
     "@lezer/highlight": "1.2.1",
     "@lezer/lr": "1.4.2",
@@ -522,7 +522,7 @@
     "vscode-languageclient": "8.1.0",
     "vscode-languageserver-types": "3.17.5"
   },
-  "dependenciesComments" : {
+  "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"
   },
   "main": "./out/src/mainNode.js",

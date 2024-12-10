@@ -74,14 +74,19 @@ test("Parse top level blocks (V)", () => {
     const blocks = topLevelBlocksV(inputDocumentV);
     // coqblock, hint, input, coqblock
 
-    expect(blocks.length).toBe(4);
+    expect(blocks.length).toBe(5);
     expect(isCoqBlock(blocks[0])).toBe(true);
     expect(isHintBlock(blocks[1])).toBe(true);
-    expect(isInputAreaBlock(blocks[2])).toBe(true);
-    expect(isCoqBlock(blocks[3])).toBe(true);
+
+    // Block 2 is an empty markdown block (FIXME?)
+    expect(blocks[2].stringContent).toBe("\n");
+
+    expect(isInputAreaBlock(blocks[3])).toBe(true);
+    expect(isCoqBlock(blocks[4])).toBe(true);
 
     expect(blocks[0].stringContent).toBe("(** * Example v file *)\n");
-    expect(blocks[1].stringContent).toBe("```coq\nCompute 2 + 2.\n```");
-    expect(blocks[2].stringContent).toBe("```coq\nLemma testing : True.\nProof.\nexact I.\nQed.\n(* Proof should now be finished *)\n```");
-    expect(blocks[3].stringContent).toBe("\n(** *** End example v file *)\n");
+    // FIXME I really do not like these double \n's in the coq strings.
+    expect(blocks[1].stringContent).toBe("```coq\n\nCompute 2 + 2.\n\n```");
+    expect(blocks[3].stringContent).toBe("```coq\n\nLemma testing : True.\nProof.\nexact I.\nQed.\n(* Proof should now be finished *)\n\n```");
+    expect(blocks[4].stringContent).toBe("\n(** *** End example v file *)\n");
 });

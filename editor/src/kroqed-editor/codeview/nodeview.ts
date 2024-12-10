@@ -257,6 +257,7 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 		const actions = [{
 			name: copyMessage,
 			apply: (view: CodeMirror, from: number, to: number) => {
+				this._codemirror.focus();
 				navigator.clipboard.writeText(diag.message);
 				diag.copied = true;
 				this.updateDiagnostics(from, to, diag.message, true);
@@ -268,6 +269,7 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 				actions.push({
 					name: "Insert ↓",
 					apply:(view: CodeMirror, from: number, to: number) => {
+						this._codemirror.focus();
 						const textAtErrorLine = view.state.doc.lineAt(from).text;
 						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
 						const toInsert = "\n".concat(idents, diag.message);
@@ -287,6 +289,7 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 						actions.push({
 							name: "Replace",
 							apply:(view: CodeMirror, from: number, to: number) => {
+								this._codemirror.focus();
 								const textAtErrorLine = view.state.doc.lineAt(from).text;
 								const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
 								const toInsert = idents + diag.message;
@@ -296,8 +299,8 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 										to:to,
 										insert: toInsert
 									},
-									selection: { anchor: from + toInsert.length}
 								});
+								selection: { anchor: from + toInsert.length };
 								this.forceUpdateLinting();
 							}
 						});
@@ -305,20 +308,20 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 					//toggle = !toggle; // Toggle the flag for the next warning
 				}
 			} else {
-				actions.push({
-					name: "Remove",
-					apply:(view: CodeMirror, from: number, to: number) => {
-						view.dispatch({
-							changes: {
-								from: from,
-								to: to,
-								insert: ''
-							},
-							selection: { anchor: from }
-						});
-						this.forceUpdateLinting();							
-					}
-				});
+				// actions.push({
+				// 	name: "Remove",
+				// 	apply:(view: CodeMirror, from: number, to: number) => {
+				// 		view.dispatch({
+				// 			changes: {
+				// 				from: from,
+				// 				to: to,
+				// 				insert: ''
+				// 			},
+				// 			selection: { anchor: from }
+				// 		});
+				// 		this.forceUpdateLinting();							
+				// 	}
+				// });
 			}
 
 			this._diags.push({

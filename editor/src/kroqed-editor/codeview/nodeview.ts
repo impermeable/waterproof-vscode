@@ -272,7 +272,8 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 						this._codemirror.focus();
 						const textAtErrorLine = view.state.doc.lineAt(from).text;
 						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
-						const toInsert = "\n".concat(idents, diag.message);
+						const trimmedMessage = diag.message.trim();
+						const toInsert = "\n".concat(idents, trimmedMessage);
 						view.dispatch({
 							changes: {
 								from: to, to,
@@ -292,7 +293,8 @@ private updateDiagnostics(from:number, to:number, message:string, wasCopied:bool
 								this._codemirror.focus();
 								const textAtErrorLine = view.state.doc.lineAt(from).text;
 								const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
-								const toInsert = idents + diag.message;
+								const trimmedMessage = diag.message.trim();
+								const toInsert = idents + trimmedMessage;
 								view.dispatch({
 									changes: {
 										from:from,

@@ -217,7 +217,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		});
 	};
 
-	/**
+/**
 	 * Add a new coq error to this view
 	 * @param from The from position of the error.
 	 * @param to The to postion of the error (should be larger than `from`).
@@ -226,38 +226,110 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
 		const severityString = severityToString(severity);
-
-		// For now populate the actions using the standard Copy message.
-		const actions = [
-			{
-				name: "Copy 📋",
-				apply(view: CodeMirror, from: number, to: number) {
-					navigator.clipboard.writeText(message);
-				}
-			},
-			{
-				name: "Insert ↓",
-				apply(view, from, to) {
-					const textAtErrorLine = view.state.doc.lineAt(from).text;
-					const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
-					const toInsert = "\n".concat(idents, message);
-					view.dispatch({
-						changes: {
-							from: to, to,
-							insert: toInsert
-						},
-						selection: {anchor: to + toInsert.length}
-					});
-				},
-			}
-		];
-
+		
+		const messageAndSeverity = message ;
+    	// Push the new diagnostic to the diagnostics array
 		this._diags.push({
-			from, to,
-			message,
+			from:from,
+			to:to,
+			message:messageAndSeverity,
+			copied: false,
 			severity: severityString,
-			actions
+			actions:[]
 		});
+		// Update the diagnostics display and actions.
+		this.updateDiagnostics(from, to, message, false);
+	}
+
+	private updateDiagnostics(from:number, to:number, message:string, wasCopied:boolean) {
+		const noterrors = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity !== "error");
+		const errors = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity === "error");
+		const diagCopy = this._diags.slice();
+		const copiedDiags = [];
+		this.clearCoqErrors();
+		for (const diag of diagCopy) {
+			let copyMessage = '';
+			if (diag.message === message && wasCopied) {
+				copyMessage = "✓ Copied!";
+			} else {
+				copyMessage = "Copy 📋";
+			}
+			const actions = [{
+				name: copyMessage,
+				apply: (view: CodeMirror, from: number, to: number) => {
+					// give focus to this current codeblock instante to ensure it updates
+					this._codemirror.focus();
+					navigator.clipboard.writeText(diag.message);
+					diag.copied = true;
+					this.updateDiagnostics(from, to, diag.message, true);
+				}
+			}];
+			if (diag.from === from && diag.to === to) {
+				if (noterrors.length > 0 && errors.length === 0) {
+					// Case 1: No errors in this line
+					actions.push({
+						name: "Insert ↓",
+						apply:(view: CodeMirror, from: number, to: number) => {
+							// give focus to this current codeblock instante to ensure it updates
+							this._codemirror.focus();
+							const textAtErrorLine = view.state.doc.lineAt(from).text;
+							const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
+							const trimmedMessage = diag.message.trim();
+							const toInsert = "\n".concat(idents, trimmedMessage);
+							view.dispatch({
+								changes: {
+									from: to, to,
+									insert: toInsert
+								},
+								selection: {anchor: to + toInsert.length}
+							});
+						}
+					});
+				} else if (noterrors.length > 0 && errors.length > 0) {
+					if (diag.severity !== "error") {
+						// There are errors present in this line
+						actions.push({
+							name: "Replace",
+							apply:(view: CodeMirror, from: number, to: number) => {
+								// give focus to this current codeblock instante to ensure it updates
+								this._codemirror.focus();
+								const textAtErrorLine = view.state.doc.lineAt(from).text;
+								const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
+								const trimmedMessage = diag.message.trim();
+								const toInsert = idents + trimmedMessage;
+								view.dispatch({
+									changes: {
+										from:from,
+										to:to,
+										insert: toInsert
+									},
+								});
+								selection: { anchor: from + toInsert.length };
+								this.forceUpdateLinting();
+							}
+						});
+					}
+				}
+				this._diags.push({
+					from: diag.from,
+					to: diag.to,
+					message: diag.message,
+					severity: diag.severity,
+					copied: diag.copied,
+					actions
+				});	
+			} else {
+				this._diags.push({
+					from: diag.from,
+					to: diag.to,
+					message: diag.message,
+					severity: diag.severity,
+					copied: diag.copied,
+					actions: diag.actions
+				});
+			}		
+		}
+		// Trigger the linter update to refresh diagnostics display
 		this.debouncer.call();
 	}
 

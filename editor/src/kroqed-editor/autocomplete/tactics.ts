@@ -44,15 +44,18 @@ class TacticCompletion {
     return new Promise((resolve, reject) => {
         let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
         let period = /\./gm //Regex expression to search entire line for period
-        let contextline = context.state.doc.lineAt(context.pos).text // line at the completetion context
+        // Get the line containing the cursor position
+        const line = context.state.doc.lineAt(context.pos);
+        // Extract the text from the start of the line to the cursor position
+        const lineBeforeCursor = line.text.slice(0, context.pos - line.from);
 
-        if ((!context.explicit && !before) || period.test(contextline)) resolve(null);
+        if ((!context.explicit && !before) || period.test(lineBeforeCursor)) resolve(null);
         resolve({
           from: before ? line.from : context.pos,
           // non-null assertion operator "!" used to remove 'possibly null' error
           options: TacticCompletion.instance!.tacticCompletions,
           validFor: /^[\t]*[^\.]*/gm
-    })
+        })
     });
 }
 }

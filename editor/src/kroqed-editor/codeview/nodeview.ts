@@ -94,14 +94,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					icons: false,
 					addToOptions: [renderIcon],
 					defaultKeymap: false,
-
-
-
 				}),
 				cmKeymap.of([
 				...completionKeymap,
 						...this.embeddedCodeMirrorKeymap()
-
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),

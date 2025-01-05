@@ -40,25 +40,57 @@ class TacticCompletion {
     return this.instance;
   }
 
-  public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
-    return new Promise((resolve, reject) => {
-        let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
-        let period = /\./gm //Regex expression to search entire line for period
-        // Get the line containing the cursor position
-        const line = context.state.doc.lineAt(context.pos);
-        // Extract the text from the start of the line to the cursor position
-        const lineBeforeCursor = line.text.slice(0, context.pos - line.from);
 
-        if ((!context.explicit && !before) || period.test(lineBeforeCursor)) resolve(null);
-        resolve({
-          from: before ? line.from : context.pos,
-          // non-null assertion operator "!" used to remove 'possibly null' error
-          options: TacticCompletion.instance!.tacticCompletions,
-          validFor: /^[\t]*[^\.]*/gm
-        })
-    });
+public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
+  return new Promise((resolve, reject) => {
+      let Beforecontext = this.state.doc
+      let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
+      let period = /\./gm //Regex expression to search entire line for period
+      // Get the line containing the cursor position
+      const line = context.state.doc.lineAt(context.pos);
+      const firstletter = line.text.match(/[a-zA-Z]/);
+
+      // Extract the text from the start of the line to the cursor position
+      const lineBeforeCursor = line.text.slice(0, context.pos - line.from);
+      
+      if ((!context.explicit && !before) || period.test(lineBeforeCursor)) resolve(null);
+      resolve({
+        from: firstletter ? line.from + firstletter.index!: context.pos,
+        // non-null assertion operator "!" used to remove 'possibly null' error
+        options: TacticCompletion.instance!.tacticCompletions,
+        validFor: /^[\t]*[^\.]*/gm
+      })
+  });
 }
 }
+
+/*
+public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
+  return new Promise((resolve, reject) => {
+      //let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*//*gm);
+      let completionRegex = /([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*//*gm
+      let Tokenbefore = context.tokenBefore(['string']);
+
+      // Check if Tokenbefore is null
+      if (!Tokenbefore) {
+        resolve(null); // No valid token before, no suggestions
+        return;
+    }
+
+      let before = completionRegex.test(Tokenbefore.text);
+      let period = /\./gm //Regex expression to search entire line for period
+
+      if ((!context.explicit && !before) || period.test(Tokenbefore.text)) resolve(null);
+      resolve({
+        from: before ? Tokenbefore.from : context.pos,
+        // non-null assertion operator "!" used to remove 'possibly null' error
+        options: TacticCompletion.instance!.tacticCompletions,
+        validFor: /^[\t]*[^\.]*//*gm
+      })
+  });
+}
+}*/
+
 
 // Export the singleton instance to nodeview.ts
 export const tacticCompletionSource = TacticCompletion.getInstance().tacticCompletionSource;

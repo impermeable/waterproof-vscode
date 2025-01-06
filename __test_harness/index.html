@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+    <title>Waterproof Browser</title>
+    <meta charset="utf-8">
+    <!-- 
+        Load script and style sheet from compiled editor. Assumes that
+        editor is compiled! 
+    -->
+    <script defer src="../editor_output/index.js"></script>
+    <link href="../editor_output/index.css" rel="stylesheet">
+</head>
+<body>
+    <script>
+        window.callback = (msg) => {console.log(msg)}
+        // function acquireVsCodeApi () {
+        //     return {
+        //         postMessage: (msg) => {
+        //             if (msg.type == "ready") {
+        //                 // If ready, send the initial content.
+        //                 window.postMessage({
+        //                     type:"init",
+        //                     body: {
+        //                         value: "# Title\n```coq\nDefinition foo := 42.\n```\n",
+        //                         format: "MarkdownV",
+        //                         version: 1,
+        //                     }
+        //                 });
+        //                 // Toggle teacher mode to enable full document editing.
+        //                 window.postMessage({
+        //                     type: "toggleTeacherMode",
+        //                     body: true
+        //                 });
+        //             }
+
+        //             // On docChange, send a message via 'callback'.
+        //             if (msg.type === "docChange") {
+        //                 window.callback(msg.body.startInFile, msg.body.endInFile, msg.body.finalText);
+        //             }
+        //         }
+        //     }
+        // }
+
+    </script>
+    <article>
+        <!-- The div underneath stores the editor -->
+        <div id="editor" spellcheck="false">
+        </div>
+    </article>
+    <div style="height: 50vh"></div>
+</body>
+</html>

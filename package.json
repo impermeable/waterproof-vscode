@@ -476,6 +476,7 @@
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.0",
     "@vscode/vsce": "^2.21.0",
+    "cypress": "^13.17.0",
     "esbuild": "^0.16.17",
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
@@ -522,7 +523,7 @@
     "vscode-languageclient": "8.1.0",
     "vscode-languageserver-types": "3.17.5"
   },
-  "dependenciesComments" : {
+  "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"
   },
   "main": "./out/src/mainNode.js",

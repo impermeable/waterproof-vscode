@@ -1,9 +1,11 @@
 name: Run Cypress Tests
 
-on:
-  pull_request:
-    branches:
-      - main
+on: workflow_dispatch
+  # pull_request:
+  #   branches:
+  #     - main
+
+
 
 jobs:
   cypress-run:

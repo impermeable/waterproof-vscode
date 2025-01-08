@@ -1,35 +1,16 @@
+/// <reference types="cypress" />
+
+import { setupTest } from "./util";
+
 const edits = [];
+const initialDocument = "# Title\n<input-area>\n```coq\nDefinition foo := 42.\n```\n</input-area>\n";
 
 describe('Input area', () => {
-  beforeEach(() => {
-    cy.visit("../../__test_harness/index.html", {
-      onBeforeLoad: (window) => {
-        // Supply a 'fake' acquireVsCodeApi function
-        window.acquireVsCodeApi = function () {
-          return {
-            postMessage: (msg) => {
-              if (msg.type === "ready") {
-                window.postMessage({
-                  type:"init",
-                  body: {
-                    value: "# Title\n<input-area>\n```coq\nDefinition foo := 42.\n```\n</input-area>\n",
-                    format: "MarkdownV",
-                    version: 1,
-                  }
-                });
-              } else if (msg.type === "docChange") {
-                edits.push(msg.body);
-              }
-            }
-          }
-        }
-      }
-    });
-  });
+  beforeEach(() => { setupTest(initialDocument, edits); });
 
   it("Basic input area functionality", () => {
     // We should have an input area in the document.
-    cy.get("input-area").should("exist");
+    cy.inputAreas().should("exist");
     
     // Teacher mode disabled => we should not be able to edit
     //   the markdown

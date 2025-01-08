@@ -1,6 +1,11 @@
-const messages = [
+/// <reference types="cypress" />
+import { Message, MessageType } from "../../shared/Messages";
+
+const edits: any[] = [];
+
+const messages: Array<Message> = [
     {
-        "type": "diagnostics",
+        "type": MessageType.diagnostics,
         "body": {
             "positionedDiagnostics": [
                 {
@@ -14,20 +19,20 @@ const messages = [
         }
     },
     {
-        "type": "progress",
+        "type": MessageType.progress,
         "body": {
             "numberOfLines": 5,
             "progress": []
         }
     },
     {
-        "type": "qed",
+        "type": MessageType.qedStatus,
         "body": [
             "invalid"
         ]
     },
     {
-        "type": "diagnostics",
+        "type": MessageType.diagnostics,
         "body": {
             "positionedDiagnostics": [
                 {
@@ -41,11 +46,11 @@ const messages = [
         }
     },
     {
-        "type": "toggleTeacherMode",
+        "type": MessageType.teacher,
         "body": true
     },
     {
-        "type": "lineNumbers",
+        "type": MessageType.lineNumbers,
         "body": {
             "linenumbers": [
                 2
@@ -54,20 +59,20 @@ const messages = [
         }
     },
     {
-        "type": "autocomplete",
+        "type": MessageType.setAutocomplete,
         "body": []
     }
 ];
-const edits = [];
 
 describe('TestingTest', () => {
   beforeEach(() => {
     cy.visit("../../__test_harness/index.html", {
       onBeforeLoad: (window) => {
         // Supply a 'fake' acquireVsCodeApi function
+        //@ts-ignore
         window.acquireVsCodeApi = function () {
           return {
-            postMessage: (msg) => {
+            postMessage: (msg: Message) => {
               if (msg.type === "ready") {
                 window.postMessage({
                     "type": "init",

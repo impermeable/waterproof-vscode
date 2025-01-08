@@ -1,31 +1,12 @@
+/// <reference types="cypress" />
+import { setupTest } from "./util";
 
-const edits = [];
+const edits: any[] = [];
+const startingDocument: string = "# Title\n```coq\nDefinition foo := 42.\n```\n";
 
 describe('Basic tests', () => {
   beforeEach(() => {
-    cy.visit("../../__test_harness/index.html", {
-      onBeforeLoad: (window) => {
-        // Supply a 'fake' acquireVsCodeApi function
-        window.acquireVsCodeApi = function () {
-          return {
-            postMessage: (msg) => {
-              if (msg.type === "ready") {
-                window.postMessage({
-                  type:"init",
-                  body: {
-                    value: "# Title\n```coq\nDefinition foo := 42.\n```\n",
-                    format: "MarkdownV",
-                    version: 1,
-                  }
-                });
-              } else if (msg.type === "docChange") {
-                edits.push(msg.body);
-              }
-            }
-          }
-        }
-      }
-    });
+    setupTest(startingDocument, edits);
   })
 
   it('Editor opens, contains all parts and displays file', () => {
@@ -61,7 +42,7 @@ describe('Basic tests', () => {
 
     cy.get(".markdown-view").type("\n## Hello World");
     cy.get(".markdown-view").should("contain.text", "Hello World");
-    cy.get('coqblock > .cm-editor > .cm-scroller > .cm-content').click(); // to reset h1
+    cy.nthCoqCode(0).click(); // to reset h1
     cy.get("H2").should("exist");
 
     // We record edits in the 'edits' global variable

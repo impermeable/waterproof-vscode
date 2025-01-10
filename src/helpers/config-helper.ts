@@ -17,6 +17,19 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("detailedErrorsMode") as boolean;
     }
 
+    /** `waterproof.showLineNumbersInEditor` */
+    static get showLineNumbersInEditor() {
+        return config().get<boolean>("showLineNumbersInEditor") as boolean;
+    }
+
+    /** `waterproof.showLineNumbersInEditor` */
+    static set showLineNumbersInEditor(value: boolean) {
+        // Update the Waterproof showLineNumbersInEditor configuration
+        // entry, true means we set the global configuration value.
+        config().update("showLineNumbersInEditor", value, true);
+    }
+
+
     /** `waterproof.enforceCorrectNonInputArea` */
     static get enforceCorrectNonInputArea() {
         return config().get<boolean>("enforceCorrectNonInputArea") as boolean;

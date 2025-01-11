@@ -1,4 +1,4 @@
-export enum OS {
+export const enum OS {
 	Windows,
 	MacOS,
 	Unix,

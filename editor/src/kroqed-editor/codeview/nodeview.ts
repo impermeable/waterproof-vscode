@@ -227,6 +227,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	public addCoqError(from: number, to: number, message: string, severity: number) {
 		const severityString = severityToString(severity);
 		const errorsCount = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity === "error").length;
+		//all diags have the copy action
 		const actions = [{
 			name: "Copy 📋",
 			apply: (view: CodeMirror, from: number, to: number) => {
@@ -284,11 +285,11 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._diags.push({
 			from:from,
 			to:to,
-			message: severityString + ': ' + message,
+			message: message,
 			severity: severityString,
 			actions,
 		});
-
+		//only when the first error is added, the other diagnostics are updated accordingly
 		if (severityString === "error" && errorsCount===0) {
 			this.updateDiagnostics(from, to, message);
 		}
@@ -347,6 +348,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	}
 
 	private showCopyNotification(from:number) {
+		//coordinates of the the line with the diagnostic
 		const coords = this._codemirror.coordsAtPos(from);
 	
 		if (!coords) {
@@ -369,10 +371,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		notification.style.transition = "opacity 0.5s ease";
 		notification.style.zIndex = "1000"; // Ensure it appears above the editor
 	
-		// Append the notification to the body
 		document.body.appendChild(notification);
 	
-		// Fade out after 2 seconds
+		// Fade out after 1 second
 		setTimeout(() => {
 			notification.style.opacity = "0";
 			// Remove the notification from the DOM after the transition

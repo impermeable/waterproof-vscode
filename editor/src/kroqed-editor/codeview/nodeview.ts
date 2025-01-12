@@ -336,19 +336,27 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	}
 
 	private showCopyNotification(from:number) {
+		const coords = this._codemirror.coordsAtPos(from);
+	
+		if (!coords) {
+			console.warn("Could not determine coordinates for diagnostic line.");
+			return;
+		}
+	
 		// Create the notification element
 		const notification = document.createElement("div");
-		notification.textContent = 'Copied!';
+		notification.textContent = `Copied!`;
 		notification.style.position = "fixed";
-		notification.style.bottom = "10px"; 
-		notification.style.right = "10px"; 
+		notification.style.top = `${coords.bottom + 5}px`; // Position 5px below the line
+		notification.style.left = `${coords.left}px`; // Align with the left edge of the line
 		notification.style.backgroundColor = "#4CAF50";
 		notification.style.color = "white";
-		notification.style.padding = "10px";
+		notification.style.padding = "8px";
 		notification.style.borderRadius = "5px";
 		notification.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.3)";
 		notification.style.opacity = "1";
 		notification.style.transition = "opacity 0.5s ease";
+		notification.style.zIndex = "1000"; // Ensure it appears above the editor
 	
 		// Append the notification to the body
 		document.body.appendChild(notification);
@@ -358,9 +366,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			notification.style.opacity = "0";
 			// Remove the notification from the DOM after the transition
 			setTimeout(() => notification.remove(), 500);
-		}, 2000);
-		
+		}, 1000);
 	}
+	
 	
 
 	/**

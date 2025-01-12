@@ -227,7 +227,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	public addCoqError(from: number, to: number, message: string, severity: number) {
 		const severityString = severityToString(severity);
 		
-		const messageAndSeverity = message ;
+		const messageAndSeverity = message;
     	// Push the new diagnostic to the diagnostics array
 		this._diags.push({
 			from:from,
@@ -242,9 +242,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	}
 
 	private updateDiagnostics(from:number, to:number, message:string, wasCopied:boolean) {
-		const noterrors = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity !== "error");
-		const errors = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity === "error");
 		const diagCopy = this._diags.slice();
+		const noterrors = diagCopy.filter(diag => diag.from === from && diag.to === to && diag.severity !== "error");
+		const errors = diagCopy.filter(diag => diag.from === from && diag.to === to && diag.severity === "error");
+		
 		const copiedDiags = [];
 		this.clearCoqErrors();
 		for (const diag of diagCopy) {
@@ -261,6 +262,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					this._codemirror.focus();
 					navigator.clipboard.writeText(diag.message);
 					diag.copied = true;
+					this.showCopyNotification(from);
 					this.updateDiagnostics(from, to, diag.message, true);
 				}
 			}];
@@ -332,6 +334,34 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		// Trigger the linter update to refresh diagnostics display
 		this.debouncer.call();
 	}
+
+	private showCopyNotification(from:number) {
+		// Create the notification element
+		const notification = document.createElement("div");
+		notification.textContent = 'Copied!';
+		notification.style.position = "fixed";
+		notification.style.bottom = "10px"; 
+		notification.style.right = "10px"; 
+		notification.style.backgroundColor = "#4CAF50";
+		notification.style.color = "white";
+		notification.style.padding = "10px";
+		notification.style.borderRadius = "5px";
+		notification.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.3)";
+		notification.style.opacity = "1";
+		notification.style.transition = "opacity 0.5s ease";
+	
+		// Append the notification to the body
+		document.body.appendChild(notification);
+	
+		// Fade out after 2 seconds
+		setTimeout(() => {
+			notification.style.opacity = "0";
+			// Remove the notification from the DOM after the transition
+			setTimeout(() => notification.remove(), 500);
+		}, 2000);
+		
+	}
+	
 
 	/**
 	 * Helper function that forces the linter function to run.

@@ -3,7 +3,8 @@ is setup a [development environment](./developer-resources/developer_instruction
 
 If you don't know what to work on, but know you want to, feel free to make an issue listing your skills and interests and we can help out finding something suitable.
 
-Below are the development guidelines of the Waterproof team. For a smooth process of contributing, it is helpful to adhere to these where you can.
+Below are the development guidelines of the Waterproof team. For a smooth process of contributing, please adhere to these with the exception 
+to any references to the project board, which is not publically visible.
 
 Definition of ready (to work on):
 - Issue is completely clear to at least two team members.
@@ -21,20 +22,20 @@ Development guidelines:
 
 - When working on an issue, make sure that: 
   - The issue is ready before starting.
-  - You are assigned to the issue and the issue is "In Progress".
+  - You are assigned to the issue and the issue is "In Progress" on the project board.
 - When submitting a PR:
   - Review your code as if you are the reviewer.
   - Include the text `fixes #<number of issue>`. This will automatically close the issue when the PR is merged.
   - Feel free to open a *draft* pull request just to get feedback.
   - Ask someone for review using the Github interface, if you are not fully done, communicate what you want feedback on.
-    - Ask for review again if you are done making changes 
-- When the issue is done (according to Definition of Done below), move the issue to "Completed" on the board.
+    - Ask for review again if you are done making changes in response to a review.
+- When the issue is done (according to Definition of Done below), move the issue to "Completed" on the project board.
 
 Review guidelines:
 
 - Check out the code locally.
-- Test the feature according to the test instructions and review the automated tests.
-- Review the code for clarity issues, is the code easy to read?
+- Test the feature according to the test instructions and review the automated tests (or ask for them if missing).
+- Review the code for quality. In particularly, look at readability and maintainability of the code.
 - Check if the acceptation criteria have been fulfilled.
 
 Definition of done:

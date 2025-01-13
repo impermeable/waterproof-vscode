@@ -14,6 +14,8 @@ import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
+import { window, workspace } from "vscode";
+
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -349,6 +351,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 	private showCopyNotification(from:number) {
 		//coordinates of the the line with the diagnostic
+		const config = workspace.getConfiguration("workbench.colorCustomizations");
+    	const background = config.get<string>("notifications.background", "#202020"); // Default fallback
+    	const foreground = config.get<string>("notifications.foreground", "#FFFFFF");
 		const coords = this._codemirror.coordsAtPos(from);
 	
 		if (!coords) {
@@ -362,8 +367,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		notification.style.position = "fixed";
 		notification.style.top = `${coords.bottom + 5}px`; // Position 5px below the line
 		notification.style.left = `${coords.left}px`; // Align with the left edge of the line
-		notification.style.backgroundColor = "#4CAF50";
-		notification.style.color = "white";
+		notification.style.backgroundColor = background;
+		notification.style.color = foreground;
 		notification.style.padding = "8px";
 		notification.style.borderRadius = "5px";
 		notification.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.3)";

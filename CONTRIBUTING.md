@@ -5,7 +5,7 @@ If you don't know what to work on, but know you want to, feel free to make an is
 
 Below are the development guidelines of the Waterproof team. For a smooth process of contributing, it is helpful to adhere to these where you can.
 
-Definition of ready:
+Definition of ready (to work on):
 - Issue is completely clear to at least two team members.
 - Issue is not a draft (and therefore visible to external contributors).
 - No external factors are blocking development.
@@ -25,6 +25,7 @@ Development guidelines:
 - When submitting a PR:
   - Review your code as if you are the reviewer.
   - Include the text `fixes #<number of issue>`. This will automatically close the issue when the PR is merged.
+  - Feel free to open a *draft* pull request just to get feedback.
   - Ask someone for review using the Github interface, if you are not fully done, communicate what you want feedback on.
     - Ask for review again if you are done making changes 
 - When the issue is done (according to Definition of Done below), move the issue to "Completed" on the board.

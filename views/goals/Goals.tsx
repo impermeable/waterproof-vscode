@@ -176,8 +176,6 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
       No goals at this point.
     </Box>
   }
-  console.log("test")
-  console.log(goals)
 
   return (
     <div className="goal-panel">

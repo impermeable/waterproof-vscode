@@ -142,7 +142,7 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
         {/* uses GoalsList to show the goals as a list within a stack */}
         <GoalsRemaining
           goals={goals}
-          header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
+          header={`Afterwards, we need to complete other subproofs`}
           show_on_empty={false}
           pos={pos}
           textDoc={textDoc}

@@ -246,10 +246,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					apply:(view: CodeMirror, from: number, to: number) => {
 						// give focus to this current codeblock instante to ensure it updates
 						this._codemirror.focus();
-						const textAtErrorLine = view.state.doc.lineAt(from).text;
-						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
 						const trimmedMessage = message.trim();
-						const toInsert = idents + trimmedMessage;
+						const toInsert = trimmedMessage;
 						view.dispatch({
 							changes: {
 								from:from,
@@ -319,10 +317,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					apply:(view: CodeMirror, from: number, to: number) => {
 						// give focus to this current codeblock instante to ensure it updates
 						this._codemirror.focus();
-						const textAtErrorLine = view.state.doc.lineAt(from).text;
-						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
 						const trimmedMessage = diag.message.trim();
-						const toInsert = idents + trimmedMessage;
+						const toInsert = trimmedMessage;
 						view.dispatch({
 							changes: {
 								from:from,

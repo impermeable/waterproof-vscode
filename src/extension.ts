@@ -267,8 +267,7 @@ export class Waterproof implements Disposable {
         this.registerCommand("toggleInEditorLineNumbers", () => {
             const updated = !WaterproofConfigHelper.showLineNumbersInEditor;
             WaterproofConfigHelper.showLineNumbersInEditor = updated;
-            // Optional show a message to the user
-            // window.showInformationMessage(`Waterproof: Line numbers in editor will now be ${updated ? "shown" : "hidden"}.`);
+            window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
     }
 

@@ -38,6 +38,8 @@ export class ProseMirrorWebview extends EventEmitter {
 
     private _provider: CoqEditorProvider;
 
+    private _showLineNrsInEditor: boolean = WaterproofConfigHelper.showLineNumbersInEditor;
+
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
         to: number, 
@@ -186,6 +188,11 @@ export class ProseMirrorWebview extends EventEmitter {
             if (e.affectsConfiguration("waterproof.enforceCorrectNonInputArea")) {
                 this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
             }
+
+            if (e.affectsConfiguration("waterproof.showLineNumbersInEditor")) {
+                this._showLineNrsInEditor = WaterproofConfigHelper.showLineNumbersInEditor;
+                this.updateLineNumberStatusInEditor();
+            }
         }));
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
@@ -252,12 +259,25 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         });
 
+        this.updateLineNumberStatusInEditor();
+
         // send any cached messages
         for (const m of this._cachedMessages.values()) this.postMessage(m);
     }
 
-    /** Convert line number offsets to line indices and send message to prose webview */
+    private updateLineNumberStatusInEditor() {
+        this.updateLineNumbers();
+        this.postMessage({
+            type: MessageType.setShowLineNumbers,
+            body: this._showLineNrsInEditor
+        }, true);
+
+    }
+
+    /** Convert line number offsets to line indices and send message to Editor webview */
     private updateLineNumbers() {
+        // Early return if line numbers should not be shown in the editor.
+        if (!this._showLineNrsInEditor) return;
         if (!this._linenumber || this._linenumber.version > this._document.version) return;
         this.postMessage({
             type: MessageType.lineNumbers,

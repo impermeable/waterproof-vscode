@@ -1,6 +1,6 @@
 import $ from "jquery";
 import objectHash from "object-hash";
-import { PropsWithChildren, useLayoutEffect, useRef } from "react";
+import { PropsWithChildren, useLayoutEffect, useRef, useState } from "react";
 import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 import { Goal, GoalConfig, PpString } from "../../lib/types";
 import { Box } from "./Box";
@@ -24,10 +24,6 @@ function Goal({ goal }: GoalP) {
   useLayoutEffect(() => {
     if (ref.current) {
       FormatPrettyPrint.adjustBreaks($(ref.current));
-    }
-    // See Pfff.v:17160 for tests.
-    if (tyRef.current) {
-      tyRef.current.scrollIntoView();
     }
   });
 
@@ -62,6 +58,76 @@ function GoalsList({
 }: GoalsListP) {
   let count = goals.length;
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  //if there are no goals then this is displayed
+  if (count == 0) {
+    if (show_on_empty) {
+      return (
+        <Box summary="Proof finished" pos={pos} textDox={textDoc}>{bullet_msg ? (
+          <div className="aside">
+            <CoqPp content={bullet_msg} inline={true} />
+          </div>
+        ) : null}</Box>
+      );
+    } else {
+      return null;
+    }
+  //One goals, the goals is displayed
+  } else if (count == 1) {
+    return (
+      <Box summary={`${header}`} pos={pos} textDox={textDoc}>
+          <Goal key={0} goal={goals[0]} idx={0} />
+      </Box>
+    );
+  //Numerous goals, only the first goals is displayed, the other goals are hidden and foldable.
+  } else {
+    return (
+      <div>
+        <Box summary={`${header}`} pos={pos} textDox={textDoc}>
+          <Goal key={0} goal={goals[0]} idx={0} />
+        </Box>
+        <Box summary={`Afterwards, we need to complete other subproofs`} pos={pos} textDox={textDoc}>
+        <button 
+          onClick={toggleExpand} 
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            transform: `rotate(${isExpanded ? 90 : 0}deg)`,
+            transition: 'transform 0.2s ease',
+            fontSize: '1rem',
+          }}
+          aria-label="Toggle Subproofs"
+        >
+          ▶
+        </button>
+          {isExpanded &&
+            goals.slice(1).map((value, idx) => {
+              let key = objectHash(value);
+              return <Goal key={key} goal={value} idx={idx + 1} />;
+            })}
+        </Box>
+      </div>
+    );
+  }
+
+}
+
+function GoalsRemaining({
+  goals,
+  header,
+  show_on_empty,
+  bullet_msg,
+  pos,
+  textDoc
+}: GoalsListP) {
+  let count = goals.length;
+
   //if there are no goals then this is displayed
   if (count == 0) {
     if (show_on_empty) {
@@ -80,10 +146,6 @@ function GoalsList({
   //if thare are goals then this maps over the goals and display them by using the Goal component
   return (
     <Box summary={`${header}`} pos={pos} textDox={textDoc}>
-      {goals.map((value, idx) => {
-        let key = objectHash(value);
-        return <Goal key={key} goal={value} idx={idx + 1} />;
-      })}
     </Box>
   );
 }
@@ -107,23 +169,34 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
   let level_indicator =
     idx === 0 ? "the same bullet level" : `the -${idx} bullet level`;
 
-  return (
-    <div>
-      {/* uses GoalsList to show the goals as a list within a stack */}
-      <GoalsList
-        goals={goals}
-        header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
-        show_on_empty={false}
-        pos={pos}
-        textDoc={textDoc}
-      />
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* recursively calls itself to get the different level of goals */}
-        <StackGoals idx={idx + 1} stack={stack} pos={pos} textDoc={textDoc} />
+  if (idx == 0) {
+    return (
+      <div>
+        {/* uses GoalsList to show the goals as a list within a stack */}
+        <GoalsRemaining
+          goals={goals}
+          header={`Afterwards, we need to complete other subproofs`}
+          show_on_empty={false}
+          pos={pos}
+          textDoc={textDoc}
+        />
       </div>
-    </div>
-  );
-}
+    );
+  } else {
+    return (
+      <div>
+        {/* uses GoalsList to show the goals as a list within a stack */}
+        <GoalsRemaining
+          goals={goals}
+          header={`Afterwards, we need to complete other subproofs`}
+          show_on_empty={false}
+          pos={pos}
+          textDoc={textDoc}
+        />
+      </div>  
+    )
+    }
+  }
 //type that has goals, position and textdocument and takes its children 
 type GoalsParams = PropsWithChildren<{ goals?: GoalConfig<PpString>, pos: Position, textDoc: VersionedTextDocumentIdentifier }>;
 

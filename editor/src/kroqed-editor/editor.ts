@@ -172,7 +172,7 @@ export class Editor {
 						try {
 							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
 							this.post({type: MessageType.docChange, body: obj});
-						} catch (error) {
+						} catch (error: any) {
 							console.error(error.message);
 
 
@@ -322,7 +322,8 @@ export class Editor {
 			//@ts-ignore
 			linenumbers.push(this._mapping?.findPosition(codeCell._getPos() + 1));
 		}
-		this.post({type: MessageType.lineNumbers, body: {linenumbers, version: this._mapping?.version}});
+		if (this._mapping === undefined) return;
+		this.post({type: MessageType.lineNumbers, body: {linenumbers, version: this._mapping.version}});
 	}
 
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */
@@ -526,7 +527,7 @@ export class Editor {
 				this.parseCoqDiagnostics(diagnostics);
 				break;
             case MessageType.syntax:
-                initializeTacticCompletion(msg.body as boolean);
+                initializeTacticCompletion(msg.body);
                 break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.

@@ -206,6 +206,7 @@ export class WebviewManager extends EventEmitter {
     public postMessageWithResponse<R = unknown>(panel: string, type: MessageType, body: any): Promise<R> {
         const requestId = this._requestId++;
         const p = new Promise<R>(resolve => this._callbacks.set(requestId, resolve));
+        //@ts-ignore
         this.postMessage(panel, { type, requestId, body });
         return p;
     }
@@ -221,11 +222,11 @@ export class WebviewManager extends EventEmitter {
         switch (message.type) {
             case MessageType.response:
                 // Response type message, look to which promise this belongs.
-                if (!message.requestId) {
+                if (!message.body.requestId) {
                     console.error("Received response message without a requestId!\nThe message:", message);
                     return;
                 }
-                const callback = this._callbacks.get(message.requestId);  // TODO: remove callback?
+                const callback = this._callbacks.get(message.body.requestId);  // TODO: remove callback?
                 callback?.(message.body);
                 break;
             case MessageType.editorReady:

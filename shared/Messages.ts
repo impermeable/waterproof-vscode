@@ -1,48 +1,66 @@
 import { DiagnosticSeverity } from "vscode";
+import { FileFormat } from "./FileFormat";
+import { LineNumber } from "./LineNumber";
+import { DocChange, WrappingDocChange } from "./DocChange";
+import { QedStatus } from "./QedStatus";
 
-/**
- * Interface for the message types. Every message needs to have a `type`.
- * `body` and `requestID` are optional.
- */
-export type Message = {
-    type: MessageType;
-    body?: any;
-    requestId?: number;
-    time?: number,
-}
+type MessageBase<T extends MessageType, B = undefined> = 
+    B extends undefined? { type: T } : { type: T, body: B };
+
+export type Message = 
+    | MessageBase<MessageType.response, { data: any, requestId: number }>
+    | MessageBase<MessageType.update, { value: string, version: number }>
+    | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
+    | MessageBase<MessageType.ready>
+    | MessageBase<MessageType.editorReady>
+    | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
+    | MessageBase<MessageType.cursorChange, number>
+    | MessageBase<MessageType.lineNumbers, LineNumber>
+    | MessageBase<MessageType.requestGoals, any>
+    | MessageBase<MessageType.renderGoals, any>
+    | MessageBase<MessageType.errorGoals, { error: string }>
+    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: string }>
+    | MessageBase<MessageType.command, string>
+    | MessageBase<MessageType.teacher, boolean>
+    | MessageBase<MessageType.setAutocomplete, any>
+    | MessageBase<MessageType.qedStatus, QedStatus[]>
+    | MessageBase<MessageType.progress, SimpleProgressParams>
+    | MessageBase<MessageType.diagnostics, DiagnosticMessage>
+    | MessageBase<MessageType.applyStepError, { error: string }>
+    | MessageBase<MessageType.fatalError, { error: string }>
+    | MessageBase<MessageType.updateVersion, { version: number }>
+    | MessageBase<MessageType.syntax, boolean>
+    | MessageBase<MessageType.editorHistoryChange, HistoryChangeType>
+    | { type: never }; // Ensure exhaustive matching
 
 /**
  * Message type enum. Every message that is send from the
  * extension host to the editor (and vice versa) needs to have a type.
  */
-export enum MessageType {
-    response = "response",
-    update = "update",
-    init = "init",
-    ready = "ready",
-    /**
-     * A notification sent from the editor to the extension when the editor is (1) initialized, or
-     * (2) synched (e.g., after an undo, redo, or refocus).
-     */
-    editorReady = "editorReady",
-    docChange = "docChange",
-    cursorChange = "cursorChange",
-    lineNumbers = "lineNumbers",
-    requestGoals = "waitingForInfo",
-    renderGoals = "renderGoals",
-    errorGoals = "infoError", // this should probably be changed to a generic error message
-    insert = "insertSymbol",
-    command = "command",
-    teacher = "toggleTeacherMode",
-    setAutocomplete = "autocomplete",
-    qedStatus = "qed",
-    progress = "progress",
-    diagnostics = "diagnostics",
-    applyStepError = "applyStepError",
-    fatalError = "fatal",
-    updateVersion = "updateTextDocVersion",
-    syntax= "setSyntaxMode",
-    editorHistoryChange = "editorHistoryChange"
+export const enum MessageType {
+    response,
+    update,
+    init,
+    ready,
+    editorReady,
+    docChange,
+    cursorChange,
+    lineNumbers,
+    requestGoals,
+    renderGoals,
+    errorGoals,
+    insert,
+    command,
+    teacher,
+    setAutocomplete,
+    qedStatus,
+    progress,
+    diagnostics,
+    applyStepError,
+    fatalError,
+    updateVersion,
+    syntax,
+    editorHistoryChange,
 }
 
 export const enum HistoryChangeType {

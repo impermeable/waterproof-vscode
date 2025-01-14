@@ -1,6 +1,6 @@
 import $ from "jquery";
 import objectHash from "object-hash";
-import { PropsWithChildren, useLayoutEffect, useRef } from "react";
+import { PropsWithChildren, useLayoutEffect, useRef, useState } from "react";
 import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 import { Goal, GoalConfig, PpString } from "../../lib/types";
 import { Box } from "./Box";
@@ -58,6 +58,12 @@ function GoalsList({
 }: GoalsListP) {
   let count = goals.length;
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   //if there are no goals then this is displayed
   if (count == 0) {
     if (show_on_empty) {
@@ -71,17 +77,43 @@ function GoalsList({
     } else {
       return null;
     }
+  } else if (count == 1) {
+    return (
+      <Box summary={`${header}`} pos={pos} textDox={textDoc}>
+          <Goal key={0} goal={goals[0]} idx={0} />
+      </Box>
+    );
+  } else {
+    return (
+      <div>
+        <Box summary={`${header}`} pos={pos} textDox={textDoc}>
+          <Goal key={0} goal={goals[0]} idx={0} />
+        </Box>
+        <Box summary={`Afterwards, we need to complete other subproofs`} pos={pos} textDox={textDoc}>
+        <button 
+          onClick={toggleExpand} 
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            transform: `rotate(${isExpanded ? 90 : 0}deg)`,
+            transition: 'transform 0.2s ease',
+            fontSize: '1rem',
+          }}
+          aria-label="Toggle Subproofs"
+        >
+          ▶
+        </button>
+          {isExpanded &&
+            goals.slice(1).map((value, idx) => {
+              let key = objectHash(value);
+              return <Goal key={key} goal={value} idx={idx + 1} />;
+            })}
+        </Box>
+      </div>
+    );
   }
 
-  //if thare are goals then this maps over the goals and display them by using the Goal component
-  return (
-    <Box summary={`${header}`} pos={pos} textDox={textDoc}>
-      {goals.map((value, idx) => {
-        let key = objectHash(value);
-        return <Goal key={key} goal={value} idx={idx + 1} />;
-      })}
-    </Box>
-  );
 }
 
 function GoalsRemaining({
@@ -176,6 +208,8 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
       No goals at this point.
     </Box>
   }
+
+  console.log(goals)
 
   return (
     <div className="goal-panel">

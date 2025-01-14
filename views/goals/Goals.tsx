@@ -77,12 +77,14 @@ function GoalsList({
     } else {
       return null;
     }
+  //One goals, the goals is displayed
   } else if (count == 1) {
     return (
       <Box summary={`${header}`} pos={pos} textDox={textDoc}>
           <Goal key={0} goal={goals[0]} idx={0} />
       </Box>
     );
+  //Numerous goals, only the first goals is displayed, the other goals are hidden and foldable.
   } else {
     return (
       <div>
@@ -167,7 +169,6 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
   let level_indicator =
     idx === 0 ? "the same bullet level" : `the -${idx} bullet level`;
 
-  console.log(idx)
   if (idx == 0) {
     return (
       <div>
@@ -208,8 +209,6 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
       No goals at this point.
     </Box>
   }
-
-  console.log(goals)
 
   return (
     <div className="goal-panel">

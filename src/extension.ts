@@ -82,6 +82,7 @@ export class Waterproof implements Disposable {
      * @param context the extension context object
      */
     constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory) {
+        console.log("Waterproof initialized");
         checkConflictingExtensions();
         excludeCoqFileTypes();
 
@@ -93,6 +94,8 @@ export class Waterproof implements Disposable {
             this.client.updateCompletions(document);
         });
         this.webviewManager.on(WebviewManagerEvents.focus, (document: TextDocument) => {
+            console.log("Focus event received", document);
+            console.log("Client state", this.client);
 
             // update active document
             // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
@@ -153,6 +156,7 @@ export class Waterproof implements Disposable {
         this.executorComponent = executorPanel;
 
         // register commands
+        console.log("Calling initializeClient...");
         this.registerCommand("start", this.initializeClient);
         this.registerCommand("restart", this.restartClient);
         this.registerCommand("toggle", this.toggleClient);
@@ -391,7 +395,7 @@ export class Waterproof implements Disposable {
      * Create the lsp client and update relevant status components
      */
     async initializeClient(): Promise<void> {
-
+        console.log("Start of initializeClient");
         // Run the version checker.
         const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
         const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
@@ -421,6 +425,7 @@ export class Waterproof implements Disposable {
                 markdown: { isTrusted: true, supportHtml: true },
             };
 
+            console.log("Initializing client...");
             this.client = this.clientFactory(clientOptions, WaterproofConfigHelper.configuration);
             return this.client.startWithHandlers(this.webviewManager).then(
                 () => {

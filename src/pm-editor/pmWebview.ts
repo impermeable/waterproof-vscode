@@ -82,7 +82,7 @@ export class ProseMirrorWebview extends EventEmitter {
             this.redoHandler.bind(this));
 
 
-        var path = require('path')
+        const path = require('path')
 
         const fileName = path.basename(doc.uri.fsPath)
         
@@ -120,7 +120,7 @@ export class ProseMirrorWebview extends EventEmitter {
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
                 "We will convert the document to use unix line endings (LF).");
-            let editor = await window.showTextDocument(doc);
+            const editor = await window.showTextDocument(doc);
             if (editor !== null) {
                 await editor.edit(builder => {
                     builder.setEndOfLine(EndOfLine.LF);
@@ -201,7 +201,7 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this._disposables.push(this._panel.onDidDispose(() => {
             this._panel.dispose();
-            for (let d of this._disposables) {
+            for (const d of this._disposables) {
                 d.dispose();
             }
             this.emit(WebviewEvents.dispose);

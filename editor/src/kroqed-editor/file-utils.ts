@@ -7,8 +7,8 @@ import { DocChange, Message, MessageType, WrappingDocChange } from "../../../sha
 	 */
 export function checkPrePost(content: string, post: (Message) => void): string {
     let result = content
-    let edit1: DocChange = {startInFile: 0, endInFile: 0,finalText: ''};
-    let edit2: DocChange = {startInFile: content.length, endInFile: content.length, finalText: ''};
+    const edit1: DocChange = {startInFile: 0, endInFile: 0,finalText: ''};
+    const edit2: DocChange = {startInFile: content.length, endInFile: content.length, finalText: ''};
     if (content.startsWith("```coq\n")) {
         result = '\n' + result;
         edit1.finalText = '\n';
@@ -17,7 +17,7 @@ export function checkPrePost(content: string, post: (Message) => void): string {
         result = result + '\n';
         edit2.finalText = '\n';
     } 
-    let final: WrappingDocChange = { firstEdit: edit1, secondEdit: edit2};
+    const final: WrappingDocChange = { firstEdit: edit1, secondEdit: edit2};
     if (edit1.finalText == '\n' || edit2.finalText == '\n') post({type: MessageType.docChange, body: final});
     return result;
 }
@@ -31,7 +31,7 @@ export function fixLessThanBug(content: string, post: (Message) => void): string
         if (match.index === undefined) continue;
         newContent = newContent.substring(0, match.index + 1) + " " + newContent.substring(match.index + 1);
 
-        let edit: DocChange = { startInFile: match.index+1, endInFile: match.index+1, finalText: " "};
+        const edit: DocChange = { startInFile: match.index+1, endInFile: match.index+1, finalText: " "};
         post({type: MessageType.docChange, body: edit});
     }
     return newContent;

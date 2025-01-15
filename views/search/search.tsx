@@ -60,9 +60,9 @@ export function Search() {
 
     //inserting text at the previous cursor position
     const insertText = (textToInsert: string) => {
-        var textarea = null;
-        var cursor = 0;
-        var value = "";
+        let textarea = null;
+        let cursor = 0;
+        let value = "";
         textarea = searchareaRef.current;
         cursor = cursorSearch;
         value = searchText;

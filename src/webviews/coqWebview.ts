@@ -74,7 +74,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     protected create() {
         if (this.state != WebviewState.ready) return; // Error handling
 
-        let webviewOpts = { enableScripts: true, enableFindWidget: false };
+        const webviewOpts = { enableScripts: true, enableFindWidget: false };
         if (this.name == "help") {
             this._panel = window.createWebviewPanel(
                 this.name,

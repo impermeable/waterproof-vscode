@@ -31,10 +31,10 @@ async function baseTests() {
 
 async function uiTests() {
 	try {
-		let tester: ExTester = new ExTester(".ui-test");
+		const tester: ExTester = new ExTester(".ui-test");
 		console.log("Maybe succes");
-		var code = tester.downloadCode();
-		var chrome = tester.downloadChromeDriver();
+		const code = tester.downloadCode();
+		const chrome = tester.downloadChromeDriver();
 		await Promise.all([code, chrome]);
 		await tester.installVsix({ vsixFile: "test_out/extension.vsix"});
 		return tester.runTests("test_out/test/ui-tests/**/*.js").then( (number) => {

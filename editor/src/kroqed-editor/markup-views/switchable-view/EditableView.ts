@@ -67,7 +67,7 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 	// Overwrites the base method in EmbeddedCodeMirrorEditor.
 	forwardUpdate(update: ViewUpdate): void {
 		// Get the current cursor position.
-		let pos = this._getPos();
+		const pos = this._getPos();
 		// If there is no position we are done.
 		if (pos === undefined) return;
 		// If we are updating or we don't have focus then we should return early.
@@ -75,10 +75,10 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 
 		// TODO: Comments
 		let offset = pos + 1, {main} = update.state.selection;
-		let selFrom = offset + main.from, selTo = offset + main.to;
-		let pmSel = this._outerView.state.selection;
+		const selFrom = offset + main.from, selTo = offset + main.to;
+		const pmSel = this._outerView.state.selection;
 		if (update.docChanged || pmSel.from != selFrom || pmSel.to != selTo) {
-			let tr = this._outerView.state.tr;
+			const tr = this._outerView.state.tr;
 			update.changes.iterChanges((fromA, toA, fromB, toB, text) => {
 				if (text.length) {
 					tr.replaceWith(offset + fromA, offset + toA,
@@ -101,8 +101,8 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 		if (this._parent.updating) return true;
 
 		// Extract node text (the edit) and document (current) text.
-		let newText = node.textContent;
-		let curText = this.view.state.doc.toString();
+		const newText = node.textContent;
+		const curText = this.view.state.doc.toString();
 
 		// Check whether they are the same.
 		// We don't need to update if they are.

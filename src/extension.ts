@@ -130,7 +130,7 @@ export class Waterproof implements Disposable {
 
         // make relevant gui components
         this.statusBar = new CoqnitiveStatusBar();
-        var goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
+        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals")
@@ -141,10 +141,10 @@ export class Waterproof implements Disposable {
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
-        var logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
+        const logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("logbook", logbook);
         this.goalsComponents.push(logbook);
-        var debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
+        const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("debug", debug);
         this.goalsComponents.push(debug);
 
@@ -275,7 +275,7 @@ export class Waterproof implements Disposable {
      * Attempts to install all required libraries
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
      */
-    private async autoInstall(command: string): Promise<Boolean> {
+    private async autoInstall(command: string): Promise<boolean> {
         return new Promise((resolve, reject) => {
             exec(command, (err, stdout, stderr) => {
                 if (err) {

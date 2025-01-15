@@ -15,7 +15,7 @@ export interface IInputAreaPluginState {
 export const INPUT_AREA_PLUGIN_KEY = new PluginKey<IInputAreaPluginState>("prosemirror-locking");
 
 // The plugin spec describing this plugin.
-let InputAreaPluginSpec : PluginSpec<IInputAreaPluginState> = {
+const InputAreaPluginSpec : PluginSpec<IInputAreaPluginState> = {
     // Assign the plugin key.
 	key: INPUT_AREA_PLUGIN_KEY,
 	state: {

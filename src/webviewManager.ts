@@ -40,7 +40,7 @@ class ActiveWebviews {
 
     public insert(id: string) {
         // Maybe add error handling for id not existing
-        var time: number = Date.now();
+        const time: number = Date.now();
         this._web.set(time, id);
         this._queue.unshift(time);
         if (this._queue.length == 20) {
@@ -53,7 +53,7 @@ class ActiveWebviews {
      * Returns the ID of the chronologically first webview after `times`.
      */
     public find(time: number) {
-        var i: number = 0;
+        let i: number = 0;
         if (this._queue.length == 0) throw new Error("There are no active panels");
         // @ts-ignore
         while (this._queue[i] >= time) { // There may be an issue where a panel supports insert and can send insert messages
@@ -248,7 +248,7 @@ export class WebviewManager extends EventEmitter {
                 }
                 break;
             case MessageType.applyStepError:
-                let mes = "File frozen due to corruption. Re-open the file. Error: " + message.body;
+                const mes = "File frozen due to corruption. Re-open the file. Error: " + message.body;
                 window.showErrorMessage(mes);
                 break;
             case MessageType.command:

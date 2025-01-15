@@ -47,10 +47,10 @@ export const keybindings: KeyBinding[] = [
 
   function changeFirstLine(state: EditorState, f: (line: Line, changes: ChangeSpec[], range: SelectionRange) => void) {
     return state.changeByRange(range => {
-      let changes: ChangeSpec[] = []
-      let line = state.doc.lineAt(range.from)
+      const changes: ChangeSpec[] = []
+      const line = state.doc.lineAt(range.from)
       f(line, changes, range)
-      let changeSet = state.changes(changes)
+      const changeSet = state.changes(changes)
       return {changes,
         range: EditorSelection.range(changeSet.mapPos(range.anchor, 1), changeSet.mapPos(range.head, 1))}
     })

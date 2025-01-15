@@ -25,28 +25,28 @@ export class TextUpdate {
         /** Key of the stringCell in which step occurs */
         let correctCellKey = 0;
 
-        for (let [key,value] of stringBlocks) {
+        for (const [key,value] of stringBlocks) {
             if (key > step.from) break;
             correctCellKey = key;
         }
 
         /** Get the target cell */
-        let targetCell: StringCell | undefined = stringBlocks.get(correctCellKey);
+        const targetCell: StringCell | undefined = stringBlocks.get(correctCellKey);
         if (targetCell === undefined) throw new Error(" Target cell is not in mapping!!! ");
 
         /** Check that the change is, indeed, happening within a stringcell */
         if (targetCell.endProse < step.from) throw new Error(" Step does not happen within cell ");
 
         /** The offset within the correct stringCell for the step action */ 
-        let offsetBegin = step.from - targetCell.startProse;
+        const offsetBegin = step.from - targetCell.startProse;
 
         /** The offset within the correct stringCell for the step action */ 
-        let offsetEnd = step.to - targetCell.startProse;  
+        const offsetEnd = step.to - targetCell.startProse;  
 
-        let text = step.slice.content.firstChild && step.slice.content.firstChild.text ? step.slice.content.firstChild.text : "";
+        const text = step.slice.content.firstChild && step.slice.content.firstChild.text ? step.slice.content.firstChild.text : "";
 
         /** The resulting document change to document model */
-        let result: DocChange = {
+        const result: DocChange = {
             startInFile: targetCell.startText + offsetBegin,
             endInFile: targetCell.startText + offsetEnd,
             finalText: text
@@ -55,11 +55,11 @@ export class TextUpdate {
         //// Find updated mappings
 
         // Update the mapping to reflect change
-        let newMap = new Map<number,StringCell>();
-        let offset = getTextOffset(type,step);
+        const newMap = new Map<number,StringCell>();
+        const offset = getTextOffset(type,step);
         // Loop through all the stringblocks
-        for(let [key,value] of stringBlocks) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for(const [key,value] of stringBlocks) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key >= correctCellKey) {
                 if (key != correctCellKey) {
                     newvalue.startProse += offset;
@@ -73,10 +73,10 @@ export class TextUpdate {
         }
         
 
-        let newHtmlMap = new Map<number,HtmlTagInfo>();
-        let newHtmlMapS = new Map<number,HtmlTagInfo>();
-        for (let [key, value] of endHtmlMap) {
-            let newkey = key; let newvalue = structuredClone(value);
+        const newHtmlMap = new Map<number,HtmlTagInfo>();
+        const newHtmlMapS = new Map<number,HtmlTagInfo>();
+        for (const [key, value] of endHtmlMap) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key > step.from) {
                 if (key <= step.to) throw new Error(" Edit did not take place in string cell ");
                 newkey += offset; newvalue.offsetProse += offset;
@@ -85,8 +85,8 @@ export class TextUpdate {
             newHtmlMap.set(newkey,newvalue);
         }
         
-        for (let [key, value] of startHtmlMap) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for (const [key, value] of startHtmlMap) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key >= step.to) {
                 newkey += offset; newvalue.offsetProse += offset;
                 newvalue.offsetText += offset;

@@ -72,9 +72,9 @@ export function ExpandDefinition() {
 
     //inserting text at the previous cursor position
     const insertText = (textToInsert: string) => {
-        var textarea = null;
-        var cursor = 0;
-        var value = "";
+        let textarea = null;
+        let cursor = 0;
+        let value = "";
         switch (current) {
             // first input area of expand def in context
             case "input1":

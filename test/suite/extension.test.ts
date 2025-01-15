@@ -16,7 +16,7 @@ suite('Extension Test Suite', () => {
   let extensionContext: vscode.ExtensionContext;
 
   test('Test enable button', async () => {
-    let button: IStatusComponent = new CoqnitiveStatusBar;
+    const button: IStatusComponent = new CoqnitiveStatusBar;
     
     //var kroStatusItem = vscode.window.createStatusBarItem("coqnitive.enable");
     //assert.strictEqual(kroStatusItem.text, "Coqnitive (activating)");

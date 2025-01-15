@@ -31,12 +31,12 @@ export function createRealMarkdownView(schema: Schema){
 		* Docs says that for any function proprs, the current plugin instance
 		* will be bound to `this`.  However, the typings don't reflect this.
 		*/
-		let pluginState = REAL_MARKDOWN_PLUGIN_KEY.getState(view.state);
+		const pluginState = REAL_MARKDOWN_PLUGIN_KEY.getState(view.state);
 		if(!pluginState){ throw new Error("no realtime markdown plugin!"); }
-		let nodeViews = pluginState.activeNodeViews;
+		const nodeViews = pluginState.activeNodeViews;
 
 		// set up NodeView
-		let nodeView = new MarkdownView(getPos, view, node.textContent, node, schema, REAL_MARKDOWN_PLUGIN_KEY, "markdown");
+		const nodeView = new MarkdownView(getPos, view, node.textContent, node, schema, REAL_MARKDOWN_PLUGIN_KEY, "markdown");
 
 		nodeViews.push(nodeView);
 		return nodeView;

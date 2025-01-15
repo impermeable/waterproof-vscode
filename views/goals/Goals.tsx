@@ -60,7 +60,7 @@ function GoalsList({
   pos,
   textDoc
 }: GoalsListP) {
-  let count = goals.length;
+  const count = goals.length;
 
   //if there are no goals then this is displayed
   if (count == 0) {
@@ -81,7 +81,7 @@ function GoalsList({
   return (
     <Box summary={`${header}`} pos={pos} textDox={textDoc}>
       {goals.map((value, idx) => {
-        let key = objectHash(value);
+        const key = objectHash(value);
         return <Goal key={key} goal={value} idx={idx + 1} />;
       })}
     </Box>
@@ -98,13 +98,13 @@ type StackSummaryP = PropsWithChildren<{
 //goals can have multiple layers which are stacked. 
 //the following function handles the display of stacked goals
 function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
-  let count = stack.length;
+  const count = stack.length;
   if (count <= idx) return null;
 
   const [l, r] = stack[idx];
   const goals = l.concat(r);
   //defines the level of the goal using idx
-  let level_indicator =
+  const level_indicator =
     idx === 0 ? "the same bullet level" : `the -${idx} bullet level`;
 
   return (

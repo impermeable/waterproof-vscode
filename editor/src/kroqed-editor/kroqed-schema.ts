@@ -67,7 +67,7 @@ export const TheSchema: Schema = new Schema({
 			status: {default: null}
 			},
 			parseDOM: [{tag: "input-area", getAttrs(dom) {
-			let statusAttr = (dom as HTMLElement).getAttribute("status");
+			const statusAttr = (dom as HTMLElement).getAttribute("status");
 			return {
 				status: statusAttr && statusAttr in QedStatus && statusAttr !== "invalid" ? statusAttr : null
 			};

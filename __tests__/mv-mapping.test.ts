@@ -86,8 +86,8 @@ test("coqdoc 3", () => {
 });
 
 test("testMapping", () => {
-    let textDocMapping = new TextDocMapping(`<markdown>Hello</markdown>`, 0)
-    let mapping = textDocMapping.getMapping()
+    const textDocMapping = new TextDocMapping(`<markdown>Hello</markdown>`, 0)
+    const mapping = textDocMapping.getMapping()
     if (mapping.has(3-2)) {
         //@ts-ignore
         expect(mapping.get(3-2).startProse).toBe(3-2);expect(mapping.get(3-2).endProse).toBe(8-2);expect(mapping.get(3-2).startText).toBe(0);expect(mapping.get(3-2).endText).toBe(5)
@@ -97,8 +97,8 @@ test("testMapping", () => {
 })
 
 test("testMapping", () => {
-    let textDocMapping = new TextDocMapping(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock>`, 0)
-    let mapping = textDocMapping.getMapping()
+    const textDocMapping = new TextDocMapping(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock>`, 0)
+    const mapping = textDocMapping.getMapping()
     if (mapping.has(4-2)) {
         //@ts-ignore
         expect(mapping.get(4-2).startProse).toBe(4-2);expect(mapping.get(4-2).endProse).toBe(16-2);expect(mapping.get(4-2).startText).toBe(8);expect(mapping.get(4-2).endText).toBe(20)
@@ -108,8 +108,8 @@ test("testMapping", () => {
 })
 
 test("testMapping 2", () => {
-    let textDocMapping = new TextDocMapping(`<markdown>Hello</markdown><coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock>`, 0)
-    let mapping = textDocMapping.getMapping()
+    const textDocMapping = new TextDocMapping(`<markdown>Hello</markdown><coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock>`, 0)
+    const mapping = textDocMapping.getMapping()
     if (mapping.has(3-2)) {
         //@ts-ignore
         expect(mapping.get(3-2).startProse).toBe(3-2);expect(mapping.get(3-2).endProse).toBe(8-2);expect(mapping.get(3-2).startText).toBe(0);expect(mapping.get(3-2).endText).toBe(5)
@@ -126,8 +126,8 @@ test("testMapping 2", () => {
 })
 
 test("testMapping 3", () => {
-    let textDocMapping = new TextDocMapping(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock><markdown>Hello</markdown>`,0)
-    let mapping = textDocMapping.getMapping()
+    const textDocMapping = new TextDocMapping(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock><markdown>Hello</markdown>`,0)
+    const mapping = textDocMapping.getMapping()
     if (mapping.has(4-2)) {
         //@ts-ignore
         expect(mapping.get(4-2).startProse).toBe(4-2);expect(mapping.get(4-2).endProse).toBe(16-2);expect(mapping.get(4-2).startText).toBe(8);expect(mapping.get(4-2).endText).toBe(20)
@@ -144,8 +144,8 @@ test("testMapping 3", () => {
 })
 
 test("testMapping 4", () => {
-    let textDocMapping = new TextDocMapping(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqdoc preWhite="newLine" postWhite="newLine"><coqdown>This is code</coqdown></coqdoc></coqcode></coqblock>`,0)
-    let mapping = textDocMapping.getMapping()
+    const textDocMapping = new TextDocMapping(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqdoc preWhite="newLine" postWhite="newLine"><coqdown>This is code</coqdown></coqdoc></coqcode></coqblock>`,0)
+    const mapping = textDocMapping.getMapping()
     if (mapping.has(5-2)) {
         //@ts-ignore
         expect(mapping.get(5-2).startProse).toBe(5-2);expect(mapping.get(5-2).endProse).toBe(17-2);expect(mapping.get(5-2).startText).toBe(13);expect(mapping.get(5-2).endText).toBe(25)
@@ -156,10 +156,10 @@ test("testMapping 4", () => {
 })
 
 test("docString", () => {
-    let docString = `Hello\n\`\`\`coq\nNo edit pls.\n\`\`\`\n<input-area>HELLO</input-area>\n<hint title="optional">## Header</hint>\n\n\`\`\`coq\nNo edit pls.\n\`\`\``
-    let translated = translateMvToProsemirror(docString)
-    let textDocMapping = new TextDocMapping(translated,0)
-    let mapping = textDocMapping.getMapping()
+    const docString = `Hello\n\`\`\`coq\nNo edit pls.\n\`\`\`\n<input-area>HELLO</input-area>\n<hint title="optional">## Header</hint>\n\n\`\`\`coq\nNo edit pls.\n\`\`\``
+    const translated = translateMvToProsemirror(docString)
+    const textDocMapping = new TextDocMapping(translated,0)
+    const mapping = textDocMapping.getMapping()
     if (mapping.has(3-2)) {
         //@ts-ignore
         expect(mapping.get(3-2).startProse).toBe(3-2);expect(mapping.get(3-2).endProse).toBe(8-2);expect(mapping.get(3-2).startText).toBe(0);expect(mapping.get(3-2).endText).toBe(5)
@@ -205,8 +205,8 @@ test("docString", () => {
 })
 
 test("test", () => {
-    let textDocMapping = new TextDocMapping(`<markdown>Hello</markdown>`,0)
-    let mapping = textDocMapping.getMapping()
+    const textDocMapping = new TextDocMapping(`<markdown>Hello</markdown>`,0)
+    const mapping = textDocMapping.getMapping()
     const text = TheSchema.text("Text");
     const coqCode = TheSchema.nodes['coqcode'].create({}, text);
     const moreIntNode = TheSchema.nodes['coqblock'].create({}, coqCode);

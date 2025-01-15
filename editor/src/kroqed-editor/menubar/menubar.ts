@@ -63,7 +63,7 @@ class MenuView implements PluginView {
         // Add event listeners to every menubar item
         this.menubarDOM.addEventListener("mousedown", (event) => {
             // Get the target DOM Node.
-            let mouseTarget = event.target as Node;
+            const mouseTarget = event.target as Node;
             // Prevent default behaviour.
             event.preventDefault();
         
@@ -86,7 +86,7 @@ class MenuView implements PluginView {
         const inTeacherMode = MENU_PLUGIN_KEY.getState(view.state)?.teacher;
 
         for(const item of this.items) {
-            let active = item.cmd(this.view.state, undefined, this.view); 
+            const active = item.cmd(this.view.state, undefined, this.view); 
             /* From https://prosemirror.net/examples/menu/
             "To update the menu for a new state, all commands are run without dispatch function, 
             and the items for those that return false are hidden."
@@ -139,7 +139,7 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os
     const keyBinding = (key: string): string => `${cmdOrCtrl}-${key}`;
 
     // Create the list of menu entries.
-    let items: MenuEntry[] = [
+    const items: MenuEntry[] = [
         // Insert Coq command
         createMenuItem("Math↓", `Insert new verified math block underneath (${keyBinding("q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
         createMenuItem("Math↑", `Insert new verified math block above (${keyBinding("Q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
@@ -197,9 +197,9 @@ export function menuPlugin(schema: Schema, filef: any, os: OS) {
         // This plugin has an associated `view`. This allows it to add DOM elements.
         view(outerView) {
             // Create the default menu.
-            let menuView = createDefaultMenu(schema, outerView, filef, os);
+            const menuView = createDefaultMenu(schema, outerView, filef, os);
             // Get the parent node (the parent node of the outer prosemirror dom)
-            let parentNode = outerView.dom.parentNode;
+            const parentNode = outerView.dom.parentNode;
             if (parentNode == null) {
                 throw Error("outerView.dom.parentNode cannot be null here");
             }

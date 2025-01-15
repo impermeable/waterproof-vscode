@@ -134,12 +134,12 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = checkPrePost(content, (msg: Message) => {
+		const newContent = checkPrePost(content, (msg: Message) => {
 			this.post(msg);
 		});
 		if (newContent !== content) version = version + 1;
 
-		let parsedContent = this._translator.toProsemirror(newContent);
+		const parsedContent = this._translator.toProsemirror(newContent);
 		// this._contentElem.innerHTML = parsedContent;
 
 		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
@@ -161,7 +161,7 @@ export class Editor {
 	createProseMirrorEditor(proseDoc: ProseNode) {
 		// Shadow this variable _userOS.
 		const userOS = this._userOS;
-		let view = new EditorView(this._editorElem, {
+		const view = new EditorView(this._editorElem, {
 			state: this.createState(proseDoc),
 			clipboardTextSerializer: (slice) => { return mathSerializer.serializeSlice(slice) },
 			dispatchTransaction: ((tr) => {
@@ -172,7 +172,7 @@ export class Editor {
 					if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
-							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
+							const obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
 							this.post({type: MessageType.docChange, body: obj});
 						} catch (error) {
 							console.error(error.message);
@@ -274,7 +274,7 @@ export class Editor {
 	}
 
 	handleSnippet(template: string) {
-		const view = this._view!!;
+		const view = this._view!;
 		// Get the first selection.
 		const from = view.state.selection.from;
 		const to = view.state.selection.to;
@@ -321,7 +321,7 @@ export class Editor {
 		if (!this._view || COQ_CODE_PLUGIN_KEY.getState(this._view.state) === undefined) return;
 		const linenumbers = Array<number>();
 		//@ts-ignore
-		for (let codeCell of COQ_CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
+		for (const codeCell of COQ_CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
 			//@ts-ignore
 			linenumbers.push(this._mapping?.findPosition(codeCell._getPos() + 1));
 		}
@@ -331,7 +331,7 @@ export class Editor {
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */
 	setLineNumbers(msg: LineNumber) {
 		if (!this._view || !this._mapping || msg.version < this._mapping.version) return;
-		let state = COQ_CODE_PLUGIN_KEY.getState(this._view.state);
+		const state = COQ_CODE_PLUGIN_KEY.getState(this._view.state);
 		if (!state) return;
 		const tr = this._view.state.tr.setMeta(COQ_CODE_PLUGIN_KEY, msg);
 		this._view.dispatch(tr);
@@ -454,7 +454,7 @@ export class Editor {
 	parseCoqDiagnostics(msg: DiagnosticMessage) {
 		if (this._mapping === undefined || msg.version < this._mapping.version) return;
 
-		let diagnostics = msg.positionedDiagnostics;
+		const diagnostics = msg.positionedDiagnostics;
 		const map = this._mapping;
 		if (this._view === undefined || map === undefined) return;
 
@@ -462,12 +462,12 @@ export class Editor {
 		const views = COQ_CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
 		if (views === undefined) return;
 		// Clear the errors
-		for (let view of views) view.clearCoqErrors();
+		for (const view of views) view.clearCoqErrors();
 
 		// Convert to inverse mapped positions.
 		const doc = this._view.state.doc;
 		this.currentProseDiagnostics = new Array<DiagnosticObjectProse>();
-		for (let diag of diagnostics) {
+		for (const diag of diagnostics) {
 			const start = map.findInvPosition(diag.startOffset);
 			const end = map.findInvPosition(diag.endOffset);
 			if (start >= end) continue;

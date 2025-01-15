@@ -15,7 +15,7 @@ export type MessagesInfo = PropsWithChildren<
 
 //component that takes in the MessagesInfo and displays the list of messages
 export function Messages({answer} : MessagesInfo) {
-  let count = answer.messages.length;
+  const count = answer.messages.length;
   //check if there are any messages that need to be shown
   if (count != 0) {
   //the Box component is used to display the messages along with the location
@@ -25,7 +25,7 @@ export function Messages({answer} : MessagesInfo) {
         {answer.messages.map((value, idx) => {
           //mapping over the messages to display the list of all messages
           //hashing the value to retrieve a key
-          let key = objectHash(value);
+          const key = objectHash(value);
           return <Message key={key} message={value} />;
         })}
       </ul>

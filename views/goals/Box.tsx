@@ -24,10 +24,10 @@ export type DetailsP = PropsWithChildren<
 //position is the position in the textdocument
 //textDox is the corresponding file
 export function Box({ summary, children, pos, textDox  }: DetailsP) {
-    let uri = textDox.uri.split("/").slice(-1)[0];
-    let line = pos.line + 1; // 1-based position
-    let character = pos.character + 1; // 1-based character
-    let info = (
+    const uri = textDox.uri.split("/").slice(-1)[0];
+    const line = pos.line + 1; // 1-based position
+    const character = pos.character + 1; // 1-based character
+    const info = (
     <span>
       {uri}:{line}:{character}
     </span>

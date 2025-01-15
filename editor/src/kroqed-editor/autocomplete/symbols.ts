@@ -10,7 +10,7 @@ const symbolCompletions: Completion[] = symbols;
  */
 export const symbolCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
     return new Promise((resolve, reject) => {
-        let before = context.matchBefore(/\\/);
+        const before = context.matchBefore(/\\/);
         // If completion wasn't explicitly started and there
         // is no word before the cursor, don't open completions.
         if (!context.explicit && !before) resolve(null);

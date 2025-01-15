@@ -64,13 +64,13 @@ test("Double coqdoc", () => {
 })
 
 test("entire document", () => {
-    let docString = `Hello\n\`\`\`coq\nNo edit pls.\n\`\`\`\n<input-area>HELLO</input-area>\n<hint title="optional">## Header</hint>\n\n\`\`\`coq\nNo edit pls.\n\`\`\``
-    let predict = `<markdown>Hello</markdown><coqblock prePreWhite="newLine" prePostWhite="newLine" postPreWhite="newLine" postPostWhite="newLine"><coqcode>No edit pls.</coqcode></coqblock><input-area><markdown>HELLO</markdown></input-area><markdown>\n</markdown><hint title="optional"><markdown>## Header</markdown></hint><markdown>\n</markdown><coqblock prePreWhite="newLine" prePostWhite="newLine" postPreWhite="newLine" postPostWhite=""><coqcode>No edit pls.</coqcode></coqblock>`
+    const docString = `Hello\n\`\`\`coq\nNo edit pls.\n\`\`\`\n<input-area>HELLO</input-area>\n<hint title="optional">## Header</hint>\n\n\`\`\`coq\nNo edit pls.\n\`\`\``
+    const predict = `<markdown>Hello</markdown><coqblock prePreWhite="newLine" prePostWhite="newLine" postPreWhite="newLine" postPostWhite="newLine"><coqcode>No edit pls.</coqcode></coqblock><input-area><markdown>HELLO</markdown></input-area><markdown>\n</markdown><hint title="optional"><markdown>## Header</markdown></hint><markdown>\n</markdown><coqblock prePreWhite="newLine" prePostWhite="newLine" postPreWhite="newLine" postPostWhite=""><coqcode>No edit pls.</coqcode></coqblock>`
     expect(translateMvToProsemirror(docString)).toBe(predict)
 })
 
 test("entire document2", () => {
-    let docString = `# This is a header. 
+    const docString = `# This is a header. 
 
 This is a paragraph. Paragraphs support inline LaTeX like $5+3=22$. Underneath you'll find a math display block.
 $$
@@ -100,7 +100,7 @@ Proof.
   - simpl. rewrite IHl. simpl. reflexivity.
 Qed.
 \`\`\``
-    let predict = `<markdown># This is a header. 
+    const predict = `<markdown># This is a header. 
 
 This is a paragraph. Paragraphs support inline LaTeX like $5+3=22$. Underneath you'll find a math display block.
 </markdown><math-display>

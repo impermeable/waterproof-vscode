@@ -155,7 +155,7 @@ export namespace CoqLspServerConfig {
 
 export namespace CoqLspClientConfig {
     export function create(wsConfig: any): CoqLspClientConfig {
-        let obj: CoqLspClientConfig = { show_goals_on: wsConfig.show_goals_on };
+        const obj: CoqLspClientConfig = { show_goals_on: wsConfig.show_goals_on };
         return obj;
     }
 }

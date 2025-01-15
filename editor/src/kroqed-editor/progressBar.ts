@@ -26,7 +26,7 @@ function createProgressBar(progressState, progressBarContainer, spinnerContainer
   const { progressParams, resetProgressBar, endLine, startLine } = progressState;
 
   // Remove existing progress bar text
-  let oldProgressBarText = progressBarContainer.querySelector('.progress-bar-text');
+  const oldProgressBarText = progressBarContainer.querySelector('.progress-bar-text');
   if (oldProgressBarText) {
     progressBarContainer.removeChild(oldProgressBarText);
   }
@@ -35,7 +35,7 @@ function createProgressBar(progressState, progressBarContainer, spinnerContainer
   
   if (resetProgressBar) {
     // If resetProgressBar is true, remove existing progress element
-    let oldProgress = progressBarContainer.querySelector('progress');
+    const oldProgress = progressBarContainer.querySelector('progress');
     if (oldProgress) {
       progressBarContainer.removeChild(oldProgress);
     }
@@ -59,7 +59,7 @@ function createProgressBar(progressState, progressBarContainer, spinnerContainer
   }
 
   // Create a span for the text
-  let progressBarText = document.createElement('span');
+  const progressBarText = document.createElement('span');
   progressBarText.className = 'progress-bar-text';
 
   
@@ -76,7 +76,7 @@ function createProgressBar(progressState, progressBarContainer, spinnerContainer
 }
 
 // Spec for the progress bar plugin
-let ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
+const ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
   key: PROGRESS_PLUGIN_KEY,
   state: {
     init(config, instance) {
@@ -108,13 +108,13 @@ let ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
   },
   view(editorView) {
     // Create a container for the progress bar
-    let progressBarContainer = document.createElement('div');
+    const progressBarContainer = document.createElement('div');
     progressBarContainer.className = 'progress-bar';
-    let spinnerContainer = document.createElement('div');
+    const spinnerContainer = document.createElement('div');
     spinnerContainer.className = 'spinner-container';
 
     // Insert the progress bar container into the DOM
-    let parentNode = editorView.dom.parentNode;
+    const parentNode = editorView.dom.parentNode;
     if (parentNode == null) {
       throw Error("editorView.dom.parentNode cannot be null here");
     }
@@ -124,7 +124,7 @@ let ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
     return {
       update(view, prevState) {
         // Update the progress bar with the current state
-        let progressState = PROGRESS_PLUGIN_KEY.getState(view.state);
+        const progressState = PROGRESS_PLUGIN_KEY.getState(view.state);
         if (progressState) {
           createProgressBar(progressState, progressBarContainer, spinnerContainer);
         }

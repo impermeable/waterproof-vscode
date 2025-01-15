@@ -36,7 +36,7 @@ export class RenderedView {
         // Set the holder innerHTML to the rendered markdown this way we can parse it to prosemirror.
         holder.innerHTML = mditOutput;
         // Create a prosemirror view with the math plugin enabled
-        let view = new EditorView(target, {
+        const view = new EditorView(target, {
             state: EditorState.create({
                 doc: DOMParser.fromSchema(markdownRenderingSchema).parse(holder),
                 schema: markdownRenderingSchema,

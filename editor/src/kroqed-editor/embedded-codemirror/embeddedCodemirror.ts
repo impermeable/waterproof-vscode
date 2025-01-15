@@ -52,8 +52,8 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 		if (this.updating) return true;
 
 		// Extract node text (the edit) and document (current) text.
-		let newText = node.textContent;
-		let curText = this._codemirror.state.doc.toString();
+		const newText = node.textContent;
+		const curText = this._codemirror.state.doc.toString();
 
 		// Check whether they are the same.
 		// We don't need to update if they are.
@@ -115,7 +115,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 
 	forwardUpdate(update: ViewUpdate): void {
 		// Get the current cursor position.
-		let pos = this._getPos();
+		const pos = this._getPos();
 		// If there is no position we are done.
 		if (!pos) return;
 		// If we are updating or we don't have focus then we should return early.
@@ -124,13 +124,13 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 		// Figure out offset position from selection.
 		let offset = pos + 1, { main } = update.state.selection;
 		// Get selection from and to.
-		let selFrom = offset + main.from, selTo = offset + main.to;
+		const selFrom = offset + main.from, selTo = offset + main.to;
 		// Get the selection from the outer view.
-		let pmSel = this._outerView.state.selection;
+		const pmSel = this._outerView.state.selection;
 		// If either the document changed or the selections do not match...
 		if (update.docChanged || pmSel.from != selFrom || pmSel.to != selTo) {
 			//..then we get the currnt transaction
-			let tr = this._outerView.state.tr;
+			const tr = this._outerView.state.tr;
 			update.changes.iterChanges((fromA, toA, fromB, toB, text) => {
 				//..iterate over all changes and create text changes in the outer editor.
 				if (text.length) {
@@ -164,8 +164,8 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 			if (!pos) return false;
 
 			// Get the current state and the main selection related to this state.
-			let _state = targetView.state;
-			let _mainSelection = _state.selection.main;
+			const _state = targetView.state;
+			const _mainSelection = _state.selection.main;
 
 			// If there is no main selection this is a no-op.
 			if (!_mainSelection.empty) return false;
@@ -226,7 +226,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 
     // Setup codemirror keymap
 	embeddedCodeMirrorKeymap(): KeyBinding[] {
-		let view = this._outerView;
+		const view = this._outerView;
 
 		// 'Mod' is a platform independent 'Ctrl'/'Cmd'
 		return [

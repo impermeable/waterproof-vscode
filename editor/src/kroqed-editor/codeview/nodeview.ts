@@ -205,7 +205,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	dynamicCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
 		return new Promise((resolve, reject) => {
-			let before = context.matchBefore(/\w/);
+			const before = context.matchBefore(/\w/);
 			// If completion wasn't explicitly started and there
 			// is no word before the cursor, don't open completions.
 			if (!context.explicit && !before) resolve(null);

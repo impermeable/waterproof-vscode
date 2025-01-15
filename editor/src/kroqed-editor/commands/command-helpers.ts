@@ -94,7 +94,7 @@ export function insertUnder(state: EditorState, tr: Transaction, ...nodeType: No
     } else if (isTextSelection) {
         const textSel = (sel as TextSelection);
         const to = sel.to + (sel.$from.parent.nodeSize - textSel.$from.parentOffset) - 1;
-        let content: PNode | null = null;
+        const content: PNode | null = null;
 
         if (to > state.doc.nodeSize) {
             console.log("This is no bueno");

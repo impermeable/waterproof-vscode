@@ -6,7 +6,7 @@ import {
     window
 } from "vscode";
 import { Disposable } from "vscode-languageclient";
-import { Message, MessageType } from "../../shared";
+import { Message } from "../../shared";
 
 /**
  * Defines the states of the webview

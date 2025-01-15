@@ -87,7 +87,7 @@ export class TextDocMappingMV {
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
         let correctCellKey = 0;
-        for (const [key,value] of this.stringBlocks) {
+        for (const [key,_value] of this.stringBlocks) {
             if (key > index) break;
             correctCellKey = key;
         }
@@ -99,7 +99,7 @@ export class TextDocMappingMV {
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
         let correctCellKey = 0;
-        for (const [key,value] of this.invStringBlocks) {
+        for (const [key,_value] of this.invStringBlocks) {
             if (key > index) break;
             correctCellKey = key;
         }
@@ -193,12 +193,12 @@ export class TextDocMappingMV {
     /** Checks whether the step takes place exclusively within a string cell */
     private inStringCell(step: ReplaceStep | ReplaceAroundStep) : boolean {
         let correctCellKey = 0;
-        for (const [key,value] of this.stringBlocks) {
+        for (const [key,_value] of this.stringBlocks) {
             if (key > step.from) break;
             correctCellKey = key;
         }
-        //@ts-ignore
-        return step.to <= this.stringBlocks.get(correctCellKey)?.endProse;
+        const cell = this.stringBlocks.get(correctCellKey);
+        return cell !== undefined && step.to <= cell.endProse;
     }
 
     /** Called whenever a step is made in the editor */
@@ -235,7 +235,7 @@ export class TextDocMappingMV {
     /** Constructs a map from stringBlocks that is indexed based on the vscode index instead of prose */
     private updateInvMapping() {
         this.invStringBlocks = new Map<number, StringCell>();
-        this.stringBlocks.forEach((value, key) => {
+        this.stringBlocks.forEach((value, _key) => {
             this.invStringBlocks.set(value.startText, value)
         });
     }

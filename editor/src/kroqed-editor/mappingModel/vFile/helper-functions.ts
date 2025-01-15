@@ -52,7 +52,10 @@ export function parseFragment(frag: Fragment | undefined) : {proseOffset: number
         case "math_display":
             start += "$";
             end += "$";
-        case "coqcode": case "coqdown":
+        // Purposeful fallthrough
+        // eslint-disable-next-line no-fallthrough
+        case "coqcode": 
+        case "coqdown":
         case "markdown":
             needsCell = true;
             break;

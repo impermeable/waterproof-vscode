@@ -38,9 +38,9 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
         this._schema = schema;
 		// Initialize other parameters to default value
 		this.updating = false;
-		this.dom = new Node();
     }
-
+	// Don't know how to initialize this without it being a problem
+	// @ts-expect-error
     dom : Node;
     contentDOM?: HTMLElement | null | undefined;
 

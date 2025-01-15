@@ -221,9 +221,9 @@ function handleCoqBlock(match: RegExpMatchArray) {
     });
 
     if (result === "") {
-        result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`"><coqcode></coqcode><\/coqblock>`
+        result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`"><coqcode></coqcode></coqblock>`
     } else {
-        result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`">` + result + `<\/coqblock>`
+        result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`">` + result + `</coqblock>`
     }
 
     

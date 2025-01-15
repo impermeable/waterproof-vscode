@@ -1,5 +1,5 @@
 import objectHash from "object-hash";
-import { GoalAnswer, Message as Msg, Pp } from "../../lib/types";
+import { GoalAnswer} from "../../lib/types";
 import { PpString } from "../../lib/types";
 import { Message } from "./Message";
 import {Box} from "./Box";
@@ -22,7 +22,7 @@ export function Messages({answer} : MessagesInfo) {
   return (
     <Box summary={`Messages`} pos={answer.position} textDox={answer.textDocument} >
       <ul className="messageList">
-        {answer.messages.map((value, idx) => {
+        {answer.messages.map((value, _) => {
           //mapping over the messages to display the list of all messages
           //hashing the value to retrieve a key
           const key = objectHash(value);

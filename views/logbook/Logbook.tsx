@@ -48,7 +48,7 @@ export function Logbook() {
   return (
     <div className="info-panel-container">
       <div className="info-panel">
-      {goalsArray.map((value, idx) => {
+      {goalsArray.map((value, _) => {
           const key = objectHash(value);
           return <Messages key={key} answer={value} />;
         })}

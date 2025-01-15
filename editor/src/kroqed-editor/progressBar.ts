@@ -79,7 +79,7 @@ function createProgressBar(progressState, progressBarContainer, spinnerContainer
 const ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
   key: PROGRESS_PLUGIN_KEY,
   state: {
-    init(config, instance) {
+    init(_config, _instance) {
       return {
         progressParams: {
           numberOfLines: 1,
@@ -90,7 +90,7 @@ const ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
         startLine: 1,
       };
     },
-    apply(tr: Transaction, value: IProgressPluginState, oldState: EditorState, newState: EditorState): IProgressPluginState {
+    apply(tr: Transaction, value: IProgressPluginState, _oldState: EditorState, _newState: EditorState): IProgressPluginState {
       // Retrieve progress parameters from the transaction meta data
       const progressParams: SimpleProgressParams = tr.getMeta(PROGRESS_PLUGIN_KEY);
       if (progressParams != null) {
@@ -122,7 +122,7 @@ const ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
     parentNode.insertBefore(spinnerContainer, editorView.dom);
 
     return {
-      update(view, prevState) {
+      update(view, _prevState) {
         // Update the progress bar with the current state
         const progressState = PROGRESS_PLUGIN_KEY.getState(view.state);
         if (progressState) {

@@ -103,9 +103,6 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
 
   const [l, r] = stack[idx];
   const goals = l.concat(r);
-  //defines the level of the goal using idx
-  const level_indicator =
-    idx === 0 ? "the same bullet level" : `the -${idx} bullet level`;
 
   return (
     <div>

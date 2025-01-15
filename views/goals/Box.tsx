@@ -1,11 +1,9 @@
 import React from "react";
-import { GoalAnswer, GoalRequest, Pp, PpString } from "../../lib/types";
-import { PropsWithChildren, DetailsHTMLAttributes } from "react";
+import { PropsWithChildren} from "react";
 import "../styles/box.css";
 import {
   VersionedTextDocumentIdentifier,
   Position,
-  Range,
 } from "vscode-languageserver-types";
 
 //type that makes sure the children components are also passed 

@@ -1,5 +1,4 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
-import objectHash from "object-hash";
 import React, { useEffect, useRef, useState } from "react";
 
 import { MessageType } from "../../shared";
@@ -19,7 +18,6 @@ export function ExpandDefinition() {
     const [current, setCurrent] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const searchareaRef =  useRef(null);
     const input1Ref = useRef(null);
     const input2Ref = useRef(null);
 
@@ -139,36 +137,15 @@ export function ExpandDefinition() {
         }
     };
 
-    //search by pressing shift + enter
-    const handleKeyDownSearch = (event) => {
-        if (event.key === 'Enter' && event.shiftKey) {
-            // Handle Shift + Enter key press logic here
-            // Prevent adding a new line in the textarea
-            event.preventDefault(); 
-             //print the search results
-        }
-        setCursorPos(searchareaRef.current, "search");
-    };
-
     //handle change in the first input of execute
-    const handleChange = (event) => {
+    const handleChange = (_event) => {
         setCursorPos(input1Ref.current, "input1");
     };
 
     //handle change in the second input of execute
-    const handleChange2 = (event) => {
+    const handleChange2 = (_event) => {
         setCursorPos(input2Ref.current, "input2");
     };
-
-    //handle change in the search input
-    const handleChangeSearch = (event) => {
-        setCursorPos(searchareaRef.current, "search");
-    };
-
-    // handle click in the search bar
-    const onClickSearch = ()=> {
-        setCursorPos(searchareaRef.current, "search");
-    }
 
     //handle click in the first input of execute
     const onClick1 = () => {

@@ -30,7 +30,7 @@ import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
 import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
-import { DiagnosticSeverity, ThemeIcon } from "vscode";
+import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
 
@@ -71,7 +71,7 @@ export class Editor {
 
 	// User operating system.
 	private readonly _userOS;
-	private _filef: any;
+	private _filef: FileFormat;
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>;
 
@@ -95,7 +95,7 @@ export class Editor {
 		document.body.appendChild(theContextMenu);
 
 		// Setup the custom context menu
-		document.addEventListener("click", (ev) => {
+		document.addEventListener("click", (_ev) => {
 			// Handle a 'left mouse click'
 			// console.log("LMB");
 			theContextMenu.style.display = "none";
@@ -277,7 +277,6 @@ export class Editor {
 		const view = this._view!;
 		// Get the first selection.
 		const from = view.state.selection.from;
-		const to = view.state.selection.to;
 
 		// We need to figure out to which codemirror cell this insertion belongs.
 
@@ -320,9 +319,9 @@ export class Editor {
 		if (!this._lineNumbersShown) return;
 		if (!this._view || COQ_CODE_PLUGIN_KEY.getState(this._view.state) === undefined) return;
 		const linenumbers = Array<number>();
-		//@ts-ignore
+		// @ts-expect-error TODO: Fix me
 		for (const codeCell of COQ_CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
-			//@ts-ignore
+			// @ts-expect-error TODO: Fix me
 			linenumbers.push(this._mapping?.findPosition(codeCell._getPos() + 1));
 		}
 		this.post({type: MessageType.lineNumbers, body: {linenumbers, version: this._mapping?.version}});
@@ -341,7 +340,7 @@ export class Editor {
 		const view = this._view;
 		if (!view) return;
 		const func = type === HistoryChangeType.Undo ? undo : redo;
-		const ret = func(view.state, view.dispatch, view);
+		func(view.state, view.dispatch, view);
 	}
 
 	/**
@@ -351,16 +350,16 @@ export class Editor {
 	 * @param symbolLaTeX The LaTeX command(s) to produce the character.
 	 * @returns Whether the operation was a success.
 	 */
-	insertSymbol(symbolUnicode: string, symbolLaTeX: string): boolean {
+	insertSymbol(symbolUnicode: string, _symbolLaTeX: string): boolean {
 		// If there is no view at the moment this is a no-op.
 		if (!this._view) return false;
 		let state = this._view.state;
 		let from = state.selection.from;
 		let to = state.selection.to;
 		if (REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor) {
-			//@ts-ignore
+			// @ts-expect-error TODO: Fix me
 			from = REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor?.from;
-			//@ts-ignore
+			// @ts-expect-error TODO: Fix me
 			to = REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor?.to;
 		}
 		state = this._view.state;
@@ -522,29 +521,33 @@ export class Editor {
 
 	/** Handle a message from vscode */
 	handleMessage(msg: Message) {
+		// Blocks added to scope const declarations
 		switch(msg.type) {
 			case MessageType.qedStatus:
-				const statuses = msg.body as QedStatus[];  // one status for each input area, in order
+				{ const statuses = msg.body as QedStatus[];  // one status for each input area, in order
 				this.updateQedStatus(statuses);
-				break;
+				break; }
 			case MessageType.setShowLineNumbers:
-				const show = msg.body as boolean;
+				{ const show = msg.body as boolean;
 				this.setShowLineNumbers(show);
-				break;
+				break; }
 			case MessageType.lineNumbers:
+				// @ts-expect-error TODO: Fix me
 				this.setLineNumbers(msg.body);
 				break;
 			case MessageType.teacher:
+				// @ts-expect-error TODO: Fix me
 				this.updateLockingState(msg.body);
 				break;
 			case MessageType.progress:
-				const progressParams = msg.body as SimpleProgressParams;
+				{ const progressParams = msg.body as SimpleProgressParams;
 				this.updateProgressBar(progressParams);
-				break;
+				break; }
 			case MessageType.diagnostics:
-				const diagnostics = msg.body;
+				{ const diagnostics = msg.body;
+				// @ts-expect-error TODO: Fix me
 				this.parseCoqDiagnostics(diagnostics);
-				break;
+				break; }
             case MessageType.syntax:
                 initializeTacticCompletion(msg.body as boolean);
                 break;

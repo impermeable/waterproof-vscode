@@ -63,6 +63,7 @@ export class TextDocMappingMV {
     constructor(inputString: string, versionNum: number) {
         this._version = versionNum;
         this.stringBlocks = new Map<number, StringCell>();
+        this.invStringBlocks = new Map<number, StringCell>();
         this.endHtmlMap = new Map<number,HtmlTagInfo>();
         this.startHtmlMap = new Map<number,HtmlTagInfo>();
         this.initialize(inputString);

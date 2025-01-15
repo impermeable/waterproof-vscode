@@ -551,7 +551,7 @@
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
     "package": "npm run clean && npm run test-package",
     "unit-tests": "npx jest",
-    "lezer-generator": "npx lezer-generator ./editor/src/kroqed-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/kroqed-editor/codeview/lang-pack/syntax.js",
+    "lezer-generator": "npx lezer-generator ./editor/src/kroqed-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/kroqed-editor/codeview/lang-pack/syntax.ts",
     "cypress-tests": "npx cypress run"
   }
 }

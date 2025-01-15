@@ -1,4 +1,3 @@
-import { indentMore, indentLess } from "@codemirror/commands"
 import {
 	EditorView as CodeMirror, ViewUpdate, keymap as cmKeymap,
 	placeholder
@@ -10,7 +9,7 @@ import { Decoration, EditorView } from "prosemirror-view"
 import { SwitchableView } from "./SwitchableView"
 import { editorTheme } from "./EditorTheme"
 import { renderIcon, symbolCompletionSource } from "../../autocomplete"
-import { autocompletion, acceptCompletion } from "@codemirror/autocomplete"
+import { autocompletion } from "@codemirror/autocomplete"
 import { EmbeddedCodeMirrorEditor } from "../../embedded-codemirror"
 
 /**
@@ -74,7 +73,8 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 		if (this._parent.updating || !this.view.hasFocus) return;
 
 		// TODO: Comments
-		let offset = pos + 1, {main} = update.state.selection;
+		let offset = pos + 1
+		const {main} = update.state.selection;
 		const selFrom = offset + main.from, selTo = offset + main.to;
 		const pmSel = this._outerView.state.selection;
 		if (update.docChanged || pmSel.from != selFrom || pmSel.to != selTo) {
@@ -95,7 +95,7 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 	}
 
 	// Overwrites the base method in EmbeddedCodeMirrorEditor.
-	update(node: Node, decorations: readonly Decoration[]) {
+	update(node: Node, _decorations: readonly Decoration[]) {
 
 		// If is updating return early
 		if (this._parent.updating) return true;

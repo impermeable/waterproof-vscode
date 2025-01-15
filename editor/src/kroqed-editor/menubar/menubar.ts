@@ -1,11 +1,11 @@
 import { selectParentNode, wrapIn } from "prosemirror-commands";
 import { Schema } from "prosemirror-model";
-import { Command, PluginView, Plugin, EditorState, Transaction, PluginKey } from "prosemirror-state";
+import { Command, PluginView, Plugin, PluginKey } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 import { cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, InsertionPlace, liftWrapper } from "../commands";
-import { COQ_CODE_PLUGIN_KEY } from "../codeview/coqcodeplugin";
 import { OS } from "../osType";
+import { FileFormat } from "../../../../shared";
 
 /** MenuEntry type contains the DOM, whether to only show it in teacher mode and the command to execute on click */
 type MenuEntry = {
@@ -132,7 +132,7 @@ const DEBUG = false;
  * @param filef The file format of the current file. Some commands will behave differently in `.mv` vs `.v` context.
  * @returns A new `MenuView` filled with default menu items.
  */
-function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os: OS): MenuView {
+function createDefaultMenu(schema: Schema, outerView: EditorView, filef: FileFormat, os: OS): MenuView {
 
     // Platform specific keybinding string:
     const cmdOrCtrl = os == OS.MacOS ? "Cmd" : "Ctrl";
@@ -192,7 +192,7 @@ export const MENU_PLUGIN_KEY = new PluginKey<IMenuPluginState>("prosemirror-menu
  * @param filef The file format of the currently opened file.
  * @returns A prosemirror `Plugin` type containing the menubar.
  */
-export function menuPlugin(schema: Schema, filef: any, os: OS) {
+export function menuPlugin(schema: Schema, filef: FileFormat, os: OS) {
     return new Plugin({
         // This plugin has an associated `view`. This allows it to add DOM elements.
         view(outerView) {
@@ -212,13 +212,13 @@ export function menuPlugin(schema: Schema, filef: any, os: OS) {
         // Set the key (uniquely associates this key to this plugin)
         key: MENU_PLUGIN_KEY, 
         state: {
-            init(config, instance): IMenuPluginState {
+            init(_config, _instance): IMenuPluginState {
                 // Initially teacher mode is set to true.
                 return {
                     teacher: true
                 }
             },
-            apply(tr, value, oldState, newState) {
+            apply(tr, value, _oldState, _newState) {
                 // Upon recieving a transaction with meta information...
                 let teacherState = !tr.getMeta(INPUT_AREA_PLUGIN_KEY);
                 // we check if the teacherState variable is set and if so,

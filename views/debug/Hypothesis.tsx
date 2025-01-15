@@ -86,7 +86,7 @@ export function Hypothesis({ goals, pos, textDoc }: GoalsParams) {
   return (
     <div className="coq-goal-env" ref={ref}>
     <Box summary={'Hypothesis'} pos={pos} textDox={textDoc}>
-      {goals.goals.map((value, idx) => {
+      {goals.goals.map((value, _idx) => {
         const key = objectHash(value);
         //another chekc for when a goal does not have hypothesis
         if (value.hyps.length ==0 ) return "No Hypothesis at this point!";

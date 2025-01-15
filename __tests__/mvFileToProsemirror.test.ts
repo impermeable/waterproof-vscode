@@ -1,5 +1,7 @@
+/* eslint-disable no-useless-escape */
+// Disable due to test data including latex code
 import { translateMvToProsemirror } from "../editor/src/kroqed-editor/translation/toProsemirror/mvFileToProsemirror";
-
+import { expect } from "@jest/globals";
 
 test("Expect empty input to return empty output", () => {
     expect(translateMvToProsemirror("")).toBe("");

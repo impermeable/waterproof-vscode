@@ -25,7 +25,7 @@ export class TextUpdate {
         /** Key of the stringCell in which step occurs */
         let correctCellKey = 0;
 
-        for (const [key,value] of stringBlocks) {
+        for (const [key, _value] of stringBlocks) {
             if (key > step.from) break;
             correctCellKey = key;
         }

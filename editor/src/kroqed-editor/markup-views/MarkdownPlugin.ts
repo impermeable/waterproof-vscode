@@ -48,14 +48,14 @@ const RealMarkdownPluginSpec = (schema: Schema): PluginSpec<IRealMarkdownPluginS
 	return {
 		key: REAL_MARKDOWN_PLUGIN_KEY,
 		state: {
-			init(config, instance){
+			init(_config, _instance){
 				return {
 					cursor: undefined,
 					macros: {},
 					activeNodeViews: []
 				};
 			},
-			apply(tr, value, oldState, newState){
+			apply(tr, value, _oldState, _newState){
 				// produce updated state field for this plugin
 				let newCur = value.cursor;
 				if(tr.getMeta(REAL_MARKDOWN_PLUGIN_KEY)) newCur = tr.getMeta(REAL_MARKDOWN_PLUGIN_KEY);

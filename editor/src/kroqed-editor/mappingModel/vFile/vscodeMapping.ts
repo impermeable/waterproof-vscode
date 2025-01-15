@@ -64,6 +64,7 @@ export class TextDocMappingV {
     constructor(inputString: string, versionNum: number) {
         this._version = versionNum;
         this.stringBlocks = new Map<number, StringCell>();
+        this.invStringBlocks = new Map<number, StringCell>();
         this.endHtmlMap = new Map<number,HtmlTagInfo>();
         this.startHtmlMap = new Map<number,HtmlTagInfo>();
         this.initialize(inputString);
@@ -88,7 +89,7 @@ export class TextDocMappingV {
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
         let correctCellKey = 0;
-        for (const [key,value] of this.stringBlocks) {
+        for (const [key,_value] of this.stringBlocks) {
             if (key > index) break;
             correctCellKey = key;
         }
@@ -100,7 +101,7 @@ export class TextDocMappingV {
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
         let correctCellKey = 0;
-        for (const [key,value] of this.invStringBlocks) {
+        for (const [key,_value] of this.invStringBlocks) {
             if (key > index) break;
             correctCellKey = key;
         }
@@ -125,9 +126,6 @@ export class TextDocMappingV {
 
         /** The current index we are at within the raw vscode text document */
         let offsetText: number = 0;
-
-        /** This represents whether we are currently within a coqdoc block */
-        const inCoqdoc: boolean = false; 
 
         // Continue until the entire string has been parsed
         while(inputString.length > 0) { 
@@ -190,12 +188,12 @@ export class TextDocMappingV {
     /** Checks whether the step takes place exclusively within a string cell */
     private inStringCell(step: ReplaceStep | ReplaceAroundStep) : boolean {
         let correctCellKey = 0;
-        for (const [key,value] of this.stringBlocks) {
+        for (const [key,_value] of this.stringBlocks) {
             if (key > step.from) break;
             correctCellKey = key;
         }
-        //@ts-ignore
-        return step.to <= this.stringBlocks.get(correctCellKey)?.endProse;
+        const targetCell = this.stringBlocks.get(correctCellKey);
+        return targetCell !== undefined && step.to <= targetCell.endProse;
     }
 
     /** Called whenever a step is made in the editor */
@@ -232,7 +230,7 @@ export class TextDocMappingV {
     /** Constructs a map from stringBlocks that is indexed based on the vscode index instead of prose */
     private updateInvMapping() {
         this.invStringBlocks = new Map<number, StringCell>();
-        this.stringBlocks.forEach((value, key) => {
+        this.stringBlocks.forEach((value, _key) => {
             this.invStringBlocks.set(value.startText, value)
         });
     }

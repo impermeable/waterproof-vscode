@@ -43,13 +43,13 @@ const coqdocPluginSpec = (schema: Schema):PluginSpec<ICoqdocPluginState> => {
 	return {
 		key: COQDOC_PLUGIN_KEY,
 		state: {
-			init(config, instance){
+			init(_config, _instance){
 				return {
 					macros: {},
 					activeNodeViews: []
 				};
 			},
-			apply(tr, value, oldState, newState){
+			apply(tr, value, _oldState, _newState){
 				// produce updated state field for this plugin
 				return {
 					// these values are left unchanged

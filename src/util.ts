@@ -40,7 +40,9 @@ export function excludeCoqFileTypes() {
     const activationConfig = workspace.getConfiguration();
     const updateIgnores = activationConfig.get("waterproof.updateIgnores") ?? true;
     if (updateIgnores) {
-        const fexc: any = activationConfig.get("files.exclude");
+        // TODO: Look at 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fexc : any = activationConfig.get("files.exclude");
         activationConfig.update("files.exclude", {
             "**/*.vo": true,
             "**/*.vok": true,

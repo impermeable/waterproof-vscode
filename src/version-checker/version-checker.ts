@@ -1,6 +1,6 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
-import { exec, spawn } from "child_process";
-import path = require("path");
+import { exec } from "child_process";
+import * as path from 'path';
 import { Version, VersionRequirement } from "./version";
 import { COMPARE_MODE } from "./types";
 
@@ -9,7 +9,7 @@ export type VersionError = {
 }
 
 /** Check if `input` is a version error. */
-function isVersionError(input: any | VersionError): input is VersionError {
+function isVersionError(input: unknown) : input is VersionError {
     return (input as VersionError).reason !== undefined;
 }
 
@@ -101,13 +101,11 @@ export class VersionChecker {
             const command = `${coqcBinary} --version`;
             const regex = /version (?<version>\d+\.\d+\.\d+)/g;
 
-            exec(command, (err, stdout, stderr) => {
+            exec(command, (err, stdout, _stderr) => {
                 if (err) resolve({ reason: err.message });
                 const groups = regex.exec(stdout)?.groups;
                 if (groups === undefined) reject("Regex matching on version string went wrong");
-                // FIXME: ts-ignore
-                //@ts-ignore
-                resolve(Version.fromString(groups["version"]));
+                resolve(Version.fromString(groups!["version"]));
             });
         });
     }
@@ -117,14 +115,14 @@ export class VersionChecker {
      * @returns 
      */
     public async checkWaterproofLib(): Promise<{ wpVersion: Version, requiredCoqVersion: Version } | VersionError> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
             const ext = process.platform === "win32" ? ".exe" : "";
             const coqtopPath = path.join(path.parse(this._wpPath).dir, `coqtop${ext}`);
 
             const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
             const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
-            exec(command, (err, stdout, stderr) => {
+            exec(command, (err, stdout, _stderr) => {
                 if (err) return resolve({ reason: err.message });
 
                 const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
@@ -141,11 +139,11 @@ export class VersionChecker {
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
      */
     private async checkLSPBinary(): Promise<Version | VersionError> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
             const command = `${this._wpPath} --version`;
 
-            exec(command, (err, stdout, stderr) => {
+            exec(command, (err, stdout, _stderr) => {
                 if (err) return resolve({ reason: err.message });
                 const version = Version.fromString(stdout.trim());
                 resolve(version);

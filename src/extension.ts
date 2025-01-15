@@ -3,7 +3,6 @@ import {
     ExtensionContext,
     Position,
     TextDocument,
-    WorkspaceConfiguration,
     commands,
     workspace,
     window,

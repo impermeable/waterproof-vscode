@@ -1,4 +1,4 @@
-name: Run Cypress Tests
+name: Run lint
 
 on: 
   push:
@@ -11,7 +11,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-24.04
-       steps:
+    steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 

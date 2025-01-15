@@ -1,3 +1,5 @@
+/* eslint-disable no-useless-escape */
+// Disable due to latex code in sample data
 import { topLevelBlocksMV, topLevelBlocksV } from "../../editor/src/kroqed-editor/prosedoc-construction";
 import { expect } from '@jest/globals';
 import { MarkdownBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/blocktypes";
@@ -16,7 +18,7 @@ Compute 1028 + 23.
 \`\`\`
 </input-area>
 #### Markdown content
-$$ int_0^2 x dx $$
+$$ \int_0^2 x dx $$
 \`\`\`coq
 Compute 1 + 1.
 \`\`\`
@@ -48,7 +50,7 @@ test("Parse top level blocks (MV)", () => {
     expect(blocks[4].stringContent).toBe("\n#### Markdown content\n");
     
     expect(isMathDisplayBlock(blocks[5])).toBe(true);
-    expect(blocks[5].stringContent).toBe(" int_0^2 x dx ");
+    expect(blocks[5].stringContent).toBe(" \int_0^2 x dx ");
     
     expect(isCoqBlock(blocks[6])).toBe(true);
     expect(blocks[6].stringContent).toBe("Compute 1 + 1.");

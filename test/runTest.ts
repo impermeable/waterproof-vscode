@@ -1,8 +1,7 @@
 import * as path from 'path';
 
 import { runTests } from '@vscode/test-electron';
-import { ExTester, SetupOptions } from 'vscode-extension-tester';
-import { version } from 'os';
+import { ExTester} from 'vscode-extension-tester';
 
 // Run all testing programs
 async function main() {

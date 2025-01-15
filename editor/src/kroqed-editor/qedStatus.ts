@@ -31,13 +31,13 @@ const UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginS
     key: UPDATE_STATUS_PLUGIN_KEY,
     state: {
       // The function to initialize the plugin state
-      init(config, instance){
+      init(_config, _instance){
         return {
           status: [],
         };
       },
       // Function to apply updates to the plugin state
-      apply(tr, value, oldState, newState){
+      apply(tr, value, _oldState, _newState){
         const newStatus = tr.getMeta(UPDATE_STATUS_PLUGIN_KEY);
         if (newStatus === undefined) {
           return value;

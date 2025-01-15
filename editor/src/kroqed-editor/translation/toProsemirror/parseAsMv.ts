@@ -22,7 +22,7 @@ export function parseAsMv(input: string, markDownType: string) {
     } else if (markDownType === "coqdown") {
 
         // This is for markdown replacement with text
-        const mathdisplayRegEx = /(?<!(?:\\|`))(?:((?<!\$)\${1}(?!\$)))([^]*?)(?<!(?:\\|\`))(?<!\$)\1(?!\$)/gm
+        const mathdisplayRegEx = /(?<!(?:\\|`))(?:((?<!\$)\${1}(?!\$)))([^]*?)(?<!(?:\\|`))(?<!\$)\1(?!\$)/gm
         input = input.replaceAll(mathdisplayRegEx, `</${markDownType}><math-display>$2</math-display><${markDownType}>`)
 
         // This is for empty cells

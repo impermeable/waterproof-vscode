@@ -1,5 +1,4 @@
 // Importing necessary modules from the Codemirror library
-import { Completion, CompletionSource } from "@codemirror/autocomplete"
 import {
     HighlightStyle, LRLanguage, LanguageSupport, delimitedIndent, foldInside, foldNodeProp,
     indentNodeProp, syntaxHighlighting

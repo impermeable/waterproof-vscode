@@ -61,7 +61,7 @@ const CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 				lines: {linenumbers: [], version: 0},
 			};
 		},
-		apply(tr, value, oldState, newState){
+		apply(tr, value, _oldState, _newState){
 			// produce updated state field for this plugin
 			let lineState = value.showLines;
 			let newlines = value.lines;
@@ -70,7 +70,7 @@ const CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 				for (const step of tr.steps) {
 					if (step instanceof ReplaceStep && step.slice.content.firstChild === null) {
 						for (const view of value.activeNodeViews) {
-							//@ts-ignore
+							// @ts-expect-error TODO: Fix me
 							if (view._getPos() === undefined || (view._getPos() >= step.from && view._getPos() < step.to)) value.activeNodeViews.delete(view);
 						} 
 					}

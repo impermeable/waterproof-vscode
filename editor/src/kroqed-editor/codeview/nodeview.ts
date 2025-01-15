@@ -28,7 +28,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
-	private _diags;
+	private _diags: Diagnostic[];
 
 	private debouncer: Debouncer;
 
@@ -162,7 +162,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		}, null, posFrom, posTo);
 	}
 
-	private lintingFunction: LintSource = (view: CodeMirror): readonly Diagnostic[] => {
+	private lintingFunction: LintSource = (_view: CodeMirror): readonly Diagnostic[] => {
 		return this._diags;
 	}
 
@@ -204,7 +204,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * Contains completions for defined theorems/lemmas/etc.
 	 */
 	dynamicCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve, _reject) => {
 			const before = context.matchBefore(/\w/);
 			// If completion wasn't explicitly started and there
 			// is no word before the cursor, don't open completions.
@@ -231,7 +231,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		const actions = [
 			{
 				name: "Copy 📋",
-				apply(view: CodeMirror, from: number, to: number) {
+				apply(_view: CodeMirror, _from: number, _to: number) {
 					navigator.clipboard.writeText(message);
 				}
 			},

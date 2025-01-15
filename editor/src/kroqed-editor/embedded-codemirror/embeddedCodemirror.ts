@@ -1,6 +1,6 @@
 import { EditorView as CodeMirror, Command, KeyBinding, ViewUpdate } from "@codemirror/view";
 import { Node as PNode, Schema } from "prosemirror-model";
-import { TextSelection, Selection, Transaction } from "prosemirror-state";
+import { TextSelection } from "prosemirror-state";
 import { Decoration, DecorationSource, EditorView, NodeView } from "prosemirror-view";
 import { MovementDirection, MovementUnit } from "./types";
 import { exitCode } from "prosemirror-commands";
@@ -41,7 +41,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
     dom: Node;
     contentDOM?: HTMLElement | null | undefined;
 
-    update(node: PNode, decorations: readonly Decoration[], innerDecorations: DecorationSource) {
+    update(node: PNode, _decorations: readonly Decoration[], _innerDecorations: DecorationSource) {
 		// Ignore the update if the type of `node` is not the same as the internal node type.
 		if (node.type != this._node.type) return false;
 
@@ -97,7 +97,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
     selectNode?: (() => void) | undefined;
     deselectNode?: (() => void) | undefined;
     
-    setSelection(anchor: number, head: number, root: Document | ShadowRoot) {
+    setSelection(anchor: number, head: number, _root: Document | ShadowRoot) {
 		// Focus on the internal codemirror instance.
 		// TODO: Is this the culprit of the selectParent bug?
 		// this._codemirror.focus(); 
@@ -122,7 +122,8 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 		if (this.updating || !this._codemirror.hasFocus) return;
 
 		// Figure out offset position from selection.
-		let offset = pos + 1, { main } = update.state.selection;
+		let offset = pos + 1;
+		const { main } = update.state.selection;
 		// Get selection from and to.
 		const selFrom = offset + main.from, selTo = offset + main.to;
 		// Get the selection from the outer view.
@@ -172,14 +173,11 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 
 			// TODO: Move the selection 'into' the above/ below cell.
 
-			let targetPos: number;
-			let selection: Selection;
-
 			switch (unit) {
 				case MovementUnit.line:
 					// We are moving up and down within the coq cell.
 					// We get the line the cursor is currently in:
-					const currentLine = _state.doc.lineAt(_mainSelection.head);
+					{ const currentLine = _state.doc.lineAt(_mainSelection.head);
 					if (dir == MovementDirection.backward) {
 						// Backward in the case of lines means going up :) 
 						if (currentLine.from > 0) {
@@ -193,7 +191,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 							return false;
 						}
 					}
-					return true;
+					return true; }
 					// targetPos = pos + (dir < 0 ? 0 : this._node.nodeSize);
 					// selection = Selection.near(this._outerView.state.doc.resolve(targetPos), dir);
 					// break;

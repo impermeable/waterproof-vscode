@@ -30,7 +30,7 @@ export const TheSchema: Schema = new Schema({
 			content: "text*",
 			parseDOM: [{tag: "markdown", preserveWhitespace: "full"}],
 			atom: true,
-			toDOM(node) {
+			toDOM(_node) {
 				return ["markdown", 0];
 			},
 		},
@@ -72,7 +72,7 @@ export const TheSchema: Schema = new Schema({
 				status: statusAttr && statusAttr in QedStatus && statusAttr !== "invalid" ? statusAttr : null
 			};
 			}}],
-			toDOM: (node: PNode) => {
+			toDOM: (_node: PNode) => {
 			return ["input-area", {class: "inputarea"}, 0];
 			}
 		},

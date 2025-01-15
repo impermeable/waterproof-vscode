@@ -19,15 +19,15 @@ const InputAreaPluginSpec : PluginSpec<IInputAreaPluginState> = {
     // Assign the plugin key.
 	key: INPUT_AREA_PLUGIN_KEY,
 	state: {
-		init(config, instance){
+		init(_config, _instance){
             // Initially set the locked state to true and globalLock to false.
 			return {
                 locked: true,
                 globalLock: false,
 			};
 		},
-		apply(tr : Transaction, value: IInputAreaPluginState, oldState: 
-            EditorState, newState: EditorState
+		apply(tr : Transaction, value: IInputAreaPluginState, _oldState: 
+            EditorState, _newState: EditorState
         ){
 			// produce updated state field for this plugin
             let newLockedState = tr.getMeta(INPUT_AREA_PLUGIN_KEY);

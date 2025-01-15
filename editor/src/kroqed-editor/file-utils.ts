@@ -5,7 +5,7 @@ import { DocChange, Message, MessageType, WrappingDocChange } from "../../../sha
 	 * insertion purposes
 	 * @param content the content of the file
 	 */
-export function checkPrePost(content: string, post: (Message) => void): string {
+export function checkPrePost(content: string, post: (m : Message) => void): string {
     let result = content
     const edit1: DocChange = {startInFile: 0, endInFile: 0,finalText: ''};
     const edit2: DocChange = {startInFile: content.length, endInFile: content.length, finalText: ''};

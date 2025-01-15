@@ -1,4 +1,4 @@
-import { WorkspaceConfiguration, workspace } from "vscode";
+import { workspace } from "vscode";
 
 export class WaterproofConfigHelper {
 

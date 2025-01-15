@@ -1,5 +1,5 @@
 /** The pretty-printing table. */
-let ppTable: Map<string, string> = new Map();
+const ppTable: Map<string, string> = new Map();
 
 /** 
  * Populate the pretty printing table according to: 
@@ -41,14 +41,14 @@ export function translateCoqDoc(entry: string) {
     commentInside = commentInside.replaceAll(/(?<![.A-Za-z\d(]+)\*{1}\s+([^\n\r]+)/g, "# $1");
 
     // List (-)
-    let listMatchesPlaceHolder = Array.from(commentInside.matchAll(/( {2})\-/g));
+    const listMatchesPlaceHolder = Array.from(commentInside.matchAll(/( {2})-/g));
     listMatchesPlaceHolder.forEach((match) => {
-        let orig = match[0];
+        const orig = match[0];
         commentInside = commentInside.replace(orig, `....-`);
     });
-    let listMatches = Array.from(commentInside.matchAll(/(\.{4})\-/g));
+    const listMatches = Array.from(commentInside.matchAll(/(\.{4})-/g));
     listMatches.forEach((match) => {
-        let orig = match[0];
+        const orig = match[0];
         commentInside = commentInside.replace(orig, `    -`);
     });
 

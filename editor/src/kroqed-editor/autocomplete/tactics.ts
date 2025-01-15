@@ -41,17 +41,17 @@ class TacticCompletion {
   }
 
   public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
-    return new Promise((resolve, reject) => {
-        let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
-        let period = /\./gm //Regex expression to search entire line for period
-        let contextline = context.state.doc.lineAt(context.pos).text // line at the completetion context
+    return new Promise((resolve, _reject) => {
+        const before = context.matchBefore(/([^\s.\n\t\-+*])[^\s\n\t\-+*]*/gm);
+        const period = /\./gm //Regex expression to search entire line for period
+        const contextline = context.state.doc.lineAt(context.pos).text // line at the completetion context
 
         if ((!context.explicit && !before) || period.test(contextline)) resolve(null);
         resolve({
             from: before ? before.from : context.pos,
             // non-null assertion operator "!" used to remove 'possibly null' error
             options: TacticCompletion.instance!.tacticCompletions,
-            validFor: /^[ \t]*[^\.]*/gm
+            validFor: /^[ \t]*[^.]*/gm
         })
     });
 }

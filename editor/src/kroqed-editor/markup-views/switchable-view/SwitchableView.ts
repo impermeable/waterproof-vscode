@@ -139,7 +139,7 @@ export abstract class SwitchableView implements NodeView {
     makeEditableView() {
         this.view.destroy();
         this.dom.classList.remove(this._emptyClassName);
-        const inputContent = this.preprocessContentForEditing(this._node.textContent);
+        this.preprocessContentForEditing(this._node.textContent);
         // Add/ Remove classes for styling.
         this.dom.classList.remove(this._renderedClassName);
         this.dom.classList.add(this._editorClassName);

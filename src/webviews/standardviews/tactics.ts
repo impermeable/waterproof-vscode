@@ -9,7 +9,7 @@ export class TacticsPanel extends CoqWebview {
         super(extensionUri,"tactics");
         this.readyPanel();
         // Set up an event listener for WebviewEvents.change event
-        this.on(WebviewEvents.change,(e) => {
+        this.on(WebviewEvents.change,(_e) => {
             switch(this.state) { // Check the state of the webview
                 // If the webview is open
                 case WebviewState.open:

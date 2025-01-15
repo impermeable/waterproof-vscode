@@ -5,12 +5,12 @@
 import { createProseMirrorDocument } from "../../editor/src/kroqed-editor/prosedoc-construction/construct-document";
 import { FileFormat } from "../../shared";
 import { FileTranslator } from "../../editor/src/kroqed-editor/translation"
-import { EditorState } from "prosemirror-state";
 import { TheSchema } from "../../editor/src/kroqed-editor/kroqed-schema";
-import { DOMParser, Node as PNode } from "prosemirror-model";
+import { DOMParser} from "prosemirror-model";
+import { expect } from "@jest/globals";
 
 const inputDocument = `#### Markdown content
-$\int_2^3 x dx$
+$int_2^3 x dx$
 $$1028 + 23 = ?$$
 Lol, empty coq block underneath.
 \`\`\`coq
@@ -41,7 +41,6 @@ $\text{display math} $ *)
 test("createProseMirrorDocument", () => {
     const outputNode = createProseMirrorDocument(inputDocument, FileFormat.MarkdownV);
     const jsonOutput = outputNode.toJSON();
-    const jsonString = JSON.stringify(jsonOutput);
 
     const translator = new FileTranslator(FileFormat.MarkdownV);
     const translatedString = translator.toProsemirror(inputDocument);
@@ -49,7 +48,6 @@ test("createProseMirrorDocument", () => {
     div.innerHTML = translatedString;
     const oldOutputNode = DOMParser.fromSchema(TheSchema).parse(div);
     const oldJsonOutput = oldOutputNode.toJSON();
-    const oldJsonString = JSON.stringify(oldJsonOutput);
 
     expect(jsonOutput).toMatchObject(oldJsonOutput);
 });

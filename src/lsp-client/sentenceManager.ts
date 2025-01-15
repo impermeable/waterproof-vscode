@@ -58,7 +58,7 @@ export class SentenceManager implements IFileProgressComponent {
      * If `strict`, return `undefined` if no sentences are known or if `position` is after the last.
      * In the second case, if not `strict`, simply return the last sentence.
      */
-    getBeginningOfSentence(position: Position, strict: boolean = false): Position | undefined {
+    getBeginningOfSentence(position: Position): Position | undefined {
         // FIXME: This is really just a hack to get things to work for now.
         const n = this.sentenceEndPositions.length;
         if (n === 0) return undefined;

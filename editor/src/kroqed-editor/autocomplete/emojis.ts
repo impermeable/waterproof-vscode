@@ -11,7 +11,7 @@ const emojiCompletions: Completion[] = emojis;
  * from https://github.com/github/gemoji 
  */
 export const emojiCompletionSource: CompletionSource = function(context: CompletionContext) {
-    let before = context.matchBefore(/:.*/);    
+    const before = context.matchBefore(/:.*/);    
     // If completion wasn't explicitly started and there
     // is no word before the cursor, don't open completions.
     if (!context.explicit && !before) return null;

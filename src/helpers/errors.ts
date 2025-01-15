@@ -1,5 +1,7 @@
 import { Uri, env, window } from "vscode";
 
+// TODO : Convert this to modern syntax
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace WaterproofErrors {
     export function showError(message: string) {
         window.showErrorMessage(message, REPORT_ISSUE).then(reportIssueHandler);

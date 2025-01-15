@@ -15,7 +15,7 @@ export class ExecutePanel extends CoqWebview implements IExecutor {
         super(extensionUri, "execute", true); 
         this.readyPanel(); 
         // Set up an event listener for WebviewEvents.change event
-        this.on(WebviewEvents.change, (e) => { 
+        this.on(WebviewEvents.change, (_e) => { 
             switch (this.state) { // Check the state of the webview
                 // If the webview is open
                 case WebviewState.open: 

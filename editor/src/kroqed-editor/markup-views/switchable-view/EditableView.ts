@@ -1,4 +1,3 @@
-import { indentMore, indentLess } from "@codemirror/commands"
 import {
 	EditorView as CodeMirror, ViewUpdate, keymap as cmKeymap,
 	placeholder
@@ -10,7 +9,7 @@ import { Decoration, EditorView } from "prosemirror-view"
 import { SwitchableView } from "./SwitchableView"
 import { editorTheme } from "./EditorTheme"
 import { renderIcon, symbolCompletionSource } from "../../autocomplete"
-import { autocompletion, acceptCompletion } from "@codemirror/autocomplete"
+import { autocompletion } from "@codemirror/autocomplete"
 import { EmbeddedCodeMirrorEditor } from "../../embedded-codemirror"
 
 /**
@@ -67,18 +66,19 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 	// Overwrites the base method in EmbeddedCodeMirrorEditor.
 	forwardUpdate(update: ViewUpdate): void {
 		// Get the current cursor position.
-		let pos = this._getPos();
+		const pos = this._getPos();
 		// If there is no position we are done.
 		if (pos === undefined) return;
 		// If we are updating or we don't have focus then we should return early.
 		if (this._parent.updating || !this.view.hasFocus) return;
 
 		// TODO: Comments
-		let offset = pos + 1, {main} = update.state.selection;
-		let selFrom = offset + main.from, selTo = offset + main.to;
-		let pmSel = this._outerView.state.selection;
+		let offset = pos + 1
+		const {main} = update.state.selection;
+		const selFrom = offset + main.from, selTo = offset + main.to;
+		const pmSel = this._outerView.state.selection;
 		if (update.docChanged || pmSel.from != selFrom || pmSel.to != selTo) {
-			let tr = this._outerView.state.tr;
+			const tr = this._outerView.state.tr;
 			update.changes.iterChanges((fromA, toA, fromB, toB, text) => {
 				if (text.length) {
 					tr.replaceWith(offset + fromA, offset + toA,
@@ -95,14 +95,14 @@ export class EditableView extends EmbeddedCodeMirrorEditor {
 	}
 
 	// Overwrites the base method in EmbeddedCodeMirrorEditor.
-	update(node: Node, decorations: readonly Decoration[]) {
+	update(node: Node, _decorations: readonly Decoration[]) {
 
 		// If is updating return early
 		if (this._parent.updating) return true;
 
 		// Extract node text (the edit) and document (current) text.
-		let newText = node.textContent;
-		let curText = this.view.state.doc.toString();
+		const newText = node.textContent;
+		const curText = this.view.state.doc.toString();
 
 		// Check whether they are the same.
 		// We don't need to update if they are.

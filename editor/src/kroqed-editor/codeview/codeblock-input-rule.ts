@@ -8,9 +8,9 @@ export const codeblockInputRuleRegExp: RegExp = /!coq\s+$/i;
 // adepted from prosemirror math.
 export function makeCodeBlockInputRule(nodeType: NodeType) {
 	return new InputRule(codeblockInputRuleRegExp, (state, match, start, end) => {
-		let _start = state.doc.resolve(start);
-		let index = _start.index();
-		let _end = state.doc.resolve(end);
+		const _start = state.doc.resolve(start);
+		const index = _start.index();
+		const _end = state.doc.resolve(end);
 		
 		// check if the replacement is valid
 		if (!_start.parent.canReplaceWith(index, _end.index(), nodeType)) {

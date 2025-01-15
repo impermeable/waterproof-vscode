@@ -26,7 +26,7 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
     }
 
     //sends message for errorGoals
-    failedGoals(e: any) {
+    failedGoals(e: unknown) {
         this.postMessage({ type: MessageType.errorGoals, body: e});
     }
 

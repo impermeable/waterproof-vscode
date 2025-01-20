@@ -41,6 +41,7 @@ class TacticCompletion {
   }
 
 
+
 public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
   return new Promise((resolve, reject) => {
       let Beforecontext = this.state.doc
@@ -59,8 +60,7 @@ public tacticCompletionSource: CompletionSource = function(context: CompletionCo
         validFor: /^[\t]*[^\.]*/gm
       })
   });
-}
-}
+
 
 // Export the singleton instance to nodeview.ts
 export const tacticCompletionSource = TacticCompletion.getInstance().tacticCompletionSource;

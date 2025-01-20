@@ -64,10 +64,7 @@ export function cmdInsertCoq(schema: Schema, filef: FileFormat, insertionPlace: 
 export function cmdInsertMarkdown(schema: Schema, filef: FileFormat, insertionPlace: InsertionPlace): Command {
     // Retrieve the node types for both markdown and coqdoc markdown (coqdown) from the schema.
     const mdNodeType = schema.nodes["markdown"];
-    
-    // Strictly speaking we don't conform to existing type because of our own nodes
-    // @ts-expect-error
-    const coqMdNodeType = schema.node["coqdown"];
+    const coqMdNodeType = schema.nodes["coqdown"];
     // Return a command with the correct insertion command and place.
     return getMdInsertCommand(filef, getInsertionFunction(insertionPlace), 
         insertionPlace, mdNodeType, coqMdNodeType);

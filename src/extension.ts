@@ -76,6 +76,8 @@ export class Waterproof implements Disposable {
 
     private sidePanelProvider: SidePanelProvider;
 
+    private clientRunning: boolean = false;
+
     /**
      * Constructs the extension lifecycle object.
      *
@@ -93,8 +95,26 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
             this.client.updateCompletions(document);
         });
-        this.webviewManager.on(WebviewManagerEvents.focus, (document: TextDocument) => {
+        this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
             console.log("Focus event received", document);
+
+            // Wait for client to initialize
+            if (!this.clientRunning) {
+                console.warn("Focus event received before client is ready. Waiting...");
+                const waitForClient = async (): Promise<void> => {
+                    return new Promise(resolve => {
+                        const interval = setInterval(() => {
+                            if (this.clientRunning) {
+                                clearInterval(interval);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                };
+                await waitForClient();
+                console.log("Client ready. Proceeding with focus event.");
+        	}
+
             console.log("Client state", this.client);
 
             // update active document
@@ -431,6 +451,8 @@ export class Waterproof implements Disposable {
                 () => {
                     // show user that LSP is working
                     this.statusBar.update(true);
+                    this.clientRunning = true;
+                    console.log("Client initialization complete.");
                 },
                 reason => {
                     const message = reason.toString();
@@ -471,6 +493,7 @@ export class Waterproof implements Disposable {
         if (this.client.isRunning()) {
             for (const g of this.goalsComponents) g.disable();
             await this.client.dispose(2000);
+            this.clientRunning = false;
             this.statusBar.update(false);
         } else {
             return Promise.resolve();

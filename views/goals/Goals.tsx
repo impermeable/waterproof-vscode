@@ -58,12 +58,6 @@ function GoalsList({
 }: GoalsListP) {
   let count = goals.length;
 
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
   //if there are no goals then this is displayed
   if (count == 0) {
     if (show_on_empty) {
@@ -92,25 +86,6 @@ function GoalsList({
           <Goal key={0} goal={goals[0]} idx={0} />
         </Box>
         <Box summary={`Afterwards, we need to complete other subproofs`} pos={pos} textDox={textDoc}>
-        <button 
-          onClick={toggleExpand} 
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            transform: `rotate(${isExpanded ? 90 : 0}deg)`,
-            transition: 'transform 0.2s ease',
-            fontSize: '1rem',
-          }}
-          aria-label="Toggle Subproofs"
-        >
-          ▶
-        </button>
-          {isExpanded &&
-            goals.slice(1).map((value, idx) => {
-              let key = objectHash(value);
-              return <Goal key={key} goal={value} idx={idx + 1} />;
-            })}
         </Box>
       </div>
     );
@@ -210,39 +185,77 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
     </Box>
   }
 
-  return (
-    <div className="goal-panel">
-      {/* primary list of goals */}
-      <GoalsList
-        goals={goals.goals}
-        header={"We need to show"}
-        show_on_empty={true}
-        bullet_msg={goals.bullet}
-        pos={pos}
-        textDoc={textDoc}
-      />
-      {/* stacking goals that are on different levels */}
-      <div style={{ marginLeft: "0.5ex" }}>
-        <StackGoals idx={0} stack={goals.stack} pos={pos} textDoc={textDoc} />
-      </div>
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* a list for the goals that are on the shelf */}
+  let count = goals.goals.length
+
+  if (count <= 1) {
+    return (
+      <div className="goal-panel">
+        {/* primary list of goals */}
         <GoalsList
-          goals={goals.shelf}
-          header={"Shelf"}
-          show_on_empty={false} // these goals are not shown if they do not exist
+          goals={goals.goals}
+          header={"We need to show"}
+          show_on_empty={true}
+          bullet_msg={goals.bullet}
           pos={pos}
           textDoc={textDoc}
         />
-        {/* a list for the goals that are given up */}
-        <GoalsList 
-          goals={goals.given_up}
-          header={"Given Up"}
-          show_on_empty={false} // these goals are not shown if they do not exist
-          pos={pos}
-          textDoc={textDoc}
-        />
+        {/* stacking goals that are on different levels */}
+        <div style={{ marginLeft: "0.5ex" }}>
+          <StackGoals idx={0} stack={goals.stack} pos={pos} textDoc={textDoc} />
+        </div>
+        <div style={{ marginLeft: "0.5ex" }}>
+          {/* a list for the goals that are on the shelf */}
+          <GoalsList
+            goals={goals.shelf}
+            header={"Shelf"}
+            show_on_empty={false} // these goals are not shown if they do not exist
+            pos={pos}
+            textDoc={textDoc}
+          />
+          {/* a list for the goals that are given up */}
+          <GoalsList 
+            goals={goals.given_up}
+            header={"Given Up"}
+            show_on_empty={false} // these goals are not shown if they do not exist
+            pos={pos}
+            textDoc={textDoc}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  } else {
+
+    return (
+      <div className="goal-panel">
+        {/* primary list of goals */}
+        <GoalsList
+          goals={goals.goals}
+          header={"We need to show"}
+          show_on_empty={true}
+          bullet_msg={goals.bullet}
+          pos={pos}
+          textDoc={textDoc}
+        />
+
+        <div style={{ marginLeft: "0.5ex" }}>
+          {/* a list for the goals that are on the shelf */}
+          <GoalsList
+            goals={goals.shelf}
+            header={"Shelf"}
+            show_on_empty={false} // these goals are not shown if they do not exist
+            pos={pos}
+            textDoc={textDoc}
+          />
+          {/* a list for the goals that are given up */}
+          <GoalsList 
+            goals={goals.given_up}
+            header={"Given Up"}
+            show_on_empty={false} // these goals are not shown if they do not exist
+            pos={pos}
+            textDoc={textDoc}
+          />
+        </div>
+      </div>
+    );
+  }
 }

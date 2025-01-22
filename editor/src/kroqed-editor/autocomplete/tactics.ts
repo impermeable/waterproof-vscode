@@ -42,24 +42,26 @@ class TacticCompletion {
 
 
 
-public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
-  return new Promise((resolve, reject) => {
-      let Beforecontext = this.state.doc
-      let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
-      let period = /\./gm 
-      const line = context.state.doc.lineAt(context.pos);
-      const firstletter = line.text.match(/[a-zA-Z]/);
-      const lineBeforeCursor = line.text.slice(0, context.pos - line.from);
-      
-      if ((!context.explicit && !before) || period.test(lineBeforeCursor)) resolve(null);
-      resolve({
-        // start completion instance from first letter of line
-        from: firstletter ? line.from + firstletter.index!: context.pos,
-        // non-null assertion operator "!" used to remove 'possibly null' error
-        options: TacticCompletion.instance!.tacticCompletions,
-        validFor: /^[\t]*[^\.]*/gm
-      })
-  });
+  public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
+    return new Promise((resolve, reject) => {
+        let Beforecontext = this.state.doc
+        let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
+        let period = /\./gm 
+        const line = context.state.doc.lineAt(context.pos);
+        const firstletter = line.text.match(/[a-zA-Z]/);
+        const lineBeforeCursor = line.text.slice(0, context.pos - line.from);
+        
+        if ((!context.explicit && !before) || period.test(lineBeforeCursor)) resolve(null);
+        resolve({
+          // start completion instance from first letter of line
+          from: firstletter ? line.from + firstletter.index!: context.pos,
+          // non-null assertion operator "!" used to remove 'possibly null' error
+          options: TacticCompletion.instance!.tacticCompletions,
+          validFor: /^[\t]*[^\.]*/gm
+        })
+    });
+  }
+}
 
 
 // Export the singleton instance to nodeview.ts

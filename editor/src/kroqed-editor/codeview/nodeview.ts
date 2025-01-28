@@ -14,6 +14,7 @@ import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
+import "../styles/notifications.css";
 
 
 /**
@@ -356,18 +357,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		// Create the notification element
 		const notification = document.createElement("div");
 		notification.textContent = `Copied!`;
-		notification.style.position = "fixed";
 		notification.style.top = `${coords.bottom + 5}px`; // Position 5px below the line
 		notification.style.left = `${coords.left}px`; // Align with the left edge of the line
-		notification.style.backgroundColor = "var(--vscode-notifications-background)";
-		notification.style.color = "var(--vscode-notifications-foreground)";
-		notification.style.padding = "8px";
-		notification.style.borderRadius = "5px";
-		notification.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.3)";
-		notification.style.opacity = "1";
-		notification.style.transition = "opacity 0.5s ease";
-		notification.style.zIndex = "1000"; // Ensure it appears above the editor
-	
+		notification.classList.add("copy-notification");
 		document.body.appendChild(notification);
 	
 		// Fade out after 1 second

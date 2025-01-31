@@ -14,7 +14,6 @@ import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
-import "../styles/notifications.css";
 
 
 /**

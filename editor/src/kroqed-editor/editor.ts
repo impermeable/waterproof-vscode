@@ -75,10 +75,13 @@ export class Editor {
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>;
 
+	private _lineNumbersShown: boolean = false;
+
 	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement) {
 		this._api = vscodeapi;
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
+		this.currentProseDiagnostics = [];
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -172,12 +175,12 @@ export class Editor {
 						try {
 							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
 							this.post({type: MessageType.docChange, body: obj});
-						} catch (error: any) {
-							console.error(error.message);
+						} catch (error) {
+							console.error((error as Error).message);
 
 
 							// Send message to VSCode that an error has occured
-							this.post({type: MessageType.applyStepError, body: error.message})
+							this.post({type: MessageType.applyStepError, body: (error as Error).message})
 
 							// Set global locking mode
 							const tr = view.state.tr;
@@ -315,6 +318,7 @@ export class Editor {
 
 	/** Called on every transaction update in which the textdocument was modified */
 	sendLineNumbers() {
+		if (!this._lineNumbersShown) return;
 		if (!this._view || COQ_CODE_PLUGIN_KEY.getState(this._view.state) === undefined) return;
 		const linenumbers = Array<number>();
 		//@ts-ignore
@@ -398,6 +402,19 @@ export class Editor {
 		this.createAndDispatchInsertionTransaction(trans, symbolUnicode, from, to);
 
 		return true;
+	}
+
+	/**
+	 * Toggles line numbers for all codeblocks.
+	 */
+	private setShowLineNumbers(show: boolean) {
+		this._lineNumbersShown = show;
+		const view = this._view;
+		if (view === undefined) return;
+		const tr = view.state.tr;
+		tr.setMeta(COQ_CODE_PLUGIN_KEY, {setting: "update", show: this._lineNumbersShown});
+		view.dispatch(tr);
+		this.sendLineNumbers();
 	}
 
 	private createAndDispatchInsertionTransaction(
@@ -511,6 +528,10 @@ export class Editor {
 			case MessageType.qedStatus:
 				const statuses = msg.body as QedStatus[];  // one status for each input area, in order
 				this.updateQedStatus(statuses);
+				break;
+			case MessageType.setShowLineNumbers:
+				const show = msg.body as boolean;
+				this.setShowLineNumbers(show);
 				break;
 			case MessageType.lineNumbers:
 				this.setLineNumbers(msg.body);

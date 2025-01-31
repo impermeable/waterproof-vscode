@@ -15,6 +15,7 @@ import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirro
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
+
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
  * Corresponds with the example as can be found here:
@@ -217,7 +218,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		});
 	};
 
-	/**
+/**
 	 * Add a new coq error to this view
 	 * @param from The from position of the error.
 	 * @param to The to postion of the error (should be larger than `from`).
@@ -226,40 +227,149 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
 		const severityString = severityToString(severity);
-
-		// For now populate the actions using the standard Copy message.
-		const actions = [
-			{
-				name: "Copy 📋",
-				apply(view: CodeMirror, from: number, to: number) {
-					navigator.clipboard.writeText(message);
-				}
-			},
-			{
-				name: "Insert ↓",
-				apply(view : any, from : any, to : any) {
-					const textAtErrorLine = view.state.doc.lineAt(from).text;
-					const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
-					const toInsert = "\n".concat(idents, message);
-					view.dispatch({
-						changes: {
-							from: to, to,
-							insert: toInsert
-						},
-						selection: {anchor: to + toInsert.length}
-					});
-				},
+		const errorsCount = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity === "error").length;
+		//all diags have the copy action
+		const actions = [{
+			name: "Copy 📋",
+			apply: (view: CodeMirror, from: number, to: number) => {
+				// give focus to this current codeblock instante to ensure it updates
+				this._codemirror?.focus();
+				navigator.clipboard.writeText(message);
+				this.showCopyNotification(from);
 			}
-		];
+		}];
+
+		if (severityString !== "error") {
+			if (errorsCount > 0) {
+				actions.push({
+					name: "Replace",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const trimmedMessage = message.trim();
+						const toInsert = trimmedMessage;
+						view.dispatch({
+							changes: {
+								from:from,
+								to:to,
+								insert: toInsert
+							},
+						});
+						selection: { anchor: from + toInsert.length };
+						this.forceUpdateLinting();
+					}
+				});
+			} else {
+				actions.push({
+					name: "Insert ↓",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const textAtErrorLine = view.state.doc.lineAt(from).text;
+						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
+						const trimmedMessage = message.trim();
+						const toInsert = "\n".concat(idents, trimmedMessage);
+						view.dispatch({
+							changes: {
+								from: to, to,
+								insert: toInsert
+							},
+							selection: {anchor: to + toInsert.length}
+						});
+					}
+				});
+			}
+		}
 
 		this._diags.push({
-			from, to,
-			message,
+			from:from,
+			to:to,
+			message: message,
 			severity: severityString,
-			actions
+			actions,
 		});
+		//only when the first error is added, the other diagnostics are updated accordingly
+		if (severityString === "error" && errorsCount===0) {
+			this.updateDiagnostics(from, to, message);
+		}
+
+	}
+
+	private updateDiagnostics(from:number, to:number, message:string) {
+		const diagUnchanged = this._diags.filter(diag => diag.from !== from || diag.to !== to);
+		const diagnosticsToUpdate = this._diags.filter(diag => diag.from === from && diag.to === to);
+		this.clearCoqErrors();
+		this._diags = diagUnchanged;
+		for (const diag of diagnosticsToUpdate) {
+			const actions = [{
+				name: "Copy 📋",
+				apply: (view: CodeMirror, from: number, to: number) => {
+					// give focus to this current codeblock instante to ensure it updates
+					this._codemirror?.focus();
+					navigator.clipboard.writeText(diag.message);
+					this.showCopyNotification(from);
+				}
+			}];
+			
+			if (diag.severity !== "error"){
+				actions.push({
+					name: "Replace",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const trimmedMessage = diag.message.trim();
+						const toInsert = trimmedMessage;
+						view.dispatch({
+							changes: {
+								from:from,
+								to:to,
+								insert: toInsert
+							},
+						});
+						selection: { anchor: from + toInsert.length };
+						this.forceUpdateLinting();
+					}
+				});
+			}
+
+			this._diags.push({
+				from: diag.from,
+				to: diag.to,
+				message: diag.message,
+				severity: diag.severity,
+				actions
+			});
+		}
+		// Trigger the linter update to refresh diagnostics display
 		this.debouncer.call();
 	}
+
+	private showCopyNotification(from:number) {
+		//coordinates of the the line with the diagnostic
+		const coords = this._codemirror?.coordsAtPos(from);
+	
+		if (!coords) {
+			console.warn("Could not determine coordinates for diagnostic line.");
+			return;
+		}
+	
+		// Create the notification element
+		const notification = document.createElement("div");
+		notification.textContent = `Copied!`;
+		notification.style.top = `${coords.bottom + 5}px`; // Position 5px below the line
+		notification.style.left = `${coords.left}px`; // Align with the left edge of the line
+		notification.classList.add("copy-notification");
+		document.body.appendChild(notification);
+	
+		// Fade out after 1 second
+		setTimeout(() => {
+			notification.style.opacity = "0";
+			// Remove the notification from the DOM after the transition
+			setTimeout(() => notification.remove(), 500);
+		}, 1000);
+	}
+	
+	
 
 	/**
 	 * Helper function that forces the linter function to run.

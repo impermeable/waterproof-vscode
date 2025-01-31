@@ -7,6 +7,7 @@ import { Goals } from "./Goals";
 import { Messages } from "./Messages";
 
 import "../styles/info.css";
+import { Message, MessageType } from "../../shared";
 
 // Dynamic import because the project uses CommonJS and the module is an ECMAScript module
 // Top level await is supported with other `module` options in tsconfig.json
@@ -23,20 +24,24 @@ export function InfoPanel() {
   const [isLoading, setIsLoading] = useState(false);
 
   //handles the message
-  //event : CoqMessageEvent as defined above
-  function infoViewDispatch(event: CoqMessageEvent) { // TODO: make this change in logbook as well
-    if (event.data.type === "renderGoals") {
-      setGoals(event.data.body); //setting the information
-      setIsLoading(false); //putting loading to false
-    } else if (event.data.type === "waitingForInfo") {
-      setIsLoading(true); //waiting for info therefore loading is true
+  function infoViewDispatch(msg: Message) { // TODO: make this change in logbook as well
+    if (msg.type === MessageType.renderGoals) {
+      const goals = msg.body.goals;
+      
+      // FIXME: The `renderGoals` message type is currently overloaded for very different functions.
+      // This should be changed. 
+      //@ts-ignore 
+      setGoals(goals); //setting the information
+      setIsLoading(false);
+      
     }
   }
 
   // Set the callback
   useEffect(() => {
-    window.addEventListener("message", infoViewDispatch);
-    return () => window.removeEventListener("message", infoViewDispatch);
+    const callback = (ev: MessageEvent) => {infoViewDispatch(ev.data as Message)};
+    window.addEventListener("message", callback);
+    return () => window.removeEventListener("message", callback);
   }, []);
 
   //show that the messages are loading

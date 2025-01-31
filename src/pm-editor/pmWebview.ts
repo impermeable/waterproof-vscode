@@ -269,7 +269,7 @@ export class ProseMirrorWebview extends EventEmitter {
         this.updateLineNumbers();
         this.postMessage({
             type: MessageType.setShowLineNumbers,
-            body: this._showLineNrsInEditor
+            body: { showLineNumbers: this._showLineNrsInEditor }
         }, true);
 
     }

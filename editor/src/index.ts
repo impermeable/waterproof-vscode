@@ -53,7 +53,7 @@ window.onload = () => {
 				// Handle autocompletion
 				const state = theEditor.state;
 				if (!state) break;
-				const completions: Completion[] = msg.body;
+				const completions: Completion[] = msg.body.completions;
 				// Apply autocomplete to all coq cells
 				COQ_CODE_PLUGIN_KEY
 					.getState(state)

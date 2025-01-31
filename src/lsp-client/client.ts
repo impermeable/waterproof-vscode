@@ -297,7 +297,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             // send completions to (all code blocks in) the document's editor (not cached!)
             this.webviewManager.postMessage(document.uri.toString(), {
                 type: MessageType.setAutocomplete,
-                body: completions
+                body: { completions }
             });
         }
 

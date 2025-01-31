@@ -21,7 +21,7 @@ export function createContextMenuHTML(editor: Editor): HTMLDivElement {
     // Create a 'Help' button. On execution will send a command to coq-lsp to query for help, 
     // this result is then displayed in a popup within the editor.
     listContainer.appendChild(contextMenuButton("?", "Help", () => {
-        editor.post({type: MessageType.command, body: "Help.", time: date.getTime()});
+        editor.post({type: MessageType.command, body: {command: "Help.", time: date.getTime()}});
     }));
 
     listContainer.appendChild(contextMenuButton("X", "Close", () => {}));

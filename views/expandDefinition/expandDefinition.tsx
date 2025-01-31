@@ -33,7 +33,7 @@ export function ExpandDefinition() {
                     insertText(event.data.body.symbolUnicode);
                     break;
                 // receiving info of the executed commands
-                case MessageType.command:
+                case MessageType.setData:
                     setInfo(event.data.body);
                     setIsLoading(false);
                     break;

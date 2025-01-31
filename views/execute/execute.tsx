@@ -28,7 +28,7 @@ export function Execute() {
                     insertText(event.data.body.symbolUnicode);
                     break;
                 //info after execute message
-                case MessageType.command:
+                case MessageType.setData:
                     setInfo(event.data.body);
                     setIsLoading(false);
                     break;

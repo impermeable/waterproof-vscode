@@ -180,7 +180,7 @@ export class Editor {
 
 
 							// Send message to VSCode that an error has occured
-							this.post({type: MessageType.applyStepError, body: (error as Error).message})
+							this.post({type: MessageType.applyStepError, body: {error: (error as Error).message}})
 
 							// Set global locking mode
 							const tr = view.state.tr;
@@ -257,7 +257,7 @@ export class Editor {
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				"Mod-h": () => {
-					this.post({type: MessageType.command, body: "Help.", time: (new Date()).getTime()});
+					this.post({type: MessageType.command, body: {command: "Help.", time: (new Date()).getTime()}});
 					return true;
 				},
 				"Backspace": deleteSelection,
@@ -530,7 +530,7 @@ export class Editor {
 				this.updateQedStatus(statuses);
 				break;
 			case MessageType.setShowLineNumbers:
-				const show = msg.body as boolean;
+				const show = msg.body.showLineNumbers;
 				this.setShowLineNumbers(show);
 				break;
 			case MessageType.lineNumbers:

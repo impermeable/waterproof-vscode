@@ -76,12 +76,15 @@ export class Waterproof implements Disposable {
 
     private sidePanelProvider: SidePanelProvider;
 
+    private clientRunning: boolean = false;
+
     /**
      * Constructs the extension lifecycle object.
      *
      * @param context the extension context object
      */
     constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory) {
+        console.log("Waterproof initialized");
         checkConflictingExtensions();
         excludeCoqFileTypes();
 
@@ -92,7 +95,27 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
             this.client.updateCompletions(document);
         });
-        this.webviewManager.on(WebviewManagerEvents.focus, (document: TextDocument) => {
+        this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
+            console.log("Focus event received", document);
+
+            // Wait for client to initialize
+            if (!this.clientRunning) {
+                console.warn("Focus event received before client is ready. Waiting...");
+                const waitForClient = async (): Promise<void> => {
+                    return new Promise(resolve => {
+                        const interval = setInterval(() => {
+                            if (this.clientRunning) {
+                                clearInterval(interval);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                };
+                await waitForClient();
+                console.log("Client ready. Proceeding with focus event.");
+        	}
+
+            console.log("Client state", this.client);
 
             // update active document
             // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
@@ -153,6 +176,7 @@ export class Waterproof implements Disposable {
         this.executorComponent = executorPanel;
 
         // register commands
+        console.log("Calling initializeClient...");
         this.registerCommand("start", this.initializeClient);
         this.registerCommand("restart", this.restartClient);
         this.registerCommand("toggle", this.toggleClient);
@@ -397,7 +421,7 @@ export class Waterproof implements Disposable {
      * Create the lsp client and update relevant status components
      */
     async initializeClient(): Promise<void> {
-
+        console.log("Start of initializeClient");
         // Run the version checker.
         const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
         const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
@@ -427,11 +451,14 @@ export class Waterproof implements Disposable {
                 markdown: { isTrusted: true, supportHtml: true },
             };
 
+            console.log("Initializing client...");
             this.client = this.clientFactory(clientOptions, WaterproofConfigHelper.configuration);
             return this.client.startWithHandlers(this.webviewManager).then(
                 () => {
                     // show user that LSP is working
                     this.statusBar.update(true);
+                    this.clientRunning = true;
+                    console.log("Client initialization complete.");
                 },
                 reason => {
                     const message = reason.toString();
@@ -472,6 +499,7 @@ export class Waterproof implements Disposable {
         if (this.client.isRunning()) {
             for (const g of this.goalsComponents) g.disable();
             await this.client.dispose(2000);
+            this.clientRunning = false;
             this.statusBar.update(false);
         } else {
             return Promise.resolve();

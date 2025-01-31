@@ -13,16 +13,16 @@ export interface IProgressPluginState {
 // Plugin key for the progress plugin
 export const PROGRESS_PLUGIN_KEY = new PluginKey<IProgressPluginState>("prosemirror-progressBar");
 
-function startSpinner(spinnerContainer) {
+function startSpinner(spinnerContainer: HTMLDivElement) {
   spinnerContainer.classList.add('spinner');
 }
 
-function stopSpinner(spinnerContainer) {
+function stopSpinner(spinnerContainer: HTMLDivElement) {
   spinnerContainer.classList.remove('spinner');
 }
 
 // Function to create a progress bar given the progress state and the container for the progress bar
-function createProgressBar(progressState, progressBarContainer, spinnerContainer) {
+function createProgressBar(progressState: IProgressPluginState, progressBarContainer: HTMLDivElement, spinnerContainer: HTMLDivElement) {
   const { progressParams, resetProgressBar, endLine, startLine } = progressState;
 
   // Remove existing progress bar text

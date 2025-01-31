@@ -29,7 +29,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
-	private _diags;
+	private _diags : Diagnostic[];
 
 	private debouncer: Debouncer;
 
@@ -147,7 +147,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 		// Fix the coqblock not being selectable when editing the markdown blocks.
 		this.dom.addEventListener("click", () => {
-			this._codemirror.focus();
+			this._codemirror?.focus();
 			this.setEditPermission();
 		});
 
@@ -156,10 +156,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	}
 
 	public handleSnippet(template: string, posFrom: number, posTo: number) {
-		this._codemirror.focus();
+		this._codemirror?.focus();
 		snippet(template)({
-			state: this._codemirror.state,
-			dispatch: this._codemirror.dispatch
+			state: this._codemirror!.state,
+			dispatch: this._codemirror!.dispatch
 		}, null, posFrom, posTo);
 	}
 
@@ -172,7 +172,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	setEditPermission(): void {
 		// update
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: this._readOnlyCompartment.reconfigure(
 				EditorState.readOnly.of(!this._outerView.editable)
 			)
@@ -186,7 +186,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = lineNumbers({
 			formatNumber: (lineNo: number) => (lineNo + firstLineNo - 1).toString()
 		});
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: this._lineNumberCompartment.reconfigure(
 				toggleState ? this._lineNumbersExtension : []
 			)
@@ -233,7 +233,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			name: "Copy 📋",
 			apply: (view: CodeMirror, from: number, to: number) => {
 				// give focus to this current codeblock instante to ensure it updates
-				this._codemirror.focus();
+				this._codemirror?.focus();
 				navigator.clipboard.writeText(message);
 				this.showCopyNotification(from);
 			}
@@ -245,7 +245,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					name: "Replace",
 					apply:(view: CodeMirror, from: number, to: number) => {
 						// give focus to this current codeblock instante to ensure it updates
-						this._codemirror.focus();
+						this._codemirror?.focus();
 						const trimmedMessage = message.trim();
 						const toInsert = trimmedMessage;
 						view.dispatch({
@@ -264,7 +264,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					name: "Insert ↓",
 					apply:(view: CodeMirror, from: number, to: number) => {
 						// give focus to this current codeblock instante to ensure it updates
-						this._codemirror.focus();
+						this._codemirror?.focus();
 						const textAtErrorLine = view.state.doc.lineAt(from).text;
 						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
 						const trimmedMessage = message.trim();
@@ -305,7 +305,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				name: "Copy 📋",
 				apply: (view: CodeMirror, from: number, to: number) => {
 					// give focus to this current codeblock instante to ensure it updates
-					this._codemirror.focus();
+					this._codemirror?.focus();
 					navigator.clipboard.writeText(diag.message);
 					this.showCopyNotification(from);
 				}
@@ -316,7 +316,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					name: "Replace",
 					apply:(view: CodeMirror, from: number, to: number) => {
 						// give focus to this current codeblock instante to ensure it updates
-						this._codemirror.focus();
+						this._codemirror?.focus();
 						const trimmedMessage = diag.message.trim();
 						const toInsert = trimmedMessage;
 						view.dispatch({
@@ -346,7 +346,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 	private showCopyNotification(from:number) {
 		//coordinates of the the line with the diagnostic
-		const coords = this._codemirror.coordsAtPos(from);
+		const coords = this._codemirror?.coordsAtPos(from);
 	
 		if (!coords) {
 			console.warn("Could not determine coordinates for diagnostic line.");
@@ -376,7 +376,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
 	private forceUpdateLinting() {
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: setDiagnosticsEffect.of(this._diags)
 		});
 	}

@@ -44,7 +44,6 @@ class TacticCompletion {
 
   public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
     return new Promise((resolve, reject) => {
-        let Beforecontext = this.state.doc
         let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
         let period = /\./gm 
         const line = context.state.doc.lineAt(context.pos);

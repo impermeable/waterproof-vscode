@@ -78,9 +78,13 @@ let CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 			}
 
 			// Update the state 
-			if (tr.getMeta(COQ_CODE_PLUGIN_KEY)) {
-				if (tr.getMeta(COQ_CODE_PLUGIN_KEY) === "toggleLines") lineState = !lineState;
-				else newlines = tr.getMeta(COQ_CODE_PLUGIN_KEY);
+			const meta = tr.getMeta(COQ_CODE_PLUGIN_KEY);
+			if (meta) {
+				if (meta.setting === "update")
+					lineState = meta.show;
+				else 
+					newlines = meta;
+				
 				if (value.activeNodeViews.size == newlines.linenumbers.length) {
 					let i = 0;
 					for (let view of value.activeNodeViews) {

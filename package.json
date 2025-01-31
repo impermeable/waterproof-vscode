@@ -133,6 +133,11 @@
       {
         "command": "waterproof.setDefaultArgsWin",
         "title": "Waterproof: Set default arguments for Windows"
+      },
+      {
+        "command": "waterproof.toggleInEditorLineNumbers",
+        "title": "Toggle line numbers displayed in editor",
+        "category": "Waterproof"
       }
     ],
     "menus": {
@@ -311,6 +316,11 @@
             "type": "boolean",
             "default": false,
             "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
+          },
+          "waterproof.showLineNumbersInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show line numbers in the Waterproof editor"
           }
         }
       },

@@ -43,8 +43,8 @@ class TacticCompletion {
 
 
   public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
-    return new Promise((resolve, reject) => {
-        const before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
+    return new Promise((resolve, _reject) => {
+        const before = context.matchBefore(/([^\s.\n\t\-+*])[^\s\n\t\-+*]*/gm);
         const period = /\./gm 
         const line = context.state.doc.lineAt(context.pos);
         const firstletter = line.text.match(/[a-zA-Z]/);
@@ -56,7 +56,7 @@ class TacticCompletion {
           from: firstletter ? line.from + firstletter.index!: context.pos,
           // non-null assertion operator "!" used to remove 'possibly null' error
           options: TacticCompletion.instance!.tacticCompletions,
-          validFor: /^[\t]*[^\.]*/gm
+          validFor: /^[\t]*[^.]*/gm
         })
     });
   }

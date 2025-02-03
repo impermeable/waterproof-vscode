@@ -81,6 +81,7 @@ export class Editor {
 		this._api = vscodeapi;
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
+		this.currentProseDiagnostics = [];
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -175,11 +176,11 @@ export class Editor {
 							const obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
 							this.post({type: MessageType.docChange, body: obj});
 						} catch (error) {
-							console.error(error.message);
+							console.error((error as Error).message);
 
 
 							// Send message to VSCode that an error has occured
-							this.post({type: MessageType.applyStepError, body: error.message})
+							this.post({type: MessageType.applyStepError, body: (error as Error).message})
 
 							// Set global locking mode
 							const tr = view.state.tr;

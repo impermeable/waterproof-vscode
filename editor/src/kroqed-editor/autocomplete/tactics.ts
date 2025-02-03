@@ -40,22 +40,28 @@ class TacticCompletion {
     return this.instance;
   }
 
-  public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
-    return new Promise((resolve, _reject) => {
-        const before = context.matchBefore(/([^\s.\n\t\-+*])[^\s\n\t\-+*]*/gm);
-        const period = /\./gm //Regex expression to search entire line for period
-        const contextline = context.state.doc.lineAt(context.pos).text // line at the completetion context
 
-        if ((!context.explicit && !before) || period.test(contextline)) resolve(null);
+
+  public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
+    return new Promise((resolve, reject) => {
+        let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
+        let period = /\./gm 
+        const line = context.state.doc.lineAt(context.pos);
+        const firstletter = line.text.match(/[a-zA-Z]/);
+        const lineBeforeCursor = line.text.slice(0, context.pos - line.from);
+        
+        if ((!context.explicit && !before) || period.test(lineBeforeCursor)) resolve(null);
         resolve({
-            from: before ? before.from : context.pos,
-            // non-null assertion operator "!" used to remove 'possibly null' error
-            options: TacticCompletion.instance!.tacticCompletions,
-            validFor: /^[ \t]*[^.]*/gm
+          // start completion instance from first letter of line
+          from: firstletter ? line.from + firstletter.index!: context.pos,
+          // non-null assertion operator "!" used to remove 'possibly null' error
+          options: TacticCompletion.instance!.tacticCompletions,
+          validFor: /^[\t]*[^\.]*/gm
         })
     });
+  }
 }
-}
+
 
 // Export the singleton instance to nodeview.ts
 export const tacticCompletionSource = TacticCompletion.getInstance().tacticCompletionSource;

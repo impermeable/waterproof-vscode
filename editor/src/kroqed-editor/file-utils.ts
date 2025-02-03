@@ -23,7 +23,7 @@ export function checkPrePost(content: string, post: (m : Message) => void): stri
 }
 
 // TODO: Temporary fix for the bug that "<z" turns into an html tag.
-export function fixLessThanBug(content: string, post: (Message) => void): string {
+export function fixLessThanBug(content: string, post: (m : Message) => void): string {
     const regexp = /<(?!input-area|hint|br|hr)([\w\d]+)/g;
     const matches = content.matchAll(regexp);
     let newContent = content;

@@ -17,7 +17,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
     // Whether the inner editor (the codemirror instance) is updating.
 	protected updating: boolean;
 	// The inner codemirror editor view.
-    protected _codemirror: CodeMirror;
+    protected _codemirror: CodeMirror | undefined;
 	// The outer prosemirror editor view.
     protected _outerView: EditorView;
 	// The schema in use for the prosemirror editor.
@@ -36,9 +36,12 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
         this._outerView = view;
         this._getPos = getPos;
         this._schema = schema;
+		// Initialize other parameters to default value
+		this.updating = false;
     }
-
-    dom: Node;
+	// Don't know how to initialize this without it being a problem
+	// @ts-expect-error
+    dom : Node;
     contentDOM?: HTMLElement | null | undefined;
 
     update(node: PNode, _decorations: readonly Decoration[], _innerDecorations: DecorationSource) {
@@ -52,8 +55,8 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 		if (this.updating) return true;
 
 		// Extract node text (the edit) and document (current) text.
-		const newText = node.textContent;
-		const curText = this._codemirror.state.doc.toString();
+		let newText = node.textContent;
+		let curText = this._codemirror?.state.doc.toString();
 
 		// Check whether they are the same.
 		// We don't need to update if they are.
@@ -61,26 +64,26 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 			// Set start.
 			let start = 0;
 			// The current length of the document.
-			let curEnd = curText.length;
+			let curEnd = curText?.length;
 			// The new length of the document.
 			let newEnd = newText.length;
 
 			// Figure out what range of characters needs to be replaced.
 			// All matching characters can be safely ignored.
-			while (start < curEnd &&
-				curText.charCodeAt(start) == newText.charCodeAt(start)) {
+			while (start < curEnd! &&
+				curText?.charCodeAt(start) == newText.charCodeAt(start)) {
 				++start;
 			}
-			while (curEnd > start && newEnd > start &&
-				curText.charCodeAt(curEnd - 1) == newText.charCodeAt(newEnd - 1)) {
-				curEnd--;
+			while (curEnd! > start && newEnd > start &&
+				curText?.charCodeAt(curEnd! - 1) == newText.charCodeAt(newEnd - 1)) {
+				curEnd!--;
 				newEnd--;
 			}
 
 			// Set updating to true before dispatching transaction.
 			this.updating = true;
 			// Update the codemirror instance from 'start' to 'curEnd' with the corresponding slice of the newText.
-			this._codemirror.dispatch({
+			this._codemirror?.dispatch({
 				changes: {
 					from: start,
 					to: curEnd,
@@ -104,7 +107,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 		// Set updating state to true while updating selection.
 		this.updating = true;
 		// Update the selection within the codemirror instance.
-		this._codemirror.dispatch({ selection: { anchor, head } });
+		this._codemirror?.dispatch({ selection: { anchor, head } });
 		// Reset updating state to false.
 		this.updating = false;
 	}
@@ -119,7 +122,7 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 		// If there is no position we are done.
 		if (!pos) return;
 		// If we are updating or we don't have focus then we should return early.
-		if (this.updating || !this._codemirror.hasFocus) return;
+		if (this.updating || !this._codemirror?.hasFocus) return;
 
 		// Figure out offset position from selection.
 		let offset = pos + 1;

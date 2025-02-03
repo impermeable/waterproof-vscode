@@ -2,6 +2,8 @@ import { Position } from "vscode";
 import { IFileProgressComponent } from "../components";
 import { CoqFileProgressParams } from "./requestTypes";
 
+// TODO: Figure out if this is unused, and if yes, delete file and usages.
+
 export class SentenceManager implements IFileProgressComponent {
 
     /**

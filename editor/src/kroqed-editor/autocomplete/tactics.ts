@@ -44,8 +44,8 @@ class TacticCompletion {
 
   public tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
     return new Promise((resolve, reject) => {
-        let before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
-        let period = /\./gm 
+        const before = context.matchBefore(/([^\s\.\n\t\-\+\*])[^\s\n\t\-\+\*]*/gm);
+        const period = /\./gm 
         const line = context.state.doc.lineAt(context.pos);
         const firstletter = line.text.match(/[a-zA-Z]/);
         const lineBeforeCursor = line.text.slice(0, context.pos - line.from);

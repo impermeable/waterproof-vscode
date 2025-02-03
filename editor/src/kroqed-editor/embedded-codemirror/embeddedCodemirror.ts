@@ -55,8 +55,8 @@ export class EmbeddedCodeMirrorEditor implements NodeView {
 		if (this.updating) return true;
 
 		// Extract node text (the edit) and document (current) text.
-		let newText = node.textContent;
-		let curText = this._codemirror?.state.doc.toString();
+		const newText = node.textContent;
+		const curText = this._codemirror?.state.doc.toString();
 
 		// Check whether they are the same.
 		// We don't need to update if they are.

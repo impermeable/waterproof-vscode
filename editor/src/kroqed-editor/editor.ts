@@ -71,7 +71,7 @@ export class Editor {
 
 	// User operating system.
 	private readonly _userOS;
-	private _filef: FileFormat;
+	private _filef: FileFormat = FileFormat.Unknown;
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>;
 

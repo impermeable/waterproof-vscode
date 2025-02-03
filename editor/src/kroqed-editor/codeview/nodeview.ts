@@ -29,11 +29,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
-<<<<<<< HEAD
-	private _diags: Diagnostic[];
-=======
 	private _diags : Diagnostic[];
->>>>>>> origin/main
 
 	private debouncer: Debouncer;
 
@@ -235,7 +231,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		//all diags have the copy action
 		const actions = [{
 			name: "Copy 📋",
-			apply: (view: CodeMirror, from: number, to: number) => {
+			apply: (view: CodeMirror, from: number, _to: number) => {
 				// give focus to this current codeblock instante to ensure it updates
 				this._codemirror?.focus();
 				navigator.clipboard.writeText(message);
@@ -258,8 +254,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 								to:to,
 								insert: toInsert
 							},
+							selection: { anchor: from + toInsert.length }
 						});
-						selection: { anchor: from + toInsert.length };
 						this.forceUpdateLinting();
 					}
 				});
@@ -299,7 +295,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 	}
 
-	private updateDiagnostics(from:number, to:number, message:string) {
+	private updateDiagnostics(from:number, to:number, _message :string) {
 		const diagUnchanged = this._diags.filter(diag => diag.from !== from || diag.to !== to);
 		const diagnosticsToUpdate = this._diags.filter(diag => diag.from === from && diag.to === to);
 		this.clearCoqErrors();
@@ -307,7 +303,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		for (const diag of diagnosticsToUpdate) {
 			const actions = [{
 				name: "Copy 📋",
-				apply: (view: CodeMirror, from: number, to: number) => {
+				apply: (view: CodeMirror, from: number, _to: number) => {
 					// give focus to this current codeblock instante to ensure it updates
 					this._codemirror?.focus();
 					navigator.clipboard.writeText(diag.message);
@@ -329,8 +325,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 								to:to,
 								insert: toInsert
 							},
+							selection: { anchor: from + toInsert.length }
 						});
-						selection: { anchor: from + toInsert.length };
 						this.forceUpdateLinting();
 					}
 				});

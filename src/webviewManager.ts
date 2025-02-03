@@ -228,6 +228,7 @@ export class WebviewManager extends EventEmitter {
                 this.emit(WebviewManagerEvents.editorReady, document);
                 break;
             case MessageType.cursorChange:
+                // @ts-expect-error TODO: Use proper type(check) for messages
                 { const pos = document.positionAt(message.body);
                 this._lineStatus.update(pos);
                 // Update goals components

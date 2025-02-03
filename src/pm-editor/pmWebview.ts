@@ -390,6 +390,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private handleMessage(msg: Message) {
         switch (msg.type) {
             case MessageType.docChange:
+                // @ts-expect-error TODO: Use proper type(check) for messages
                 this.handleChangeFromEditor(msg.body);
                 break;
             case MessageType.ready:
@@ -397,6 +398,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 this.updateTeacherMode();
                 break;
             case MessageType.lineNumbers:
+                // @ts-expect-error TODO: Use proper type(check) for messages
                 this._linenumber = msg.body;
                 this.updateLineNumbers();
                 break;

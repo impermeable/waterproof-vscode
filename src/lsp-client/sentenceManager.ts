@@ -55,8 +55,6 @@ export class SentenceManager implements IFileProgressComponent {
     /**
      * Returns the beginning position of the sentence in which `position` is located.
      * That is, the end position of the previous sentence.
-     * If `strict`, return `undefined` if no sentences are known or if `position` is after the last.
-     * In the second case, if not `strict`, simply return the last sentence.
      */
     getBeginningOfSentence(position: Position): Position | undefined {
         // FIXME: This is really just a hack to get things to work for now.

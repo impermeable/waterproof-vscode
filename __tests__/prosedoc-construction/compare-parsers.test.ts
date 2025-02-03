@@ -2,6 +2,9 @@
  * @jest-environment jsdom
  */
 
+/* eslint-disable no-useless-escape */
+// Disable due to latex code in sample data
+
 import { createProseMirrorDocument } from "../../editor/src/kroqed-editor/prosedoc-construction/construct-document";
 import { FileFormat } from "../../shared";
 import { FileTranslator } from "../../editor/src/kroqed-editor/translation"
@@ -10,7 +13,7 @@ import { DOMParser} from "prosemirror-model";
 import { expect } from "@jest/globals";
 
 const inputDocument = `#### Markdown content
-$int_2^3 x dx$
+$\int_2^3 x dx$
 $$1028 + 23 = ?$$
 Lol, empty coq block underneath.
 \`\`\`coq

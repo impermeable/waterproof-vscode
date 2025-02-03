@@ -1,5 +1,3 @@
-import { Serializer } from "./types";
-import { Fragment, Node, Slice } from "prosemirror-model";
 import { translateMvToProsemirror } from "./toProsemirror";
 import { FileFormat } from "../../../../shared"
 

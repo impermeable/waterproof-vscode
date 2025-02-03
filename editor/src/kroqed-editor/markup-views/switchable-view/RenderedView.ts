@@ -5,7 +5,6 @@ import { EditorState, TextSelection } from "prosemirror-state";
 import MarkdownIt from "markdown-it";
 import { SwitchableView } from "./SwitchableView";
 import { markdownRenderingSchema } from "./MarkdownSchema";
-import { FileFormat } from "../../../../../shared";
 
 export class RenderedView {
     public view: EditorView;
@@ -18,7 +17,7 @@ export class RenderedView {
         outerView: EditorView, 
         parent: SwitchableView, 
         usingCoqdocSyntax: boolean,
-        getPos: (() => number | undefined),
+        _getPos: (() => number | undefined),
         
     ) {
         // Create a new MarkdownIt renderer with support for html (this allows 
@@ -36,7 +35,7 @@ export class RenderedView {
         // Set the holder innerHTML to the rendered markdown this way we can parse it to prosemirror.
         holder.innerHTML = mditOutput;
         // Create a prosemirror view with the math plugin enabled
-        let view = new EditorView(target, {
+        const view = new EditorView(target, {
             state: EditorState.create({
                 doc: DOMParser.fromSchema(markdownRenderingSchema).parse(holder),
                 schema: markdownRenderingSchema,
@@ -45,13 +44,13 @@ export class RenderedView {
                 ]
             }),
             // This view is not editable
-            editable: (state) => { return false; }
+            editable: (_state) => { return false; }
         });
         // Save the view.
         this.view = view;
     }
 
-    setSelection(anchor: number, head: number, root: Document | ShadowRoot) {
+    setSelection(anchor: number, head: number, _root: Document | ShadowRoot) {
         this.view.focus();
         const $anchor = this.view.state.doc.resolve(anchor);
         const $head = this.view.state.doc.resolve(head);

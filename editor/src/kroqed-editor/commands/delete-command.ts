@@ -1,7 +1,7 @@
 import { EditorState, Transaction } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 
-export function deleteNodeIfEmpty(state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean {
+export function deleteNodeIfEmpty(state: EditorState, dispatch?: ((tr: Transaction) => void), _view?: EditorView): boolean {
     if (state.selection.from !== state.selection.to) return false;
     const parent = state.selection.$from.parent;
     const content = parent.textContent;

@@ -30,7 +30,7 @@ import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
 import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
-import { DiagnosticSeverity, ThemeIcon } from "vscode";
+import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
 
@@ -71,7 +71,7 @@ export class Editor {
 
 	// User operating system.
 	private readonly _userOS;
-	private _filef: any;
+	private _filef: FileFormat = FileFormat.Unknown;
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>;
 
@@ -96,7 +96,7 @@ export class Editor {
 		document.body.appendChild(theContextMenu);
 
 		// Setup the custom context menu
-		document.addEventListener("click", (ev) => {
+		document.addEventListener("click", (_ev) => {
 			// Handle a 'left mouse click'
 			// console.log("LMB");
 			theContextMenu.style.display = "none";
@@ -135,12 +135,12 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = checkPrePost(content, (msg: Message) => {
+		const newContent = checkPrePost(content, (msg: Message) => {
 			this.post(msg);
 		});
 		if (newContent !== content) version = version + 1;
 
-		let parsedContent = this._translator.toProsemirror(newContent);
+		const parsedContent = this._translator.toProsemirror(newContent);
 		// this._contentElem.innerHTML = parsedContent;
 
 		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
@@ -162,7 +162,7 @@ export class Editor {
 	createProseMirrorEditor(proseDoc: ProseNode) {
 		// Shadow this variable _userOS.
 		const userOS = this._userOS;
-		let view = new EditorView(this._editorElem, {
+		const view = new EditorView(this._editorElem, {
 			state: this.createState(proseDoc),
 			clipboardTextSerializer: (slice) => { return mathSerializer.serializeSlice(slice) },
 			dispatchTransaction: ((tr) => {
@@ -173,7 +173,7 @@ export class Editor {
 					if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
-							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
+							const obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
 							this.post({type: MessageType.docChange, body: obj});
 						} catch (error) {
 							console.error((error as Error).message);
@@ -275,10 +275,9 @@ export class Editor {
 	}
 
 	handleSnippet(template: string) {
-		const view = this._view!!;
+		const view = this._view!;
 		// Get the first selection.
 		const from = view.state.selection.from;
-		const to = view.state.selection.to;
 
 		// We need to figure out to which codemirror cell this insertion belongs.
 
@@ -321,9 +320,9 @@ export class Editor {
 		if (!this._lineNumbersShown) return;
 		if (!this._view || COQ_CODE_PLUGIN_KEY.getState(this._view.state) === undefined) return;
 		const linenumbers = Array<number>();
-		//@ts-ignore
-		for (let codeCell of COQ_CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
-			//@ts-ignore
+		// @ts-expect-error TODO: Fix me
+		for (const codeCell of COQ_CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
+			// @ts-expect-error TODO: Fix me
 			linenumbers.push(this._mapping?.findPosition(codeCell._getPos() + 1));
 		}
 		this.post({type: MessageType.lineNumbers, body: {linenumbers, version: this._mapping?.version}});
@@ -332,7 +331,7 @@ export class Editor {
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */
 	setLineNumbers(msg: LineNumber) {
 		if (!this._view || !this._mapping || msg.version < this._mapping.version) return;
-		let state = COQ_CODE_PLUGIN_KEY.getState(this._view.state);
+		const state = COQ_CODE_PLUGIN_KEY.getState(this._view.state);
 		if (!state) return;
 		const tr = this._view.state.tr.setMeta(COQ_CODE_PLUGIN_KEY, msg);
 		this._view.dispatch(tr);
@@ -342,7 +341,7 @@ export class Editor {
 		const view = this._view;
 		if (!view) return;
 		const func = type === HistoryChangeType.Undo ? undo : redo;
-		const ret = func(view.state, view.dispatch, view);
+		func(view.state, view.dispatch, view);
 	}
 
 	/**
@@ -352,16 +351,16 @@ export class Editor {
 	 * @param symbolLaTeX The LaTeX command(s) to produce the character.
 	 * @returns Whether the operation was a success.
 	 */
-	insertSymbol(symbolUnicode: string, symbolLaTeX: string): boolean {
+	insertSymbol(symbolUnicode: string, _symbolLaTeX: string): boolean {
 		// If there is no view at the moment this is a no-op.
 		if (!this._view) return false;
 		let state = this._view.state;
 		let from = state.selection.from;
 		let to = state.selection.to;
 		if (REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor) {
-			//@ts-ignore
+			// @ts-expect-error TODO: Fix me
 			from = REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor?.from;
-			//@ts-ignore
+			// @ts-expect-error TODO: Fix me
 			to = REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor?.to;
 		}
 		state = this._view.state;
@@ -455,7 +454,7 @@ export class Editor {
 	parseCoqDiagnostics(msg: DiagnosticMessage) {
 		if (this._mapping === undefined || msg.version < this._mapping.version) return;
 
-		let diagnostics = msg.positionedDiagnostics;
+		const diagnostics = msg.positionedDiagnostics;
 		const map = this._mapping;
 		if (this._view === undefined || map === undefined) return;
 
@@ -463,12 +462,12 @@ export class Editor {
 		const views = COQ_CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
 		if (views === undefined) return;
 		// Clear the errors
-		for (let view of views) view.clearCoqErrors();
+		for (const view of views) view.clearCoqErrors();
 
 		// Convert to inverse mapped positions.
 		const doc = this._view.state.doc;
 		this.currentProseDiagnostics = new Array<DiagnosticObjectProse>();
-		for (let diag of diagnostics) {
+		for (const diag of diagnostics) {
 			const start = map.findInvPosition(diag.startOffset);
 			const end = map.findInvPosition(diag.endOffset);
 			if (start >= end) continue;
@@ -523,29 +522,33 @@ export class Editor {
 
 	/** Handle a message from vscode */
 	handleMessage(msg: Message) {
+		// Blocks added to scope const declarations
 		switch(msg.type) {
 			case MessageType.qedStatus:
-				const statuses = msg.body as QedStatus[];  // one status for each input area, in order
+				{ const statuses = msg.body as QedStatus[];  // one status for each input area, in order
 				this.updateQedStatus(statuses);
-				break;
+				break; }
 			case MessageType.setShowLineNumbers:
-				const show = msg.body as boolean;
+				{ const show = msg.body as boolean;
 				this.setShowLineNumbers(show);
-				break;
+				break; }
 			case MessageType.lineNumbers:
+				// @ts-expect-error TODO: Fix me
 				this.setLineNumbers(msg.body);
 				break;
 			case MessageType.teacher:
+				// @ts-expect-error TODO: Fix me
 				this.updateLockingState(msg.body);
 				break;
 			case MessageType.progress:
-				const progressParams = msg.body as SimpleProgressParams;
+				{ const progressParams = msg.body as SimpleProgressParams;
 				this.updateProgressBar(progressParams);
-				break;
+				break; }
 			case MessageType.diagnostics:
-				const diagnostics = msg.body;
+				{ const diagnostics = msg.body;
+				// @ts-expect-error TODO: Fix me
 				this.parseCoqDiagnostics(diagnostics);
-				break;
+				break; }
             case MessageType.syntax:
                 initializeTacticCompletion(msg.body as boolean);
                 break;

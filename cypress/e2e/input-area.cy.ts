@@ -27,7 +27,7 @@ describe('Input area', () => {
     cy.get(".cm-content").click();
     cy.get(".menubar .menubar-item").filter(":lt(6)").then((buttons) => {
         expect(buttons).to.satisfy((buttons) => {
-            for (let button of buttons) {
+            for (const button of buttons) {
                 if (button.getAttribute("disabled") === "true") {
                     return false;
                 }

@@ -1,6 +1,9 @@
+/* eslint-disable no-useless-escape */
+// Disable due to latex code in sample data
 import { topLevelBlocksMV, topLevelBlocksV } from "../../editor/src/kroqed-editor/prosedoc-construction";
+import { expect } from '@jest/globals';
 import { MarkdownBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/blocktypes";
-import { isHintBlock, isInputAreaBlock, isMarkdownBlock, isMathDisplayBlock, isCoqBlock, isCoqDocBlock, isCoqCodeBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { isHintBlock, isInputAreaBlock, isMarkdownBlock, isMathDisplayBlock, isCoqBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
 
 const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">

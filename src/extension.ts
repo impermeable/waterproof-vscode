@@ -3,7 +3,6 @@ import {
     ExtensionContext,
     Position,
     TextDocument,
-    WorkspaceConfiguration,
     commands,
     workspace,
     window,
@@ -35,10 +34,9 @@ import { join as joinPath} from "path";
 import { homedir } from "os";
 import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
 import { exec } from "child_process"
-import { resolveSoa } from "dns";
 
 
-export function activate(context: ExtensionContext): void {
+export function activate(_context: ExtensionContext): void {
     commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
 }
 
@@ -130,7 +128,7 @@ export class Waterproof implements Disposable {
 
         // make relevant gui components
         this.statusBar = new CoqnitiveStatusBar();
-        var goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
+        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals")
@@ -141,10 +139,10 @@ export class Waterproof implements Disposable {
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
-        var logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
+        const logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("logbook", logbook);
         this.goalsComponents.push(logbook);
-        var debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
+        const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("debug", debug);
         this.goalsComponents.push(debug);
 
@@ -252,6 +250,7 @@ export class Waterproof implements Disposable {
                     // If a waterproof installation is found in the default location it is first uninstalled.
                     // The path is updated to the default location so if an installation is present in another directory it still will not be utilised
                     // The installer is then downloaded, run and then removed.
+                // eslint-disable-next-line no-fallthrough
                 case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && `
                     + uninstallerLocation + ` && ` + windowsInstallationScript + ` ) ELSE (echo No previous installation found && ` +  windowsInstallationScript + ` )"`; break;
                 case "netbsd": cmnd = undefined; break;
@@ -275,9 +274,9 @@ export class Waterproof implements Disposable {
      * Attempts to install all required libraries
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
      */
-    private async autoInstall(command: string): Promise<Boolean> {
-        return new Promise((resolve, reject) => {
-            exec(command, (err, stdout, stderr) => {
+    private async autoInstall(command: string): Promise<boolean> {
+        return new Promise((resolve, _reject) => {
+            exec(command, (err, _stdout, _stderr) => {
                 if (err) {
                     // Simple fixed scripts are run, the user is able to stop these but they are not considered errors
                     // as the user has freedom to choose the steps and can rerun the command.
@@ -370,7 +369,7 @@ export class Waterproof implements Disposable {
      * @param handler the function that runs when the command is executed
      * @param editorCommand whether to register a "text editor" or ordinary command
      */
-    private registerCommand(name: string, handler: (...args: any[]) => void, editorCommand: boolean = false) {
+    private registerCommand(name: string, handler: (...args: unknown[]) => void, editorCommand: boolean = false) {
         const register = editorCommand ? commands.registerTextEditorCommand : commands.registerCommand;
         this.disposables.push(register("waterproof." + name, handler, this));
     }

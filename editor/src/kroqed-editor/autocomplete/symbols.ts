@@ -9,8 +9,8 @@ const symbolCompletions: Completion[] = symbols;
  * This function can be used in the editor as a completion source.
  */
 export const symbolCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
-    return new Promise((resolve, reject) => {
-        let before = context.matchBefore(/\\/);
+    return new Promise((resolve, _reject) => {
+        const before = context.matchBefore(/\\/);
         // If completion wasn't explicitly started and there
         // is no word before the cursor, don't open completions.
         if (!context.explicit && !before) resolve(null);

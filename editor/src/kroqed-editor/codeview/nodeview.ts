@@ -163,7 +163,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		}, null, posFrom, posTo);
 	}
 
-	private lintingFunction: LintSource = (view: CodeMirror): readonly Diagnostic[] => {
+	private lintingFunction: LintSource = (_view: CodeMirror): readonly Diagnostic[] => {
 		return this._diags;
 	}
 
@@ -205,8 +205,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * Contains completions for defined theorems/lemmas/etc.
 	 */
 	dynamicCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
-		return new Promise((resolve, reject) => {
-			let before = context.matchBefore(/\w/);
+		return new Promise((resolve, _reject) => {
+			const before = context.matchBefore(/\w/);
 			// If completion wasn't explicitly started and there
 			// is no word before the cursor, don't open completions.
 			if (!context.explicit && !before) resolve(null);
@@ -231,7 +231,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		//all diags have the copy action
 		const actions = [{
 			name: "Copy 📋",
-			apply: (view: CodeMirror, from: number, to: number) => {
+			apply: (view: CodeMirror, from: number, _to: number) => {
 				// give focus to this current codeblock instante to ensure it updates
 				this._codemirror?.focus();
 				navigator.clipboard.writeText(message);
@@ -254,8 +254,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 								to:to,
 								insert: toInsert
 							},
+							selection: { anchor: from + toInsert.length }
 						});
-						selection: { anchor: from + toInsert.length };
 						this.forceUpdateLinting();
 					}
 				});
@@ -295,7 +295,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 	}
 
-	private updateDiagnostics(from:number, to:number, message:string) {
+	private updateDiagnostics(from:number, to:number, _message :string) {
 		const diagUnchanged = this._diags.filter(diag => diag.from !== from || diag.to !== to);
 		const diagnosticsToUpdate = this._diags.filter(diag => diag.from === from && diag.to === to);
 		this.clearCoqErrors();
@@ -303,7 +303,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		for (const diag of diagnosticsToUpdate) {
 			const actions = [{
 				name: "Copy 📋",
-				apply: (view: CodeMirror, from: number, to: number) => {
+				apply: (view: CodeMirror, from: number, _to: number) => {
 					// give focus to this current codeblock instante to ensure it updates
 					this._codemirror?.focus();
 					navigator.clipboard.writeText(diag.message);
@@ -325,8 +325,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 								to:to,
 								insert: toInsert
 							},
+							selection: { anchor: from + toInsert.length }
 						});
-						selection: { anchor: from + toInsert.length };
 						this.forceUpdateLinting();
 					}
 				});

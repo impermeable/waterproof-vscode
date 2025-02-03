@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 import { setupTest } from "./util";
 
-const edits: any[] = [];
+const edits = [];
 const startingDocument: string = "# Title\n```coq\nDefinition foo := 42.\n```\n";
 
 describe('Basic tests', () => {

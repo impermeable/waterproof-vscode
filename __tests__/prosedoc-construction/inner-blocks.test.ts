@@ -1,5 +1,6 @@
 import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/inner-blocks";
-import { isCoqBlock, isCoqCodeBlock, isCoqDocBlock, isCoqMarkdownBlock, isMarkdownBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { isCoqCodeBlock, isCoqDocBlock, isCoqMarkdownBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { expect } from "@jest/globals";
 
 test("Inner input area (and hint) blocks", () => {
     const inputAreaContent = "$$1028 + 23 = ?$$\n```coq\nCompute 1028 + 23.\n```";

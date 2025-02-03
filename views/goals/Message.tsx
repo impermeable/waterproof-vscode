@@ -10,9 +10,9 @@ export function Message({
   message: PpString | Message<PpString>;
 }) {
   //hashing the message as the key
-  let key = objectHash(message);
+  const key = objectHash(message);
   //converting message to text if it is not of the type string
-  let text =
+  const text =
     typeof message === "string"
       ? message
       : typeof message === "object" && "text" in message

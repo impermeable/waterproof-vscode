@@ -9,7 +9,7 @@ export interface WaitingForInfo {
   body: GoalRequest;
 }
 export interface InfoError {
-  type: "infoError"
+  type: "infoError";
   body: unknown;
 }
 //a message designed for Coq that extends MessageEvent

@@ -1,6 +1,6 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
-import { exec, spawn } from "child_process";
-import path = require("path");
+// import { exec, spawn } from "child_process";
+// import path = require("path");
 import { Version, VersionRequirement } from "./version";
 import { COMPARE_MODE } from "./types";
 
@@ -97,18 +97,18 @@ export class VersionChecker {
     public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {
         return new Promise((resolve, reject) => {
             if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
-            const coqcBinary = path.join(path.parse(this._wpPath).dir, "coqc");
+            const coqcBinary = this._wpPath.concat('/', "coqc");
             const command = `${coqcBinary} --version`;
             const regex = /version (?<version>\d+\.\d+\.\d+)/g;
 
-            exec(command, (err, stdout, stderr) => {
-                if (err) resolve({ reason: err.message });
-                const groups = regex.exec(stdout)?.groups;
-                if (groups === undefined) reject("Regex matching on version string went wrong");
-                // FIXME: ts-ignore
-                //@ts-ignore
-                resolve(Version.fromString(groups["version"]));
-            });
+            // exec(command, (err, stdout, stderr) => {
+            //     if (err) resolve({ reason: err.message });
+            //     const groups = regex.exec(stdout)?.groups;
+            //     if (groups === undefined) reject("Regex matching on version string went wrong");
+            //     // FIXME: ts-ignore
+            //     //@ts-ignore
+            //     resolve(Version.fromString(groups["version"]));
+            // });
         });
     }
 
@@ -120,19 +120,20 @@ export class VersionChecker {
         return new Promise((resolve, reject) => {
             if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
             const ext = process.platform === "win32" ? ".exe" : "";
-            const coqtopPath = path.join(path.parse(this._wpPath).dir, `coqtop${ext}`);
+            // TODO : Fix this
+            const coqtopPath = this._wpPath.concat('/', `coqtop${ext}`);
 
             const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
             const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
-            exec(command, (err, stdout, stderr) => {
-                if (err) return resolve({ reason: err.message });
+            // exec(command, (err, stdout, stderr) => {
+            //     if (err) return resolve({ reason: err.message });
 
-                const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
-                const versionCoqWaterproof = Version.fromString(wpVersion);
-                const versionRequiredCoq = Version.fromString(reqCoqVersion);
+            //     const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
+            //     const versionCoqWaterproof = Version.fromString(wpVersion);
+            //     const versionRequiredCoq = Version.fromString(reqCoqVersion);
 
-                resolve({ wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq });
-            });
+            //     resolve({ wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq });
+            // });
         });
     }
 
@@ -145,11 +146,11 @@ export class VersionChecker {
             if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
             const command = `${this._wpPath} --version`;
 
-            exec(command, (err, stdout, stderr) => {
-                if (err) return resolve({ reason: err.message });
-                const version = Version.fromString(stdout.trim());
-                resolve(version);
-            });
+            // exec(command, (err, stdout, stderr) => {
+            //     if (err) return resolve({ reason: err.message });
+            //     const version = Version.fromString(stdout.trim());
+            //     resolve(version);
+            // });
         });
     }
 

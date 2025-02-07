@@ -1,4 +1,4 @@
-import { EventEmitter } from "stream";
+import { EventEmitter } from "events";
 import { Disposable, EndOfLine, Position, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
 import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNumber } from "../../shared";
@@ -82,9 +82,14 @@ export class ProseMirrorWebview extends EventEmitter {
             this.redoHandler.bind(this));
 
 
-        var path = require('path')
+        const basename = (str : string) => {
+           var base = new String(str).substring(str.lastIndexOf('/') + 1); 
+            if(base.lastIndexOf(".") != -1)       
+                base = base.substring(0, base.lastIndexOf("."));
+           return base;
+        }
 
-        const fileName = path.basename(doc.uri.fsPath)
+        const fileName = basename(doc.uri.fsPath)
         
         if (isIllegalFileName(fileName)) {
             const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "\-", "\(", "\)". Please rename the file.`

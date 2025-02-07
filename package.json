@@ -2,9 +2,9 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.14",
-  "requiredCoqLspVersion": "==0.1.8",
-  "requiredCoqWaterproofVersion": "==2.1.0",
+  "version": "0.9.18",
+  "requiredCoqLspVersion": "==0.2.2",
+  "requiredCoqWaterproofVersion": "==2.2.0",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",
@@ -129,6 +129,15 @@
       {
         "command": "waterproof.autoInstall",
         "title": "Waterproof: Automatically installs all required libraries."
+      },
+      {
+        "command": "waterproof.setDefaultArgsWin",
+        "title": "Waterproof: Set default arguments for Windows"
+      },
+      {
+        "command": "waterproof.toggleInEditorLineNumbers",
+        "title": "Toggle line numbers displayed in editor",
+        "category": "Waterproof"
       }
     ],
     "menus": {
@@ -216,10 +225,7 @@
             "id": "download-installer-mac",
             "when": "isMac && !hasRemoteServer",
             "title": "Downloading the Installer",
-            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
-            "completionEvents": [
-              "onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"
-            ],
+            "description": "Currently only a manual installation is available for Mac, please follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
             "media": {
               "markdown": "walkthrough-data/initial-setup/download-installer-mac.md"
             }
@@ -305,6 +311,16 @@
             "type": "boolean",
             "default": false,
             "description": "Enable teacher mode; if true, allows user to edit all content outside input fields."
+          },
+          "waterproof.detailedErrorsMode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
+          },
+          "waterproof.showLineNumbersInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show line numbers in the Waterproof editor"
           }
         }
       },
@@ -346,6 +362,11 @@
             "type": "number",
             "default": 150,
             "description": "Maximum number of errors per file, after that, coq-lsp will stop checking the file."
+          },
+          "waterproof.send_diags_extra_data": {
+            "type": "boolean",
+            "default": true,
+            "description": "Send extra diagnostics data, usually on error"
           }
         }
       },
@@ -465,6 +486,7 @@
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.0",
     "@vscode/vsce": "^2.21.0",
+    "cypress": "^13.17.0",
     "esbuild": "^0.16.17",
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
@@ -477,39 +499,42 @@
     "vscode-extension-tester": "^5.6.0"
   },
   "dependencies": {
-    "@benrbray/prosemirror-math": "^1.0.0",
-    "@codemirror/autocomplete": "^6.7.1",
-    "@codemirror/commands": "^6.2.4",
-    "@codemirror/language": "^6.6.0",
-    "@codemirror/lint": "^6.4.1",
-    "@codemirror/view": "^6.11.0",
-    "@lezer/highlight": "^1.1.6",
-    "@lezer/lr": "^1.3.5",
-    "@types/double-ended-queue": "^2.1.2",
-    "@types/markdown-it": "^12.2.3",
-    "@vscode/webview-ui-toolkit": "^1.2.1",
+    "@benrbray/prosemirror-math": "1.0.0",
+    "@codemirror/autocomplete": "6.18.1",
+    "@codemirror/commands": "6.6.2",
+    "@codemirror/language": "6.10.3",
+    "@codemirror/lint": "6.8.2",
+    "@codemirror/view": "6.27.0",
+    "@lezer/highlight": "1.2.1",
+    "@lezer/lr": "1.4.2",
+    "@types/double-ended-queue": "2.1.7",
+    "@types/markdown-it": "12.2.3",
+    "@vscode/webview-ui-toolkit": "1.4.0",
     "eventemitter2": "6.4.9",
-    "jquery": "^3.7.0",
-    "katex": "^0.16.10",
-    "markdown-it": "^13.0.1",
-    "object-hash": "^3.0.0",
-    "prosemirror-commands": "^1.1.7",
-    "prosemirror-inputrules": ">=1.1.2",
-    "prosemirror-keymap": "^1.1.4",
-    "prosemirror-markdown": "^1.11.0",
-    "prosemirror-model": "^1.13.3",
-    "prosemirror-state": "^1.3.4",
-    "prosemirror-transform": "^1.2.12",
-    "prosemirror-view": "^1.18.2",
-    "punycode": "^2.3.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-rnd": "^10.4.1",
-    "react-tooltip": "^5.13.1",
-    "throttle-debounce": "^5.0.0",
-    "vscode-languageclient": "^8.1.0",
-    "vscode-languageserver-types": "^3.17.3",
-    "vscode-uri": "^3.0.8"
+    "jquery": "3.7.1",
+    "katex": "0.16.11",
+    "markdown-it": "13.0.2",
+    "object-hash": "3.0.0",
+    "prosemirror-commands": "1.6.0",
+    "prosemirror-history": "1.4.1",
+    "prosemirror-inputrules": "1.4.0",
+    "prosemirror-keymap": "1.2.2",
+    "prosemirror-markdown": "1.13.1",
+    "prosemirror-model": "1.22.3",
+    "prosemirror-state": "1.4.3",
+    "prosemirror-transform": "1.10.0",
+    "prosemirror-view": "1.34.3",
+    "punycode": "2.3.1",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-rnd": "10.4.13",
+    "react-tooltip": "5.28.0",
+    "throttle-debounce": "5.0.2",
+    "vscode-languageclient": "8.1.0",
+    "vscode-languageserver-types": "3.17.5"
+  },
+  "dependenciesComments": {
+    "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"
   },
   "main": "./out/src/mainNode.js",
   "browser": "/out/src/mainBrowser.js",
@@ -526,6 +551,7 @@
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
     "package": "npm run clean && npm run test-package",
     "unit-tests": "npx jest",
-    "lezer-generator": "npx lezer-generator ./editor/src/kroqed-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/kroqed-editor/codeview/lang-pack/syntax.js"
+    "lezer-generator": "npx lezer-generator ./editor/src/kroqed-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/kroqed-editor/codeview/lang-pack/syntax.ts",
+    "cypress-tests": "npx cypress run"
   }
 }

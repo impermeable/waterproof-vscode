@@ -1,4 +1,4 @@
-import { ExtensionContext, Position, TextDocument, WorkspaceConfiguration } from "vscode";
+import { Position, ExtensionContext, TextDocument, Uri, WorkspaceConfiguration, Range, DiagnosticRelatedInformation, DiagnosticSeverity, DiagnosticTag } from "vscode";
 import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscode-languageclient";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
@@ -128,6 +128,7 @@ export interface CoqLspServerConfig {
     max_errors: number;
     pp_type: 0 | 1 | 2;
     show_stats_on_hover: boolean;
+    send_diags_extra_data: boolean;
 }
 
 
@@ -148,6 +149,7 @@ export namespace CoqLspServerConfig {
             max_errors: wsConfig.max_errors,
             pp_type: wsConfig.pp_type,
             show_stats_on_hover: wsConfig.show_stats_on_hover,
+            send_diags_extra_data: wsConfig.send_diags_extra_data,
         };
     }
 }
@@ -157,4 +159,39 @@ export namespace CoqLspClientConfig {
         let obj: CoqLspClientConfig = { show_goals_on: wsConfig.show_goals_on };
         return obj;
     }
+}
+
+/**
+ * We override the Diagnostic type from vscode to include the coq-lsp specific data
+ * 
+ * Original: https://github.com/youngjuning/vscode-api.js.org/blob/e9ac06e/vscode.d.ts#L6781
+ * 
+ * Additional field: `data` (https://github.com/ejgallego/coq-lsp/blob/main/etc/doc/PROTOCOL.md#extra-diagnostics-data)
+ */
+export interface WpDiagnostic {
+    range: Range;
+    message: string;
+    severity: DiagnosticSeverity;
+    source?: string;
+    code?: string | number | {
+        value: string | number;
+        target: Uri;
+    };
+    relatedInformation?: DiagnosticRelatedInformation[];
+    tags?: DiagnosticTag[];
+
+    // Coq-LSP specific (see https://github.com/ejgallego/coq-lsp/blob/main/etc/doc/PROTOCOL.md#extra-diagnostics-data)
+    data?: DiagnosticsData;
+}
+
+// See https://github.com/ejgallego/coq-lsp/blob/main/etc/doc/PROTOCOL.md#extra-diagnostics-data
+// From `prefix` Require `refs`
+// type failedRequire = {
+//     prefix ?: qualid
+//     refs : qualid list
+// }
+
+type DiagnosticsData = {
+    sentenceRange ?: Range;
+    // failedRequire ?: FailedRequire // TODO: Unsupported by us for now
 }

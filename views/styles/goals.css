@@ -53,3 +53,7 @@ p.num-goals + p.aside {
   white-space: pre;
   font-size: var(--vscode-editor-font-size);
 }
+
+.coq-goal-env + .coq-goal-env {
+  border-style: solid none none none;
+}

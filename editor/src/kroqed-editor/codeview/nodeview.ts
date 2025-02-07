@@ -1,5 +1,4 @@
-import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet } from "@codemirror/autocomplete";
-import { indentWithTab } from "@codemirror/commands";
+import { Completion, CompletionContext, CompletionResult, CompletionSource, autocompletion, snippet, completionKeymap } from "@codemirror/autocomplete";
 import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { coq, coqSyntaxHighlighting } from "./lang-pack"
 import { Compartment, EditorState, Extension } from "@codemirror/state"
@@ -16,6 +15,7 @@ import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirro
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
+
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
  * Corresponds with the example as can be found here:
@@ -29,7 +29,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
-	private _diags;
+	private _diags : Diagnostic[];
 
 	private debouncer: Debouncer;
 
@@ -47,30 +47,58 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
 		this._diags = [];
-		
+
 		// Shadow this._outerView for use in the next function.
 		const outerView = this._outerView;
+
+		// Helper function to create the placeholder content for the codemirror cells.
+		const placeholderContent = (): HTMLDivElement => {
+			const div = document.createElement("div");
+			const pos = getPos();
+			if (pos === undefined) {
+				div.innerText = "Empty code cell";
+				return div;
+			}
+			const name = outerView.state.doc.resolve(pos).node(1).type.name;
+			if (name === "input") {
+				// This codemirror cell is part of an input area, we change
+				// the placeholder to `(* Type your proof here *)` and apply
+				// the appropriate styling.
+				div.innerText = "(* Type your proof here *)";
+				// The styling of this class is
+				// defined in `editor/src/kroqed-editor/styles/input-area.css`.
+				div.classList.add("empty-proof-placeholder");
+			} else {
+				// This codemirror cell is not part of an input area, use the
+				// `Empty code cell` placeholder.
+				div.innerText = "Empty code cell";
+			}
+
+			return div;
+		}
 
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
-				// Add the linting extension for showing diagnostics (errors, warnings, etc) 
+				// Add the linting extension for showing diagnostics (errors, warnings, etc)
 				linter(this.lintingFunction),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
+
 				autocompletion({
 					override: [
-						tacticCompletionSource, 
-						this.dynamicCompletionSource, 
-						symbolCompletionSource, 
+						tacticCompletionSource,
+						this.dynamicCompletionSource,
+						symbolCompletionSource,
 						coqCompletionSource
-					], 
+					],
 					icons: false,
-					addToOptions: [renderIcon]
+					addToOptions: [renderIcon],
+					defaultKeymap: false,
 				}),
 				cmKeymap.of([
-					indentWithTab,
-					...this.embeddedCodeMirrorKeymap()
+				...completionKeymap,
+						...this.embeddedCodeMirrorKeymap()
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),
@@ -78,12 +106,12 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
                 highlightActiveLine(),
 				coqSyntaxHighlighting(),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
-				placeholder("Empty code cell")
+				placeholder(placeholderContent())
 			],
 			// We override the dispatch field to filter the transactions in the CodeMirror cells.
 			// We explicitly **allow** selection changes, so that students can select (and copy) non-input area code.
 			dispatch(tr, view) {
-				// TODO: deprecated according to reference manual https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch 
+				// TODO: deprecated according to reference manual https://codemirror.net/docs/ref/#view.EditorViewConfig.dispatch
 				if (!tr.docChanged) {
 					view.update([tr]);
 				} else {
@@ -95,7 +123,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 						// allow this transaction to update the view.
 						return;
 					}
-					
+
 					if (locked) {
 						// in student mode.
 						const pos = getPos();
@@ -119,7 +147,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 		// Fix the coqblock not being selectable when editing the markdown blocks.
 		this.dom.addEventListener("click", () => {
-			this._codemirror.focus();
+			this._codemirror?.focus();
 			this.setEditPermission();
 		});
 
@@ -128,10 +156,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	}
 
 	public handleSnippet(template: string, posFrom: number, posTo: number) {
-		this._codemirror.focus();
+		this._codemirror?.focus();
 		snippet(template)({
-			state: this._codemirror.state,
-			dispatch: this._codemirror.dispatch
+			state: this._codemirror!.state,
+			dispatch: this._codemirror!.dispatch
 		}, null, posFrom, posTo);
 	}
 
@@ -144,7 +172,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	setEditPermission(): void {
 		// update
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: this._readOnlyCompartment.reconfigure(
 				EditorState.readOnly.of(!this._outerView.editable)
 			)
@@ -158,7 +186,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = lineNumbers({
 			formatNumber: (lineNo: number) => (lineNo + firstLineNo - 1).toString()
 		});
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: this._lineNumberCompartment.reconfigure(
 				toggleState ? this._lineNumbersExtension : []
 			)
@@ -190,7 +218,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		});
 	};
 
-	/**
+/**
 	 * Add a new coq error to this view
 	 * @param from The from position of the error.
 	 * @param to The to postion of the error (should be larger than `from`).
@@ -198,26 +226,157 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * @param severity The severity attached to this error.
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
+		const severityString = severityToString(severity);
+		const errorsCount = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity === "error").length;
+		//all diags have the copy action
+		const actions = [{
+			name: "Copy 📋",
+			apply: (view: CodeMirror, from: number, to: number) => {
+				// give focus to this current codeblock instante to ensure it updates
+				this._codemirror?.focus();
+				navigator.clipboard.writeText(message);
+				this.showCopyNotification(from);
+			}
+		}];
+
+		if (severityString !== "error") {
+			if (errorsCount > 0) {
+				actions.push({
+					name: "Replace",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const trimmedMessage = message.trim();
+						const toInsert = trimmedMessage;
+						view.dispatch({
+							changes: {
+								from:from,
+								to:to,
+								insert: toInsert
+							},
+						});
+						selection: { anchor: from + toInsert.length };
+						this.forceUpdateLinting();
+					}
+				});
+			} else {
+				actions.push({
+					name: "Insert ↓",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const textAtErrorLine = view.state.doc.lineAt(from).text;
+						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
+						const trimmedMessage = message.trim();
+						const toInsert = "\n".concat(idents, trimmedMessage);
+						view.dispatch({
+							changes: {
+								from: to, to,
+								insert: toInsert
+							},
+							selection: {anchor: to + toInsert.length}
+						});
+					}
+				});
+			}
+		}
+
 		this._diags.push({
-			from, to, 
-			message, 
-			severity: severityToString(severity),
-			actions: [{
-				name: "Copy 📋", 
-				apply(view: EditorView, from: number, to: number) {
-					navigator.clipboard.writeText(message);
-				}
-			}]
+			from:from,
+			to:to,
+			message: message,
+			severity: severityString,
+			actions,
 		});
-		this.debouncer.call();		
+		//only when the first error is added, the other diagnostics are updated accordingly
+		if (severityString === "error" && errorsCount===0) {
+			this.updateDiagnostics(from, to, message);
+		}
+
 	}
 
+	private updateDiagnostics(from:number, to:number, message:string) {
+		const diagUnchanged = this._diags.filter(diag => diag.from !== from || diag.to !== to);
+		const diagnosticsToUpdate = this._diags.filter(diag => diag.from === from && diag.to === to);
+		this.clearCoqErrors();
+		this._diags = diagUnchanged;
+		for (const diag of diagnosticsToUpdate) {
+			const actions = [{
+				name: "Copy 📋",
+				apply: (view: CodeMirror, from: number, to: number) => {
+					// give focus to this current codeblock instante to ensure it updates
+					this._codemirror?.focus();
+					navigator.clipboard.writeText(diag.message);
+					this.showCopyNotification(from);
+				}
+			}];
+			
+			if (diag.severity !== "error"){
+				actions.push({
+					name: "Replace",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const trimmedMessage = diag.message.trim();
+						const toInsert = trimmedMessage;
+						view.dispatch({
+							changes: {
+								from:from,
+								to:to,
+								insert: toInsert
+							},
+						});
+						selection: { anchor: from + toInsert.length };
+						this.forceUpdateLinting();
+					}
+				});
+			}
+
+			this._diags.push({
+				from: diag.from,
+				to: diag.to,
+				message: diag.message,
+				severity: diag.severity,
+				actions
+			});
+		}
+		// Trigger the linter update to refresh diagnostics display
+		this.debouncer.call();
+	}
+
+	private showCopyNotification(from:number) {
+		//coordinates of the the line with the diagnostic
+		const coords = this._codemirror?.coordsAtPos(from);
+	
+		if (!coords) {
+			console.warn("Could not determine coordinates for diagnostic line.");
+			return;
+		}
+	
+		// Create the notification element
+		const notification = document.createElement("div");
+		notification.textContent = `Copied!`;
+		notification.style.top = `${coords.bottom + 5}px`; // Position 5px below the line
+		notification.style.left = `${coords.left}px`; // Align with the left edge of the line
+		notification.classList.add("copy-notification");
+		document.body.appendChild(notification);
+	
+		// Fade out after 1 second
+		setTimeout(() => {
+			notification.style.opacity = "0";
+			// Remove the notification from the DOM after the transition
+			setTimeout(() => notification.remove(), 500);
+		}, 1000);
+	}
+	
+	
+
 	/**
-	 * Helper function that forces the linter function to run. 
+	 * Helper function that forces the linter function to run.
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
 	private forceUpdateLinting() {
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: setDiagnosticsEffect.of(this._diags)
 		});
 	}
@@ -233,15 +392,15 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 const severityToString = (sv: number) => {
 	switch (sv) {
-		case 0: 
+		case 0:
 			return "error";
-		case 1: 
+		case 1:
 			return "warning";
-		case 2: 
+		case 2:
 			return "info";
-		case 3: 
+		case 3:
 			return "hint";
-		default: 
+		default:
 			return "error";
 	}
 }

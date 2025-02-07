@@ -63,6 +63,7 @@ export class TextDocMappingMV {
     constructor(inputString: string, versionNum: number) {
         this._version = versionNum;
         this.stringBlocks = new Map<number, StringCell>();
+        this.invStringBlocks = new Map<number, StringCell>();
         this.endHtmlMap = new Map<number,HtmlTagInfo>();
         this.startHtmlMap = new Map<number,HtmlTagInfo>();
         this.initialize(inputString);
@@ -255,10 +256,10 @@ export class TextDocMappingMV {
      * @param The string that contains html tags  
      * @returns The first valid html tag in the string and the position of this tag in the string
      */
-    public static getNextHTMLtag(input: string): TagInformation { 
+    public static getNextHTMLtag(input: string): TagInformation {
 
         // Find all html tags (this is necessary for the position and for invalid matches)
-        let matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
+        let matches = Array.from(input.matchAll(/<(\/)?(input-area|coqblock|coqcode|markdown|math-display|hint|coqdoc|coqdown)( [^>]*)?>/g));
 
         // Loop through all matches 
         for (let match of matches) {

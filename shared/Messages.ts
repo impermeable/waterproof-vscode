@@ -42,6 +42,13 @@ export enum MessageType {
     fatalError = "fatal",
     updateVersion = "updateTextDocVersion",
     syntax= "setSyntaxMode",
+    editorHistoryChange = "editorHistoryChange",
+    setShowLineNumbers = "setShowLineNumbers",
+}
+
+export const enum HistoryChangeType {
+    Undo,
+    Redo
 }
 
 export enum CoqFileProgressKind {

@@ -10,6 +10,8 @@ import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 const SAVE_AS = "Save As";
 import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
+import { CoqEditorProvider } from "./coqEditor";
+import { HistoryChangeType } from "../../shared/Messages";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -34,6 +36,10 @@ export class ProseMirrorWebview extends EventEmitter {
     private _enforceCorrectNonInputArea: boolean;
     private _lastCorrectDocString: string;
 
+    private _provider: CoqEditorProvider;
+
+    private _showLineNrsInEditor: boolean = WaterproofConfigHelper.showLineNumbersInEditor;
+
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
         to: number, 
@@ -54,8 +60,27 @@ export class ProseMirrorWebview extends EventEmitter {
         return !this._workspaceEditor.isInProgress;
     }
 
-    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
+    
+    // Handlers for undo and redo actions. 
+    // These can either be triggered by the user via a keybinding or by the undo/redo command
+    //     under `edit > edit` and `edit > undo` in the menubar.
+    private undoHandler() {
+        this.sendHistoryChangeToEditor(HistoryChangeType.Undo);
+        
+    };
+    private redoHandler() {
+        this.sendHistoryChangeToEditor(HistoryChangeType.Redo);
+    };
+
+    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         super();
+
+        this._provider = provider;
+        this._provider.disposeHistoryCommandListeners(this);
+        this._provider.registerHistoryCommandListeners(this, 
+            this.undoHandler.bind(this), 
+            this.redoHandler.bind(this));
+
 
         var path = require('path')
 
@@ -90,7 +115,7 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Create a prosemirror webview */
-    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument) {
+    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         // Check if the line endings of file are windows
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
@@ -106,7 +131,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 window.showErrorMessage("Failed to open document for conversion");
             }
         }
-        return new ProseMirrorWebview(webview, extensionUri, doc);
+        return new ProseMirrorWebview(webview, extensionUri, doc, provider);
     }
 
     /**
@@ -163,6 +188,11 @@ export class ProseMirrorWebview extends EventEmitter {
             if (e.affectsConfiguration("waterproof.enforceCorrectNonInputArea")) {
                 this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
             }
+
+            if (e.affectsConfiguration("waterproof.showLineNumbersInEditor")) {
+                this._showLineNrsInEditor = WaterproofConfigHelper.showLineNumbersInEditor;
+                this.updateLineNumberStatusInEditor();
+            }
         }));
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
@@ -181,6 +211,15 @@ export class ProseMirrorWebview extends EventEmitter {
             if (e.webviewPanel.active) {
                 this.syncWebview();
                 this.emit(WebviewEvents.change, WebviewState.focus);
+                
+                // Overwrite the undo and redo commands
+                this._provider.registerHistoryCommandListeners(
+                    this, 
+                    this.undoHandler.bind(this), 
+                    this.redoHandler.bind(this));
+            } else {
+                // Dispose of the overwritten undo and redo commands when the editor is not active.
+                this._provider.disposeHistoryCommandListeners(this);
             }
         }));
 
@@ -220,12 +259,25 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         });
 
+        this.updateLineNumberStatusInEditor();
+
         // send any cached messages
         for (const m of this._cachedMessages.values()) this.postMessage(m);
     }
 
-    /** Convert line number offsets to line indices and send message to prose webview */
+    private updateLineNumberStatusInEditor() {
+        this.updateLineNumbers();
+        this.postMessage({
+            type: MessageType.setShowLineNumbers,
+            body: this._showLineNrsInEditor
+        }, true);
+
+    }
+
+    /** Convert line number offsets to line indices and send message to Editor webview */
     private updateLineNumbers() {
+        // Early return if line numbers should not be shown in the editor.
+        if (!this._showLineNrsInEditor) return;
         if (!this._linenumber || this._linenumber.version > this._document.version) return;
         this.postMessage({
             type: MessageType.lineNumbers,
@@ -324,6 +376,13 @@ export class ProseMirrorWebview extends EventEmitter {
                 this._lastCorrectDocString = this._document.getText();
             }
         }
+    }
+
+    private sendHistoryChangeToEditor(type: HistoryChangeType) {
+        this.postMessage({
+            type: MessageType.editorHistoryChange,
+            body: type
+        });
     }
 
     /** Handle the messages received from prosemirror */

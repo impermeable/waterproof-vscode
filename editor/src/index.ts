@@ -20,7 +20,7 @@ window.onload = () => {
 		throw Error("Editor element cannot be null (no element with id 'editor' found)");
 	}
 
-	//@ts-ignore
+	
 	const vscode = acquireVsCodeApi() as VSCodeAPI;
 	if (vscode == null) {
 		throw Error("Could not acquire the vscode api.");
@@ -62,6 +62,9 @@ window.onload = () => {
 				break;
 			case MessageType.fatalError:
 				// TODO: show skull
+				break;
+			case MessageType.editorHistoryChange:
+				theEditor.handleHistoryChange(msg.body);
 				break;
 			default:
 				theEditor.handleMessage(msg);

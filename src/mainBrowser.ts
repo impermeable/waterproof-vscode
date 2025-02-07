@@ -25,6 +25,7 @@ const clientFactory: CoqLspClientFactory = (context: ExtensionContext, clientOpt
 
 
 export function activate(context: ExtensionContext): void {
+    console.log("Browser activate function");
     let extension: Waterproof = new Waterproof(context, clientFactory);
     context.subscriptions.push(extension);
     // start the lsp client

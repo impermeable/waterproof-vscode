@@ -21,7 +21,7 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-              "--extensionPath=/home/pim/Downloads/coq-lsp_worker and front-end",
+              "--extensionPath=/home/pim/projects/impermeable/web-experiment/coq-lsp_worker and front-end",
               "--extensionDevelopmentPath=${workspaceFolder}",
               "--extensionDevelopmentKind=web",
             ],

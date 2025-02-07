@@ -1,6 +1,5 @@
-
-import { EventEmitter, TextDocument, Uri, window } from "vscode";
-
+import { TextDocument, Uri, window } from "vscode";
+import { EventEmitter } from "events";
 import { Message, MessageType } from "../shared";
 import { IExecutor, ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
@@ -69,7 +68,7 @@ class ActiveWebviews {
 /**
  * The webview manager that manages communication between views
  */
-export class WebviewManager extends EventTarget {
+export class WebviewManager extends EventEmitter {
     // Tool webviews (UI such as panels), stores the view based on name
     private readonly _toolWebviews: Map<string, CoqWebview> = new Map<string, CoqWebview>;
 
@@ -117,8 +116,7 @@ export class WebviewManager extends EventTarget {
         });
         webview.on(WebviewEvents.change, (state) => {
             if (state == WebviewState.focus && webview.supportInsert) this._active.insert(name);
-            const event = new CustomEvent(WebviewManagerEvents.updateButton, {'detail' : {name, open: webview.isOpened}});
-            this.dispatchEvent(event);
+            this.emit(WebviewManagerEvents.updateButton, { name, open: webview.isOpened});
         });
     }
 
@@ -142,14 +140,12 @@ export class WebviewManager extends EventTarget {
         webview.on(WebviewEvents.change, (state) => {
             if (state == WebviewState.focus) {
                 this._active.insert(webview.document.uri.toString());
-                const event = new CustomEvent(WebviewManagerEvents.focus, {'detail' : webview.document});
-                this.dispatchEvent(event);
+                this.emit(WebviewManagerEvents.focus, webview.document);
             }
         });
 
         this._active.insert(webview.document.uri.toString());
-        const event = new CustomEvent(WebviewManagerEvents.focus, {'detail' : webview.document});
-        this.dispatchEvent(event);
+        this.emit(WebviewManagerEvents.focus, webview.document);
     }
 
     /**
@@ -232,8 +228,7 @@ export class WebviewManager extends EventTarget {
                 callback?.(message.body);
                 break;
             case MessageType.editorReady:
-                const event = new CustomEvent(WebviewManagerEvents.editorReady, {'detail' : document});
-                this.dispatchEvent(event);
+                this.emit(WebviewManagerEvents.editorReady, document);
                 break;
             case MessageType.cursorChange:
                 var pos = document.positionAt(message.body);
@@ -242,13 +237,11 @@ export class WebviewManager extends EventTarget {
                 const webview = this._pmWebviews.get(document.uri.toString());
                 if (!webview) break;
                 if (webview.documentIsUpToDate) {
-                    const event = new CustomEvent(WebviewManagerEvents.cursorChange, {'detail' : {document, pos}});
-                    this.dispatchEvent(event);
+                    this.emit(WebviewManagerEvents.cursorChange, document, pos);
                 } else {
                     // Document is updating wait for completion
                     const callback = () => {
-                        const event = new CustomEvent(WebviewManagerEvents.cursorChange, {'detail' : {document, pos}});
-                        this.dispatchEvent(event);
+                        this.emit(WebviewManagerEvents.cursorChange, document, pos);
                     };
                     if(webview.listeners(WebviewEvents.finishUpdate).length == 0) webview.once(WebviewEvents.finishUpdate, callback);
                 }
@@ -282,9 +275,7 @@ export class WebviewManager extends EventTarget {
                 this.postMessage(id, { type: MessageType.insert, body: msg.body });
                 break;
             case MessageType.command:
-                const event = new CustomEvent(WebviewManagerEvents.command, 
-                        {'detail' : {'toolWebview': this._toolWebviews.get(id), 'body': msg.body}});
-                this.dispatchEvent(event);
+                this.emit(WebviewManagerEvents.command, this._toolWebviews.get(id), msg.body);
                 break;
             default:
                 console.error("The message type " + msg.type + " is not currently supported by webview manager");

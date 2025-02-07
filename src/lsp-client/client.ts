@@ -56,7 +56,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         constructor(...args: any[]) {
             super(...args);
             this.sentenceManager = new SentenceManager();
-
+            console.log("CoqLspClient constructor");
             // forward progress notifications to editor
             this.fileProgressComponents.push({
                 dispose() { /* noop */ },

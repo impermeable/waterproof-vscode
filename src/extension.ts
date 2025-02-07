@@ -394,7 +394,7 @@ export class Waterproof implements Disposable {
      * Create the lsp client and update relevant status components
      */
     async initializeClient(): Promise<void> {
-
+        console.log("Running initializeClient");
         // Run the version checker.
         const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
         const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
@@ -423,7 +423,7 @@ export class Waterproof implements Disposable {
                 initializationOptions: serverOptions,
                 markdown: { isTrusted: true, supportHtml: true },
             };
-
+            console.log("Calling clientFactory");
             this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
             return this.client.startWithHandlers(this.webviewManager).then(
                 () => {

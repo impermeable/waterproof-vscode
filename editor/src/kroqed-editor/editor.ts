@@ -442,12 +442,6 @@ export class Editor {
 		const map = this._mapping;
 		if (this._view === undefined || map === undefined) return;
 
-		// Get the available coq views
-		const views = COQ_CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
-		if (views === undefined) return;
-		// Clear the errors
-		for (let view of views) view.clearCoqErrors();
-
 		// Convert to inverse mapped positions.
 		const doc = this._view.state.doc;
 		this.currentProseDiagnostics = new Array<DiagnosticObjectProse>();
@@ -465,36 +459,10 @@ export class Editor {
 			});
 		}
 
-		// TODO: the below code can probably be optimized a bit
-	    for (const diag of this.currentProseDiagnostics) {
-			if (diag.start > diag.end) {
-				console.error("We do not support errors for which the start position is greater than the end postion.");
-				continue;
-			}
+		const tr = this._view.state.tr;
+		tr.setMeta(COQ_CODE_PLUGIN_KEY, this.currentProseDiagnostics);
+		this._view.dispatch(tr);
 
-			let viewFound : boolean = false;
-			for (const view of views) {
-				const pos : number | undefined = view._getPos();
-				if (pos === undefined) continue;
-				const viewSize : number | undefined = this._view.state.doc.nodeAt(pos)?.nodeSize
-				if (viewSize === undefined) continue;
-				const endPos : number = pos + viewSize - 1;
-				if (diag.start < endPos && diag.end > pos) {
-					viewFound = true;
-					const startPos = Math.max(diag.start, pos + 1);
-					const finalPos = Math.min(diag.end, endPos);
-					try {
-						view.addCoqError(startPos - pos - 1, finalPos - pos - 1, diag.message, diag.severity);
-					}
-					catch (e) {
-						console.error(`Could not display diagnostic information for codeview at position ${pos}:`);
-						console.error(e);
-					}
-				}
-			}
-
-			if (!viewFound) throw new Error("Diagnostic message does not match any coqblock");
-		}
 	}
 
 	public getDiagnosticsInRange(low: number, high: number, truncationLevel: number = 5): Array<DiagnosticObjectProse> {

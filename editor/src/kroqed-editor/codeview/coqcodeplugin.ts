@@ -3,14 +3,19 @@
  *--------------------------------------------------------*/
 
 // prosemirror imports
-import { Schema, Node as ProseNode } from "prosemirror-model";
+import { Schema, Node as ProseNode, ResolvedPos } from "prosemirror-model";
 import { Plugin as ProsePlugin, PluginKey, PluginSpec } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { CodeBlockView } from "./nodeview";
 import { ReplaceStep } from "prosemirror-transform";
 import { LineNumber } from "../../../../shared";
+import { DiagnosticSeverity } from "vscode";
 
 ////////////////////////////////////////////////////////////
+
+/** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
+type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: number};
+
 
 export interface ICoqCodePluginState {
 	macros: { [cmd:string] : string };
@@ -22,6 +27,8 @@ export interface ICoqCodePluginState {
     showLines: boolean;
 	/** The lastest versioned linenumbers */
 	lines: LineNumber;
+	/**  */
+	diagnostics: DiagnosticObjectProse[];
 }
 
 export const COQ_CODE_PLUGIN_KEY = new PluginKey<ICoqCodePluginState>("prosemirror-coq-code");
@@ -59,12 +66,14 @@ let CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
                 showLines: false,
                 schema: instance.schema,
 				lines: {linenumbers: [], version: 0},
+				diagnostics: [],
 			};
 		},
 		apply(tr, value, oldState, newState){
 			// produce updated state field for this plugin
 			let lineState = value.showLines;
 			let newlines = value.lines;
+			let diagnostics = value.diagnostics;
 			// Check if a node has been deleted
 			if (tr.steps.length > 0) {
 				for (let step of tr.steps) {
@@ -72,14 +81,22 @@ let CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 						for (let view of value.activeNodeViews) {
 							//@ts-ignore
 							if (view._getPos() === undefined || (view._getPos() >= step.from && view._getPos() < step.to)) value.activeNodeViews.delete(view);
-						} 
+						}
 					}
 				}
 			}
 
-			// Update the state 
+			// Update the state
 			if (tr.getMeta(COQ_CODE_PLUGIN_KEY)) {
 				if (tr.getMeta(COQ_CODE_PLUGIN_KEY) === "toggleLines") lineState = !lineState;
+				else if (tr.getMeta(COQ_CODE_PLUGIN_KEY).length !== undefined) {
+					const meta = tr.getMeta(COQ_CODE_PLUGIN_KEY);
+					console.log("Setting diagnostics", meta);
+					diagnostics = meta;
+					for (const view of value.activeNodeViews) {
+						view.updateDiagnostics();
+					}
+				}
 				else newlines = tr.getMeta(COQ_CODE_PLUGIN_KEY);
 				if (value.activeNodeViews.size == newlines.linenumbers.length) {
 					let i = 0;
@@ -96,6 +113,7 @@ let CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
                 schema          : value.schema,
                 showLines       : lineState,
 				lines           : newlines,
+				diagnostics
 			}
 		}
 	},

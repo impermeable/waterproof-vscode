@@ -11,9 +11,10 @@ import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic, setDiagnosticsEffect, setDiagnostics, forceLinting, forEachDiagnostic, lintGutter, nextDiagnostic } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
+import { COQ_CODE_PLUGIN_KEY } from "./coqcodeplugin";
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
@@ -80,7 +81,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			doc: this._node.textContent,
 			extensions: [
 				// Add the linting extension for showing diagnostics (errors, warnings, etc)
-				linter(this.lintingFunction),
+				linter(null),
+				lintGutter(),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 
@@ -96,6 +98,18 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					defaultKeymap: false,
 				}),
 				cmKeymap.of([
+					{
+						key: "Shift-ArrowUp",
+						run: () => {
+							console.log("keypress??");
+							forceLinting(this._codemirror);
+							forEachDiagnostic(this._codemirror.state, (d, from, to) => {
+								console.log(d, from, to);
+							})
+							// return nextDiagnostic(this._codemirror);
+							return true;
+						}
+					},
 				...completionKeymap,
 						...this.embeddedCodeMirrorKeymap()
 				]),
@@ -139,7 +153,6 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			},
 		});
 
-		this.debouncer = new Debouncer(400, this.forceUpdateLinting.bind(this));
 
 		// Editors outer node is dom
 		this.dom = this._codemirror.dom;
@@ -162,8 +175,37 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		}, null, posFrom, posTo);
 	}
 
-	private lintingFunction: LintSource = (view: CodeMirror): readonly Diagnostic[] => {
-		return this._diags;
+	public updateDiagnostics() {
+		console.log("in linting function");
+		const low = this._getPos();
+		if (low === undefined) return [];
+		const size = this._outerView.state.doc.nodeAt(low)?.nodeSize;
+		if (size === undefined) return [];
+		const high = low + size - 1;
+
+		console.log(low, high);
+
+		const diags = COQ_CODE_PLUGIN_KEY.getState(this._outerView.state)?.diagnostics.filter((value) => {
+			return (low <= value.end) && (value.start <= high);
+		});
+
+		console.log(diags);
+
+		if (diags === undefined) return [];
+
+		const properDiags = diags.map((diag) => {
+			const startPos = Math.max(diag.start, low + 1);
+			const finalPos = Math.min(diag.end, high);
+			return {
+				from: startPos - low - 1,
+				to:   finalPos - low - 1,
+				message: diag.message,
+				severity: severityToString(diag.severity)
+			}
+		});
+
+		console.log(properDiags);
+		this._codemirror.dispatch(setDiagnostics(this._codemirror.state, [properDiags[0]]));
 	}
 
 	/**
@@ -265,22 +307,23 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * Helper function that forces the linter function to run.
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
-	private forceUpdateLinting() {
-		this._codemirror.dispatch({
-			effects: setDiagnosticsEffect.of(this._diags)
-		});
-	}
+	// private forceUpdateLinting() {
+	// 	// setDiagnostics
+	// 	this._codemirror.dispatch({
+	// 		effects: setDiagnosticsEffect.of(this._diags)
+	// 	});
+	// }
 
-	/**
-	 * Clear all coq errors from this view.
-	 */
-	public clearCoqErrors() {
-		this._diags = [];
-		this.debouncer.call();
-	}
+	// /**
+	//  * Clear all coq errors from this view.
+	//  */
+	// public clearCoqErrors() {
+	// 	this._diags = [];
+	// 	this.debouncer.call();
+	// }
 }
 
-const severityToString = (sv: number) => {
+const severityToString = (sv: number): "info" | "error" | "warning" | "hint" => {
 	switch (sv) {
 		case 0:
 			return "error";

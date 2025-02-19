@@ -18,6 +18,9 @@ import "./input-area.css";
 // for the markdown
 import "./markdown.css";
 
+// for popover notifications
+import "./notifications.css";
+
 // for the coqdoc outline
 import "./coqdoc.css";
 

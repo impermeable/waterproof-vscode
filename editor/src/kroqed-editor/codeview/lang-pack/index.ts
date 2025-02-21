@@ -14,16 +14,17 @@ let customTags = {
     waterproofTactic: Tag.define(),
     tacticInput: Tag.define(),
     takeInput: Tag.define(),
-    coqSentence: Tag.define(),
+    lemma: Tag.define(),
+    comment: Tag.define()
 }
 
 // Highlighting specific elements of the Coq language
 export let highlight = HighlightStyle.define([
-    { tag: customTags.waterproofTactic, color: "#0000FF" },
+    { tag: customTags.waterproofTactic, color: "#5EC300" },
     { tag: customTags.tacticInput, color: "#FF0000" },
     { tag: customTags.takeInput, color: "#338FFF" },
-    { tag: customTags.coqSentence, color: "#FFFFFF" },
-    { tag: t.comment, color: "#00FF00" },
+    { tag: customTags.lemma, color: "#FF00F7" },
+    { tag: customTags.comment, color: "#0000FF" },
 ])
 
 // Defining the Coq language syntax, highlighting and indentation
@@ -40,8 +41,8 @@ export const coqLanguage = LRLanguage.define({
                 WaterproofTactic: customTags.waterproofTactic,
                 TacticInput: customTags.tacticInput,
                 TakeInput: customTags.takeInput,
-                CoqSentence: customTags.coqSentence,
-                Comment: t.comment
+                Lemma: customTags.lemma,
+                CommentStatement: customTags.comment
             })
         ]
     })

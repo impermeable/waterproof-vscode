@@ -12,5 +12,7 @@ function printJSON(input) {
 import { readFileSync } from "fs";
 
 const fileContents = readFileSync("input.txt", "utf8");
+console.log("File contents:");
 console.log(fileContents);
+console.log("JSON");
 printJSON(fileContents);

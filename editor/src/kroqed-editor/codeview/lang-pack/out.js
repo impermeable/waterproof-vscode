@@ -10,7 +10,9 @@ var Range = class {
   }
 };
 var NodeProp = class {
-  /// Create a new node prop type.
+  /**
+  Create a new node prop type.
+  */
   constructor(config = {}) {
     this.id = nextPropID++;
     this.perNode = !!config.perNode;
@@ -18,13 +20,15 @@ var NodeProp = class {
       throw new Error("This node type doesn't define a deserialize function");
     });
   }
-  /// This is meant to be used with
-  /// [`NodeSet.extend`](#common.NodeSet.extend) or
-  /// [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  /// prop values for each node type in the set. Takes a [match
-  /// object](#common.NodeType^match) or function that returns undefined
-  /// if the node type doesn't get this prop, and the prop's value if
-  /// it does.
+  /**
+  This is meant to be used with
+  [`NodeSet.extend`](#common.NodeSet.extend) or
+  [`LRParser.configure`](#lr.ParserConfig.props) to compute
+  prop values for each node type in the set. Takes a [match
+  object](#common.NodeType^match) or function that returns undefined
+  if the node type doesn't get this prop, and the prop's value if
+  it does.
+  */
   add(match) {
     if (this.perNode)
       throw new RangeError("Can't add per-node props to node types");
@@ -39,19 +43,41 @@ var NodeProp = class {
 NodeProp.closedBy = new NodeProp({ deserialize: (str) => str.split(" ") });
 NodeProp.openedBy = new NodeProp({ deserialize: (str) => str.split(" ") });
 NodeProp.group = new NodeProp({ deserialize: (str) => str.split(" ") });
+NodeProp.isolate = new NodeProp({ deserialize: (value) => {
+  if (value && value != "rtl" && value != "ltr" && value != "auto")
+    throw new RangeError("Invalid value for isolate: " + value);
+  return value || "auto";
+} });
 NodeProp.contextHash = new NodeProp({ perNode: true });
 NodeProp.lookAhead = new NodeProp({ perNode: true });
 NodeProp.mounted = new NodeProp({ perNode: true });
+var MountedTree = class {
+  constructor(tree, overlay, parser2) {
+    this.tree = tree;
+    this.overlay = overlay;
+    this.parser = parser2;
+  }
+  /**
+  @internal
+  */
+  static get(tree) {
+    return tree && tree.props && tree.props[NodeProp.mounted.id];
+  }
+};
 var noProps = /* @__PURE__ */ Object.create(null);
 var NodeType = class {
-  /// @internal
+  /**
+  @internal
+  */
   constructor(name, props, id, flags = 0) {
     this.name = name;
     this.props = props;
     this.id = id;
     this.flags = flags;
   }
-  /// Define a node type.
+  /**
+  Define a node type.
+  */
   static define(spec) {
     let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps;
     let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
@@ -68,30 +94,42 @@ var NodeType = class {
       }
     return type;
   }
-  /// Retrieves a node prop for this type. Will return `undefined` if
-  /// the prop isn't present on this node.
+  /**
+  Retrieves a node prop for this type. Will return `undefined` if
+  the prop isn't present on this node.
+  */
   prop(prop) {
     return this.props[prop.id];
   }
-  /// True when this is the top node of a grammar.
+  /**
+  True when this is the top node of a grammar.
+  */
   get isTop() {
     return (this.flags & 1) > 0;
   }
-  /// True when this node is produced by a skip rule.
+  /**
+  True when this node is produced by a skip rule.
+  */
   get isSkipped() {
     return (this.flags & 2) > 0;
   }
-  /// Indicates whether this is an error node.
+  /**
+  Indicates whether this is an error node.
+  */
   get isError() {
     return (this.flags & 4) > 0;
   }
-  /// When true, this node type doesn't correspond to a user-declared
-  /// named node, for example because it is used to cache repetition.
+  /**
+  When true, this node type doesn't correspond to a user-declared
+  named node, for example because it is used to cache repetition.
+  */
   get isAnonymous() {
     return (this.flags & 8) > 0;
   }
-  /// Returns true when this node's name or one of its
-  /// [groups](#common.NodeProp^group) matches the given string.
+  /**
+  Returns true when this node's name or one of its
+  [groups](#common.NodeProp^group) matches the given string.
+  */
   is(name) {
     if (typeof name == "string") {
       if (this.name == name)
@@ -101,12 +139,14 @@ var NodeType = class {
     }
     return this.id == name;
   }
-  /// Create a function from node types to arbitrary values by
-  /// specifying an object whose property names are node or
-  /// [group](#common.NodeProp^group) names. Often useful with
-  /// [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  /// names, separated by spaces, in a single property name to map
-  /// multiple node names to a single value.
+  /**
+  Create a function from node types to arbitrary values by
+  specifying an object whose property names are node or
+  [group](#common.NodeProp^group) names. Often useful with
+  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
+  names, separated by spaces, in a single property name to map
+  multiple node names to a single value.
+  */
   static match(map) {
     let direct = /* @__PURE__ */ Object.create(null);
     for (let prop in map)
@@ -129,17 +169,21 @@ NodeType.none = new NodeType(
   /* NodeFlag.Anonymous */
 );
 var NodeSet = class {
-  /// Create a set with the given types. The `id` property of each
-  /// type should correspond to its position within the array.
+  /**
+  Create a set with the given types. The `id` property of each
+  type should correspond to its position within the array.
+  */
   constructor(types) {
     this.types = types;
     for (let i = 0; i < types.length; i++)
       if (types[i].id != i)
         throw new RangeError("Node type ids should correspond to array positions when creating a node set");
   }
-  /// Create a copy of this set with some node properties added. The
-  /// arguments to this method can be created with
-  /// [`NodeProp.add`](#common.NodeProp.add).
+  /**
+  Create a copy of this set with some node properties added. The
+  arguments to this method can be created with
+  [`NodeProp.add`](#common.NodeProp.add).
+  */
   extend(...props) {
     let newTypes = [];
     for (let type of this.types) {
@@ -167,7 +211,9 @@ var IterMode;
   IterMode2[IterMode2["IgnoreOverlays"] = 8] = "IgnoreOverlays";
 })(IterMode || (IterMode = {}));
 var Tree = class {
-  /// Construct a new tree. See also [`Tree.build`](#common.Tree^build).
+  /**
+  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
+  */
   constructor(type, children, positions, length, props) {
     this.type = type;
     this.children = children;
@@ -180,9 +226,11 @@ var Tree = class {
         this.props[typeof prop == "number" ? prop : prop.id] = value;
     }
   }
-  /// @internal
+  /**
+  @internal
+  */
   toString() {
-    let mounted = this.prop(NodeProp.mounted);
+    let mounted = MountedTree.get(this);
     if (mounted && !mounted.overlay)
       return mounted.tree.toString();
     let children = "";
@@ -196,15 +244,19 @@ var Tree = class {
     }
     return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
   }
-  /// Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  /// the tree. Mode can be used to [control](#common.IterMode) which
-  /// nodes the cursor visits.
+  /**
+  Get a [tree cursor](#common.TreeCursor) positioned at the top of
+  the tree. Mode can be used to [control](#common.IterMode) which
+  nodes the cursor visits.
+  */
   cursor(mode = 0) {
     return new TreeCursor(this.topNode, mode);
   }
-  /// Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  /// at the given position and side (see
-  /// [`moveTo`](#common.TreeCursor.moveTo).
+  /**
+  Get a [tree cursor](#common.TreeCursor) pointing into this tree
+  at the given position and side (see
+  [`moveTo`](#common.TreeCursor.moveTo).
+  */
   cursorAt(pos, side = 0, mode = 0) {
     let scope = CachedNode.get(this) || this.topNode;
     let cursor = new TreeCursor(scope);
@@ -212,51 +264,70 @@ var Tree = class {
     CachedNode.set(this, cursor._tree);
     return cursor;
   }
-  /// Get a [syntax node](#common.SyntaxNode) object for the top of the
-  /// tree.
+  /**
+  Get a [syntax node](#common.SyntaxNode) object for the top of the
+  tree.
+  */
   get topNode() {
     return new TreeNode(this, 0, 0, null);
   }
-  /// Get the [syntax node](#common.SyntaxNode) at the given position.
-  /// If `side` is -1, this will move into nodes that end at the
-  /// position. If 1, it'll move into nodes that start at the
-  /// position. With 0, it'll only enter nodes that cover the position
-  /// from both sides.
-  ///
-  /// Note that this will not enter
-  /// [overlays](#common.MountedTree.overlay), and you often want
-  /// [`resolveInner`](#common.Tree.resolveInner) instead.
+  /**
+  Get the [syntax node](#common.SyntaxNode) at the given position.
+  If `side` is -1, this will move into nodes that end at the
+  position. If 1, it'll move into nodes that start at the
+  position. With 0, it'll only enter nodes that cover the position
+  from both sides.
+  
+  Note that this will not enter
+  [overlays](#common.MountedTree.overlay), and you often want
+  [`resolveInner`](#common.Tree.resolveInner) instead.
+  */
   resolve(pos, side = 0) {
     let node = resolveNode(CachedNode.get(this) || this.topNode, pos, side, false);
     CachedNode.set(this, node);
     return node;
   }
-  /// Like [`resolve`](#common.Tree.resolve), but will enter
-  /// [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  /// pointing into the innermost overlaid tree at the given position
-  /// (with parent links going through all parent structure, including
-  /// the host trees).
+  /**
+  Like [`resolve`](#common.Tree.resolve), but will enter
+  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
+  pointing into the innermost overlaid tree at the given position
+  (with parent links going through all parent structure, including
+  the host trees).
+  */
   resolveInner(pos, side = 0) {
     let node = resolveNode(CachedInnerNode.get(this) || this.topNode, pos, side, true);
     CachedInnerNode.set(this, node);
     return node;
   }
-  /// Iterate over the tree and its children, calling `enter` for any
-  /// node that touches the `from`/`to` region (if given) before
-  /// running over such a node's children, and `leave` (if given) when
-  /// leaving the node. When `enter` returns `false`, that node will
-  /// not have its children iterated over (or `leave` called).
+  /**
+  In some situations, it can be useful to iterate through all
+  nodes around a position, including those in overlays that don't
+  directly cover the position. This method gives you an iterator
+  that will produce all nodes, from small to big, around the given
+  position.
+  */
+  resolveStack(pos, side = 0) {
+    return stackIterator(this, pos, side);
+  }
+  /**
+  Iterate over the tree and its children, calling `enter` for any
+  node that touches the `from`/`to` region (if given) before
+  running over such a node's children, and `leave` (if given) when
+  leaving the node. When `enter` returns `false`, that node will
+  not have its children iterated over (or `leave` called).
+  */
   iterate(spec) {
     let { enter, leave, from = 0, to = this.length } = spec;
-    for (let c = this.cursor((spec.mode || 0) | IterMode.IncludeAnonymous); ; ) {
+    let mode = spec.mode || 0, anon = (mode & IterMode.IncludeAnonymous) > 0;
+    for (let c = this.cursor(mode | IterMode.IncludeAnonymous); ; ) {
       let entered = false;
-      if (c.from <= to && c.to >= from && (c.type.isAnonymous || enter(c) !== false)) {
+      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
         if (c.firstChild())
           continue;
         entered = true;
       }
       for (; ; ) {
-        if (entered && leave && !c.type.isAnonymous)
+        if (entered && leave && (anon || !c.type.isAnonymous))
           leave(c);
         if (c.nextSibling())
           break;
@@ -266,14 +337,18 @@ var Tree = class {
       }
     }
   }
-  /// Get the value of the given [node prop](#common.NodeProp) for this
-  /// node. Works with both per-node and per-type props.
+  /**
+  Get the value of the given [node prop](#common.NodeProp) for this
+  node. Works with both per-node and per-type props.
+  */
   prop(prop) {
     return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
   }
-  /// Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  /// format that can be passed to the [`Tree`](#common.Tree)
-  /// constructor.
+  /**
+  Returns the node's [per-node props](#common.NodeProp.perNode) in a
+  format that can be passed to the [`Tree`](#common.Tree)
+  constructor.
+  */
   get propValues() {
     let result = [];
     if (this.props)
@@ -281,14 +356,18 @@ var Tree = class {
         result.push([+id, this.props[id]]);
     return result;
   }
-  /// Balance the direct children of this tree, producing a copy of
-  /// which may have children grouped into subtrees with type
-  /// [`NodeType.none`](#common.NodeType^none).
+  /**
+  Balance the direct children of this tree, producing a copy of
+  which may have children grouped into subtrees with type
+  [`NodeType.none`](#common.NodeType^none).
+  */
   balance(config = {}) {
     return this.children.length <= 8 ? this : balanceRange(NodeType.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new Tree(this.type, children, positions, length, this.propValues), config.makeTree || ((children, positions, length) => new Tree(NodeType.none, children, positions, length)));
   }
-  /// Build a tree from a postfix-ordered buffer of node information,
-  /// or a cursor over such a buffer.
+  /**
+  Build a tree from a postfix-ordered buffer of node information,
+  or a cursor over such a buffer.
+  */
   static build(data) {
     return buildTree(data);
   }
@@ -322,17 +401,23 @@ var FlatBufferCursor = class {
   }
 };
 var TreeBuffer = class {
-  /// Create a tree buffer.
+  /**
+  Create a tree buffer.
+  */
   constructor(buffer, length, set) {
     this.buffer = buffer;
     this.length = length;
     this.set = set;
   }
-  /// @internal
+  /**
+  @internal
+  */
   get type() {
     return NodeType.none;
   }
-  /// @internal
+  /**
+  @internal
+  */
   toString() {
     let result = [];
     for (let index = 0; index < this.buffer.length; ) {
@@ -341,7 +426,9 @@ var TreeBuffer = class {
     }
     return result.join(",");
   }
-  /// @internal
+  /**
+  @internal
+  */
   childString(index) {
     let id = this.buffer[index], endIndex = this.buffer[index + 3];
     let type = this.set.types[id], result = type.name;
@@ -357,7 +444,9 @@ var TreeBuffer = class {
     }
     return result + "(" + children.join(",") + ")";
   }
-  /// @internal
+  /**
+  @internal
+  */
   findChild(startIndex, endIndex, dir, pos, side) {
     let { buffer } = this, pick = -1;
     for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
@@ -369,7 +458,9 @@ var TreeBuffer = class {
     }
     return pick;
   }
-  /// @internal
+  /**
+  @internal
+  */
   slice(startI, endI, from) {
     let b = this.buffer;
     let copy = new Uint16Array(endI - startI), len = 0;
@@ -399,21 +490,6 @@ function checkSide(side, pos, from, to) {
       return true;
   }
 }
-function enterUnfinishedNodesBefore(node, pos) {
-  let scan = node.childBefore(pos);
-  while (scan) {
-    let last = scan.lastChild;
-    if (!last || last.to != scan.to)
-      break;
-    if (last.type.isError && last.from == last.to) {
-      node = scan;
-      scan = last.prevSibling;
-    } else {
-      scan = last;
-    }
-  }
-  return node;
-}
 function resolveNode(node, pos, side, overlays) {
   var _a;
   while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
@@ -435,8 +511,51 @@ function resolveNode(node, pos, side, overlays) {
     node = inner;
   }
 }
-var TreeNode = class {
+var BaseNode = class {
+  cursor(mode = 0) {
+    return new TreeCursor(this, mode);
+  }
+  getChild(type, before = null, after = null) {
+    let r = getChildren(this, type, before, after);
+    return r.length ? r[0] : null;
+  }
+  getChildren(type, before = null, after = null) {
+    return getChildren(this, type, before, after);
+  }
+  resolve(pos, side = 0) {
+    return resolveNode(this, pos, side, false);
+  }
+  resolveInner(pos, side = 0) {
+    return resolveNode(this, pos, side, true);
+  }
+  matchContext(context) {
+    return matchNodeContext(this.parent, context);
+  }
+  enterUnfinishedNodesBefore(pos) {
+    let scan = this.childBefore(pos), node = this;
+    while (scan) {
+      let last = scan.lastChild;
+      if (!last || last.to != scan.to)
+        break;
+      if (last.type.isError && last.from == last.to) {
+        node = scan;
+        scan = last.prevSibling;
+      } else {
+        scan = last;
+      }
+    }
+    return node;
+  }
+  get node() {
+    return this;
+  }
+  get next() {
+    return this.parent;
+  }
+};
+var TreeNode = class extends BaseNode {
   constructor(_tree, from, index, _parent) {
+    super();
     this._tree = _tree;
     this.from = from;
     this.index = index;
@@ -465,7 +584,7 @@ var TreeNode = class {
             return new BufferNode(new BufferContext(parent, next, i, start), null, index);
         } else if (mode & IterMode.IncludeAnonymous || (!next.type.isAnonymous || hasChild(next))) {
           let mounted;
-          if (!(mode & IterMode.IgnoreMounts) && next.props && (mounted = next.prop(NodeProp.mounted)) && !mounted.overlay)
+          if (!(mode & IterMode.IgnoreMounts) && (mounted = MountedTree.get(next)) && !mounted.overlay)
             return new TreeNode(mounted.tree, start, i, parent);
           let inner = new TreeNode(next, start, i, parent);
           return mode & IterMode.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side);
@@ -520,7 +639,7 @@ var TreeNode = class {
   }
   enter(pos, side, mode = 0) {
     let mounted;
-    if (!(mode & IterMode.IgnoreOverlays) && (mounted = this._tree.prop(NodeProp.mounted)) && mounted.overlay) {
+    if (!(mode & IterMode.IgnoreOverlays) && (mounted = MountedTree.get(this._tree)) && mounted.overlay) {
       let rPos = pos - this.from;
       for (let { from, to } of mounted.overlay) {
         if ((side > 0 ? from <= rPos : from < rPos) && (side < 0 ? to >= rPos : to > rPos))
@@ -556,51 +675,29 @@ var TreeNode = class {
       /* Side.DontCare */
     ) : null;
   }
-  cursor(mode = 0) {
-    return new TreeCursor(this, mode);
-  }
   get tree() {
     return this._tree;
   }
   toTree() {
     return this._tree;
   }
-  resolve(pos, side = 0) {
-    return resolveNode(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode(this, pos, side, true);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    return enterUnfinishedNodesBefore(this, pos);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren(this, type, before, after);
-  }
-  /// @internal
+  /**
+  @internal
+  */
   toString() {
     return this._tree.toString();
-  }
-  get node() {
-    return this;
-  }
-  matchContext(context) {
-    return matchNodeContext(this, context);
   }
 };
 function getChildren(node, type, before, after) {
   let cur = node.cursor(), result = [];
   if (!cur.firstChild())
     return result;
-  if (before != null) {
-    while (!cur.type.is(before))
+  if (before != null)
+    for (let found = false; !found; ) {
+      found = cur.type.is(before);
       if (!cur.nextSibling())
         return result;
-  }
+    }
   for (; ; ) {
     if (after != null && cur.type.is(after))
       return result;
@@ -611,7 +708,7 @@ function getChildren(node, type, before, after) {
   }
 }
 function matchNodeContext(node, context, i = context.length - 1) {
-  for (let p = node.parent; i >= 0; p = p.parent) {
+  for (let p = node; i >= 0; p = p.parent) {
     if (!p)
       return false;
     if (!p.type.isAnonymous) {
@@ -630,7 +727,7 @@ var BufferContext = class {
     this.start = start;
   }
 };
-var BufferNode = class {
+var BufferNode = class extends BaseNode {
   get name() {
     return this.type.name;
   }
@@ -641,6 +738,7 @@ var BufferNode = class {
     return this.context.start + this.context.buffer.buffer[this.index + 2];
   }
   constructor(context, _parent, index) {
+    super();
     this.context = context;
     this._parent = _parent;
     this.index = index;
@@ -723,9 +821,6 @@ var BufferNode = class {
       /* Side.DontCare */
     ));
   }
-  cursor(mode = 0) {
-    return new TreeCursor(this, mode);
-  }
   get tree() {
     return null;
   }
@@ -740,39 +835,68 @@ var BufferNode = class {
     }
     return new Tree(this.type, children, positions, this.to - this.from);
   }
-  resolve(pos, side = 0) {
-    return resolveNode(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode(this, pos, side, true);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    return enterUnfinishedNodesBefore(this, pos);
-  }
-  /// @internal
+  /**
+  @internal
+  */
   toString() {
     return this.context.buffer.childString(this.index);
   }
-  getChild(type, before = null, after = null) {
-    let r = getChildren(this, type, before, after);
-    return r.length ? r[0] : null;
+};
+function iterStack(heads) {
+  if (!heads.length)
+    return null;
+  let pick = 0, picked = heads[0];
+  for (let i = 1; i < heads.length; i++) {
+    let node = heads[i];
+    if (node.from > picked.from || node.to < picked.to) {
+      picked = node;
+      pick = i;
+    }
   }
-  getChildren(type, before = null, after = null) {
-    return getChildren(this, type, before, after);
+  let next = picked instanceof TreeNode && picked.index < 0 ? null : picked.parent;
+  let newHeads = heads.slice();
+  if (next)
+    newHeads[pick] = next;
+  else
+    newHeads.splice(pick, 1);
+  return new StackIterator(newHeads, picked);
+}
+var StackIterator = class {
+  constructor(heads, node) {
+    this.heads = heads;
+    this.node = node;
   }
-  get node() {
-    return this;
-  }
-  matchContext(context) {
-    return matchNodeContext(this, context);
+  get next() {
+    return iterStack(this.heads);
   }
 };
+function stackIterator(tree, pos, side) {
+  let inner = tree.resolveInner(pos, side), layers = null;
+  for (let scan = inner instanceof TreeNode ? inner : inner.context.parent; scan; scan = scan.parent) {
+    if (scan.index < 0) {
+      let parent = scan.parent;
+      (layers || (layers = [inner])).push(parent.resolve(pos, side));
+      scan = parent;
+    } else {
+      let mount = MountedTree.get(scan.tree);
+      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
+        let root = new TreeNode(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
+        (layers || (layers = [inner])).push(resolveNode(root, pos, side, false));
+      }
+    }
+  }
+  return layers ? iterStack(layers) : inner;
+}
 var TreeCursor = class {
-  /// Shorthand for `.type.name`.
+  /**
+  Shorthand for `.type.name`.
+  */
   get name() {
     return this.type.name;
   }
-  /// @internal
+  /**
+  @internal
+  */
   constructor(node, mode = 0) {
     this.mode = mode;
     this.buffer = null;
@@ -807,6 +931,9 @@ var TreeCursor = class {
     this.to = start + buffer.buffer[index + 2];
     return true;
   }
+  /**
+  @internal
+  */
   yield(node) {
     if (!node)
       return false;
@@ -817,11 +944,15 @@ var TreeCursor = class {
     this.buffer = node.context;
     return this.yieldBuf(node.index, node.type);
   }
-  /// @internal
+  /**
+  @internal
+  */
   toString() {
     return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
   }
-  /// @internal
+  /**
+  @internal
+  */
   enterChild(dir, pos, side) {
     if (!this.buffer)
       return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
@@ -832,8 +963,10 @@ var TreeCursor = class {
     this.stack.push(this.index);
     return this.yieldBuf(index);
   }
-  /// Move the cursor to this node's first child. When this returns
-  /// false, the node has no child, and the cursor has not been moved.
+  /**
+  Move the cursor to this node's first child. When this returns
+  false, the node has no child, and the cursor has not been moved.
+  */
   firstChild() {
     return this.enterChild(
       1,
@@ -842,7 +975,9 @@ var TreeCursor = class {
       /* Side.DontCare */
     );
   }
-  /// Move the cursor to this node's last child.
+  /**
+  Move the cursor to this node's last child.
+  */
   lastChild() {
     return this.enterChild(
       -1,
@@ -851,7 +986,9 @@ var TreeCursor = class {
       /* Side.DontCare */
     );
   }
-  /// Move the cursor to the first child that ends after `pos`.
+  /**
+  Move the cursor to the first child that ends after `pos`.
+  */
   childAfter(pos) {
     return this.enterChild(
       1,
@@ -860,7 +997,9 @@ var TreeCursor = class {
       /* Side.After */
     );
   }
-  /// Move to the last child that starts before `pos`.
+  /**
+  Move to the last child that starts before `pos`.
+  */
   childBefore(pos) {
     return this.enterChild(
       -1,
@@ -869,17 +1008,21 @@ var TreeCursor = class {
       /* Side.Before */
     );
   }
-  /// Move the cursor to the child around `pos`. If side is -1 the
-  /// child may end at that position, when 1 it may start there. This
-  /// will also enter [overlaid](#common.MountedTree.overlay)
-  /// [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  /// set to false.
+  /**
+  Move the cursor to the child around `pos`. If side is -1 the
+  child may end at that position, when 1 it may start there. This
+  will also enter [overlaid](#common.MountedTree.overlay)
+  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
+  set to false.
+  */
   enter(pos, side, mode = this.mode) {
     if (!this.buffer)
       return this.yield(this._tree.enter(pos, side, mode));
     return mode & IterMode.ExcludeBuffers ? false : this.enterChild(1, pos, side);
   }
-  /// Move to the node's parent node, if this isn't the top node.
+  /**
+  Move to the node's parent node, if this isn't the top node.
+  */
   parent() {
     if (!this.buffer)
       return this.yieldNode(this.mode & IterMode.IncludeAnonymous ? this._tree._parent : this._tree.parent);
@@ -889,7 +1032,9 @@ var TreeCursor = class {
     this.buffer = null;
     return this.yieldNode(parent);
   }
-  /// @internal
+  /**
+  @internal
+  */
   sibling(dir) {
     if (!this.buffer)
       return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
@@ -912,11 +1057,15 @@ var TreeCursor = class {
     }
     return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
   }
-  /// Move to this node's next sibling, if any.
+  /**
+  Move to this node's next sibling, if any.
+  */
   nextSibling() {
     return this.sibling(1);
   }
-  /// Move to this node's previous sibling, if any.
+  /**
+  Move to this node's previous sibling, if any.
+  */
   prevSibling() {
     return this.sibling(-1);
   }
@@ -960,24 +1109,30 @@ var TreeCursor = class {
         return false;
     }
   }
-  /// Move to the next node in a
-  /// [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  /// traversal, going from a node to its first child or, if the
-  /// current node is empty or `enter` is false, its next sibling or
-  /// the next sibling of the first parent node that has one.
+  /**
+  Move to the next node in a
+  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
+  traversal, going from a node to its first child or, if the
+  current node is empty or `enter` is false, its next sibling or
+  the next sibling of the first parent node that has one.
+  */
   next(enter = true) {
     return this.move(1, enter);
   }
-  /// Move to the next node in a last-to-first pre-order traveral. A
-  /// node is followed by its last child or, if it has none, its
-  /// previous sibling or the previous sibling of the first parent
-  /// node that has one.
+  /**
+  Move to the next node in a last-to-first pre-order traversal. A
+  node is followed by its last child or, if it has none, its
+  previous sibling or the previous sibling of the first parent
+  node that has one.
+  */
   prev(enter = true) {
     return this.move(-1, enter);
   }
-  /// Move the cursor to the innermost node that covers `pos`. If
-  /// `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  /// it will enter nodes that start at `pos`.
+  /**
+  Move the cursor to the innermost node that covers `pos`. If
+  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
+  it will enter nodes that start at `pos`.
+  */
   moveTo(pos, side = 0) {
     while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
       if (!this.parent())
@@ -986,8 +1141,10 @@ var TreeCursor = class {
     }
     return this;
   }
-  /// Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  /// position.
+  /**
+  Get a [syntax node](#common.SyntaxNode) at the cursor's current
+  position.
+  */
   get node() {
     if (!this.buffer)
       return this._tree;
@@ -1010,16 +1167,20 @@ var TreeCursor = class {
       result = new BufferNode(this.buffer, result, this.stack[i]);
     return this.bufferNode = new BufferNode(this.buffer, result, this.index);
   }
-  /// Get the [tree](#common.Tree) that represents the current node, if
-  /// any. Will return null when the node is in a [tree
-  /// buffer](#common.TreeBuffer).
+  /**
+  Get the [tree](#common.Tree) that represents the current node, if
+  any. Will return null when the node is in a [tree
+  buffer](#common.TreeBuffer).
+  */
   get tree() {
     return this.buffer ? null : this._tree._tree;
   }
-  /// Iterate over the current node and all its descendants, calling
-  /// `enter` when entering a node and `leave`, if given, when leaving
-  /// one. When `enter` returns `false`, any children of that node are
-  /// skipped, and `leave` isn't called for it.
+  /**
+  Iterate over the current node and all its descendants, calling
+  `enter` when entering a node and `leave`, if given, when leaving
+  one. When `enter` returns `false`, any children of that node are
+  skipped, and `leave` isn't called for it.
+  */
   iterate(enter, leave) {
     for (let depth = 0; ; ) {
       let mustLeave = false;
@@ -1035,26 +1196,28 @@ var TreeCursor = class {
         if (mustLeave && leave)
           leave(this);
         mustLeave = this.type.isAnonymous;
-        if (this.nextSibling())
-          break;
         if (!depth)
           return;
+        if (this.nextSibling())
+          break;
         this.parent();
         depth--;
         mustLeave = true;
       }
     }
   }
-  /// Test whether the current node matches a given context—a sequence
-  /// of direct parent node names. Empty strings in the context array
-  /// are treated as wildcards.
+  /**
+  Test whether the current node matches a given context—a sequence
+  of direct parent node names. Empty strings in the context array
+  are treated as wildcards.
+  */
   matchContext(context) {
     if (!this.buffer)
-      return matchNodeContext(this.node, context);
+      return matchNodeContext(this.node.parent, context);
     let { buffer } = this.buffer, { types } = buffer.set;
     for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
       if (d < 0)
-        return matchNodeContext(this.node, context, i);
+        return matchNodeContext(this._tree, context, i);
       let type = types[buffer.buffer[this.stack[d]]];
       if (!type.isAnonymous) {
         if (context[i] && context[i] != type.name)
@@ -1074,9 +1237,9 @@ function buildTree(data) {
   let cursor = Array.isArray(buffer) ? new FlatBufferCursor(buffer, buffer.length) : buffer;
   let types = nodeSet.types;
   let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat) {
+  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
     let { id, start, end, size } = cursor;
-    let lookAheadAtStart = lookAhead;
+    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
     while (size < 0) {
       cursor.next();
       if (size == -1) {
@@ -1112,30 +1275,62 @@ function buildTree(data) {
       while (cursor.pos > endPos) {
         if (localInRepeat >= 0 && cursor.id == localInRepeat && cursor.size >= 0) {
           if (cursor.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor.end, lastEnd, localInRepeat, lookAheadAtStart);
+            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
             lastGroup = localChildren.length;
             lastEnd = cursor.end;
           }
           cursor.next();
+        } else if (depth > 2500) {
+          takeFlatNode(start, endPos, localChildren, localPositions);
         } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat);
+          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
         }
       }
       if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart);
+        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
       localChildren.reverse();
       localPositions.reverse();
       if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type);
+        let make = makeBalanced(type, contextAtStart);
         node = balanceRange(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
       } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end);
+        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
       }
     }
     children2.push(node);
     positions2.push(startPos);
   }
-  function makeBalanced(type) {
+  function takeFlatNode(parentStart, minPos, children2, positions2) {
+    let nodes = [];
+    let nodeCount = 0, stopAt = -1;
+    while (cursor.pos > minPos) {
+      let { id, start, end, size } = cursor;
+      if (size > 4) {
+        cursor.next();
+      } else if (stopAt > -1 && start < stopAt) {
+        break;
+      } else {
+        if (stopAt < 0)
+          stopAt = end - maxBufferLength;
+        nodes.push(id, start, end);
+        nodeCount++;
+        cursor.next();
+      }
+    }
+    if (nodeCount) {
+      let buffer2 = new Uint16Array(nodeCount * 4);
+      let start = nodes[nodes.length - 2];
+      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
+        buffer2[j++] = nodes[i];
+        buffer2[j++] = nodes[i + 1] - start;
+        buffer2[j++] = nodes[i + 2] - start;
+        buffer2[j++] = j;
+      }
+      children2.push(new TreeBuffer(buffer2, nodes[2] - start, nodeSet));
+      positions2.push(start - parentStart);
+    }
+  }
+  function makeBalanced(type, contextHash2) {
     return (children2, positions2, length2) => {
       let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
       if (lastI >= 0 && (last = children2[lastI]) instanceof Tree) {
@@ -1144,21 +1339,21 @@ function buildTree(data) {
         if (lookAheadProp = last.prop(NodeProp.lookAhead))
           lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
       }
-      return makeTree(type, children2, positions2, length2, lookAhead2);
+      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
     };
   }
-  function makeRepeatLeaf(children2, positions2, base, i, from, to, type, lookAhead2) {
+  function makeRepeatLeaf(children2, positions2, base, i, from, to, type, lookAhead2, contextHash2) {
     let localChildren = [], localPositions = [];
     while (children2.length > i) {
       localChildren.push(children2.pop());
       localPositions.push(positions2.pop() + base - from);
     }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to));
+    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
     positions2.push(from - base);
   }
-  function makeTree(type, children2, positions2, length2, lookAhead2 = 0, props) {
-    if (contextHash) {
-      let pair2 = [NodeProp.contextHash, contextHash];
+  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
+    if (contextHash2) {
+      let pair2 = [NodeProp.contextHash, contextHash2];
       props = props ? [pair2].concat(props) : [pair2];
     }
     if (lookAhead2 > 25) {
@@ -1234,7 +1429,7 @@ function buildTree(data) {
   }
   let children = [], positions = [];
   while (cursor.pos > 0)
-    takeNode(data.start || 0, data.bufferStart || 0, children, positions, -1);
+    takeNode(data.start || 0, data.bufferStart || 0, children, positions, -1, 0);
   let length = (_a = data.length) !== null && _a !== void 0 ? _a : children.length ? positions[0] + children[0].length : 0;
   return new Tree(types[data.topID], children.reverse(), positions.reverse(), length);
 }
@@ -1293,21 +1488,25 @@ function balanceRange(balanceType, children, positions, from, to, start, length,
   return (mkTop || mkTree)(localChildren, localPositions, length);
 }
 var Parser = class {
-  /// Start a parse, returning a [partial parse](#common.PartialParse)
-  /// object. [`fragments`](#common.TreeFragment) can be passed in to
-  /// make the parse incremental.
-  ///
-  /// By default, the entire input is parsed. You can pass `ranges`,
-  /// which should be a sorted array of non-empty, non-overlapping
-  /// ranges, to parse only those ranges. The tree returned in that
-  /// case will start at `ranges[0].from`.
+  /**
+  Start a parse, returning a [partial parse](#common.PartialParse)
+  object. [`fragments`](#common.TreeFragment) can be passed in to
+  make the parse incremental.
+  
+  By default, the entire input is parsed. You can pass `ranges`,
+  which should be a sorted array of non-empty, non-overlapping
+  ranges, to parse only those ranges. The tree returned in that
+  case will start at `ranges[0].from`.
+  */
   startParse(input, fragments, ranges) {
     if (typeof input == "string")
       input = new StringInput(input);
     ranges = !ranges ? [new Range(0, input.length)] : ranges.length ? ranges.map((r) => new Range(r.from, r.to)) : [new Range(0, 0)];
     return this.createParse(input, fragments || [], ranges);
   }
-  /// Run a full parse, returning the resulting tree.
+  /**
+  Run a full parse, returning the resulting tree.
+  */
   parse(input, fragments, ranges) {
     let parse = this.startParse(input, fragments, ranges);
     for (; ; ) {
@@ -1338,7 +1537,9 @@ var stoppedInner = new NodeProp({ perNode: true });
 
 // ../../../../../node_modules/@lezer/lr/dist/index.js
 var Stack = class {
-  /// @internal
+  /**
+  @internal
+  */
   constructor(p, stack, state, reducePos, pos, score, buffer, bufferBase, curContext, lookAhead = 0, parent) {
     this.p = p;
     this.stack = stack;
@@ -1352,43 +1553,56 @@ var Stack = class {
     this.lookAhead = lookAhead;
     this.parent = parent;
   }
-  /// @internal
+  /**
+  @internal
+  */
   toString() {
     return `[${this.stack.filter((_, i) => i % 3 == 0).concat(this.state)}]@${this.pos}${this.score ? "!" + this.score : ""}`;
   }
   // Start an empty stack
-  /// @internal
+  /**
+  @internal
+  */
   static start(p, state, pos = 0) {
     let cx = p.parser.context;
     return new Stack(p, [], state, pos, pos, 0, [], 0, cx ? new StackContext(cx, cx.start) : null, 0, null);
   }
-  /// The stack's current [context](#lr.ContextTracker) value, if
-  /// any. Its type will depend on the context tracker's type
-  /// parameter, or it will be `null` if there is no context
-  /// tracker.
+  /**
+  The stack's current [context](#lr.ContextTracker) value, if
+  any. Its type will depend on the context tracker's type
+  parameter, or it will be `null` if there is no context
+  tracker.
+  */
   get context() {
     return this.curContext ? this.curContext.context : null;
   }
   // Push a state onto the stack, tracking its start position as well
   // as the buffer base at that point.
-  /// @internal
+  /**
+  @internal
+  */
   pushState(state, start) {
     this.stack.push(this.state, start, this.bufferBase + this.buffer.length);
     this.state = state;
   }
   // Apply a reduce action
-  /// @internal
+  /**
+  @internal
+  */
   reduce(action) {
     var _a;
     let depth = action >> 19, type = action & 65535;
     let { parser: parser2 } = this.p;
+    let lookaheadRecord = this.reducePos < this.pos - 25;
+    if (lookaheadRecord)
+      this.setLookAhead(this.pos);
     let dPrec = parser2.dynamicPrecedence(type);
     if (dPrec)
       this.score += dPrec;
     if (depth == 0) {
       this.pushState(parser2.getGoto(this.state, type, true), this.reducePos);
       if (type < parser2.minRepeatTerm)
-        this.storeNode(type, this.reducePos, this.reducePos, 4, true);
+        this.storeNode(type, this.reducePos, this.reducePos, lookaheadRecord ? 8 : 4, true);
       this.reduceContext(type, this.reducePos);
       return;
     }
@@ -1424,8 +1638,10 @@ var Stack = class {
     this.reduceContext(type, start);
   }
   // Shift a value into the buffer
-  /// @internal
-  storeNode(term, start, end, size = 4, isReduce = false) {
+  /**
+  @internal
+  */
+  storeNode(term, start, end, size = 4, mustSink = false) {
     if (term == 0 && (!this.stack.length || this.stack[this.stack.length - 1] < this.buffer.length + this.bufferBase)) {
       let cur = this, top = this.buffer.length;
       if (top == 0 && cur.parent) {
@@ -1441,20 +1657,29 @@ var Stack = class {
         }
       }
     }
-    if (!isReduce || this.pos == end) {
+    if (!mustSink || this.pos == end) {
       this.buffer.push(term, start, end, size);
     } else {
       let index = this.buffer.length;
-      if (index > 0 && this.buffer[index - 4] != 0)
-        while (index > 0 && this.buffer[index - 2] > end) {
-          this.buffer[index] = this.buffer[index - 4];
-          this.buffer[index + 1] = this.buffer[index - 3];
-          this.buffer[index + 2] = this.buffer[index - 2];
-          this.buffer[index + 3] = this.buffer[index - 1];
-          index -= 4;
-          if (size > 4)
-            size -= 4;
+      if (index > 0 && this.buffer[index - 4] != 0) {
+        let mustMove = false;
+        for (let scan = index; scan > 0 && this.buffer[scan - 2] > end; scan -= 4) {
+          if (this.buffer[scan - 1] >= 0) {
+            mustMove = true;
+            break;
+          }
         }
+        if (mustMove)
+          while (index > 0 && this.buffer[index - 2] > end) {
+            this.buffer[index] = this.buffer[index - 4];
+            this.buffer[index + 1] = this.buffer[index - 3];
+            this.buffer[index + 2] = this.buffer[index - 2];
+            this.buffer[index + 3] = this.buffer[index - 1];
+            index -= 4;
+            if (size > 4)
+              size -= 4;
+          }
+      }
       this.buffer[index] = term;
       this.buffer[index + 1] = start;
       this.buffer[index + 2] = end;
@@ -1462,43 +1687,48 @@ var Stack = class {
     }
   }
   // Apply a shift action
-  /// @internal
-  shift(action, next, nextEnd) {
-    let start = this.pos;
+  /**
+  @internal
+  */
+  shift(action, type, start, end) {
     if (action & 131072) {
       this.pushState(action & 65535, this.pos);
     } else if ((action & 262144) == 0) {
       let nextState = action, { parser: parser2 } = this.p;
-      if (nextEnd > this.pos || next <= parser2.maxNode) {
-        this.pos = nextEnd;
+      if (end > this.pos || type <= parser2.maxNode) {
+        this.pos = end;
         if (!parser2.stateFlag(
           nextState,
           1
           /* StateFlag.Skipped */
         ))
-          this.reducePos = nextEnd;
+          this.reducePos = end;
       }
       this.pushState(nextState, start);
-      this.shiftContext(next, start);
-      if (next <= parser2.maxNode)
-        this.buffer.push(next, start, nextEnd, 4);
+      this.shiftContext(type, start);
+      if (type <= parser2.maxNode)
+        this.buffer.push(type, start, end, 4);
     } else {
-      this.pos = nextEnd;
-      this.shiftContext(next, start);
-      if (next <= this.p.parser.maxNode)
-        this.buffer.push(next, start, nextEnd, 4);
+      this.pos = end;
+      this.shiftContext(type, start);
+      if (type <= this.p.parser.maxNode)
+        this.buffer.push(type, start, end, 4);
     }
   }
   // Apply an action
-  /// @internal
-  apply(action, next, nextEnd) {
+  /**
+  @internal
+  */
+  apply(action, next, nextStart, nextEnd) {
     if (action & 65536)
       this.reduce(action);
     else
-      this.shift(action, next, nextEnd);
+      this.shift(action, next, nextStart, nextEnd);
   }
   // Add a prebuilt (reused) node into the buffer.
-  /// @internal
+  /**
+  @internal
+  */
   useNode(value, next) {
     let index = this.p.reused.length - 1;
     if (index < 0 || this.p.reused[index] != value) {
@@ -1521,7 +1751,9 @@ var Stack = class {
   // Split the stack. Due to the buffer sharing and the fact
   // that `this.stack` tends to stay quite shallow, this isn't very
   // expensive.
-  /// @internal
+  /**
+  @internal
+  */
   split() {
     let parent = this;
     let off = parent.buffer.length;
@@ -1533,7 +1765,9 @@ var Stack = class {
     return new Stack(this.p, this.stack.slice(), this.state, this.reducePos, this.pos, this.score, buffer, base, this.curContext, this.lookAhead, parent);
   }
   // Try to recover from an error by 'deleting' (ignoring) one token.
-  /// @internal
+  /**
+  @internal
+  */
   recoverByDelete(next, nextEnd) {
     let isNode = next <= this.p.parser.maxNode;
     if (isNode)
@@ -1542,10 +1776,12 @@ var Stack = class {
     this.pos = this.reducePos = nextEnd;
     this.score -= 190;
   }
-  /// Check if the given term would be able to be shifted (optionally
-  /// after some reductions) on this stack. This can be useful for
-  /// external tokenizers that want to make sure they only provide a
-  /// given token when it applies.
+  /**
+  Check if the given term would be able to be shifted (optionally
+  after some reductions) on this stack. This can be useful for
+  external tokenizers that want to make sure they only provide a
+  given token when it applies.
+  */
   canShift(term) {
     for (let sim = new SimulatedStack(this); ; ) {
       let action = this.p.parser.stateSlot(
@@ -1562,7 +1798,9 @@ var Stack = class {
   }
   // Apply up to Recover.MaxNext recovery actions that conceptually
   // inserts some missing token or rule.
-  /// @internal
+  /**
+  @internal
+  */
   recoverByInsert(next) {
     if (this.stack.length >= 300)
       return [];
@@ -1590,6 +1828,7 @@ var Stack = class {
       stack.pushState(s, this.pos);
       stack.storeNode(0, stack.pos, stack.pos, 4, true);
       stack.shiftContext(nextStates[i], this.pos);
+      stack.reducePos = this.pos;
       stack.score -= 200;
       result.push(stack);
     }
@@ -1597,7 +1836,9 @@ var Stack = class {
   }
   // Force a reduce, if possible. Return false if that can't
   // be done.
-  /// @internal
+  /**
+  @internal
+  */
   forceReduce() {
     let { parser: parser2 } = this.p;
     let reduce = parser2.stateSlot(
@@ -1616,16 +1857,18 @@ var Stack = class {
           return false;
         reduce = backup;
       }
-      this.storeNode(0, this.reducePos, this.reducePos, 4, true);
+      this.storeNode(0, this.pos, this.pos, 4, true);
       this.score -= 100;
     }
     this.reducePos = this.pos;
     this.reduce(reduce);
     return true;
   }
-  /// Try to scan through the automaton to find some kind of reduction
-  /// that can be applied. Used when the regular ForcedReduce field
-  /// isn't a valid action. @internal
+  /**
+  Try to scan through the automaton to find some kind of reduction
+  that can be applied. Used when the regular ForcedReduce field
+  isn't a valid action. @internal
+  */
   findForcedReduction() {
     let { parser: parser2 } = this.p, seen = [];
     let explore = (state, depth) => {
@@ -1651,7 +1894,9 @@ var Stack = class {
     };
     return explore(this.state, 0);
   }
-  /// @internal
+  /**
+  @internal
+  */
   forceAll() {
     while (!this.p.parser.stateFlag(
       this.state,
@@ -1665,9 +1910,11 @@ var Stack = class {
     }
     return this;
   }
-  /// Check whether this state has no further actions (assumed to be a direct descendant of the
-  /// top state, since any other states must be able to continue
-  /// somehow). @internal
+  /**
+  Check whether this state has no further actions (assumed to be a direct descendant of the
+  top state, since any other states must be able to continue
+  somehow). @internal
+  */
   get deadEnd() {
     if (this.stack.length != 3)
       return false;
@@ -1682,14 +1929,19 @@ var Stack = class {
       /* ParseState.DefaultReduce */
     );
   }
-  /// Restart the stack (put it back in its start state). Only safe
-  /// when this.stack.length == 3 (state is directly below the top
-  /// state). @internal
+  /**
+  Restart the stack (put it back in its start state). Only safe
+  when this.stack.length == 3 (state is directly below the top
+  state). @internal
+  */
   restart() {
+    this.storeNode(0, this.pos, this.pos, 4, true);
     this.state = this.stack[0];
     this.stack.length = 0;
   }
-  /// @internal
+  /**
+  @internal
+  */
   sameState(other) {
     if (this.state != other.state || this.stack.length != other.stack.length)
       return false;
@@ -1698,12 +1950,16 @@ var Stack = class {
         return false;
     return true;
   }
-  /// Get the parser used by this stack.
+  /**
+  Get the parser used by this stack.
+  */
   get parser() {
     return this.p.parser;
   }
-  /// Test whether a given dialect (by numeric ID, as exported from
-  /// the terms file) is enabled.
+  /**
+  Test whether a given dialect (by numeric ID, as exported from
+  the terms file) is enabled.
+  */
   dialectEnabled(dialectID) {
     return this.p.parser.dialect.flags[dialectID];
   }
@@ -1715,13 +1971,17 @@ var Stack = class {
     if (this.curContext)
       this.updateContext(this.curContext.tracker.reduce(this.curContext.context, term, this, this.p.stream.reset(start)));
   }
-  /// @internal
+  /**
+  @internal
+  */
   emitContext() {
     let last = this.buffer.length - 1;
     if (last < 0 || this.buffer[last] != -3)
       this.buffer.push(this.curContext.hash, this.pos, this.pos, -3);
   }
-  /// @internal
+  /**
+  @internal
+  */
   emitLookAhead() {
     let last = this.buffer.length - 1;
     if (last < 0 || this.buffer[last] != -4)
@@ -1735,14 +1995,18 @@ var Stack = class {
       this.curContext = newCx;
     }
   }
-  /// @internal
+  /**
+  @internal
+  */
   setLookAhead(lookAhead) {
     if (lookAhead > this.lookAhead) {
       this.emitLookAhead();
       this.lookAhead = lookAhead;
     }
   }
-  /// @internal
+  /**
+  @internal
+  */
   close() {
     if (this.curContext && this.curContext.tracker.strict)
       this.emitContext();
@@ -1757,16 +2021,6 @@ var StackContext = class {
     this.hash = tracker.strict ? tracker.hash(context) : 0;
   }
 };
-var Recover;
-(function(Recover2) {
-  Recover2[Recover2["Insert"] = 200] = "Insert";
-  Recover2[Recover2["Delete"] = 190] = "Delete";
-  Recover2[Recover2["Reduce"] = 100] = "Reduce";
-  Recover2[Recover2["MaxNext"] = 4] = "MaxNext";
-  Recover2[Recover2["MaxInsertStackDepth"] = 300] = "MaxInsertStackDepth";
-  Recover2[Recover2["DampenInsertStackDepth"] = 120] = "DampenInsertStackDepth";
-  Recover2[Recover2["MinBigReduction"] = 2e3] = "MinBigReduction";
-})(Recover || (Recover = {}));
 var SimulatedStack = class {
   constructor(start) {
     this.start = start;
@@ -1876,7 +2130,9 @@ var CachedToken = class {
 };
 var nullToken = new CachedToken();
 var InputStream = class {
-  /// @internal
+  /**
+  @internal
+  */
   constructor(input, ranges) {
     this.input = input;
     this.ranges = ranges;
@@ -1892,7 +2148,9 @@ var InputStream = class {
     this.end = ranges[ranges.length - 1].to;
     this.readNext();
   }
-  /// @internal
+  /**
+  @internal
+  */
   resolveOffset(offset, assoc) {
     let range = this.range, index = this.rangeIndex;
     let pos = this.pos + offset;
@@ -1912,7 +2170,9 @@ var InputStream = class {
     }
     return pos;
   }
-  /// @internal
+  /**
+  @internal
+  */
   clipPos(pos) {
     if (pos >= this.range.from && pos < this.range.to)
       return pos;
@@ -1921,15 +2181,17 @@ var InputStream = class {
         return Math.max(pos, range.from);
     return this.end;
   }
-  /// Look at a code unit near the stream position. `.peek(0)` equals
-  /// `.next`, `.peek(-1)` gives you the previous character, and so
-  /// on.
-  ///
-  /// Note that looking around during tokenizing creates dependencies
-  /// on potentially far-away content, which may reduce the
-  /// effectiveness incremental parsing—when looking forward—or even
-  /// cause invalid reparses when looking backward more than 25 code
-  /// units, since the library does not track lookbehind.
+  /**
+  Look at a code unit near the stream position. `.peek(0)` equals
+  `.next`, `.peek(-1)` gives you the previous character, and so
+  on.
+  
+  Note that looking around during tokenizing creates dependencies
+  on potentially far-away content, which may reduce the
+  effectiveness incremental parsing—when looking forward—or even
+  cause invalid reparses when looking backward more than 25 code
+  units, since the library does not track lookbehind.
+  */
   peek(offset) {
     let idx = this.chunkOff + offset, pos, result;
     if (idx >= 0 && idx < this.chunk.length) {
@@ -1956,15 +2218,24 @@ var InputStream = class {
       this.token.lookAhead = pos + 1;
     return result;
   }
-  /// Accept a token. By default, the end of the token is set to the
-  /// current stream position, but you can pass an offset (relative to
-  /// the stream position) to change that.
+  /**
+  Accept a token. By default, the end of the token is set to the
+  current stream position, but you can pass an offset (relative to
+  the stream position) to change that.
+  */
   acceptToken(token, endOffset = 0) {
     let end = endOffset ? this.resolveOffset(endOffset, -1) : this.pos;
     if (end == null || end < this.token.start)
       throw new RangeError("Token end out of bounds");
     this.token.value = token;
     this.token.end = end;
+  }
+  /**
+  Accept a token ending at a specific given position.
+  */
+  acceptTokenTo(token, endPos) {
+    this.token.value = token;
+    this.token.end = endPos;
   }
   getChunk() {
     if (this.pos >= this.chunk2Pos && this.pos < this.chunk2Pos + this.chunk2.length) {
@@ -1992,8 +2263,10 @@ var InputStream = class {
     }
     return this.next = this.chunk.charCodeAt(this.chunkOff);
   }
-  /// Move the stream forward N (defaults to 1) code units. Returns
-  /// the new value of [`next`](#lr.InputStream.next).
+  /**
+  Move the stream forward N (defaults to 1) code units. Returns
+  the new value of [`next`](#lr.InputStream.next).
+  */
   advance(n = 1) {
     this.chunkOff += n;
     while (this.pos + n >= this.range.to) {
@@ -2014,7 +2287,9 @@ var InputStream = class {
     this.chunk = "";
     return this.next = -1;
   }
-  /// @internal
+  /**
+  @internal
+  */
   reset(pos, token) {
     if (token) {
       this.token = token;
@@ -2044,7 +2319,9 @@ var InputStream = class {
     }
     return this;
   }
-  /// @internal
+  /**
+  @internal
+  */
   read(from, to) {
     if (from >= this.chunkPos && to <= this.chunkPos + this.chunk.length)
       return this.chunk.slice(from - this.chunkPos, to - this.chunkPos);
@@ -2082,16 +2359,17 @@ var LocalTokenGroup = class {
   token(input, stack) {
     let start = input.pos, skipped = 0;
     for (; ; ) {
+      let atEof = input.next < 0, nextPos = input.resolveOffset(1, 1);
       readToken(this.data, input, stack, 0, this.data, this.precTable);
       if (input.token.value > -1)
         break;
       if (this.elseToken == null)
         return;
-      if (input.next < 0)
+      if (!atEof)
+        skipped++;
+      if (nextPos == null)
         break;
-      input.advance();
-      input.reset(input.pos, input.token);
-      skipped++;
+      input.reset(nextPos, input.token);
     }
     if (skipped) {
       input.reset(start, input.token);
@@ -2100,6 +2378,21 @@ var LocalTokenGroup = class {
   }
 };
 LocalTokenGroup.prototype.contextual = TokenGroup.prototype.fallback = TokenGroup.prototype.extend = false;
+var ExternalTokenizer = class {
+  /**
+  Create a tokenizer. The first argument is the function that,
+  given an input stream, scans for the types of tokens it
+  recognizes at the stream's position, and calls
+  [`acceptToken`](#lr.InputStream.acceptToken) when it finds
+  one.
+  */
+  constructor(token, options = {}) {
+    this.token = token;
+    this.contextual = !!options.contextual;
+    this.fallback = !!options.fallback;
+    this.extend = !!options.extend;
+  }
+};
 function readToken(data, input, stack, group, precTable, precOffset) {
   let state = 0, groupMask = 1 << group, { dialect } = stack.p.parser;
   scan:
@@ -2116,7 +2409,7 @@ function readToken(data, input, stack, group, precTable, precOffset) {
           }
         }
       let next = input.next, low = 0, high = data[state + 2];
-      if (input.next < 0 && high > low && data[accEnd + high * 3 - 3] == 65535 && data[accEnd + high * 3 - 3] == 65535) {
+      if (input.next < 0 && high > low && data[accEnd + high * 3 - 3] == 65535) {
         state = data[accEnd + high * 3 - 1];
         continue scan;
       }
@@ -2149,10 +2442,6 @@ function overrides(token, prev, tableData, tableOffset) {
 }
 var verbose = typeof process != "undefined" && process.env && /\bparse\b/.test(process.env.LOG);
 var stackIDs = null;
-var Safety;
-(function(Safety2) {
-  Safety2[Safety2["Margin"] = 25] = "Margin";
-})(Safety || (Safety = {}));
 function cutAt(tree, pos, side) {
   let cursor = tree.cursor(IterMode.IncludeAnonymous);
   cursor.moveTo(pos);
@@ -2163,11 +2452,11 @@ function cutAt(tree, pos, side) {
           return side < 0 ? Math.max(0, Math.min(
             cursor.to - 1,
             pos - 25
-            /* Safety.Margin */
+            /* Lookahead.Margin */
           )) : Math.min(tree.length, Math.max(
             cursor.from + 1,
             pos + 25
-            /* Safety.Margin */
+            /* Lookahead.Margin */
           ));
         if (side < 0 ? cursor.prevSibling() : cursor.nextSibling())
           break;
@@ -2378,17 +2667,6 @@ var TokenCache = class {
     return index;
   }
 };
-var Rec;
-(function(Rec2) {
-  Rec2[Rec2["Distance"] = 5] = "Distance";
-  Rec2[Rec2["MaxRemainingPerStep"] = 3] = "MaxRemainingPerStep";
-  Rec2[Rec2["MinBufferLengthPrune"] = 500] = "MinBufferLengthPrune";
-  Rec2[Rec2["ForceReduceLimit"] = 10] = "ForceReduceLimit";
-  Rec2[Rec2["CutDepth"] = 15e3] = "CutDepth";
-  Rec2[Rec2["CutTo"] = 9e3] = "CutTo";
-  Rec2[Rec2["MaxLeftAssociativeReductionCount"] = 300] = "MaxLeftAssociativeReductionCount";
-  Rec2[Rec2["MaxStackCount"] = 12] = "MaxStackCount";
-})(Rec || (Rec = {}));
 var Parse = class {
   constructor(parser2, input, fragments, ranges) {
     this.parser = parser2;
@@ -2450,8 +2728,11 @@ var Parse = class {
     }
     if (!newStacks.length) {
       let finished = stopped && findFinished(stopped);
-      if (finished)
+      if (finished) {
+        if (verbose)
+          console.log("Finish with " + this.stackID(finished));
         return this.stackToTree(finished);
+      }
       if (this.parser.strict) {
         if (verbose && stopped)
           console.log("Stuck with token " + (this.tokens.mainToken ? this.parser.getName(this.tokens.mainToken.value) : "none"));
@@ -2462,8 +2743,11 @@ var Parse = class {
     }
     if (this.recovering && stopped) {
       let finished = this.stoppedAt != null && stopped[0].pos > this.stoppedAt ? stopped[0] : this.runRecovery(stopped, stoppedTokens, newStacks);
-      if (finished)
+      if (finished) {
+        if (verbose)
+          console.log("Force-finish " + this.stackID(finished));
         return this.stackToTree(finished.forceAll());
+      }
     }
     if (this.recovering) {
       let maxRemaining = this.recovering == 1 ? 1 : this.recovering * 3;
@@ -2550,8 +2834,8 @@ var Parse = class {
         )})`);
       return true;
     }
-    if (stack.stack.length >= 15e3) {
-      while (stack.stack.length > 9e3 && stack.forceReduce()) {
+    if (stack.stack.length >= 8400) {
+      while (stack.stack.length > 6e3 && stack.forceReduce()) {
       }
     }
     let actions = this.tokens.getActions(stack);
@@ -2559,7 +2843,8 @@ var Parse = class {
       let action = actions[i++], term = actions[i++], end = actions[i++];
       let last = i == actions.length || !split;
       let localStack = last ? stack : stack.split();
-      localStack.apply(action, term, end);
+      let main = this.tokens.mainToken;
+      localStack.apply(action, term, main ? main.start : localStack.pos, end);
       if (verbose)
         console.log(base + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift" : `reduce of ${parser2.getName(
           action & 65535
@@ -2677,7 +2962,9 @@ var Dialect = class {
   }
 };
 var LRParser = class extends Parser {
-  /// @internal
+  /**
+  @internal
+  */
   constructor(spec) {
     super();
     this.wrappers = [];
@@ -2750,7 +3037,9 @@ var LRParser = class extends Parser {
       parse = w(parse, input, fragments, ranges);
     return parse;
   }
-  /// Get a goto table entry @internal
+  /**
+  Get a goto table entry @internal
+  */
   getGoto(state, term, loose = false) {
     let table = this.goto;
     if (term >= table[0])
@@ -2767,7 +3056,9 @@ var LRParser = class extends Parser {
         return -1;
     }
   }
-  /// Check if this state has an action for a given terminal @internal
+  /**
+  Check if this state has an action for a given terminal @internal
+  */
   hasAction(state, terminal) {
     let data = this.data;
     for (let set = 0; set < 2; set++) {
@@ -2790,11 +3081,15 @@ var LRParser = class extends Parser {
     }
     return 0;
   }
-  /// @internal
+  /**
+  @internal
+  */
   stateSlot(state, slot) {
     return this.states[state * 6 + slot];
   }
-  /// @internal
+  /**
+  @internal
+  */
   stateFlag(state, flag) {
     return (this.stateSlot(
       state,
@@ -2802,11 +3097,15 @@ var LRParser = class extends Parser {
       /* ParseState.Flags */
     ) & flag) > 0;
   }
-  /// @internal
+  /**
+  @internal
+  */
   validAction(state, action) {
     return !!this.allActions(state, (a) => a == action ? true : null);
   }
-  /// @internal
+  /**
+  @internal
+  */
   allActions(state, action) {
     let deflt = this.stateSlot(
       state,
@@ -2829,8 +3128,10 @@ var LRParser = class extends Parser {
     }
     return result;
   }
-  /// Get the states that can follow this one through shift actions or
-  /// goto jumps. @internal
+  /**
+  Get the states that can follow this one through shift actions or
+  goto jumps. @internal
+  */
   nextStates(state) {
     let result = [];
     for (let i = this.stateSlot(
@@ -2852,9 +3153,11 @@ var LRParser = class extends Parser {
     }
     return result;
   }
-  /// Configure the parser. Returns a new parser instance that has the
-  /// given settings modified. Settings not provided in `config` are
-  /// kept from the original parser.
+  /**
+  Configure the parser. Returns a new parser instance that has the
+  given settings modified. Settings not provided in `config` are
+  kept from the original parser.
+  */
   configure(config) {
     let copy = Object.assign(Object.create(LRParser.prototype), this);
     if (config.props)
@@ -2893,33 +3196,45 @@ var LRParser = class extends Parser {
       copy.bufferLength = config.bufferLength;
     return copy;
   }
-  /// Tells you whether any [parse wrappers](#lr.ParserConfig.wrap)
-  /// are registered for this parser.
+  /**
+  Tells you whether any [parse wrappers](#lr.ParserConfig.wrap)
+  are registered for this parser.
+  */
   hasWrappers() {
     return this.wrappers.length > 0;
   }
-  /// Returns the name associated with a given term. This will only
-  /// work for all terms when the parser was generated with the
-  /// `--names` option. By default, only the names of tagged terms are
-  /// stored.
+  /**
+  Returns the name associated with a given term. This will only
+  work for all terms when the parser was generated with the
+  `--names` option. By default, only the names of tagged terms are
+  stored.
+  */
   getName(term) {
     return this.termNames ? this.termNames[term] : String(term <= this.maxNode && this.nodeSet.types[term].name || term);
   }
-  /// The eof term id is always allocated directly after the node
-  /// types. @internal
+  /**
+  The eof term id is always allocated directly after the node
+  types. @internal
+  */
   get eofTerm() {
     return this.maxNode + 1;
   }
-  /// The type of top node produced by the parser.
+  /**
+  The type of top node produced by the parser.
+  */
   get topNode() {
     return this.nodeSet.types[this.top[1]];
   }
-  /// @internal
+  /**
+  @internal
+  */
   dynamicPrecedence(term) {
     let prec = this.dynamicPrecedences;
     return prec == null ? 0 : prec[term] || 0;
   }
-  /// @internal
+  /**
+  @internal
+  */
   parseDialect(dialect) {
     let values = Object.keys(this.dialects), flags = values.map(() => false);
     if (dialect)
@@ -2936,8 +3251,10 @@ var LRParser = class extends Parser {
       }
     return new Dialect(dialect, flags, disabled);
   }
-  /// Used by the output of the parser generator. Not available to
-  /// user code. @hide
+  /**
+  Used by the output of the parser generator. Not available to
+  user code. @hide
+  */
   static deserialize(spec) {
     return new LRParser(spec);
   }
@@ -2966,19 +3283,41 @@ function getSpecializer(spec) {
   return spec.get;
 }
 
+// externalTokens.js
+var TakeInput = new ExternalTokenizer((input, stack) => {
+  let pos = input.pos;
+  if (input.read(pos, pos + 4) === "Take") {
+    pos += 4;
+  } else {
+    return;
+  }
+  const start = pos;
+  while (pos < input.end && input.read(pos, pos + 1) !== ":" && input.read(pos, pos + 1) != "\n") {
+    pos++;
+  }
+  console.log("Captured token:");
+  console.log(input.read(start, pos));
+  console.log(pos);
+  console.log(input.end);
+  console.log();
+  if (pos < input.end) {
+    input.acceptToken(TakeInput, pos);
+  }
+}, { contextual: true });
+
 // syntax.js
 var parser = LRParser.deserialize({
   version: 14,
-  states: "(pQYQPOOOOQO'#C`'#C`O!sO`O'#C`O!xO`O'#C`O!}O`O'#C`O#SO`O'#C`O#XO`O'#C`O#^O`O'#C`O#cO`O'#C`O#hO`O'#C`O#mO`O'#C`O#rO`O'#C`O#wO`O'#C`O#|QQO'#C_OOQO'#Cd'#CdQYQPOOO$ROSO,58zO$WO`O,58zO$]OSO,58zO$bOSO,58zO$gOSO,58zO$lOPO,58zO$wOSO,58zO$|OWO,58zO%ROSO,58zO%^OPO,58zO%cOPO,58zOOQO,58y,58yOOQO-E6b-E6bO%hO`O1G.fOOQO1G.f1G.fO%mO`O1G.fO%rO`O1G.fO%wO`O1G.fO%|O`O1G.fO&RO`O7+$QO&WOPO7+$QO&`OPO7+$QO&eOPO7+$QO&jOPO7+$QOOQO<<Gl<<GlO&oO`O<<GlO&tOPO<<GlO&yO`O<<GlO'OOPOAN=WO'TO`OAN=WO'YOPOAN=WOOQOG22rG22rO'_OPOG22rO'dO`OG22rO'iO`OLD(^O'nOPOLD(^O'sOPO!$'KxO'xO`O!$'KxO'}O`O!)9AdO(SOPO!)9AdO(XOPO!.K7OOOQO!.K7O!.K7OOOQO!4/,j!4/,j",
-  stateData: "(^~OZOSPOS~O[PO]QO_RO`ROaSOcROdTOfROgUOiROjVOlROnROoPOpPOqWOsPOtPOuROwXOyYO!PZO!S[O~OT`O~OTaO~OTbO~OTcO~OTdO~OTeO~OTfO~OTgO~OThO~OTiO~OTjO~OVkO~O^mO~OUnO~ObmO~OenO~OhmO~OkmOmmOvmO~OrmO~OxmO~OzoO}pO!OqO~O!QrO~O!TpO~OTsO~OTtO~OTuO~OTvO~OTwO~OUxO~O{xO|yO~O{xO~O{zO~O|{O~OT|O~O!P}O~OT!OO~O{!PO~OT!QO~O!R!RO~O!Q!SO~OT!TO~OT!UO~O|!VO~O!R!WO~OT!XO~OT!YO~O{!ZO~O{![O~O",
-  goto: "hXPPPY^PPPbT^O_T]O_Q_ORl_",
-  nodeNames: "\u26A0 Comment Program Sentence WaterproofTactic TacticInput dotSpace CoqSentence",
-  maxTerm: 51,
-  skippedNodes: [0, 1],
+  states: "(pQYQQOOO!yOPO'#CaOOQO'#Ca'#CaO#OOpO'#CaO#TOpO'#CaO#YOpO'#CaO#_OpO'#CaO#dOpO'#CaO#iOpO'#CaO#nOpO'#CaO#sOpO'#CaO#xOpO'#CaO#}OpO'#CaO$SQSO'#C`OOQO'#Ce'#CeQYQQOOO$XOQO,58{O$^OpO,58{O$cOWO,58{O$hOWO,58{O$mOQO,58{O$xOWO,58{O$}OWO,58{O%SO`O,58{O%XOWO,58{O%dOQO,58{O%iOQO,58{OOQO,58z,58zOOQO-E6c-E6cO%nOpO1G.gOOQO1G.g1G.gO%sOpO1G.gO%xOpO1G.gO%}OpO1G.gO&SOpO1G.gO&XOpO7+$RO&^OQO7+$RO&fOQO7+$RO&kOQO7+$RO&pOQO7+$ROOQO<<Gm<<GmO&uOpO<<GmO&zOQO<<GmO'POpO<<GmO'UOQOAN=XO'ZOpOAN=XO'`OQOAN=XOOQOG22sG22sO'eOQOG22sO'jOpOG22sO'oOpOLD(_O'tOQOLD(_O'yOQO!$'KyO(OOpO!$'KyO(TOpO!)9AeO(YOQO!)9AeO(_OQO!.K7POOQO!.K7P!.K7POOQO!4/,k!4/,k",
+  stateData: "(d~O[OSQOS~O]PO_QO`QOaQObQOcQOdROeROfROgSOiROjROkROlROmROnROoROpTOrUOtVOvWOzXO|YO!SZO!V[O~OP`O~OUaO~OUbO~OUcO~OUdO~OUeO~OUfO~OUgO~OUhO~OUiO~OUjO~OWkO~O^mO~OVnO~OhnO~OqmO~OsmOxmOymO~OumO~OwmO~O{mO~O}oO!QpO!RqO~O!TrO~O!WpO~OUsO~OUtO~OUuO~OUvO~OUwO~OVxO~O!OxO!PyO~O!OxO~O!OzO~O!P{O~OU|O~O!S}O~OU!OO~O!O!PO~OU!QO~O!U!RO~O!T!SO~OU!TO~OU!UO~O!P!VO~O!U!WO~OU!XO~OU!YO~O!O!ZO~O!O![O~O",
+  goto: "iYPPPPZ_PPPcT^O_T]O_Q_ORl_",
+  nodeNames: "\u26A0 TakeInput Comment Program Sentence WaterproofTactic TacticInput dotSpace CoqSentence",
+  maxTerm: 54,
+  skippedNodes: [0, 2],
   repeatNodeCount: 1,
-  tokenData: "%*p~RnOX#PXY#nYZ#nZ]#P]^#n^p#Ppq$Sqx#Pxy/wyz2{z!O#P!P!c#P!c!d!+{!d!e!2T!e!f!8_!f!g!B^!g!h!Ex!h!j#P!j!k#(h!k!l#*m!l!q#P!q!r#=a!r!u#P!u!v#Dm!v!w#HX!w!y#P!y!z#Jq!z;'S#P;'S;=`#h<%lO#PS#STO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PS#hOVSS#kP;=`<%l#PU#sTZUO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#Pn$X]ZUOy#Pyz%Qz!O#P!O!P#c!P![#P![!]%k!]#T#P#T#U'o#U#]#P#]#^.a#^;'S#P;'S;=`#h<%lO#P[%TTO!O#P!O!P%d!P;'S#P;'S;=`#h<%lO#P[%kOeWVSl%nXOp#Ppq&Zq!O#P!O!P#c!P!_#P!_!`&o!`;'S#P;'S;=`#h<%lO#P[&`T^WO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#Pl&tVbWOp#Ppq'Zq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#Pd'`Tx`O!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P['rVO!O#P!O!P#c!P#V#P#V#W(X#W;'S#P;'S;=`#h<%lO#P[([VO!O#P!O!P#c!P#V#P#V#W(q#W;'S#P;'S;=`#h<%lO#P[(tVO!O#P!O!P#c!P#c#P#c#d)Z#d;'S#P;'S;=`#h<%lO#P[)^VO!O#P!O!P#c!P#f#P#f#g)s#g;'S#P;'S;=`#h<%lO#P[)vVO!O#P!O!P#c!P#W#P#W#X*]#X;'S#P;'S;=`#h<%lO#P[*`VO!O#P!O!P#c!P#]#P#]#^*u#^;'S#P;'S;=`#h<%lO#P[*xVO!O#P!O!P#c!P#b#P#b#c+_#c;'S#P;'S;=`#h<%lO#P[+bVO!O#P!O!P#c!P#Z#P#Z#[+w#[;'S#P;'S;=`#h<%lO#P[+zVOp#Ppq,aq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P[,dVO!O#P!O!P#c!P#h#P#h#i,y#i;'S#P;'S;=`#h<%lO#P[,|VO!O#P!O!P#c!P#c#P#c#d-c#d;'S#P;'S;=`#h<%lO#P[-fVOp#Ppq-{q!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P[.QThWO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P[.dVO!O#P!O!P#c!P#b#P#b#c.y#c;'S#P;'S;=`#h<%lO#P[.|VOp#Ppq/cq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P[/hTrWO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P~/zXOv#Pvw0gwz#Pz{1e{!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU0jVOp#Ppq1Pq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU1UTdQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P~1hVOz#Pz{1}{!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P~2QVOy#Pyz2gz!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P~2lTP~O!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^3OVOp#Ppq3eq!O#P!O!P!+t!P;'S#P;'S;=`#h<%lO#P^3h`Ox#Pxy4jy!O#P!O!P#c!P#T#P#T#U5O#U#V7h#V#]#P#]#^:j#^#c#P#c#dNd#d#k#P#k#l!!d#l;'S#P;'S;=`#h<%lO#PU4oT|QO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU5RVO!O#P!O!P#c!P#b#P#b#c5h#c;'S#P;'S;=`#h<%lO#PU5kVO!O#P!O!P#c!P#W#P#W#X6Q#X;'S#P;'S;=`#h<%lO#PU6TVOp#Ppq6jq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU6mVOx#Pxy7Sy!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU7XT!RQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU7kVO!O#P!O!P#c!P#c#P#c#d8Q#d;'S#P;'S;=`#h<%lO#PU8TVO!O#P!O!P#c!P#h#P#h#i8j#i;'S#P;'S;=`#h<%lO#PU8mVO!O#P!O!P#c!P#[#P#[#]9S#];'S#P;'S;=`#h<%lO#PU9VVOp#Ppq9lq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU9oVOx#Pxy:Uy!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU:ZT!QQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^:mVO!O#P!O!P#c!P#h#P#h#i;S#i;'S#P;'S;=`#h<%lO#P^;VVOp#Ppq;lq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^;oXO!O#P!O!P#c!P#[#P#[#]<[#]#g#P#g#hBf#h;'S#P;'S;=`#h<%lO#P^<_VO!O#P!O!P#c!P#c#P#c#d<t#d;'S#P;'S;=`#h<%lO#P^<wVO!O#P!O!P#c!P#`#P#`#a=^#a;'S#P;'S;=`#h<%lO#P^=aVO!O#P!O!P#c!P#W#P#W#X=v#X;'S#P;'S;=`#h<%lO#P^=yVO!O#P!O!P#c!P#g#P#g#h>`#h;'S#P;'S;=`#h<%lO#P^>cVOp#Ppq>xq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^>{VO!O#P!O!P#c!P#h#P#h#i?b#i;'S#P;'S;=`#h<%lO#P^?eVO!O#P!O!P#c!P#[#P#[#]?z#];'S#P;'S;=`#h<%lO#P^?}VO!O#P!O!P#c!P#T#P#T#U@d#U;'S#P;'S;=`#h<%lO#P^@gVO!O#P!O!P#c!P#h#P#h#i@|#i;'S#P;'S;=`#h<%lO#P^APVOp#PpqAfq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^AkVmQOx#PxyBQy!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P[BVTzWO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^BiVO!O#P!O!P#c!P#i#P#i#jCO#j;'S#P;'S;=`#h<%lO#P^CRVO!O#P!O!P#c!P#Y#P#Y#ZCh#Z;'S#P;'S;=`#h<%lO#P^CkVO!O#P!O!P#c!P#Y#P#Y#ZDQ#Z;'S#P;'S;=`#h<%lO#P^DTVO!O#P!O!P#c!P#]#P#]#^Dj#^;'S#P;'S;=`#h<%lO#P^DmVO!O#P!O!P#c!P#V#P#V#WES#W;'S#P;'S;=`#h<%lO#P^EVVO!O#P!O!P#c!P#X#P#X#YEl#Y;'S#P;'S;=`#h<%lO#P^EoVO!O#P!O!P#c!P#g#P#g#hFU#h;'S#P;'S;=`#h<%lO#P^FXVOp#PpqFnq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^FqVO!O#P!O!P#c!P#h#P#h#iGW#i;'S#P;'S;=`#h<%lO#P^GZVO!O#P!O!P#c!P#c#P#c#dGp#d;'S#P;'S;=`#h<%lO#P^GsVOp#PpqHYq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^H]VO!O#P!O!P#c!P#g#P#g#hHr#h;'S#P;'S;=`#h<%lO#P^HuVO!O#P!O!P#c!P#[#P#[#]I[#];'S#P;'S;=`#h<%lO#P^I_VO!O#P!O!P#c!P#c#P#c#dIt#d;'S#P;'S;=`#h<%lO#P^IwVO!O#P!O!P#c!P#k#P#k#lJ^#l;'S#P;'S;=`#h<%lO#P^JaVOp#PpqJvq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^JyVO!O#P!O!P#c!P#h#P#h#iK`#i;'S#P;'S;=`#h<%lO#P^KcVO!O#P!O!P#c!P#[#P#[#]Kx#];'S#P;'S;=`#h<%lO#P^K{VO!O#P!O!P#c!P#T#P#T#ULb#U;'S#P;'S;=`#h<%lO#P^LeVO!O#P!O!P#c!P#h#P#h#iLz#i;'S#P;'S;=`#h<%lO#P^L}VOp#PpqMdq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^MiVkQOx#PxyNOy!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P[NTT!OWO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PUNgVO!O#P!O!P#c!P#f#P#f#gN|#g;'S#P;'S;=`#h<%lO#PU! PVOp#Ppq! fq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU! iVOx#Pxy!!Oy!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!!TT!TQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^!!gVO!O#P!O!P#c!P#X#P#X#Y!!|#Y;'S#P;'S;=`#h<%lO#P^!#PVOp#Ppq!#fq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^!#iVO!O#P!O!P#c!P#V#P#V#W!$O#W;'S#P;'S;=`#h<%lO#P^!$RVO!O#P!O!P#c!P#c#P#c#d!$h#d;'S#P;'S;=`#h<%lO#P^!$kVO!O#P!O!P#c!P#b#P#b#c!%Q#c;'S#P;'S;=`#h<%lO#P^!%TVO!O#P!O!P#c!P#V#P#V#W!%j#W;'S#P;'S;=`#h<%lO#P^!%mVO!O#P!O!P#c!P#`#P#`#a!&S#a;'S#P;'S;=`#h<%lO#P^!&VVO!O#P!O!P#c!P#i#P#i#j!&l#j;'S#P;'S;=`#h<%lO#P^!&oVO!O#P!O!P#c!P#W#P#W#X!'U#X;'S#P;'S;=`#h<%lO#P^!'XVO!O#P!O!P#c!P#X#P#X#Y!'n#Y;'S#P;'S;=`#h<%lO#P^!'qVOp#Ppq!(Wq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^!(ZVO!O#P!O!P#c!P#h#P#h#i!(p#i;'S#P;'S;=`#h<%lO#P^!(sVO!O#P!O!P#c!P#[#P#[#]!)Y#];'S#P;'S;=`#h<%lO#P^!)]VO!O#P!O!P#c!P#T#P#T#U!)r#U;'S#P;'S;=`#h<%lO#P^!)uVO!O#P!O!P#c!P#h#P#h#i!*[#i;'S#P;'S;=`#h<%lO#P^!*_VOp#Ppq!*tq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P^!*yVvQOx#Pxy!+`y!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P[!+eT}WO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!+{O{QVSU!,OVO!O#P!O!P#c!P#g#P#g#h!,e#h;'S#P;'S;=`#h<%lO#PU!,hVO!O#P!O!P#c!P#g#P#g#h!,}#h;'S#P;'S;=`#h<%lO#PU!-QVO!O#P!O!P#c!P#i#P#i#j!-g#j;'S#P;'S;=`#h<%lO#PU!-jVO!O#P!O!P#c!P#a#P#a#b!.P#b;'S#P;'S;=`#h<%lO#PU!.SVO!O#P!O!P#c!P#X#P#X#Y!.i#Y;'S#P;'S;=`#h<%lO#PU!.lVOp#Ppq!/Rq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!/UVO!O#P!O!P#c!P#h#P#h#i!/k#i;'S#P;'S;=`#h<%lO#PU!/nVO!O#P!O!P#c!P#[#P#[#]!0T#];'S#P;'S;=`#h<%lO#PU!0WVO!O#P!O!P#c!P#T#P#T#U!0m#U;'S#P;'S;=`#h<%lO#PU!0pVO!O#P!O!P#c!P#h#P#h#i!1V#i;'S#P;'S;=`#h<%lO#PU!1YVOp#Ppq!1oq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!1tTcQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!2WXO!O#P!O!P#c!P#X#P#X#Y!2s#Y#m#P#m#n!6w#n;'S#P;'S;=`#h<%lO#PU!2vVO!O#P!O!P#c!P#V#P#V#W!3]#W;'S#P;'S;=`#h<%lO#PU!3`VO!O#P!O!P#c!P#T#P#T#U!3u#U;'S#P;'S;=`#h<%lO#PU!3xVO!O#P!O!P#c!P#i#P#i#j!4_#j;'S#P;'S;=`#h<%lO#PU!4bVO!O#P!O!P#c!P#g#P#g#h!4w#h;'S#P;'S;=`#h<%lO#PU!4zVO!O#P!O!P#c!P#X#P#X#Y!5a#Y;'S#P;'S;=`#h<%lO#PU!5dVOp#Ppq!5yq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!5|VOx#Pxy!6cy!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!6hT!PQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!6zVOp#Ppq!7aq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!7dVOx#Pxy!7yy!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!8OTjQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!8bXO!O#P!O!P#c!P#[#P#[#]!8}#]#c#P#c#d!<P#d;'S#P;'S;=`#h<%lO#PU!9QVO!O#P!O!P#c!P#c#P#c#d!9g#d;'S#P;'S;=`#h<%lO#PU!9jVO!O#P!O!P#c!P#c#P#c#d!:P#d;'S#P;'S;=`#h<%lO#PU!:SVO!O#P!O!P#c!P#g#P#g#h!:i#h;'S#P;'S;=`#h<%lO#PU!:lVO!O#P!O!P#c!P#X#P#X#Y!;R#Y;'S#P;'S;=`#h<%lO#PU!;UVOp#Ppq!;kq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!;pTaQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!<SVO!O#P!O!P#c!P#b#P#b#c!<i#c;'S#P;'S;=`#h<%lO#PU!<lVO!O#P!O!P#c!P#h#P#h#i!=R#i;'S#P;'S;=`#h<%lO#PU!=UVO!O#P!O!P#c!P#f#P#f#g!=k#g;'S#P;'S;=`#h<%lO#PU!=nVO!O#P!O!P#c!P#T#P#T#U!>T#U;'S#P;'S;=`#h<%lO#PU!>WVO!O#P!O!P#c!P#W#P#W#X!>m#X;'S#P;'S;=`#h<%lO#PU!>pVO!O#P!O!P#c!P#]#P#]#^!?V#^;'S#P;'S;=`#h<%lO#PU!?YVO!O#P!O!P#c!P#V#P#V#W!?o#W;'S#P;'S;=`#h<%lO#PU!?rVO!O#P!O!P#c!P#h#P#h#i!@X#i;'S#P;'S;=`#h<%lO#PU!@[VO!O#P!O!P#c!P#]#P#]#^!@q#^;'S#P;'S;=`#h<%lO#PU!@tVO!O#P!O!P#c!P#c#P#c#d!AZ#d;'S#P;'S;=`#h<%lO#PU!A^VO!O#P!O!P#c!P#b#P#b#c!As#c;'S#P;'S;=`#h<%lO#PU!AvTO!O#P!O!P!BV!P;'S#P;'S;=`#h<%lO#PU!B^OpQVSU!BaVO!O#P!O!P#c!P#X#P#X#Y!Bv#Y;'S#P;'S;=`#h<%lO#PU!ByVO!O#P!O!P#c!P#Y#P#Y#Z!C`#Z;'S#P;'S;=`#h<%lO#PU!CcVO!O#P!O!P#c!P#]#P#]#^!Cx#^;'S#P;'S;=`#h<%lO#PU!C{VO!O#P!O!P#c!P#b#P#b#c!Db#c;'S#P;'S;=`#h<%lO#PU!DeVO!O#P!O!P#c!P#X#P#X#Y!Dz#Y;'S#P;'S;=`#h<%lO#PU!D}VOp#Ppq!Edq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!EiTwQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!E{XO!O#P!O!P#c!P#]#P#]#^!Fh#^#l#P#l#m!JS#m;'S#P;'S;=`#h<%lO#PU!FkVO!O#P!O!P#c!P#h#P#h#i!GQ#i;'S#P;'S;=`#h<%lO#PU!GTVO!O#P!O!P#c!P#[#P#[#]!Gj#];'S#P;'S;=`#h<%lO#PU!GmVO!O#P!O!P#c!P#X#P#X#Y!HS#Y;'S#P;'S;=`#h<%lO#PU!HVVO!O#P!O!P#c!P#f#P#f#g!Hl#g;'S#P;'S;=`#h<%lO#PU!HoVOp#Ppq!IUq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!IXVOx#Pxy!Iny!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!IsT!SQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!JVVO!O#P!O!P#c!P#d#P#d#e!Jl#e;'S#P;'S;=`#h<%lO#PU!JoVO!O#P!O!P#c!P#T#P#T#U!KU#U;'S#P;'S;=`#h<%lO#PU!KXVO!O#P!O!P#c!P#b#P#b#c!Kn#c;'S#P;'S;=`#h<%lO#PU!KqVO!O#P!O!P#c!P#W#P#W#X!LW#X;'S#P;'S;=`#h<%lO#PU!LZVOp#Ppq!Lpq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!LsVO!O#P!O!P#c!P#h#P#h#i!MY#i;'S#P;'S;=`#h<%lO#PU!M]VO!O#P!O!P#c!P#[#P#[#]!Mr#];'S#P;'S;=`#h<%lO#PU!MuVO!O#P!O!P#c!P#X#P#X#Y!N[#Y;'S#P;'S;=`#h<%lO#PU!N_VOp#Ppq!Ntq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU!NwVO!O#P!O!P#c!P#W#P#W#X# ^#X;'S#P;'S;=`#h<%lO#PU# aVO!O#P!O!P#c!P#X#P#X#Y# v#Y;'S#P;'S;=`#h<%lO#PU# yVO!O#P!O!P#c!P#Y#P#Y#Z#!`#Z;'S#P;'S;=`#h<%lO#PU#!cVO!O#P!O!P#c!P#]#P#]#^#!x#^;'S#P;'S;=`#h<%lO#PU#!{VO!O#P!O!P#c!P#b#P#b#c##b#c;'S#P;'S;=`#h<%lO#PU##eVO!O#P!O!P#c!P#]#P#]#^##z#^;'S#P;'S;=`#h<%lO#PU##}VO!O#P!O!P#c!P#h#P#h#i#$d#i;'S#P;'S;=`#h<%lO#PU#$gVO!O#P!O!P#c!P#]#P#]#^#$|#^;'S#P;'S;=`#h<%lO#PU#%PVO!O#P!O!P#c!P#c#P#c#d#%f#d;'S#P;'S;=`#h<%lO#PU#%iVO!O#P!O!P#c!P#b#P#b#c#&O#c;'S#P;'S;=`#h<%lO#PU#&RVOp#Ppq#&hq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#&kVO!O#P!O!P#c!P#c#P#c#d#'Q#d;'S#P;'S;=`#h<%lO#PU#'TVO!O#P!O!P#c!P#Y#P#Y#Z#'j#Z;'S#P;'S;=`#h<%lO#PU#'mVOp#Ppq#(Sq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#(XTqQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#(kVO!O#P!O!P#c!P#X#P#X#Y#)Q#Y;'S#P;'S;=`#h<%lO#PU#)TVO!O#P!O!P#c!P#`#P#`#a#)j#a;'S#P;'S;=`#h<%lO#PU#)mVO!O#P!O!P#c!P#d#P#d#e#*S#e;'S#P;'S;=`#h<%lO#PU#*VTO!O#P!O!P#*f!P;'S#P;'S;=`#h<%lO#PU#*mO[QVSU#*pVO!O#P!O!P#c!P#h#P#h#i#+V#i;'S#P;'S;=`#h<%lO#PU#+YVOp#Ppq#+oq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#+rXO!O#P!O!P#c!P#[#P#[#]#,_#]#g#P#g#h#1}#h;'S#P;'S;=`#h<%lO#PU#,bVO!O#P!O!P#c!P#c#P#c#d#,w#d;'S#P;'S;=`#h<%lO#PU#,zVO!O#P!O!P#c!P#`#P#`#a#-a#a;'S#P;'S;=`#h<%lO#PU#-dVO!O#P!O!P#c!P#W#P#W#X#-y#X;'S#P;'S;=`#h<%lO#PU#-|VO!O#P!O!P#c!P#g#P#g#h#.c#h;'S#P;'S;=`#h<%lO#PU#.fVOp#Ppq#.{q!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#/OVO!O#P!O!P#c!P#h#P#h#i#/e#i;'S#P;'S;=`#h<%lO#PU#/hVO!O#P!O!P#c!P#[#P#[#]#/}#];'S#P;'S;=`#h<%lO#PU#0QVO!O#P!O!P#c!P#T#P#T#U#0g#U;'S#P;'S;=`#h<%lO#PU#0jVO!O#P!O!P#c!P#h#P#h#i#1P#i;'S#P;'S;=`#h<%lO#PU#1SVOp#Ppq#1iq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#1nTlQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#2QVO!O#P!O!P#c!P#i#P#i#j#2g#j;'S#P;'S;=`#h<%lO#PU#2jVO!O#P!O!P#c!P#Y#P#Y#Z#3P#Z;'S#P;'S;=`#h<%lO#PU#3SVO!O#P!O!P#c!P#Y#P#Y#Z#3i#Z;'S#P;'S;=`#h<%lO#PU#3lVO!O#P!O!P#c!P#]#P#]#^#4R#^;'S#P;'S;=`#h<%lO#PU#4UVO!O#P!O!P#c!P#V#P#V#W#4k#W;'S#P;'S;=`#h<%lO#PU#4nVO!O#P!O!P#c!P#X#P#X#Y#5T#Y;'S#P;'S;=`#h<%lO#PU#5WVO!O#P!O!P#c!P#g#P#g#h#5m#h;'S#P;'S;=`#h<%lO#PU#5pVOp#Ppq#6Vq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#6YVO!O#P!O!P#c!P#h#P#h#i#6o#i;'S#P;'S;=`#h<%lO#PU#6rVO!O#P!O!P#c!P#c#P#c#d#7X#d;'S#P;'S;=`#h<%lO#PU#7[VOp#Ppq#7qq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#7tVO!O#P!O!P#c!P#g#P#g#h#8Z#h;'S#P;'S;=`#h<%lO#PU#8^VO!O#P!O!P#c!P#[#P#[#]#8s#];'S#P;'S;=`#h<%lO#PU#8vVO!O#P!O!P#c!P#c#P#c#d#9]#d;'S#P;'S;=`#h<%lO#PU#9`VO!O#P!O!P#c!P#k#P#k#l#9u#l;'S#P;'S;=`#h<%lO#PU#9xVOp#Ppq#:_q!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#:bVO!O#P!O!P#c!P#h#P#h#i#:w#i;'S#P;'S;=`#h<%lO#PU#:zVO!O#P!O!P#c!P#[#P#[#]#;a#];'S#P;'S;=`#h<%lO#PU#;dVO!O#P!O!P#c!P#T#P#T#U#;y#U;'S#P;'S;=`#h<%lO#PU#;|VO!O#P!O!P#c!P#h#P#h#i#<c#i;'S#P;'S;=`#h<%lO#PU#<fVOp#Ppq#<{q!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#=QTiQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#=dVO!O#P!O!P#c!P#U#P#U#V#=y#V;'S#P;'S;=`#h<%lO#PU#=|VO!O#P!O!P#c!P#h#P#h#i#>c#i;'S#P;'S;=`#h<%lO#PU#>fVO!O#P!O!P#c!P#T#P#T#U#>{#U;'S#P;'S;=`#h<%lO#PU#?OVO!O#P!O!P#c!P#]#P#]#^#?e#^;'S#P;'S;=`#h<%lO#PU#?hVO!O#P!O!P#c!P#b#P#b#c#?}#c;'S#P;'S;=`#h<%lO#PU#@QVOp#Ppq#@gq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#@lVgQO!O#P!O!P#c!P#g#P#g#h#AR#h;'S#P;'S;=`#h<%lO#PU#AUVO!O#P!O!P#c!P#i#P#i#j#Ak#j;'S#P;'S;=`#h<%lO#PU#AnVO!O#P!O!P#c!P#V#P#V#W#BT#W;'S#P;'S;=`#h<%lO#PU#BWVO!O#P!O!P#c!P#[#P#[#]#Bm#];'S#P;'S;=`#h<%lO#PU#BpVOp#Ppq#CVq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#CYVO!O#P!O!P#c!P#T#P#T#U#Co#U;'S#P;'S;=`#h<%lO#PU#CrVOp#Ppq#DXq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#D^TfQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#DpVO!O#P!O!P#c!P#]#P#]#^#EV#^;'S#P;'S;=`#h<%lO#PU#EYVO!O#P!O!P#c!P#b#P#b#c#Eo#c;'S#P;'S;=`#h<%lO#PU#ErVO!O#P!O!P#c!P#V#P#V#W#FX#W;'S#P;'S;=`#h<%lO#PU#F[VO!O#P!O!P#c!P#X#P#X#Y#Fq#Y;'S#P;'S;=`#h<%lO#PU#FtVOp#Ppq#GZq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#G^VOx#Pxy#Gsy!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#GxTyQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#H[VO!O#P!O!P#c!P#T#P#T#U#Hq#U;'S#P;'S;=`#h<%lO#PU#HtVO!O#P!O!P#c!P#_#P#_#`#IZ#`;'S#P;'S;=`#h<%lO#PU#I^VO!O#P!O!P#c!P#X#P#X#Y#Is#Y;'S#P;'S;=`#h<%lO#PU#IvVOp#Ppq#J]q!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#JbT]QO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#JtVO!O#P!O!P#c!P#X#P#X#Y#KZ#Y;'S#P;'S;=`#h<%lO#PU#K^VOp#Ppq#Ksq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU#Kv_O!O#P!O!P#c!P#T#P#T#U#Lu#U#V#P#V#W$*^#W#b#P#b#c$6t#c#g#P#g#h$@S#h#i#P#i#j% z#j;'S#P;'S;=`#h<%lO#PU#LxVO!O#P!O!P#c!P#f#P#f#g#M_#g;'S#P;'S;=`#h<%lO#PU#MbVO!O#P!O!P#c!P#Z#P#Z#[#Mw#[;'S#P;'S;=`#h<%lO#PU#MzVO!O#P!O!P#c!P#i#P#i#j#Na#j;'S#P;'S;=`#h<%lO#PU#NdVO!O#P!O!P#c!P#X#P#X#Y#Ny#Y;'S#P;'S;=`#h<%lO#PU#N|VOp#Ppq$ cq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$ fVO!O#P!O!P#c!P#U#P#U#V$ {#V;'S#P;'S;=`#h<%lO#PU$!OVO!O#P!O!P#c!P#m#P#m#n$!e#n;'S#P;'S;=`#h<%lO#PU$!hVOp#Ppq$!}q!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$#QVO!O#P!O!P#c!P#V#P#V#W$#g#W;'S#P;'S;=`#h<%lO#PU$#jVO!O#P!O!P#c!P#c#P#c#d$$P#d;'S#P;'S;=`#h<%lO#PU$$SVO!O#P!O!P#c!P#b#P#b#c$$i#c;'S#P;'S;=`#h<%lO#PU$$lVO!O#P!O!P#c!P#h#P#h#i$%R#i;'S#P;'S;=`#h<%lO#PU$%UVO!O#P!O!P#c!P#f#P#f#g$%k#g;'S#P;'S;=`#h<%lO#PU$%nVO!O#P!O!P#c!P#T#P#T#U$&T#U;'S#P;'S;=`#h<%lO#PU$&WVO!O#P!O!P#c!P#W#P#W#X$&m#X;'S#P;'S;=`#h<%lO#PU$&pVO!O#P!O!P#c!P#]#P#]#^$'V#^;'S#P;'S;=`#h<%lO#PU$'YVO!O#P!O!P#c!P#V#P#V#W$'o#W;'S#P;'S;=`#h<%lO#PU$'rVO!O#P!O!P#c!P#h#P#h#i$(X#i;'S#P;'S;=`#h<%lO#PU$([VO!O#P!O!P#c!P#]#P#]#^$(q#^;'S#P;'S;=`#h<%lO#PU$(tVO!O#P!O!P#c!P#c#P#c#d$)Z#d;'S#P;'S;=`#h<%lO#PU$)^VO!O#P!O!P#c!P#b#P#b#c$)s#c;'S#P;'S;=`#h<%lO#PU$)vTO!O#P!O!P$*V!P;'S#P;'S;=`#h<%lO#PU$*^OoQVSU$*aXO!O#P!O!P#c!P#`#P#`#a$*|#a#c#P#c#d$0S#d;'S#P;'S;=`#h<%lO#PU$+PVO!O#P!O!P#c!P#T#P#T#U$+f#U;'S#P;'S;=`#h<%lO#PU$+iVO!O#P!O!P#c!P#]#P#]#^$,O#^;'S#P;'S;=`#h<%lO#PU$,RVO!O#P!O!P#c!P#a#P#a#b$,h#b;'S#P;'S;=`#h<%lO#PU$,kVOp#Ppq$-Qq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$-TVO!O#P!O!P#c!P#h#P#h#i$-j#i;'S#P;'S;=`#h<%lO#PU$-mVO!O#P!O!P#c!P#[#P#[#]$.S#];'S#P;'S;=`#h<%lO#PU$.VVO!O#P!O!P#c!P#T#P#T#U$.l#U;'S#P;'S;=`#h<%lO#PU$.oVO!O#P!O!P#c!P#h#P#h#i$/U#i;'S#P;'S;=`#h<%lO#PU$/XVOp#Ppq$/nq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$/sTnQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$0VVO!O#P!O!P#c!P#b#P#b#c$0l#c;'S#P;'S;=`#h<%lO#PU$0oVO!O#P!O!P#c!P#V#P#V#W$1U#W;'S#P;'S;=`#h<%lO#PU$1XVO!O#P!O!P#c!P#`#P#`#a$1n#a;'S#P;'S;=`#h<%lO#PU$1qVO!O#P!O!P#c!P#i#P#i#j$2W#j;'S#P;'S;=`#h<%lO#PU$2ZVO!O#P!O!P#c!P#W#P#W#X$2p#X;'S#P;'S;=`#h<%lO#PU$2sVO!O#P!O!P#c!P#X#P#X#Y$3Y#Y;'S#P;'S;=`#h<%lO#PU$3]VOp#Ppq$3rq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$3uVO!O#P!O!P#c!P#h#P#h#i$4[#i;'S#P;'S;=`#h<%lO#PU$4_VO!O#P!O!P#c!P#[#P#[#]$4t#];'S#P;'S;=`#h<%lO#PU$4wVO!O#P!O!P#c!P#T#P#T#U$5^#U;'S#P;'S;=`#h<%lO#PU$5aVO!O#P!O!P#c!P#h#P#h#i$5v#i;'S#P;'S;=`#h<%lO#PU$5yVOp#Ppq$6`q!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$6eT`QO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$6wVO!O#P!O!P#c!P#X#P#X#Y$7^#Y;'S#P;'S;=`#h<%lO#PU$7aVO!O#P!O!P#c!P#X#P#X#Y$7v#Y;'S#P;'S;=`#h<%lO#PU$7yVO!O#P!O!P#c!P#W#P#W#X$8`#X;'S#P;'S;=`#h<%lO#PU$8cVOp#Ppq$8xq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$8{VO!O#P!O!P#c!P#h#P#h#i$9b#i;'S#P;'S;=`#h<%lO#PU$9eVO!O#P!O!P#c!P#c#P#c#d$9z#d;'S#P;'S;=`#h<%lO#PU$9}VOp#Ppq$:dq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$:gVO!O#P!O!P#c!P#g#P#g#h$:|#h;'S#P;'S;=`#h<%lO#PU$;PVO!O#P!O!P#c!P#[#P#[#]$;f#];'S#P;'S;=`#h<%lO#PU$;iVO!O#P!O!P#c!P#c#P#c#d$<O#d;'S#P;'S;=`#h<%lO#PU$<RVO!O#P!O!P#c!P#k#P#k#l$<h#l;'S#P;'S;=`#h<%lO#PU$<kVOp#Ppq$=Qq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$=TVO!O#P!O!P#c!P#h#P#h#i$=j#i;'S#P;'S;=`#h<%lO#PU$=mVO!O#P!O!P#c!P#[#P#[#]$>S#];'S#P;'S;=`#h<%lO#PU$>VVO!O#P!O!P#c!P#T#P#T#U$>l#U;'S#P;'S;=`#h<%lO#PU$>oVO!O#P!O!P#c!P#h#P#h#i$?U#i;'S#P;'S;=`#h<%lO#PU$?XVOp#Ppq$?nq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$?sT_QO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$@VVO!O#P!O!P#c!P#[#P#[#]$@l#];'S#P;'S;=`#h<%lO#PU$@oVO!O#P!O!P#c!P#c#P#c#d$AU#d;'S#P;'S;=`#h<%lO#PU$AXVO!O#P!O!P#c!P#k#P#k#l$An#l;'S#P;'S;=`#h<%lO#PU$AqVOp#Ppq$BWq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$BZVO!O#P!O!P#c!P#U#P#U#V$Bp#V;'S#P;'S;=`#h<%lO#PU$BsVO!O#P!O!P#c!P#c#P#c#d$CY#d;'S#P;'S;=`#h<%lO#PU$C]VO!O#P!O!P#c!P#h#P#h#i$Cr#i;'S#P;'S;=`#h<%lO#PU$CuVO!O#P!O!P#c!P#[#P#[#]$D[#];'S#P;'S;=`#h<%lO#PU$D_VOp#Ppq$Dtq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU$DwXO!O#P!O!P#c!P#W#P#W#X$Ed#X#g#P#g#h$Jo#h;'S#P;'S;=`#h<%lO#PU$EgVO!O#P!O!P#c!P#]#P#]#^$E|#^;'S#P;'S;=`#h<%lO#PU$FPVO!O#P!O!P#c!P#f#P#f#g$Ff#g;'S#P;'S;=`#h<%lO#PU$FiVO!O#P!O!P#c!P#X#P#X#Y$GO#Y;'S#P;'S;=`#h<%lO#PU$GRVO!O#P!O!P#c!P#V#P#V#W$Gh#W;'S#P;'S;=`#h<%lO#PU$GkVO!O#P!O!P#c!P#h#P#h#i$HQ#i;'S#P;'S;=`#h<%lO#PU$HTVO!O#P!O!P#c!P#]#P#]#^$Hj#^;'S#P;'S;=`#h<%lO#PU$HmVO!O#P!O!P#c!P#c#P#c#d$IS#d;'S#P;'S;=`#h<%lO#PU$IVVO!O#P!O!P#c!P#b#P#b#c$Il#c;'S#P;'S;=`#h<%lO#PU$IoVO!O#P!O!P#c!P#g#P#g#h$JU#h;'S#P;'S;=`#h<%lO#PU$JXTO!O#P!O!P$Jh!P;'S#P;'S;=`#h<%lO#PU$JoOtQVSU$JrVO!O#P!O!P#c!P#h#P#h#i$KX#i;'S#P;'S;=`#h<%lO#PU$K[VO!O#P!O!P#c!P#T#P#T#U$Kq#U;'S#P;'S;=`#h<%lO#PU$KtVO!O#P!O!P#c!P#h#P#h#i$LZ#i;'S#P;'S;=`#h<%lO#PU$L^VO!O#P!O!P#c!P#X#P#X#Y$Ls#Y;'S#P;'S;=`#h<%lO#PU$LvVO!O#P!O!P#c!P#a#P#a#b$M]#b;'S#P;'S;=`#h<%lO#PU$M`VO!O#P!O!P#c!P#X#P#X#Y$Mu#Y;'S#P;'S;=`#h<%lO#PU$MxVO!O#P!O!P#c!P#b#P#b#c$N_#c;'S#P;'S;=`#h<%lO#PU$NbVO!O#P!O!P#c!P#h#P#h#i$Nw#i;'S#P;'S;=`#h<%lO#PU$NzVO!O#P!O!P#c!P#g#P#g#h% a#h;'S#P;'S;=`#h<%lO#PU% dTO!O#P!O!P% s!P;'S#P;'S;=`#h<%lO#PU% zOsQVSU% }VO!O#P!O!P#c!P#g#P#g#h%!d#h;'S#P;'S;=`#h<%lO#PU%!gVO!O#P!O!P#c!P#X#P#X#Y%!|#Y;'S#P;'S;=`#h<%lO#PU%#PVOp#Ppq%#fq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU%#iVO!O#P!O!P#c!P#]#P#]#^%$O#^;'S#P;'S;=`#h<%lO#PU%$RVO!O#P!O!P#c!P#b#P#b#c%$h#c;'S#P;'S;=`#h<%lO#PU%$kVO!O#P!O!P#c!P#W#P#W#X%%Q#X;'S#P;'S;=`#h<%lO#PU%%TVO!O#P!O!P#c!P#i#P#i#j%%j#j;'S#P;'S;=`#h<%lO#PU%%mVO!O#P!O!P#c!P#V#P#V#W%&S#W;'S#P;'S;=`#h<%lO#PU%&VVO!O#P!O!P#c!P#h#P#h#i%&l#i;'S#P;'S;=`#h<%lO#PU%&oVO!O#P!O!P#c!P#]#P#]#^%'U#^;'S#P;'S;=`#h<%lO#PU%'XVO!O#P!O!P#c!P#c#P#c#d%'n#d;'S#P;'S;=`#h<%lO#PU%'qVO!O#P!O!P#c!P#b#P#b#c%(W#c;'S#P;'S;=`#h<%lO#PU%(ZVOp#Ppq%(pq!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU%(sVO!O#P!O!P#c!P#c#P#c#d%)Y#d;'S#P;'S;=`#h<%lO#PU%)]VO!O#P!O!P#c!P#b#P#b#c%)r#c;'S#P;'S;=`#h<%lO#PU%)uVOp#Ppq%*[q!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#PU%*aTuQO!O#P!O!P#c!P;'S#P;'S;=`#h<%lO#P",
-  tokenizers: [1, 2, 3, 4, new LocalTokenGroup("k~RP!O!PU~XSXYeYZe]^epqe~jOU~~", 26, 5)],
-  topRules: { "Program": [0, 2] },
+  tokenData: "%/c~RqOX#YXY#wYZ#wZ]#Y]^#w^p#Ypq$]qx#Yxy/fyz2jz!O#Y!P![#Y![!]!+j!]!c#Y!c!d!,O!d!e!2W!e!f!8b!f!g!Ba!g!h!E{!h!j#Y!j!k#(k!k!l#*p!l!q#Y!q!r#@l!r!u#Y!u!v#Gx!v!w#Kd!w!x#Md!x!y#Y!y!z$ d!z;'S#Y;'S;=`#q<%lO#YS#]TO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YS#qOWSS#tP;=`<%l#YU#|T[UO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Yn$b][UOy#Yyz%Zz!O#Y!O!P#l!P![#Y![!]%t!]#T#Y#T#U'^#U#]#Y#]#^.O#^;'S#Y;'S;=`#q<%lO#Y[%^TO!O#Y!O!P%m!P;'S#Y;'S;=`#q<%lO#Y[%tOhWWSl%wVO!O#Y!O!P#l!P!_#Y!_!`&^!`;'S#Y;'S;=`#q<%lO#Yl&cVwWOp#Ypq&xq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Yd&}T{`O!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y['aVO!O#Y!O!P#l!P#V#Y#V#W'v#W;'S#Y;'S;=`#q<%lO#Y['yVO!O#Y!O!P#l!P#V#Y#V#W(`#W;'S#Y;'S;=`#q<%lO#Y[(cVO!O#Y!O!P#l!P#c#Y#c#d(x#d;'S#Y;'S;=`#q<%lO#Y[({VO!O#Y!O!P#l!P#f#Y#f#g)b#g;'S#Y;'S;=`#q<%lO#Y[)eVO!O#Y!O!P#l!P#W#Y#W#X)z#X;'S#Y;'S;=`#q<%lO#Y[)}VO!O#Y!O!P#l!P#]#Y#]#^*d#^;'S#Y;'S;=`#q<%lO#Y[*gVO!O#Y!O!P#l!P#b#Y#b#c*|#c;'S#Y;'S;=`#q<%lO#Y[+PVO!O#Y!O!P#l!P#Z#Y#Z#[+f#[;'S#Y;'S;=`#q<%lO#Y[+iVOp#Ypq,Oq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y[,RVO!O#Y!O!P#l!P#h#Y#h#i,h#i;'S#Y;'S;=`#q<%lO#Y[,kVO!O#Y!O!P#l!P#c#Y#c#d-Q#d;'S#Y;'S;=`#q<%lO#Y[-TVOp#Ypq-jq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y[-oTuWO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y[.RVO!O#Y!O!P#l!P#b#Y#b#c.h#c;'S#Y;'S;=`#q<%lO#Y[.kVOp#Ypq/Qq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y[/VTqWO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y~/iXOv#Yvw0Uwz#Yz{1S{!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU0XVOp#Ypq0nq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU0sTgQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y~1VVOz#Yz{1l{!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y~1oVOy#Yyz2Uz!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y~2ZTQ~O!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^2mVOp#Ypq3Sq!O#Y!O!P!+c!P;'S#Y;'S;=`#q<%lO#Y^3V`Ox#Yxy4Xy!O#Y!O!P#l!P#T#Y#T#U4m#U#V7V#V#]#Y#]#^:X#^#c#Y#c#dNR#d#k#Y#k#l!!R#l;'S#Y;'S;=`#q<%lO#YU4^T!PQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU4pVO!O#Y!O!P#l!P#b#Y#b#c5V#c;'S#Y;'S;=`#q<%lO#YU5YVO!O#Y!O!P#l!P#W#Y#W#X5o#X;'S#Y;'S;=`#q<%lO#YU5rVOp#Ypq6Xq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU6[VOx#Yxy6qy!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU6vT!UQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU7YVO!O#Y!O!P#l!P#c#Y#c#d7o#d;'S#Y;'S;=`#q<%lO#YU7rVO!O#Y!O!P#l!P#h#Y#h#i8X#i;'S#Y;'S;=`#q<%lO#YU8[VO!O#Y!O!P#l!P#[#Y#[#]8q#];'S#Y;'S;=`#q<%lO#YU8tVOp#Ypq9Zq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU9^VOx#Yxy9sy!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU9xT!TQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^:[VO!O#Y!O!P#l!P#h#Y#h#i:q#i;'S#Y;'S;=`#q<%lO#Y^:tVOp#Ypq;Zq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^;^XO!O#Y!O!P#l!P#[#Y#[#];y#]#g#Y#g#hBT#h;'S#Y;'S;=`#q<%lO#Y^;|VO!O#Y!O!P#l!P#c#Y#c#d<c#d;'S#Y;'S;=`#q<%lO#Y^<fVO!O#Y!O!P#l!P#`#Y#`#a<{#a;'S#Y;'S;=`#q<%lO#Y^=OVO!O#Y!O!P#l!P#W#Y#W#X=e#X;'S#Y;'S;=`#q<%lO#Y^=hVO!O#Y!O!P#l!P#g#Y#g#h=}#h;'S#Y;'S;=`#q<%lO#Y^>QVOp#Ypq>gq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^>jVO!O#Y!O!P#l!P#h#Y#h#i?P#i;'S#Y;'S;=`#q<%lO#Y^?SVO!O#Y!O!P#l!P#[#Y#[#]?i#];'S#Y;'S;=`#q<%lO#Y^?lVO!O#Y!O!P#l!P#T#Y#T#U@R#U;'S#Y;'S;=`#q<%lO#Y^@UVO!O#Y!O!P#l!P#h#Y#h#i@k#i;'S#Y;'S;=`#q<%lO#Y^@nVOp#YpqATq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^AYVyQOx#YxyAoy!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y[AtT}WO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^BWVO!O#Y!O!P#l!P#i#Y#i#jBm#j;'S#Y;'S;=`#q<%lO#Y^BpVO!O#Y!O!P#l!P#Y#Y#Y#ZCV#Z;'S#Y;'S;=`#q<%lO#Y^CYVO!O#Y!O!P#l!P#Y#Y#Y#ZCo#Z;'S#Y;'S;=`#q<%lO#Y^CrVO!O#Y!O!P#l!P#]#Y#]#^DX#^;'S#Y;'S;=`#q<%lO#Y^D[VO!O#Y!O!P#l!P#V#Y#V#WDq#W;'S#Y;'S;=`#q<%lO#Y^DtVO!O#Y!O!P#l!P#X#Y#X#YEZ#Y;'S#Y;'S;=`#q<%lO#Y^E^VO!O#Y!O!P#l!P#g#Y#g#hEs#h;'S#Y;'S;=`#q<%lO#Y^EvVOp#YpqF]q!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^F`VO!O#Y!O!P#l!P#h#Y#h#iFu#i;'S#Y;'S;=`#q<%lO#Y^FxVO!O#Y!O!P#l!P#c#Y#c#dG_#d;'S#Y;'S;=`#q<%lO#Y^GbVOp#YpqGwq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^GzVO!O#Y!O!P#l!P#g#Y#g#hHa#h;'S#Y;'S;=`#q<%lO#Y^HdVO!O#Y!O!P#l!P#[#Y#[#]Hy#];'S#Y;'S;=`#q<%lO#Y^H|VO!O#Y!O!P#l!P#c#Y#c#dIc#d;'S#Y;'S;=`#q<%lO#Y^IfVO!O#Y!O!P#l!P#k#Y#k#lI{#l;'S#Y;'S;=`#q<%lO#Y^JOVOp#YpqJeq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^JhVO!O#Y!O!P#l!P#h#Y#h#iJ}#i;'S#Y;'S;=`#q<%lO#Y^KQVO!O#Y!O!P#l!P#[#Y#[#]Kg#];'S#Y;'S;=`#q<%lO#Y^KjVO!O#Y!O!P#l!P#T#Y#T#ULP#U;'S#Y;'S;=`#q<%lO#Y^LSVO!O#Y!O!P#l!P#h#Y#h#iLi#i;'S#Y;'S;=`#q<%lO#Y^LlVOp#YpqMRq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^MWVsQOx#YxyMmy!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y[MrT!RWO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YUNUVO!O#Y!O!P#l!P#f#Y#f#gNk#g;'S#Y;'S;=`#q<%lO#YUNnVOp#Ypq! Tq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU! WVOx#Yxy! my!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU! rT!WQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^!!UVO!O#Y!O!P#l!P#X#Y#X#Y!!k#Y;'S#Y;'S;=`#q<%lO#Y^!!nVOp#Ypq!#Tq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^!#WVO!O#Y!O!P#l!P#V#Y#V#W!#m#W;'S#Y;'S;=`#q<%lO#Y^!#pVO!O#Y!O!P#l!P#c#Y#c#d!$V#d;'S#Y;'S;=`#q<%lO#Y^!$YVO!O#Y!O!P#l!P#b#Y#b#c!$o#c;'S#Y;'S;=`#q<%lO#Y^!$rVO!O#Y!O!P#l!P#V#Y#V#W!%X#W;'S#Y;'S;=`#q<%lO#Y^!%[VO!O#Y!O!P#l!P#`#Y#`#a!%q#a;'S#Y;'S;=`#q<%lO#Y^!%tVO!O#Y!O!P#l!P#i#Y#i#j!&Z#j;'S#Y;'S;=`#q<%lO#Y^!&^VO!O#Y!O!P#l!P#W#Y#W#X!&s#X;'S#Y;'S;=`#q<%lO#Y^!&vVO!O#Y!O!P#l!P#X#Y#X#Y!']#Y;'S#Y;'S;=`#q<%lO#Y^!'`VOp#Ypq!'uq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^!'xVO!O#Y!O!P#l!P#h#Y#h#i!(_#i;'S#Y;'S;=`#q<%lO#Y^!(bVO!O#Y!O!P#l!P#[#Y#[#]!(w#];'S#Y;'S;=`#q<%lO#Y^!(zVO!O#Y!O!P#l!P#T#Y#T#U!)a#U;'S#Y;'S;=`#q<%lO#Y^!)dVO!O#Y!O!P#l!P#h#Y#h#i!)y#i;'S#Y;'S;=`#q<%lO#Y^!)|VOp#Ypq!*cq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y^!*hVxQOx#Yxy!*}y!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y[!+ST!QWO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!+jO!OQWSU!+oT^QO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!,RVO!O#Y!O!P#l!P#g#Y#g#h!,h#h;'S#Y;'S;=`#q<%lO#YU!,kVO!O#Y!O!P#l!P#g#Y#g#h!-Q#h;'S#Y;'S;=`#q<%lO#YU!-TVO!O#Y!O!P#l!P#i#Y#i#j!-j#j;'S#Y;'S;=`#q<%lO#YU!-mVO!O#Y!O!P#l!P#a#Y#a#b!.S#b;'S#Y;'S;=`#q<%lO#YU!.VVO!O#Y!O!P#l!P#X#Y#X#Y!.l#Y;'S#Y;'S;=`#q<%lO#YU!.oVOp#Ypq!/Uq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!/XVO!O#Y!O!P#l!P#h#Y#h#i!/n#i;'S#Y;'S;=`#q<%lO#YU!/qVO!O#Y!O!P#l!P#[#Y#[#]!0W#];'S#Y;'S;=`#q<%lO#YU!0ZVO!O#Y!O!P#l!P#T#Y#T#U!0p#U;'S#Y;'S;=`#q<%lO#YU!0sVO!O#Y!O!P#l!P#h#Y#h#i!1Y#i;'S#Y;'S;=`#q<%lO#YU!1]VOp#Ypq!1rq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!1wTfQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!2ZXO!O#Y!O!P#l!P#X#Y#X#Y!2v#Y#m#Y#m#n!6z#n;'S#Y;'S;=`#q<%lO#YU!2yVO!O#Y!O!P#l!P#V#Y#V#W!3`#W;'S#Y;'S;=`#q<%lO#YU!3cVO!O#Y!O!P#l!P#T#Y#T#U!3x#U;'S#Y;'S;=`#q<%lO#YU!3{VO!O#Y!O!P#l!P#i#Y#i#j!4b#j;'S#Y;'S;=`#q<%lO#YU!4eVO!O#Y!O!P#l!P#g#Y#g#h!4z#h;'S#Y;'S;=`#q<%lO#YU!4}VO!O#Y!O!P#l!P#X#Y#X#Y!5d#Y;'S#Y;'S;=`#q<%lO#YU!5gVOp#Ypq!5|q!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!6PVOx#Yxy!6fy!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!6kT!SQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!6}VOp#Ypq!7dq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!7gVOx#Yxy!7|y!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!8RTrQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!8eXO!O#Y!O!P#l!P#[#Y#[#]!9Q#]#c#Y#c#d!<S#d;'S#Y;'S;=`#q<%lO#YU!9TVO!O#Y!O!P#l!P#c#Y#c#d!9j#d;'S#Y;'S;=`#q<%lO#YU!9mVO!O#Y!O!P#l!P#c#Y#c#d!:S#d;'S#Y;'S;=`#q<%lO#YU!:VVO!O#Y!O!P#l!P#g#Y#g#h!:l#h;'S#Y;'S;=`#q<%lO#YU!:oVO!O#Y!O!P#l!P#X#Y#X#Y!;U#Y;'S#Y;'S;=`#q<%lO#YU!;XVOp#Ypq!;nq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!;sTvQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!<VVO!O#Y!O!P#l!P#b#Y#b#c!<l#c;'S#Y;'S;=`#q<%lO#YU!<oVO!O#Y!O!P#l!P#h#Y#h#i!=U#i;'S#Y;'S;=`#q<%lO#YU!=XVO!O#Y!O!P#l!P#f#Y#f#g!=n#g;'S#Y;'S;=`#q<%lO#YU!=qVO!O#Y!O!P#l!P#T#Y#T#U!>W#U;'S#Y;'S;=`#q<%lO#YU!>ZVO!O#Y!O!P#l!P#W#Y#W#X!>p#X;'S#Y;'S;=`#q<%lO#YU!>sVO!O#Y!O!P#l!P#]#Y#]#^!?Y#^;'S#Y;'S;=`#q<%lO#YU!?]VO!O#Y!O!P#l!P#V#Y#V#W!?r#W;'S#Y;'S;=`#q<%lO#YU!?uVO!O#Y!O!P#l!P#h#Y#h#i!@[#i;'S#Y;'S;=`#q<%lO#YU!@_VO!O#Y!O!P#l!P#]#Y#]#^!@t#^;'S#Y;'S;=`#q<%lO#YU!@wVO!O#Y!O!P#l!P#c#Y#c#d!A^#d;'S#Y;'S;=`#q<%lO#YU!AaVO!O#Y!O!P#l!P#b#Y#b#c!Av#c;'S#Y;'S;=`#q<%lO#YU!AyTO!O#Y!O!P!BY!P;'S#Y;'S;=`#q<%lO#YU!BaOaQWSU!BdVO!O#Y!O!P#l!P#X#Y#X#Y!By#Y;'S#Y;'S;=`#q<%lO#YU!B|VO!O#Y!O!P#l!P#Y#Y#Y#Z!Cc#Z;'S#Y;'S;=`#q<%lO#YU!CfVO!O#Y!O!P#l!P#]#Y#]#^!C{#^;'S#Y;'S;=`#q<%lO#YU!DOVO!O#Y!O!P#l!P#b#Y#b#c!De#c;'S#Y;'S;=`#q<%lO#YU!DhVO!O#Y!O!P#l!P#X#Y#X#Y!D}#Y;'S#Y;'S;=`#q<%lO#YU!EQVOp#Ypq!Egq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!ElTzQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!FOXO!O#Y!O!P#l!P#]#Y#]#^!Fk#^#l#Y#l#m!JV#m;'S#Y;'S;=`#q<%lO#YU!FnVO!O#Y!O!P#l!P#h#Y#h#i!GT#i;'S#Y;'S;=`#q<%lO#YU!GWVO!O#Y!O!P#l!P#[#Y#[#]!Gm#];'S#Y;'S;=`#q<%lO#YU!GpVO!O#Y!O!P#l!P#X#Y#X#Y!HV#Y;'S#Y;'S;=`#q<%lO#YU!HYVO!O#Y!O!P#l!P#f#Y#f#g!Ho#g;'S#Y;'S;=`#q<%lO#YU!HrVOp#Ypq!IXq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!I[VOx#Yxy!Iqy!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!IvT!VQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!JYVO!O#Y!O!P#l!P#d#Y#d#e!Jo#e;'S#Y;'S;=`#q<%lO#YU!JrVO!O#Y!O!P#l!P#T#Y#T#U!KX#U;'S#Y;'S;=`#q<%lO#YU!K[VO!O#Y!O!P#l!P#b#Y#b#c!Kq#c;'S#Y;'S;=`#q<%lO#YU!KtVO!O#Y!O!P#l!P#W#Y#W#X!LZ#X;'S#Y;'S;=`#q<%lO#YU!L^VOp#Ypq!Lsq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!LvVO!O#Y!O!P#l!P#h#Y#h#i!M]#i;'S#Y;'S;=`#q<%lO#YU!M`VO!O#Y!O!P#l!P#[#Y#[#]!Mu#];'S#Y;'S;=`#q<%lO#YU!MxVO!O#Y!O!P#l!P#X#Y#X#Y!N_#Y;'S#Y;'S;=`#q<%lO#YU!NbVOp#Ypq!Nwq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU!NzVO!O#Y!O!P#l!P#W#Y#W#X# a#X;'S#Y;'S;=`#q<%lO#YU# dVO!O#Y!O!P#l!P#X#Y#X#Y# y#Y;'S#Y;'S;=`#q<%lO#YU# |VO!O#Y!O!P#l!P#Y#Y#Y#Z#!c#Z;'S#Y;'S;=`#q<%lO#YU#!fVO!O#Y!O!P#l!P#]#Y#]#^#!{#^;'S#Y;'S;=`#q<%lO#YU##OVO!O#Y!O!P#l!P#b#Y#b#c##e#c;'S#Y;'S;=`#q<%lO#YU##hVO!O#Y!O!P#l!P#]#Y#]#^##}#^;'S#Y;'S;=`#q<%lO#YU#$QVO!O#Y!O!P#l!P#h#Y#h#i#$g#i;'S#Y;'S;=`#q<%lO#YU#$jVO!O#Y!O!P#l!P#]#Y#]#^#%P#^;'S#Y;'S;=`#q<%lO#YU#%SVO!O#Y!O!P#l!P#c#Y#c#d#%i#d;'S#Y;'S;=`#q<%lO#YU#%lVO!O#Y!O!P#l!P#b#Y#b#c#&R#c;'S#Y;'S;=`#q<%lO#YU#&UVOp#Ypq#&kq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#&nVO!O#Y!O!P#l!P#c#Y#c#d#'T#d;'S#Y;'S;=`#q<%lO#YU#'WVO!O#Y!O!P#l!P#Y#Y#Y#Z#'m#Z;'S#Y;'S;=`#q<%lO#YU#'pVOp#Ypq#(Vq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#([TpQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#(nVO!O#Y!O!P#l!P#X#Y#X#Y#)T#Y;'S#Y;'S;=`#q<%lO#YU#)WVO!O#Y!O!P#l!P#`#Y#`#a#)m#a;'S#Y;'S;=`#q<%lO#YU#)pVO!O#Y!O!P#l!P#d#Y#d#e#*V#e;'S#Y;'S;=`#q<%lO#YU#*YTO!O#Y!O!P#*i!P;'S#Y;'S;=`#q<%lO#YU#*pO_QWSU#*sXO!O#Y!O!P#l!P#b#Y#b#c#+`#c#h#Y#h#i#.b#i;'S#Y;'S;=`#q<%lO#YU#+cVO!O#Y!O!P#l!P#W#Y#W#X#+x#X;'S#Y;'S;=`#q<%lO#YU#+{VO!O#Y!O!P#l!P#X#Y#X#Y#,b#Y;'S#Y;'S;=`#q<%lO#YU#,eVO!O#Y!O!P#l!P#X#Y#X#Y#,z#Y;'S#Y;'S;=`#q<%lO#YU#,}VO!O#Y!O!P#l!P#W#Y#W#X#-d#X;'S#Y;'S;=`#q<%lO#YU#-gVOp#Ypq#-|q!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#.RToQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#.eVOp#Ypq#.zq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#.}XO!O#Y!O!P#l!P#[#Y#[#]#/j#]#g#Y#g#h#5Y#h;'S#Y;'S;=`#q<%lO#YU#/mVO!O#Y!O!P#l!P#c#Y#c#d#0S#d;'S#Y;'S;=`#q<%lO#YU#0VVO!O#Y!O!P#l!P#`#Y#`#a#0l#a;'S#Y;'S;=`#q<%lO#YU#0oVO!O#Y!O!P#l!P#W#Y#W#X#1U#X;'S#Y;'S;=`#q<%lO#YU#1XVO!O#Y!O!P#l!P#g#Y#g#h#1n#h;'S#Y;'S;=`#q<%lO#YU#1qVOp#Ypq#2Wq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#2ZVO!O#Y!O!P#l!P#h#Y#h#i#2p#i;'S#Y;'S;=`#q<%lO#YU#2sVO!O#Y!O!P#l!P#[#Y#[#]#3Y#];'S#Y;'S;=`#q<%lO#YU#3]VO!O#Y!O!P#l!P#T#Y#T#U#3r#U;'S#Y;'S;=`#q<%lO#YU#3uVO!O#Y!O!P#l!P#h#Y#h#i#4[#i;'S#Y;'S;=`#q<%lO#YU#4_VOp#Ypq#4tq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#4yTkQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#5]VO!O#Y!O!P#l!P#i#Y#i#j#5r#j;'S#Y;'S;=`#q<%lO#YU#5uVO!O#Y!O!P#l!P#Y#Y#Y#Z#6[#Z;'S#Y;'S;=`#q<%lO#YU#6_VO!O#Y!O!P#l!P#Y#Y#Y#Z#6t#Z;'S#Y;'S;=`#q<%lO#YU#6wVO!O#Y!O!P#l!P#]#Y#]#^#7^#^;'S#Y;'S;=`#q<%lO#YU#7aVO!O#Y!O!P#l!P#V#Y#V#W#7v#W;'S#Y;'S;=`#q<%lO#YU#7yVO!O#Y!O!P#l!P#X#Y#X#Y#8`#Y;'S#Y;'S;=`#q<%lO#YU#8cVO!O#Y!O!P#l!P#g#Y#g#h#8x#h;'S#Y;'S;=`#q<%lO#YU#8{VOp#Ypq#9bq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#9eVO!O#Y!O!P#l!P#h#Y#h#i#9z#i;'S#Y;'S;=`#q<%lO#YU#9}VO!O#Y!O!P#l!P#c#Y#c#d#:d#d;'S#Y;'S;=`#q<%lO#YU#:gVOp#Ypq#:|q!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#;PVO!O#Y!O!P#l!P#g#Y#g#h#;f#h;'S#Y;'S;=`#q<%lO#YU#;iVO!O#Y!O!P#l!P#[#Y#[#]#<O#];'S#Y;'S;=`#q<%lO#YU#<RVO!O#Y!O!P#l!P#c#Y#c#d#<h#d;'S#Y;'S;=`#q<%lO#YU#<kVO!O#Y!O!P#l!P#k#Y#k#l#=Q#l;'S#Y;'S;=`#q<%lO#YU#=TVOp#Ypq#=jq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#=mVO!O#Y!O!P#l!P#h#Y#h#i#>S#i;'S#Y;'S;=`#q<%lO#YU#>VVO!O#Y!O!P#l!P#[#Y#[#]#>l#];'S#Y;'S;=`#q<%lO#YU#>oVO!O#Y!O!P#l!P#T#Y#T#U#?U#U;'S#Y;'S;=`#q<%lO#YU#?XVO!O#Y!O!P#l!P#h#Y#h#i#?n#i;'S#Y;'S;=`#q<%lO#YU#?qVOp#Ypq#@Wq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#@]TjQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#@oVO!O#Y!O!P#l!P#U#Y#U#V#AU#V;'S#Y;'S;=`#q<%lO#YU#AXVO!O#Y!O!P#l!P#h#Y#h#i#An#i;'S#Y;'S;=`#q<%lO#YU#AqVO!O#Y!O!P#l!P#T#Y#T#U#BW#U;'S#Y;'S;=`#q<%lO#YU#BZVO!O#Y!O!P#l!P#]#Y#]#^#Bp#^;'S#Y;'S;=`#q<%lO#YU#BsVO!O#Y!O!P#l!P#b#Y#b#c#CY#c;'S#Y;'S;=`#q<%lO#YU#C]VOp#Ypq#Crq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#CwVtQO!O#Y!O!P#l!P#g#Y#g#h#D^#h;'S#Y;'S;=`#q<%lO#YU#DaVO!O#Y!O!P#l!P#i#Y#i#j#Dv#j;'S#Y;'S;=`#q<%lO#YU#DyVO!O#Y!O!P#l!P#V#Y#V#W#E`#W;'S#Y;'S;=`#q<%lO#YU#EcVO!O#Y!O!P#l!P#[#Y#[#]#Ex#];'S#Y;'S;=`#q<%lO#YU#E{VOp#Ypq#Fbq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#FeVO!O#Y!O!P#l!P#T#Y#T#U#Fz#U;'S#Y;'S;=`#q<%lO#YU#F}VOp#Ypq#Gdq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#GiTiQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#G{VO!O#Y!O!P#l!P#]#Y#]#^#Hb#^;'S#Y;'S;=`#q<%lO#YU#HeVO!O#Y!O!P#l!P#b#Y#b#c#Hz#c;'S#Y;'S;=`#q<%lO#YU#H}VO!O#Y!O!P#l!P#V#Y#V#W#Id#W;'S#Y;'S;=`#q<%lO#YU#IgVO!O#Y!O!P#l!P#X#Y#X#Y#I|#Y;'S#Y;'S;=`#q<%lO#YU#JPVOp#Ypq#Jfq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#JiVOx#Yxy#KOy!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#KTT|QO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#KgVO!O#Y!O!P#l!P#T#Y#T#U#K|#U;'S#Y;'S;=`#q<%lO#YU#LPVO!O#Y!O!P#l!P#_#Y#_#`#Lf#`;'S#Y;'S;=`#q<%lO#YU#LiVO!O#Y!O!P#l!P#X#Y#X#Y#MO#Y;'S#Y;'S;=`#q<%lO#YU#MTT]QO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU#MgVO!O#Y!O!P#l!P#g#Y#g#h#M|#h;'S#Y;'S;=`#q<%lO#YU#NPVO!O#Y!O!P#l!P#X#Y#X#Y#Nf#Y;'S#Y;'S;=`#q<%lO#YU#NiVOp#Ypq$ Oq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$ TTnQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$ gVO!O#Y!O!P#l!P#X#Y#X#Y$ |#Y;'S#Y;'S;=`#q<%lO#YU$!PVOp#Ypq$!fq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$!i_O!O#Y!O!P#l!P#T#Y#T#U$#h#U#V#Y#V#W$/P#W#b#Y#b#c$;g#c#g#Y#g#h$Du#h#i#Y#i#j%&m#j;'S#Y;'S;=`#q<%lO#YU$#kVO!O#Y!O!P#l!P#f#Y#f#g$$Q#g;'S#Y;'S;=`#q<%lO#YU$$TVO!O#Y!O!P#l!P#Z#Y#Z#[$$j#[;'S#Y;'S;=`#q<%lO#YU$$mVO!O#Y!O!P#l!P#i#Y#i#j$%S#j;'S#Y;'S;=`#q<%lO#YU$%VVO!O#Y!O!P#l!P#X#Y#X#Y$%l#Y;'S#Y;'S;=`#q<%lO#YU$%oVOp#Ypq$&Uq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$&XVO!O#Y!O!P#l!P#U#Y#U#V$&n#V;'S#Y;'S;=`#q<%lO#YU$&qVO!O#Y!O!P#l!P#m#Y#m#n$'W#n;'S#Y;'S;=`#q<%lO#YU$'ZVOp#Ypq$'pq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$'sVO!O#Y!O!P#l!P#V#Y#V#W$(Y#W;'S#Y;'S;=`#q<%lO#YU$(]VO!O#Y!O!P#l!P#c#Y#c#d$(r#d;'S#Y;'S;=`#q<%lO#YU$(uVO!O#Y!O!P#l!P#b#Y#b#c$)[#c;'S#Y;'S;=`#q<%lO#YU$)_VO!O#Y!O!P#l!P#h#Y#h#i$)t#i;'S#Y;'S;=`#q<%lO#YU$)wVO!O#Y!O!P#l!P#f#Y#f#g$*^#g;'S#Y;'S;=`#q<%lO#YU$*aVO!O#Y!O!P#l!P#T#Y#T#U$*v#U;'S#Y;'S;=`#q<%lO#YU$*yVO!O#Y!O!P#l!P#W#Y#W#X$+`#X;'S#Y;'S;=`#q<%lO#YU$+cVO!O#Y!O!P#l!P#]#Y#]#^$+x#^;'S#Y;'S;=`#q<%lO#YU$+{VO!O#Y!O!P#l!P#V#Y#V#W$,b#W;'S#Y;'S;=`#q<%lO#YU$,eVO!O#Y!O!P#l!P#h#Y#h#i$,z#i;'S#Y;'S;=`#q<%lO#YU$,}VO!O#Y!O!P#l!P#]#Y#]#^$-d#^;'S#Y;'S;=`#q<%lO#YU$-gVO!O#Y!O!P#l!P#c#Y#c#d$-|#d;'S#Y;'S;=`#q<%lO#YU$.PVO!O#Y!O!P#l!P#b#Y#b#c$.f#c;'S#Y;'S;=`#q<%lO#YU$.iTO!O#Y!O!P$.x!P;'S#Y;'S;=`#q<%lO#YU$/PO`QWSU$/SXO!O#Y!O!P#l!P#`#Y#`#a$/o#a#c#Y#c#d$4u#d;'S#Y;'S;=`#q<%lO#YU$/rVO!O#Y!O!P#l!P#T#Y#T#U$0X#U;'S#Y;'S;=`#q<%lO#YU$0[VO!O#Y!O!P#l!P#]#Y#]#^$0q#^;'S#Y;'S;=`#q<%lO#YU$0tVO!O#Y!O!P#l!P#a#Y#a#b$1Z#b;'S#Y;'S;=`#q<%lO#YU$1^VOp#Ypq$1sq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$1vVO!O#Y!O!P#l!P#h#Y#h#i$2]#i;'S#Y;'S;=`#q<%lO#YU$2`VO!O#Y!O!P#l!P#[#Y#[#]$2u#];'S#Y;'S;=`#q<%lO#YU$2xVO!O#Y!O!P#l!P#T#Y#T#U$3_#U;'S#Y;'S;=`#q<%lO#YU$3bVO!O#Y!O!P#l!P#h#Y#h#i$3w#i;'S#Y;'S;=`#q<%lO#YU$3zVOp#Ypq$4aq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$4fTlQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$4xVO!O#Y!O!P#l!P#b#Y#b#c$5_#c;'S#Y;'S;=`#q<%lO#YU$5bVO!O#Y!O!P#l!P#V#Y#V#W$5w#W;'S#Y;'S;=`#q<%lO#YU$5zVO!O#Y!O!P#l!P#`#Y#`#a$6a#a;'S#Y;'S;=`#q<%lO#YU$6dVO!O#Y!O!P#l!P#i#Y#i#j$6y#j;'S#Y;'S;=`#q<%lO#YU$6|VO!O#Y!O!P#l!P#W#Y#W#X$7c#X;'S#Y;'S;=`#q<%lO#YU$7fVO!O#Y!O!P#l!P#X#Y#X#Y$7{#Y;'S#Y;'S;=`#q<%lO#YU$8OVOp#Ypq$8eq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$8hVO!O#Y!O!P#l!P#h#Y#h#i$8}#i;'S#Y;'S;=`#q<%lO#YU$9QVO!O#Y!O!P#l!P#[#Y#[#]$9g#];'S#Y;'S;=`#q<%lO#YU$9jVO!O#Y!O!P#l!P#T#Y#T#U$:P#U;'S#Y;'S;=`#q<%lO#YU$:SVO!O#Y!O!P#l!P#h#Y#h#i$:i#i;'S#Y;'S;=`#q<%lO#YU$:lVOp#Ypq$;Rq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$;WTeQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$;jVO!O#Y!O!P#l!P#X#Y#X#Y$<P#Y;'S#Y;'S;=`#q<%lO#YU$<SVO!O#Y!O!P#l!P#X#Y#X#Y$<i#Y;'S#Y;'S;=`#q<%lO#YU$<lVO!O#Y!O!P#l!P#W#Y#W#X$=R#X;'S#Y;'S;=`#q<%lO#YU$=UVOp#Ypq$=kq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$=nVO!O#Y!O!P#l!P#h#Y#h#i$>T#i;'S#Y;'S;=`#q<%lO#YU$>WVO!O#Y!O!P#l!P#c#Y#c#d$>m#d;'S#Y;'S;=`#q<%lO#YU$>pVOp#Ypq$?Vq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$?YVO!O#Y!O!P#l!P#g#Y#g#h$?o#h;'S#Y;'S;=`#q<%lO#YU$?rVO!O#Y!O!P#l!P#[#Y#[#]$@X#];'S#Y;'S;=`#q<%lO#YU$@[VO!O#Y!O!P#l!P#c#Y#c#d$@q#d;'S#Y;'S;=`#q<%lO#YU$@tVO!O#Y!O!P#l!P#k#Y#k#l$AZ#l;'S#Y;'S;=`#q<%lO#YU$A^VOp#Ypq$Asq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$AvVO!O#Y!O!P#l!P#h#Y#h#i$B]#i;'S#Y;'S;=`#q<%lO#YU$B`VO!O#Y!O!P#l!P#[#Y#[#]$Bu#];'S#Y;'S;=`#q<%lO#YU$BxVO!O#Y!O!P#l!P#T#Y#T#U$C_#U;'S#Y;'S;=`#q<%lO#YU$CbVO!O#Y!O!P#l!P#h#Y#h#i$Cw#i;'S#Y;'S;=`#q<%lO#YU$CzVOp#Ypq$Daq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$DfTdQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$DxVO!O#Y!O!P#l!P#[#Y#[#]$E_#];'S#Y;'S;=`#q<%lO#YU$EbVO!O#Y!O!P#l!P#c#Y#c#d$Ew#d;'S#Y;'S;=`#q<%lO#YU$EzVO!O#Y!O!P#l!P#k#Y#k#l$Fa#l;'S#Y;'S;=`#q<%lO#YU$FdVOp#Ypq$Fyq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$F|VO!O#Y!O!P#l!P#U#Y#U#V$Gc#V;'S#Y;'S;=`#q<%lO#YU$GfVO!O#Y!O!P#l!P#c#Y#c#d$G{#d;'S#Y;'S;=`#q<%lO#YU$HOVO!O#Y!O!P#l!P#h#Y#h#i$He#i;'S#Y;'S;=`#q<%lO#YU$HhVO!O#Y!O!P#l!P#[#Y#[#]$H}#];'S#Y;'S;=`#q<%lO#YU$IQVOp#Ypq$Igq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU$IjXO!O#Y!O!P#l!P#W#Y#W#X$JV#X#g#Y#g#h% b#h;'S#Y;'S;=`#q<%lO#YU$JYVO!O#Y!O!P#l!P#]#Y#]#^$Jo#^;'S#Y;'S;=`#q<%lO#YU$JrVO!O#Y!O!P#l!P#f#Y#f#g$KX#g;'S#Y;'S;=`#q<%lO#YU$K[VO!O#Y!O!P#l!P#X#Y#X#Y$Kq#Y;'S#Y;'S;=`#q<%lO#YU$KtVO!O#Y!O!P#l!P#V#Y#V#W$LZ#W;'S#Y;'S;=`#q<%lO#YU$L^VO!O#Y!O!P#l!P#h#Y#h#i$Ls#i;'S#Y;'S;=`#q<%lO#YU$LvVO!O#Y!O!P#l!P#]#Y#]#^$M]#^;'S#Y;'S;=`#q<%lO#YU$M`VO!O#Y!O!P#l!P#c#Y#c#d$Mu#d;'S#Y;'S;=`#q<%lO#YU$MxVO!O#Y!O!P#l!P#b#Y#b#c$N_#c;'S#Y;'S;=`#q<%lO#YU$NbVO!O#Y!O!P#l!P#g#Y#g#h$Nw#h;'S#Y;'S;=`#q<%lO#YU$NzTO!O#Y!O!P% Z!P;'S#Y;'S;=`#q<%lO#YU% bOcQWSU% eVO!O#Y!O!P#l!P#h#Y#h#i% z#i;'S#Y;'S;=`#q<%lO#YU% }VO!O#Y!O!P#l!P#T#Y#T#U%!d#U;'S#Y;'S;=`#q<%lO#YU%!gVO!O#Y!O!P#l!P#h#Y#h#i%!|#i;'S#Y;'S;=`#q<%lO#YU%#PVO!O#Y!O!P#l!P#X#Y#X#Y%#f#Y;'S#Y;'S;=`#q<%lO#YU%#iVO!O#Y!O!P#l!P#a#Y#a#b%$O#b;'S#Y;'S;=`#q<%lO#YU%$RVO!O#Y!O!P#l!P#X#Y#X#Y%$h#Y;'S#Y;'S;=`#q<%lO#YU%$kVO!O#Y!O!P#l!P#b#Y#b#c%%Q#c;'S#Y;'S;=`#q<%lO#YU%%TVO!O#Y!O!P#l!P#h#Y#h#i%%j#i;'S#Y;'S;=`#q<%lO#YU%%mVO!O#Y!O!P#l!P#g#Y#g#h%&S#h;'S#Y;'S;=`#q<%lO#YU%&VTO!O#Y!O!P%&f!P;'S#Y;'S;=`#q<%lO#YU%&mObQWSU%&pVO!O#Y!O!P#l!P#g#Y#g#h%'V#h;'S#Y;'S;=`#q<%lO#YU%'YVO!O#Y!O!P#l!P#X#Y#X#Y%'o#Y;'S#Y;'S;=`#q<%lO#YU%'rVOp#Ypq%(Xq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU%([VO!O#Y!O!P#l!P#]#Y#]#^%(q#^;'S#Y;'S;=`#q<%lO#YU%(tVO!O#Y!O!P#l!P#b#Y#b#c%)Z#c;'S#Y;'S;=`#q<%lO#YU%)^VO!O#Y!O!P#l!P#W#Y#W#X%)s#X;'S#Y;'S;=`#q<%lO#YU%)vVO!O#Y!O!P#l!P#i#Y#i#j%*]#j;'S#Y;'S;=`#q<%lO#YU%*`VO!O#Y!O!P#l!P#V#Y#V#W%*u#W;'S#Y;'S;=`#q<%lO#YU%*xVO!O#Y!O!P#l!P#h#Y#h#i%+_#i;'S#Y;'S;=`#q<%lO#YU%+bVO!O#Y!O!P#l!P#]#Y#]#^%+w#^;'S#Y;'S;=`#q<%lO#YU%+zVO!O#Y!O!P#l!P#c#Y#c#d%,a#d;'S#Y;'S;=`#q<%lO#YU%,dVO!O#Y!O!P#l!P#b#Y#b#c%,y#c;'S#Y;'S;=`#q<%lO#YU%,|VOp#Ypq%-cq!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU%-fVO!O#Y!O!P#l!P#c#Y#c#d%-{#d;'S#Y;'S;=`#q<%lO#YU%.OVO!O#Y!O!P#l!P#b#Y#b#c%.e#c;'S#Y;'S;=`#q<%lO#YU%.hVOp#Ypq%.}q!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#YU%/STmQO!O#Y!O!P#l!P;'S#Y;'S;=`#q<%lO#Y",
+  tokenizers: [TakeInput, 1, 2, 3, 4, new LocalTokenGroup("k~RP!O!PU~XSXYeYZe]^epqe~jOV~~", 26, 6)],
+  topRules: { "Program": [0, 3] },
   tokenPrec: 0
 });
 
@@ -2988,5 +3327,7 @@ function printJSON(input) {
   console.log(JSON.stringify(parser.parse(input), null, 2));
 }
 var fileContents = (0, import_fs.readFileSync)("input.txt", "utf8");
+console.log("File contents:");
 console.log(fileContents);
+console.log("JSON");
 printJSON(fileContents);

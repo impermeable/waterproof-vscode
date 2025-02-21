@@ -3,7 +3,7 @@
 
 Sentence {
     WaterproofTactic
-    CoqSentence
+    Lemma
 }
 
 @skip { space | Comment }
@@ -11,13 +11,14 @@ Sentence {
 // Define local token for tactics, whatever is not TacticEnd 
 // is just TacticInput
 @local tokens {
-    TacticEnd[@name='dotSpace'] { '.' space }
+    TacticEnd[@name='dotSpace'] { '.' space* }
     @else TacticInput
 }
 
 // Skip WaterproofTactics
 @skip {} {
     WaterproofTactic {
+        // TODO: fix Take, is external tokeniser necessary?
         "Take" TakeInput ":" TacticInput TacticEnd | 
         "Help." | 
         "We argue by contradiction." | 
@@ -34,6 +35,8 @@ Sentence {
         "It holds that " TacticInput TacticEnd | 
         "We claim that " TacticInput TacticEnd | 
         "We use induction on " TacticInput TacticEnd | 
+        "Indeed, " TacticInput TacticEnd |
+        "Use " TacticInput TacticEnd |
         // TODO: Figure out approach for tactics with 2 or more TacticInput(s)
         "Expand the definition of " TacticInput " in " TacticInput TacticEnd | 
         "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
@@ -53,6 +56,18 @@ Sentence {
     }
 }
 
+@local tokens {
+    LemmaEnd[@name='dotSpace'] { '.' space* }
+    @else LemmaStatement
+}
+
+// Skip WaterproofTactics
+@skip {} {
+    Lemma {
+        "Lemma" LemmaStatement LemmaEnd 
+    }
+}
+
 // Remaining tokens
 @tokens {
     CommentOpen { "(*" }
@@ -63,9 +78,6 @@ Sentence {
 
     space { " " | "\t" | "\n" | "\r" }
     
-    CoqSentence {
-        ![.]+ "."
-    }
 }
 
 @precedence {

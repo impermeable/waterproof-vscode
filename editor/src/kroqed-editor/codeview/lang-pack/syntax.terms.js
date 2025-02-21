@@ -7,4 +7,6 @@ export const
   WaterproofTactic = 5,
   TacticInput = 6,
   TacticEnd = 7,
-  CoqSentence = 8
+  Lemma = 8,
+  LemmaStatement = 9,
+  LemmaEnd = 10

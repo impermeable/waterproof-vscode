@@ -459,6 +459,7 @@
     "eventemitter2": "6.4.9",
     "jquery": "^3.7.0",
     "katex": "^0.16.10",
+    "lezer-generator": "^0.13.4",
     "markdown-it": "^13.0.1",
     "object-hash": "^3.0.0",
     "prosemirror-commands": "^1.1.7",

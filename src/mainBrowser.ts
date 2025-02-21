@@ -15,11 +15,12 @@ import { Waterproof } from "./extension";
 const clientFactory: CoqLspClientFactory = (context: ExtensionContext, clientOptions: LanguageClientOptions, wsConfig: WorkspaceConfiguration) => {
     const serverMain = Uri.joinPath(context.extensionUri, 'out/src/mainBrowser.js');
 	const worker = new Worker(serverMain.toString(true));
+    const lspWorker = new Worker(Uri.joinPath(context.extensionUri, 'out/coq_lsp_worker.bc.js').toString(true));
     return new (CoqLspClient(LanguageClient))(
         "waterproof",
         "Waterproof Document Checker",
         clientOptions,
-        worker
+        lspWorker
     );
 };
 

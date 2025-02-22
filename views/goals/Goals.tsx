@@ -47,7 +47,7 @@ type GoalsListP = PropsWithChildren<{
   textDoc: VersionedTextDocumentIdentifier
 }>;
 
-//function that displays a list of goals if it exists 
+//function that displays a list of goals if it exists
 function GoalsList({
   goals,
   header,
@@ -71,14 +71,14 @@ function GoalsList({
     } else {
       return null;
     }
-  //One goals, the goals is displayed
+  //One goal, the goals is displayed
   } else if (count == 1) {
     return (
       <Box summary={`${header}`} pos={pos} textDox={textDoc}>
           <Goal key={0} goal={goals[0]} idx={0} />
       </Box>
     );
-  //Numerous goals, only the first goals is displayed, the other goals are hidden and foldable.
+  //Numerous goals, only the first goal is displayed, the other goals are hidden and foldable.
   } else {
     return (
       <div>
@@ -132,7 +132,7 @@ type StackSummaryP = PropsWithChildren<{
   textDoc: VersionedTextDocumentIdentifier
 }>;
 
-//goals can have multiple layers which are stacked. 
+//goals can have multiple layers which are stacked.
 //the following function handles the display of stacked goals
 function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
   let count = stack.length;
@@ -168,11 +168,11 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
           pos={pos}
           textDoc={textDoc}
         />
-      </div>  
+      </div>
     )
     }
   }
-//type that has goals, position and textdocument and takes its children 
+//type that has goals, position and textdocument and takes its children
 type GoalsParams = PropsWithChildren<{ goals?: GoalConfig<PpString>, pos: Position, textDoc: VersionedTextDocumentIdentifier }>;
 
 //the component that is used by other components
@@ -213,7 +213,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
             textDoc={textDoc}
           />
           {/* a list for the goals that are given up */}
-          <GoalsList 
+          <GoalsList
             goals={goals.given_up}
             header={"Given Up"}
             show_on_empty={false} // these goals are not shown if they do not exist
@@ -247,7 +247,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
             textDoc={textDoc}
           />
           {/* a list for the goals that are given up */}
-          <GoalsList 
+          <GoalsList
             goals={goals.given_up}
             header={"Given Up"}
             show_on_empty={false} // these goals are not shown if they do not exist

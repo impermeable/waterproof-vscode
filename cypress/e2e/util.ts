@@ -1,3 +1,4 @@
+/// <reference types="cypress" />
 import {Message, MessageType} from "../../shared/Messages";
 /**
  * Sets up the test harness and initializes the editor after receiving the 
@@ -28,6 +29,7 @@ export function setupTest(initialDocument: string, edits: any[], callbacks?: Par
                             if (callbacks) {
                                 const callback = callbacks[msg.type];
                                 if (callback !== undefined)
+                                    //@ts-ignore
                                     callback(msg.body);
                             }
                         }

@@ -17,12 +17,12 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
 
     //sends message for requestGoals
     goalRequestSent(cursor: GoalRequest) {
-        this.postMessage({ type: MessageType.requestGoals, body: cursor});
+        this.postMessage({ type: MessageType.requestGoals, body: cursor });
     }
 
     //sends message for renderGoals
     updateGoals(goals: GoalAnswer<PpString> | undefined) {
-        this.postMessage({ type: MessageType.renderGoals, body: goals});
+        this.postMessage({ type: MessageType.renderGoals, body: goals });
     }
 
     //sends message for errorGoals

@@ -287,6 +287,12 @@ export class Waterproof implements Disposable {
                 this.autoInstall(cmnd)
             }
         });
+
+        this.registerCommand("toggleInEditorLineNumbers", () => {
+            const updated = !WaterproofConfigHelper.showLineNumbersInEditor;
+            WaterproofConfigHelper.showLineNumbersInEditor = updated;
+            window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
+        });
     }
 
     /**

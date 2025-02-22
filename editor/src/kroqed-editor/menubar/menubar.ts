@@ -149,8 +149,6 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os
         // Insert LaTeX
         createMenuItem(`${LaTeX_SVG} <div>↓</div>`, `Insert new LaTeX block underneath (${keyBinding("l")})`, cmdInsertLatex(schema, filef, InsertionPlace.Underneath), false),
         createMenuItem(`${LaTeX_SVG} <div>↑</div>`, `Insert new LaTeX block above (${keyBinding("L")})`, cmdInsertLatex(schema, filef, InsertionPlace.Above), false),
-        // Toggle the line numbers in coq code cells.
-        createMenuItem("Line nr", "Toggle Line Numbers", toggleLineNumbers(), false),
         // Select the parent node.
         createMenuItem("Parent", `Select the parent node (${keyBinding(".")})`, selectParentNode, false),
         // in teacher mode, display input area, hint and lift buttons.
@@ -232,17 +230,4 @@ export function menuPlugin(schema: Schema, filef: any, os: OS) {
             },
         }
     })
-}
-
-/**
- * Toggles line numbers for all codeblocks.
- */
-function toggleLineNumbers(): Command {
-   return (state: EditorState, dispatch?: (tr: Transaction) => void) => {
-       if (INPUT_AREA_PLUGIN_KEY.getState(state)?.globalLock) return false;
-       if (dispatch) {
-           dispatch(state.tr.setMeta(COQ_CODE_PLUGIN_KEY, "toggleLines"));
-       }
-       return true; 
-   };
 }

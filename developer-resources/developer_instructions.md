@@ -9,6 +9,9 @@ Press `F5` in vscode to run the extension.
 ## Running the tests
 Run `npm run test`.
 
+## Running the linter
+Run `npm run lint`. Some common problems can be automatically fixed with `npm run lint-fix`.
+
 ## Error `Property 'replaceAll' does not exist on type 'string'`.
 VSCode thinks we are targeting an older version of Node than is specified in our build script.<br>
 Insert the following setting into your `.vscode/settings.json` to stop it from displaying:

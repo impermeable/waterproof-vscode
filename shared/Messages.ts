@@ -42,7 +42,8 @@ export enum MessageType {
     fatalError = "fatal",
     updateVersion = "updateTextDocVersion",
     syntax= "setSyntaxMode",
-    editorHistoryChange = "editorHistoryChange"
+    editorHistoryChange = "editorHistoryChange",
+    setShowLineNumbers = "setShowLineNumbers",
 }
 
 export const enum HistoryChangeType {

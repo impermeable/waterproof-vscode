@@ -2,7 +2,7 @@ import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
 import objectHash from "object-hash";
 import React, { useEffect, useRef, useState } from "react";
 
-import { MessageType } from "../../shared";
+import { Message, MessageType } from "../../shared";
 import "../styles/execute.css";
 import { Messages } from '../goals/Messages';
 
@@ -24,26 +24,29 @@ export function Search() {
     //on changes in component useEffect is run
     useEffect(() => {
         //handling a message
-        const handleMessage = (event) => {
-            switch (event.data.type){
+        const handleMessage = (msg: Message) => {
+            switch (msg.type){
                 // insert message which is either a symbol or tactic
                 case MessageType.insert:
-                    insertText(event.data.body.symbolUnicode);
+                    insertText(msg.body.symbolUnicode);
                     break;
                 // receiving info of the executed commands
-                case MessageType.command:
-                    setInfo(event.data.body);
+                case MessageType.setData:
+                    //@ts-expect-error
+                    setInfo(msg.body);
                     setIsLoading(false);
                     break;
             }
         };
 
+        const callback = (ev: MessageEvent<Message>) => {handleMessage(ev.data);};
+
         //adding event listener to component
-        window.addEventListener('message', handleMessage);
+        window.addEventListener('message', callback);
 
         return () => {
             // on dismount of component the eventlistener is removed
-          window.removeEventListener('message', handleMessage);
+          window.removeEventListener('message', callback);
         };
       }, [ cursorSearch, searchText, current, info ]);
 

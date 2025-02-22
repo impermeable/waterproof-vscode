@@ -37,8 +37,8 @@ export class ExecutePanel extends CoqWebview implements IExecutor {
 
     setResults(results: GoalAnswer<PpString> | string[]): void {
         // Set the data property to the provided results
-        this.data = results; 
+        this.data = results;
         // Send a postMessage to the webview with the MessageType.command and the data
-        this.postMessage({ type: MessageType.command, body: this.data }); 
+        this.postMessage({ type: MessageType.setData, body: this.data });
     }
 }

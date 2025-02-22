@@ -1,12 +1,12 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 
 import { GoalAnswer, PpString } from "../../lib/types";
-import { CoqMessageEvent } from "../lib/CoqMessage";
 import { ErrorBrowser } from "./ErrorBrowser";
 import { Goals } from "./Goals";
 import { Messages } from "./Messages";
 
 import "../styles/info.css";
+import { Message, MessageType } from "../../shared";
 
 // Dynamic import because the project uses CommonJS and the module is an ECMAScript module
 // Top level await is supported with other `module` options in tsconfig.json
@@ -24,19 +24,24 @@ export function InfoPanel() {
 
   //handles the message
   //event : CoqMessageEvent as defined above
-  function infoViewDispatch(event: CoqMessageEvent) { // TODO: make this change in logbook as well
-    if (event.data.type === "renderGoals") {
-      setGoals(event.data.body); //setting the information
-      setIsLoading(false); //putting loading to false
-    } else if (event.data.type === "waitingForInfo") {
-      setIsLoading(true); //waiting for info therefore loading is true
+  function infoViewDispatch(msg: Message) { // TODO: make this change in logbook as well
+    if (msg.type === MessageType.renderGoals) {
+      //@ts-expect-error
+      const goals = msg.body;
+
+      // FIXME: The `renderGoals` message type is currently overloaded and used for very different 
+      // functions. This can easily be seen when using global search on `MessageType.renderGoals`.
+      // This should be changed. 
+      setGoals(goals); //setting the information
+      setIsLoading(false);
     }
   }
 
   // Set the callback
   useEffect(() => {
-    window.addEventListener("message", infoViewDispatch);
-    return () => window.removeEventListener("message", infoViewDispatch);
+    const callback = (ev: MessageEvent<Message>) => {infoViewDispatch(ev.data);};
+    window.addEventListener("message", callback);
+    return () => window.removeEventListener("message", callback);
   }, []);
 
   //show that the messages are loading

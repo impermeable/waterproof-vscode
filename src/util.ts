@@ -37,10 +37,12 @@ export function checkConflictingExtensions() {
  * configuration accordingly.
  */
 export function excludeCoqFileTypes() {
-    let activationConfig = workspace.getConfiguration();
-    let updateIgnores = activationConfig.get("waterproof.updateIgnores") ?? true;
+    const activationConfig = workspace.getConfiguration();
+    const updateIgnores = activationConfig.get("waterproof.updateIgnores") ?? true;
     if (updateIgnores) {
-        let fexc: any = activationConfig.get("files.exclude");
+        // TODO: Look at 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fexc : any = activationConfig.get("files.exclude");
         activationConfig.update("files.exclude", {
             "**/*.vo": true,
             "**/*.vok": true,

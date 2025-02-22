@@ -8,7 +8,7 @@ import { ReplaceStep } from "prosemirror-transform";
 /** A helper function to get the in text representation (in vscode doc) of a ending tag */
 export function getEndHtmlTagText(tagId: string | undefined) : string {
     if (tagId === undefined) throw new Error("In the vscode Mapping, a tag was undefined ");
-    let result : string | undefined =  textEndHTML.get(tagId);
+    const result : string | undefined =  textEndHTML.get(tagId);
     if (result === undefined) throw new Error("In the vscode Mapping, a tag, " + tagId + ", was processed that should not be processed");
     return result;
 }
@@ -16,7 +16,7 @@ export function getEndHtmlTagText(tagId: string | undefined) : string {
 /** A helper function to get the in text representation (in vscode doc) of a starting tag */
 export function getStartHtmlTagText(tagId: string | undefined) : string {
     if (tagId === undefined) throw new Error("In the vscode Mapping, a tag was undefined ");
-    let result : string | undefined = textStartHTML.get(tagId);
+    const result : string | undefined = textStartHTML.get(tagId);
     if (result === undefined) throw new Error("In the vscode Mapping, a tag, " + tagId + ", was processed that should not be processed");
     return result;
 }
@@ -31,7 +31,7 @@ export function parseFragment(frag: Fragment | undefined) : {proseOffset: number
     if (frag.childCount == 0) return {proseOffset: 0, starttext: "", endtext: "", tags: [], stringCell: false};
 
     /** Recursively get the fragment information for inner child */
-    let inside = parseFragment(frag.firstChild?.content);
+    const inside = parseFragment(frag.firstChild?.content);
 
     let end = getEndHtmlTagText(frag.firstChild?.type.name);
     let start = getStartHtmlTagText(frag.firstChild?.type.name);
@@ -52,7 +52,10 @@ export function parseFragment(frag: Fragment | undefined) : {proseOffset: number
         case "math_display":
             start += "$";
             end += "$";
-        case "coqcode": case "coqdown":
+        // Purposeful fallthrough
+        // eslint-disable-next-line no-fallthrough
+        case "coqcode": 
+        case "coqdown":
         case "markdown":
             needsCell = true;
             break;

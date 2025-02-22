@@ -24,7 +24,7 @@ export function CoqPp({
     //to find out more how to use this:
     // https://reactjs.org/docs/integrating-with-other-libraries.html
     if (inline) {
-      let rendered = FormatPrettyPrint.pp2DOM(content, "horizontal");
+      const rendered = FormatPrettyPrint.pp2DOM(content, "horizontal");
       return (
         <div
           style={{ display: "inline" }}
@@ -32,7 +32,7 @@ export function CoqPp({
         ></div>
       );
     } else {
-      let rendered = FormatPrettyPrint.pp2DOM(content, "vertical");
+      const rendered = FormatPrettyPrint.pp2DOM(content, "vertical");
       return (
         <div
           dangerouslySetInnerHTML={{ __html: rendered.prop("outerHTML") }}

@@ -88,11 +88,11 @@ export class TextDocMappingMV {
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
         let correctCellKey = 0;
-        for (let [key,value] of this.stringBlocks) {
+        for (const [key,_value] of this.stringBlocks) {
             if (key > index) break;
             correctCellKey = key;
         }
-        let targetCell: StringCell | undefined = this.stringBlocks.get(correctCellKey);
+        const targetCell: StringCell | undefined = this.stringBlocks.get(correctCellKey);
         if (targetCell === undefined) throw new Error(" The vscode document model index could not be found ");
         return (index - correctCellKey) + targetCell.startText;
     }
@@ -100,11 +100,11 @@ export class TextDocMappingMV {
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
         let correctCellKey = 0;
-        for (let [key,value] of this.invStringBlocks) {
+        for (const [key,_value] of this.invStringBlocks) {
             if (key > index) break;
             correctCellKey = key;
         }
-        let targetCell: StringCell | undefined = this.invStringBlocks.get(correctCellKey);
+        const targetCell: StringCell | undefined = this.invStringBlocks.get(correctCellKey);
         if (targetCell === undefined) throw new Error(" The prosemirror index could not be found ");
         return (index - correctCellKey) + targetCell.startProse;
     }
@@ -118,7 +118,7 @@ export class TextDocMappingMV {
      */
     private initialize(inputString: string) : void {
         /** A stack to which we push starting html tags and pop them once we encounter the closing tag */
-        let stack = new Array<{ tag: string, offsetPost: number}>;
+        const stack = new Array<{ tag: string, offsetPost: number}>;
 
         /** The current index we are at within the prosemirror content elem */
         let offsetProse: number = 0; 
@@ -139,7 +139,7 @@ export class TextDocMappingMV {
 
             // Check whether `next` is a closing tag
             if (stack.length && stack[stack.length - 1].tag === next.content) {
-                let stackTag = stack.pop();
+                const stackTag = stack.pop();
                 if (stackTag === undefined) throw new Error(" Stack returned undefined in initialization of vscode mapping");
                 nextCell = { 
                     startProse: offsetProse, endProse: offsetProse + next.start, 
@@ -194,12 +194,12 @@ export class TextDocMappingMV {
     /** Checks whether the step takes place exclusively within a string cell */
     private inStringCell(step: ReplaceStep | ReplaceAroundStep) : boolean {
         let correctCellKey = 0;
-        for (let [key,value] of this.stringBlocks) {
+        for (const [key,_value] of this.stringBlocks) {
             if (key > step.from) break;
             correctCellKey = key;
         }
-        //@ts-ignore
-        return step.to <= this.stringBlocks.get(correctCellKey)?.endProse;
+        const cell = this.stringBlocks.get(correctCellKey);
+        return cell !== undefined && step.to <= cell.endProse;
     }
 
     /** Called whenever a step is made in the editor */
@@ -236,7 +236,7 @@ export class TextDocMappingMV {
     /** Constructs a map from stringBlocks that is indexed based on the vscode index instead of prose */
     private updateInvMapping() {
         this.invStringBlocks = new Map<number, StringCell>();
-        this.stringBlocks.forEach((value, key) => {
+        this.stringBlocks.forEach((value, _key) => {
             this.invStringBlocks.set(value.startText, value)
         });
     }
@@ -259,17 +259,17 @@ export class TextDocMappingMV {
     public static getNextHTMLtag(input: string): TagInformation {
 
         // Find all html tags (this is necessary for the position and for invalid matches)
-        let matches = Array.from(input.matchAll(/<(\/)?(input-area|coqblock|coqcode|markdown|math-display|hint|coqdoc|coqdown)( [^>]*)?>/g));
+        const matches = Array.from(input.matchAll(/<(\/)?(input-area|coqblock|coqcode|markdown|math-display|hint|coqdoc|coqdown)( [^>]*)?>/g));
 
         // Loop through all matches 
-        for (let match of matches) {
+        for (const match of matches) {
 
             // Check if there are no weird matches that we should throw an error on
             if (match !== null) {
 
                 // Receive information about the matches
-                let length = match[0].length;
-                let start = match.index;
+                const length = match[0].length;
+                const start = match.index;
 
                 // Ensure that we always have the position of the string
                 if (start === undefined) {
@@ -277,7 +277,7 @@ export class TextDocMappingMV {
                 }
 
                 // Compute the end position of the tag
-                let end = start + length;
+                const end = start + length;
 
                 // Check if the HTML tag is a valid HTML tag in our parser
                 if (TextDocMappingMV.HTMLtags.has(match[2])) {
@@ -286,14 +286,14 @@ export class TextDocMappingMV {
                     if (match[2] === "coqblock" && match[1] == undefined) {
 
                         // Get the matches regarding whitespace
-                        let whiteSpaceMatch = match[3]
+                        const whiteSpaceMatch = match[3]
 
                         // Helper variables
                         let preNum = 0
                         let postNum = 0
 
                         // We check for the pre whiteline in front of the first coqblock tag
-                        let prePreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite="(\w*?)"/g))[0]
+                        const prePreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePreWhite="(\w*?)"/g))[0]
                         if (prePreWhiteMatch != null) {
 
                             // If there is a newline tage we include this in preNum
@@ -303,7 +303,7 @@ export class TextDocMappingMV {
                         }
 
                         // We check for the post whiteline after the first coqblock tag
-                        let postPreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePostWhite="(\w*?)"/g))[0]
+                        const postPreWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/prePostWhite="(\w*?)"/g))[0]
                         if (postPreWhiteMatch != null) {
 
                             // If there is a newline tage we include this in preNum
@@ -313,7 +313,7 @@ export class TextDocMappingMV {
                         }   
 
                         // We check for the pre whiteline in front of the closing coqblock tag
-                        let prePostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPreWhite="(\w*?)"/g))[0]
+                        const prePostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPreWhite="(\w*?)"/g))[0]
                         if (prePostWhiteMatch != null) {
 
                             // If there is a newline tage we include this in postNum
@@ -323,7 +323,7 @@ export class TextDocMappingMV {
                         }
 
                         // We check for the post whiteline after the closing coqblock tag
-                        let postPostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite="(\w*?)"/g))[0]
+                        const postPostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPostWhite="(\w*?)"/g))[0]
                         if (postPostWhiteMatch != null) {
 
                             // If there is a newline tage we include this in postNum
@@ -339,14 +339,14 @@ export class TextDocMappingMV {
                     } else if ((match[2] === "coqdoc") && match[1] == undefined){
 
                         // Get the matches regarding whitespace
-                        let whiteSpaceMatch = match[3]
+                        const whiteSpaceMatch = match[3]
 
                         // Helper variables
                         let preNum = 0
                         let postNum = 0
 
                         // Pre coqdoc newline
-                        let preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/preWhite="(\w*?)"/g))[0]
+                        const preWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/preWhite="(\w*?)"/g))[0]
                         if (preWhiteMatch != null) {
                             if (preWhiteMatch[1] === "newLine") {
                                 preNum++;
@@ -354,7 +354,7 @@ export class TextDocMappingMV {
                         }
 
                         // Post coqdoc newline
-                        let postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postWhite="(\w*?)"/g))[0]
+                        const postWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postWhite="(\w*?)"/g))[0]
                         if (postWhiteMatch != null) {
                             if (postWhiteMatch[1] === "newLine") {
                                 postNum++;

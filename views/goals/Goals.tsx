@@ -1,6 +1,5 @@
 import $ from "jquery";
-import objectHash from "object-hash";
-import { PropsWithChildren, useLayoutEffect, useRef, useState } from "react";
+import { PropsWithChildren, useLayoutEffect, useRef } from "react";
 import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 import { Goal, GoalConfig, PpString } from "../../lib/types";
 import { Box } from "./Box";
@@ -56,7 +55,7 @@ function GoalsList({
   pos,
   textDoc
 }: GoalsListP) {
-  let count = goals.length;
+  const count = goals.length;
 
   //if there are no goals then this is displayed
   if (count == 0) {
@@ -101,7 +100,7 @@ function GoalsRemaining({
   pos,
   textDoc
 }: GoalsListP) {
-  let count = goals.length;
+  const count = goals.length;
 
   //if there are no goals then this is displayed
   if (count == 0) {
@@ -135,14 +134,11 @@ type StackSummaryP = PropsWithChildren<{
 //goals can have multiple layers which are stacked.
 //the following function handles the display of stacked goals
 function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
-  let count = stack.length;
+  const count = stack.length;
   if (count <= idx) return null;
 
   const [l, r] = stack[idx];
   const goals = l.concat(r);
-  //defines the level of the goal using idx
-  let level_indicator =
-    idx === 0 ? "the same bullet level" : `the -${idx} bullet level`;
 
   if (idx == 0) {
     return (
@@ -185,7 +181,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
     </Box>
   }
 
-  let count = goals.goals.length
+  const count = goals.goals.length
 
   if (count <= 1) {
     return (

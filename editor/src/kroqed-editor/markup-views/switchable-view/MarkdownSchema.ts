@@ -1,5 +1,5 @@
 import { schema } from "prosemirror-markdown";
-import { NodeSpec, Schema } from "prosemirror-model";
+import { Schema } from "prosemirror-model";
 import { mathInlineSpec } from "../../math-integration";
 
 /**

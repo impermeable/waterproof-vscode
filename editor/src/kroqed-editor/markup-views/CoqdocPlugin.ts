@@ -28,12 +28,12 @@ export function createCoqdocView(schema: Schema){
 		* Docs says that for any function proprs, the current plugin instance
 		* will be bound to `this`.  However, the typings don't reflect this.
 		*/
-		let pluginState = COQDOC_PLUGIN_KEY.getState(view.state);
+		const pluginState = COQDOC_PLUGIN_KEY.getState(view.state);
 		if(!pluginState){ throw new Error("no coqdoc plugin!"); }
-		let nodeViews = pluginState.activeNodeViews;
+		const nodeViews = pluginState.activeNodeViews;
 
 		// set up NodeView
-		let nodeView = new CoqdocView(getPos, view, node.textContent, node, schema, COQDOC_PLUGIN_KEY, "coqdoc");
+		const nodeView = new CoqdocView(getPos, view, node.textContent, node, schema, COQDOC_PLUGIN_KEY, "coqdoc");
 		nodeViews.push(nodeView);
 		return nodeView;
 	}
@@ -43,13 +43,13 @@ const coqdocPluginSpec = (schema: Schema):PluginSpec<ICoqdocPluginState> => {
 	return {
 		key: COQDOC_PLUGIN_KEY,
 		state: {
-			init(config, instance){
+			init(_config, _instance){
 				return {
 					macros: {},
 					activeNodeViews: []
 				};
 			},
-			apply(tr, value, oldState, newState){
+			apply(tr, value, _oldState, _newState){
 				// produce updated state field for this plugin
 				return {
 					// these values are left unchanged

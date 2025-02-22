@@ -17,7 +17,7 @@ const VSCodeDivider = lazy(async () => {
 
 
 export function Debug() {
-  let [goals, setGoals] = useState<GoalAnswer<PpString>>();
+  const [goals, setGoals] = useState<GoalAnswer<PpString>>();
 
   //handles the message
   //event : CoqMessageEvent as defined above

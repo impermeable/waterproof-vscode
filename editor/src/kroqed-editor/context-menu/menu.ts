@@ -36,7 +36,7 @@ export function createContextMenuHTML(editor: Editor): HTMLDivElement {
  * @param buttonCallback The callback which will be called when the button is pressed.
  * @returns HTMLLiElement representing the button.
  */
-function contextMenuButton(icon: string, buttonName: string, buttonCallback: () => any): HTMLLIElement {
+function contextMenuButton(icon: string, buttonName: string, buttonCallback: () => unknown): HTMLLIElement {
     const element = document.createElement("li");
     // <i aria-hidden="true">?
     const a = document.createElement("a");

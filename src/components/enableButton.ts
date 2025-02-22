@@ -36,7 +36,7 @@ export class CoqnitiveStatusBar implements IStatusComponent {
         }
     }
 
-    failed(emsg: string) {
+    failed(_emsg: string) {
         this.item.backgroundColor = new ThemeColor("statusBarItem.errorBackground");
         this.item.text = "$(circle-slash) Waterproof checker (failed to start)";
         this.item.tooltip = "Waterproof document checker failed to start. Click to retry.";

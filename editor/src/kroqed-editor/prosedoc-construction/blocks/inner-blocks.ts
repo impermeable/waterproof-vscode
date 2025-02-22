@@ -1,7 +1,7 @@
 import { extractMathDisplayBlocks, extractCoqBlocks, extractBlocksUsingRanges, extractCoqDoc, extractMathDisplayBlocksCoqDoc } from "../block-extraction";
 import { extractInterBlockRanges, sortBlocks } from "../utils";
 import { Block } from "./block";
-import { CoqCodeBlock, CoqMarkdownBlock, MarkdownBlock, MathDisplayBlock } from "./blocktypes";
+import { CoqCodeBlock, CoqMarkdownBlock, MarkdownBlock } from "./blocktypes";
 
 
 export function createInputAndHintInnerBlocks(input: string): Block[] {

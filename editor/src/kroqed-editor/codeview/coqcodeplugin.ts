@@ -36,12 +36,12 @@ export function createCoqCodeView(){
 		* Docs says that for any function proprs, the current plugin instance
 		* will be bound to `this`.  However, the typings don't reflect this.
 		*/
-		let pluginState = COQ_CODE_PLUGIN_KEY.getState(view.state);
+		const pluginState = COQ_CODE_PLUGIN_KEY.getState(view.state);
 		if(!pluginState){ throw new Error("no codemirror code plugin!"); }
-		let nodeViews = pluginState.activeNodeViews;
+		const nodeViews = pluginState.activeNodeViews;
 
 		// set up NodeView
-		let nodeView = new CodeBlockView(node, view, getPos, pluginState.schema);
+		const nodeView = new CodeBlockView(node, view, getPos, pluginState.schema);
 
 		nodeViews.add(nodeView);
 		return nodeView;
@@ -49,7 +49,7 @@ export function createCoqCodeView(){
 }
 
 
-let CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
+const CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 	key: COQ_CODE_PLUGIN_KEY,
 	state: {
 		init(config, instance){
@@ -61,16 +61,16 @@ let CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 				lines: {linenumbers: [], version: 0},
 			};
 		},
-		apply(tr, value, oldState, newState){
+		apply(tr, value, _oldState, _newState){
 			// produce updated state field for this plugin
 			let lineState = value.showLines;
 			let newlines = value.lines;
 			// Check if a node has been deleted
 			if (tr.steps.length > 0) {
-				for (let step of tr.steps) {
+				for (const step of tr.steps) {
 					if (step instanceof ReplaceStep && step.slice.content.firstChild === null) {
-						for (let view of value.activeNodeViews) {
-							//@ts-ignore
+						for (const view of value.activeNodeViews) {
+							// @ts-expect-error TODO: Fix me
 							if (view._getPos() === undefined || (view._getPos() >= step.from && view._getPos() < step.to)) value.activeNodeViews.delete(view);
 						} 
 					}
@@ -87,7 +87,7 @@ let CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 				
 				if (value.activeNodeViews.size == newlines.linenumbers.length) {
 					let i = 0;
-					for (let view of value.activeNodeViews) {
+					for (const view of value.activeNodeViews) {
 						view.updateLineNumbers(newlines.linenumbers[i] + 1, lineState);
 						i++;
 					}

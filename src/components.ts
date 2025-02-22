@@ -70,7 +70,7 @@ export interface IGoalsComponent extends Disposable {
      * @param e the error that resulted in failure to receive
      *          goal answer
      */
-    failedGoals(e: any): void;
+    failedGoals(e: unknown): void;
 
     /**
      * Disable the GoalsComponent

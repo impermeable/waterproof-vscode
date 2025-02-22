@@ -32,7 +32,7 @@ export interface Message<Pp> {
 export type Id = ["Id", string];
 
 export interface Loc {
-    fname: any;
+    fname: unknown;
     line_nb: number;
     bol_pos: number;
     line_nb_last: number;
@@ -44,7 +44,7 @@ export interface Loc {
 export interface Obl {
     name: Id;
     loc?: Loc;
-    status: [boolean, any];
+    status: [boolean, unknown];
     solved: boolean;
 }
 
@@ -75,8 +75,8 @@ export type Pp =
     | ["Pp_empty"]
     | ["Pp_string", string]
     | ["Pp_glue", Pp[]]
-    | ["Pp_box", any, Pp]
-    | ["Pp_tag", any, Pp]
+    | ["Pp_box", unknown, Pp]
+    | ["Pp_tag", unknown, Pp]
     | ["Pp_print_break", number, number]
     | ["Pp_force_newline"]
     | ["Pp_comment", string[]];
@@ -117,7 +117,7 @@ interface CompletionStatus {
 }
 
 // Implementation-specific span information, for now the serialized Ast if present.
-type SpanInfo = any;
+type SpanInfo = unknown;
 
 interface RangedSpan {
     range: Range;

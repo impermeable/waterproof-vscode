@@ -49,17 +49,17 @@ function getAllCoqBlocks(input: string): CoqBlock[] {
     }
 
     // Create array for coqblock saving
-    let coqBlocks: CoqBlock[] = [];
+    const coqBlocks: CoqBlock[] = [];
 
     // Loop through coqblocks and add them to the array appropiately
     matches.forEach(match => {
         // Compute information about position of the coqblocks
-        let length = match[0].length;
-        let start = match.index;
+        const length = match[0].length;
+        const start = match.index;
         if (start === undefined) {
             throw new Error("Index cannot be null");
         }
-        let end = start + length;
+        const end = start + length;
 
         // Add the coqblock with the information to the array
         coqBlocks.push({
@@ -82,7 +82,7 @@ function getAllCoqBlocks(input: string): CoqBlock[] {
  */
 function extractText(document: string, cbs: CoqBlock[]): CoqBlock[] {
     // Initialize array to save text blocks
-    let textBlocks: CoqBlock[] = [];
+    const textBlocks: CoqBlock[] = [];
     let prevEnd = 0;
 
     // loop through all coqblocks and push the text between the coqblocks
@@ -125,7 +125,7 @@ export function translateMvToProsemirror(inputDocument: string): string {
     // Get all text blocks by looking at what is left
     const allTextBlocks = extractText(inputDocument, allCoqBlocks);
 
-    let allBlocks = allCoqBlocks.concat(allTextBlocks);
+    const allBlocks = allCoqBlocks.concat(allTextBlocks);
     // sort the blocks on there start in the document (happens in place)
     allBlocks.sort((a, b) => {
         return a.start - b.start;
@@ -156,26 +156,26 @@ export function translateMvToProsemirror(inputDocument: string): string {
  * @returns parsed coq block 
  */
 function handleCoqBlock(match: RegExpMatchArray) {
-    let content = match[3];
+    const content = match[3];
 
-    let allCoqDoc = getAllCoqdoc(content);
-    let coqDoc: Array<coqFileEntry> = allCoqDoc.map((doc) => {
-        let start = doc.index;
+    const allCoqDoc = getAllCoqdoc(content);
+    const coqDoc: Array<coqFileEntry> = allCoqDoc.map((doc) => {
+        const start = doc.index;
         if (start == undefined) {
             throw new Error("");
         }
-        let end = start + doc[0].length;
+        const end = start + doc[0].length;
         return {content: doc, start, end, type: coqCellType.CoqDoc};
     });
     
-    let allCoqBlocks = getAllCoq(content, allCoqDoc);
+    const allCoqBlocks = getAllCoq(content, allCoqDoc);
 
     let allCells: Array<coqFileEntry> = [...allCoqBlocks, ...coqDoc];
     // Content is now basically its own little .mv file. 
     // We can run the .mv parser over this.
 
     // TODO: There may be a more elegant way to do this. We should not add them in the first place. 
-    let markForRemoval: Array<number> = [];
+    const markForRemoval: Array<number> = [];
     allCells.forEach((item, index) => {
         if (item.type == coqCellType.CoqCode && item.content === "") {
             markForRemoval.push(index);
@@ -183,7 +183,7 @@ function handleCoqBlock(match: RegExpMatchArray) {
     });
     // We have to loop in reverse order here, otherwise removing
     //   elements messes up the index of the later ones.
-    for (var i = markForRemoval.length - 1; i >= 0; i--) {
+    for (let i = markForRemoval.length - 1; i >= 0; i--) {
         allCells.splice(markForRemoval[i], 1);
     }
 
@@ -194,9 +194,9 @@ function handleCoqBlock(match: RegExpMatchArray) {
 
     // This makes sure we do not forget any trailing coq code.
     if (allCells.length > 0) {
-        let endEnd = allCells[allCells.length - 1].end;
+        const endEnd = allCells[allCells.length - 1].end;
         if (endEnd < content.length) {
-            let substring = content.substring(endEnd); // TODO: Same as above
+            const substring = content.substring(endEnd); // TODO: Same as above
             allCells.push({content: substring, start: endEnd, end: content.length, type: coqCellType.CoqCode})
         }
     }
@@ -221,9 +221,9 @@ function handleCoqBlock(match: RegExpMatchArray) {
     });
 
     if (result === "") {
-        result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`"><coqcode></coqcode><\/coqblock>`
+        result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`"><coqcode></coqcode></coqblock>`
     } else {
-        result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`">` + result + `<\/coqblock>`
+        result = `<coqblock prePreWhite="`+ match[1] +`" prePostWhite="`+ match[2] +`" postPreWhite="`+ match[4] +`" postPostWhite="`+ match[5] +`">` + result + `</coqblock>`
     }
 
     
@@ -252,7 +252,7 @@ function getAllCoqdoc(content: string): RegExpMatchArray[] {
     * https://coq.inria.fr/refman/using/tools/coqdoc.html#principles
     */
     const regex = /(\r\n|\n)?^\(\*\* ([^]*?)\*\)$(\r\n|\n)?/gm;
-    let result = Array.from(content.matchAll(regex))
+    const result = Array.from(content.matchAll(regex))
     for (let i = 0; i < result.length; i++) {
         for (let j = 0; j < result[i].length; j++) {
             if (result[i][j] == undefined) {
@@ -282,16 +282,16 @@ interface coqFileEntry{
  * @returns All coq code blocks
  */
 function getAllCoq(content: string, matches: RegExpMatchArray[]) {
-    let coqBlocks = new Array<coqFileEntry>();
+    const coqBlocks = new Array<coqFileEntry>();
     let prevEnd = 0;
     matches.forEach((match) => {
-        let start = match.index;
+        const start = match.index;
         if (start == undefined) {
             throw new Error("Start is undefined");
         }
-        let end = start + match[0].length;
+        const end = start + match[0].length;
         if (prevEnd != start) {
-            let substring = content.substring(prevEnd, start);
+            const substring = content.substring(prevEnd, start);
             coqBlocks.push({content: substring, start: prevEnd, end: start, type: coqCellType.CoqCode});
         }
         prevEnd = end;

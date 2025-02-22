@@ -78,7 +78,7 @@ function GoalsList({
           <Goal key={0} goal={goals[0]} idx={0} />
       </Box>
     );
-  //Numerous goals, only the first goal is displayed, the other goals are hidden and foldable.
+  //Numerous goals, only the first goal is displayed, the other goals are hidden.
   } else {
     return (
       <div>

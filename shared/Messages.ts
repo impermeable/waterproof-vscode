@@ -8,6 +8,12 @@ import { GoalAnswer, PpString } from "../lib/types";
 
 /** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)
  *
+ * Notes on the type former:
+ * - T extends MessageType makes sure T is a member of the MessageType enum.
+ * - B = undefined, defaults B to undefined (so we don't have to provide for messages that don't include a body)
+ * - B extends undefined ? A : B, is the usual ternary operator `if`. When `B extends undefined` (B = undefined)
+ *   then we choose A, otherwise (B is an object) we choose B.
+ *
  * Ex: MessageBase<MessageType.ready> does not contain a body and expands to { type : MessageType.ready }
  *     MessageBase<MessageType.update, { value: string, version: number }> does contain a body and expands to
  *     {
@@ -16,7 +22,7 @@ import { GoalAnswer, PpString } from "../lib/types";
  *     }
 */
 type MessageBase<T extends MessageType, B = undefined> =
-    B extends undefined? { type: T, requestId?: number } : { type: T, body: B, requestId?: number };
+    B extends undefined ? { type: T, requestId?: number } : { type: T, body: B, requestId?: number };
 
 export type Message =
     | MessageBase<MessageType.response, { data: any, requestId: number }>

@@ -15,7 +15,7 @@ export type Message = {
  * Message type enum. Every message that is send from the
  * extension host to the editor (and vice versa) needs to have a type.
  */
-export enum MessageType {
+export const enum MessageType {
     response = "response",
     update = "update",
     init = "init",
@@ -51,7 +51,7 @@ export const enum HistoryChangeType {
     Redo
 }
 
-export enum CoqFileProgressKind {
+export const enum CoqFileProgressKind {
     Processing = 1,
     FatalError = 2,
 }

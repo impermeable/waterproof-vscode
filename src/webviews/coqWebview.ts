@@ -12,7 +12,7 @@ import { Message, MessageType } from "../../shared";
  * Defines the states of the webview
  */
 
-export enum WebviewState {
+export const enum WebviewState {
     /** Closed and can't be made visible (i.e., any interaction is ignored). */
     closed = "closedWebview",
     /** Closed but can be made visible. */
@@ -28,7 +28,7 @@ export enum WebviewState {
 /**
  * Events emitted by Webview
  */
-export enum WebviewEvents {
+export const enum WebviewEvents {
     change = "changedState",  // Webview change notification
     message = "receivedMessage",
     dispose = "disposedView",

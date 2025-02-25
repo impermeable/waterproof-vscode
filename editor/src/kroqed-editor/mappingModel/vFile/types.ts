@@ -6,7 +6,7 @@ import { DocChange, WrappingDocChange } from "../../../../../shared";
  * In prosemirror, every step is a replace step. This enum is used to classify 
  * the steps into the given 'pure' operations
  */
-export enum OperationType {
+export const enum OperationType {
     insert = "insert",
     delete = "delete",
     replace = "replace"

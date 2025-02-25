@@ -6,6 +6,15 @@ import { QedStatus } from "./QedStatus";
 import { Completion } from "@codemirror/autocomplete";
 import { GoalAnswer, PpString } from "../lib/types";
 
+/** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)
+ *
+ * Ex: MessageBase<MessageType.ready> does not contain a body and expands to { type : MessageType.ready }
+ *     MessageBase<MessageType.update, { value: string, version: number }> does contain a body and expands to
+ *     {
+ *          type: MessageType.update,
+ *          body: { value: string, version: number }
+ *     }
+*/
 type MessageBase<T extends MessageType, B = undefined> =
     B extends undefined? { type: T, requestId?: number } : { type: T, body: B, requestId?: number };
 

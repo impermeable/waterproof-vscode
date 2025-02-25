@@ -326,7 +326,11 @@ export class Editor {
 			//@ts-ignore
 			linenumbers.push(this._mapping?.findPosition(codeCell._getPos() + 1));
 		}
-		if (this._mapping === undefined) return; // Return (fail) when the mapping is undefined
+		if (this._mapping === undefined) {
+			// Fail when the mapping is undefined
+			console.error("Encountered undefined mapping in sendLineNumbers function");
+			return;
+		}
 		this.post({type: MessageType.lineNumbers, body: { linenumbers, version: this._mapping.version }});
 	}
 

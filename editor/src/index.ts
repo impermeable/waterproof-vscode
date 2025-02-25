@@ -30,8 +30,8 @@ window.onload = () => {
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
 	const theEditor = new Editor(vscode, editorElement);
 
-	window.addEventListener("message", (event: MessageEvent) => {
-		const msg = event.data as Message; // TODO: This should be error checked!
+	window.addEventListener("message", (event: MessageEvent<Message>) => {
+		const msg = event.data;
 
 		switch(msg.type) {
 			case MessageType.init:
@@ -43,7 +43,7 @@ window.onload = () => {
 				if (msg.body.type === "tactics") {
 					// `symbolUnicode` stores the tactic template.
 					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
-					const template = symbolUnicode as string;
+					const template = symbolUnicode;
 					theEditor.handleSnippet(template);
 				} else {
 					theEditor.insertSymbol(symbolUnicode, symbolLatex);

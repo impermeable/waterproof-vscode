@@ -1,10 +1,9 @@
 import { FileFormat } from "../../../../shared";
-import { TheSchema } from "../kroqed-schema";
 import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractBlocksUsingRanges, extractMathDisplayBlocks } from "./block-extraction";
-import { Block, BlockRange } from "./blocks";
+import { Block } from "./blocks";
 import { CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock } from "./blocks/blocktypes";
 import { root } from "./blocks/schema";
-import { isCoqBlock, isMarkdownBlock } from "./blocks/typeguards";
+import { isCoqBlock } from "./blocks/typeguards";
 import { extractInterBlockRanges, maskInputAndHints, sortBlocks } from "./utils";
 import { Node as ProseNode } from "prosemirror-model";
 

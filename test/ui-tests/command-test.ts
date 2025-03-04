@@ -1,7 +1,6 @@
-import { group } from "console";
-import { ActivityBar, Button, By, EditorView, SideBarView, ViewControl, WebDriver, WebView, Workbench } from "vscode-extension-tester";
-import { CoqEditorProvider } from "../../src/pm-editor";
+import { ActivityBar, EditorView, SideBarView, WebView, Workbench } from "vscode-extension-tester";
 
+// TODO: Do these tests actually test something?
 
 describe('Set up extension', () => {
 
@@ -16,16 +15,16 @@ describe('Set up extension', () => {
 
 describe('Side Panel Button Test', () => {
     it('open side panel', async() => {
-        const view = new SideBarView();
+        new SideBarView();
         const sidepanel = await new ActivityBar().getViewControl('Waterproof');
-        if (sidepanel) { const view1 = await sidepanel.openView();};
+        if (sidepanel) { await sidepanel.openView();};
     }).timeout(10000);
 
 })
 
 describe('common execute', () => {
     it('open common execute', async() => {
-        const webb = await new EditorView().openEditor("CommonExecute", 1);
+        await new EditorView().openEditor("CommonExecute", 1);
         const webview = await new WebView();
         webview.switchToFrame();
     })
@@ -33,7 +32,7 @@ describe('common execute', () => {
 
 describe('symbols', () => {
     it('open symbols', async() => {
-        const webb = await new EditorView().openEditor("Symbols", 1);
+        await new EditorView().openEditor("Symbols", 1);
         const webview = await new WebView();
         webview.switchToFrame();
     })

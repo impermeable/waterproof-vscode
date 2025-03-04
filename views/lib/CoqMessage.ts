@@ -10,7 +10,7 @@ export interface WaitingForInfo {
 }
 export interface InfoError {
   type: "infoError";
-  body: any;
+  body: unknown;
 }
 //a message designed for Coq that extends MessageEvent
 export interface CoqMessageEvent extends MessageEvent {

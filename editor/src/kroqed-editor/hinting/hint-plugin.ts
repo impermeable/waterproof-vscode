@@ -78,7 +78,7 @@ function createCollapseDOM(view: EditorView, hint: {node: PNode, pos: number}) {
 	// Set the content to the title attribute of the hint node.
 	hintElement.textContent = hint.node.attrs.title;
 	// Add event listener for mouse clicks.
-	hintElement.addEventListener("click", (ev: MouseEvent) => {
+	hintElement.addEventListener("click", (_ev: MouseEvent) => {
 		// Get the state of the hint attribute ( assuming it is always there :) ).
 		const state = view.state.doc.nodeAt(hint.pos)?.attrs.shown as boolean;
 		// Create a new transaction that toggles the 'shown' node attribute on the node at position `hint.pos`.

@@ -6,7 +6,7 @@ import { DiagnosticSeverity } from "vscode";
  */
 export type Message = {
     type: MessageType;
-    body?: any;
+    body?: unknown;
     requestId?: number;
     time?: number,
 }

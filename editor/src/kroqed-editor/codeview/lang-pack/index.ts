@@ -1,5 +1,4 @@
 // Importing necessary modules from the Codemirror library
-import { Completion, CompletionSource } from "@codemirror/autocomplete"
 import {
     HighlightStyle, LRLanguage, LanguageSupport, delimitedIndent, foldInside, foldNodeProp,
     indentNodeProp, syntaxHighlighting
@@ -10,13 +9,13 @@ import { Tag, styleTags, tags as t } from "@lezer/highlight"
 import { parser } from "./syntax"
 
 // Defining custom tags for specific elements of the Coq language
-let customTags = {
+const customTags = {
     vernacular: Tag.define(),
     gallina: Tag.define()
 }
 
 // Highlighting specific elements of the Coq language
-export let highlight = HighlightStyle.define([
+export const highlight = HighlightStyle.define([
     { tag: customTags.gallina, color: "#6637dd" },
     { tag: customTags.vernacular, color: "#7872d0" }
 ])

@@ -1,5 +1,5 @@
-import { Node, NodeRange, Schema } from "prosemirror-model";
-import { Command, EditorState, NodeSelection, TextSelection, Transaction } from "prosemirror-state";
+import { NodeRange, Schema } from "prosemirror-model";
+import { Command, EditorState, NodeSelection, Transaction } from "prosemirror-state";
 import { FileFormat } from "../../../../shared";
 import { insertAbove, insertUnder } from "./command-helpers";
 import { InsertionPlace } from "./types";
@@ -91,7 +91,7 @@ export function cmdInsertLatex(schema: Schema, filef: FileFormat, insertionPlace
     return getLatexInsertCommand(filef, getInsertionFunction(insertionPlace), insertionPlace, latexNodeType);
 }
 
-export const liftWrapper: Command = (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
+export const liftWrapper: Command = (state: EditorState, dispatch?: ((tr: Transaction) => void), _view?: EditorView): boolean => {
     const sel = state.selection;
 
     if (sel instanceof NodeSelection) {

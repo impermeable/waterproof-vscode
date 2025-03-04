@@ -18,7 +18,7 @@ const VSCodeDivider = lazy(async () => {
 
 export function InfoPanel() {
   //saves the goal
-  let [goals, setGoals] = useState<GoalAnswer<PpString>>();
+  const [goals, setGoals] = useState<GoalAnswer<PpString>>();
   //boolean to check if the goals are still loading
   const [isLoading, setIsLoading] = useState(false);
 

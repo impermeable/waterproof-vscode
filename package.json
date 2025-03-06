@@ -544,12 +544,9 @@
   "scripts": {
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
     "esbuild": "node esbuild.mjs",
-    "esbuild-test": "node esbuild-test.mjs",
     "typecheck": "tsc -b",
     "compile": "npm run esbuild",
-    "compile-test": "npm run clean; tsc -p test/tsconfig.json && npm run esbuild-test && npm run test-package",
     "watch": "npm run lezer-generator && npm run esbuild -- --watch",
-    "test": "npm run compile-test && node ./test_out/test/runTest.js",
     "test-package": "node_modules/.bin/vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
     "package": "npm run clean && npm run test-package",

@@ -1,8 +1,7 @@
 import { TheSchema } from "../../kroqed-schema";
 import { BLOCK_NAME, Block, BlockRange } from "./block";
 import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
-import { coqCode, coqDoc, coqMarkdown, coqblock, hint, inputArea, markdown, mathDisplay, text } from "./schema";
-import { Node as ProseNode } from "prosemirror-model";
+import { coqCode, coqDoc, coqMarkdown, coqblock, hint, inputArea, markdown, mathDisplay } from "./schema";
 
 const indentation = (level: number): string => "  ".repeat(level);
 const debugInfo = (block: Block): string => `{range=${block.range.from}-${block.range.to}}`;

@@ -2,14 +2,10 @@ import { EventEmitter } from "stream";
 import { TextDocument, Uri, window } from "vscode";
 
 import { Message, MessageType } from "../shared";
-import { IExecutor, ILineNumberComponent } from "./components";
+import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
 import { ProseMirrorWebview } from "./pm-editor/pmWebview";
 import { CoqWebview, WebviewEvents, WebviewState } from "./webviews/coqWebview";
-import { Goal, GoalAnswer, Hyp, Pp, PpString, convertToString } from "../lib/types";
-import { Message as GoalMessage } from "../lib/types";
-import { FormatPrettyPrint } from "../lib/format-pprint/js/main";
-import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 
 export enum WebviewManagerEvents {
     editorReady     = "ready",
@@ -40,12 +36,11 @@ class ActiveWebviews {
 
     public insert(id: string) {
         // Maybe add error handling for id not existing
-        var time: number = Date.now();
+        const time: number = Date.now();
         this._web.set(time, id);
         this._queue.unshift(time);
         if (this._queue.length == 20) {
-            // @ts-ignore
-            this._web.delete(this._queue.pop());
+            this._web.delete(this._queue.pop()!);
         }
     }
 
@@ -53,14 +48,12 @@ class ActiveWebviews {
      * Returns the ID of the chronologically first webview after `times`.
      */
     public find(time: number) {
-        var i: number = 0;
+        let i: number = 0;
         if (this._queue.length == 0) throw new Error("There are no active panels");
-        // @ts-ignore
         while (this._queue[i] >= time) { // There may be an issue where a panel supports insert and can send insert messages
             i++;
             if (this._queue.length == i) throw new Error("There are no valid active panels");
         }
-        // @ts-ignore
         return this._web.get(this._queue[i]);
     }
 }
@@ -80,6 +73,8 @@ export class WebviewManager extends EventEmitter {
     private _requestId: number;
 
     // Callbacks used by request, response pattern
+    // TODO: See if we can fix this any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private readonly _callbacks: Map<number, (response: any) => void> = new Map<number, (response: any) => void>;
 
     // StatusBar item that indicates line number and column position
@@ -203,7 +198,7 @@ export class WebviewManager extends EventEmitter {
      * @param body The body of the message.
      * @returns A promise that is fulfilled when the response is received.
      */
-    public postMessageWithResponse<R = unknown>(panel: string, type: MessageType, body: any): Promise<R> {
+    public postMessageWithResponse<R = unknown>(panel: string, type: MessageType, body: unknown): Promise<R> {
         const requestId = this._requestId++;
         const p = new Promise<R>(resolve => this._callbacks.set(requestId, resolve));
         //@ts-ignore
@@ -220,20 +215,22 @@ export class WebviewManager extends EventEmitter {
     private onProseMessage(document: TextDocument, message: Message) {
         // TODO: For now console.log the document and the message.
         switch (message.type) {
+            // Scopes added to blocks to prevent accidental access of in-block const declarations
             case MessageType.response:
                 // Response type message, look to which promise this belongs.
-                if (!message.requestId) {
+                { if (!message.requestId) {
                     console.error("Received response message without a requestId!\nThe message:", message);
                     return;
                 }
                 const callback = this._callbacks.get(message.requestId);  // TODO: remove callback?
                 callback?.(message.body);
-                break;
+                break; }
             case MessageType.editorReady:
                 this.emit(WebviewManagerEvents.editorReady, document);
                 break;
             case MessageType.cursorChange:
-                var pos = document.positionAt(message.body);
+                // @ts-expect-error TODO: Use proper type(check) for messages
+                { const pos = document.positionAt(message.body);
                 this._lineStatus.update(pos);
                 // Update goals components
                 const webview = this._pmWebviews.get(document.uri.toString());
@@ -247,11 +244,11 @@ export class WebviewManager extends EventEmitter {
                     };
                     if(webview.listeners(WebviewEvents.finishUpdate).length == 0) webview.once(WebviewEvents.finishUpdate, callback);
                 }
-                break;
+                break; }
             case MessageType.applyStepError:
-                let mes = "File frozen due to corruption. Re-open the file. Error: " + message.body;
+                { const mes = "File frozen due to corruption. Re-open the file. Error: " + message.body;
                 window.showErrorMessage(mes);
-                break;
+                break; }
             case MessageType.command:
                 // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
                 this.onToolsMessage("help", {type: MessageType.command, body: { command: "createHelp" }});
@@ -272,10 +269,9 @@ export class WebviewManager extends EventEmitter {
     private onToolsMessage(id: string, msg: Message) {
         switch (msg.type) {
             case MessageType.insert:
-                // @ts-ignore
-                var id: string = this._active.find(msg.time);
+                { const id : string = this._active.find(msg.time!)!;
                 this.postMessage(id, { type: MessageType.insert, body: msg.body });
-                break;
+                break; }
             case MessageType.command:
                 this.emit(WebviewManagerEvents.command, this._toolWebviews.get(id), msg.body);
                 break;

@@ -2,7 +2,7 @@
 import { QedStatus } from "../../shared";
 import { Message, MessageType } from "../../shared/Messages";
 
-const edits: any[] = [];
+const edits = [];
 
 const messages: Array<Message> = [
     {
@@ -70,7 +70,7 @@ describe('TestingTest', () => {
     cy.visit("../../__test_harness/index.html", {
       onBeforeLoad: (window) => {
         // Supply a 'fake' acquireVsCodeApi function
-        //@ts-ignore
+        // @ts-expect-error Okay for test purposes
         window.acquireVsCodeApi = function () {
           return {
             postMessage: (msg: Message) => {
@@ -87,8 +87,9 @@ describe('TestingTest', () => {
                 for (const message of messages) {
                   window.postMessage(message);
                 }
-                
+
               } else if (msg.type === MessageType.docChange) {
+                // @ts-expect-error Okay for test purposes
                 edits.push(msg.body);
               }
             }

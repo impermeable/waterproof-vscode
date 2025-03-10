@@ -26,18 +26,18 @@ const statusToDecoration = (status: QedStatus) => {
 };
 
 // Plugin specification
-let UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginState> => {
+const UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginState> => {
   return {
     key: UPDATE_STATUS_PLUGIN_KEY,
     state: {
       // The function to initialize the plugin state
-      init(config, instance){
+      init(_config, _instance){
         return {
           status: [],
         };
       },
       // Function to apply updates to the plugin state
-      apply(tr, value, oldState, newState){
+      apply(tr, value, _oldState, _newState){
         const newStatus = tr.getMeta(UPDATE_STATUS_PLUGIN_KEY);
         if (newStatus === undefined) {
           return value;
@@ -59,10 +59,10 @@ let UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginSta
 
           if (!inputNodes || statusUpdate.length !== inputNodes.length) return null;
 
-          let decorations: Decoration[] = [];
+          const decorations: Decoration[] = [];
           inputNodes.forEach((inputNode, index) => {
             if (statusUpdate[index] !== undefined) {
-              let newStatusUpdate = statusUpdate[index];
+              const newStatusUpdate = statusUpdate[index];
               if (inputNode.node.attrs.status !== newStatusUpdate) {
                 // This is (probably) the place where we check for errors in the proof.
                 // A proof should not be accepted if it includes a faulty coq statement.
@@ -80,7 +80,7 @@ let UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginSta
                   }
                 }
 
-                let decoration = Decoration.node(start, end, {
+                const decoration = Decoration.node(start, end, {
                   class: className,
                 });
                 decorations.push(decoration);

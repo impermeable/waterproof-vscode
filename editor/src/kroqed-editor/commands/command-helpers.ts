@@ -18,7 +18,7 @@ export function selectionType(sel: Selection) {
     }
 }
 
-export function getNearestPosOutsideCoqblock(sel: Selection, state: EditorState) {
+export function getNearestPosOutsideCoqblock(sel: Selection, _state: EditorState) {
     const depth = sel.$from.depth;
     let foundDepth = 0;
     for (let i = depth; i >= 0; i--) {
@@ -94,7 +94,6 @@ export function insertUnder(state: EditorState, tr: Transaction, ...nodeType: No
     } else if (isTextSelection) {
         const textSel = (sel as TextSelection);
         const to = sel.to + (sel.$from.parent.nodeSize - textSel.$from.parentOffset) - 1;
-        let content: PNode | null = null;
 
         if (to > state.doc.nodeSize) {
             console.log("This is no bueno");

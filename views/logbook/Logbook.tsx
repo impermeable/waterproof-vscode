@@ -10,7 +10,7 @@ import { Message, MessageType } from "../../shared";
 
 export function Logbook() {
   //saves the goals for the logbook
-  let [goalsArray, setGoalsArray] = useState<GoalAnswer<PpString>[]>();
+  const [goalsArray, setGoalsArray] = useState<GoalAnswer<PpString>[]>();
   //boolean to check if the messages are still loading
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,8 +39,8 @@ export function Logbook() {
   return (
     <div className="info-panel-container">
       <div className="info-panel">
-      {goalsArray.map((value, idx) => {
-          let key = objectHash(value);
+      {goalsArray.map((value, _) => {
+          const key = objectHash(value);
           return <Messages key={key} answer={value} />;
         })}
       </div>

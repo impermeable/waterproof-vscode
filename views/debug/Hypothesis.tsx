@@ -18,11 +18,11 @@ type CoqId = PpString;
 //displays the hypothesis as a pp string
 function Hyp({ hyp: { names, def, ty } }: { hyp: Hyp<PpString> }) {
   //className to give the right css to the hypothesis, definition or not
-  let className = "coq-hypothesis" + (def ? " coq-has-def" : "");
+  const className = "coq-hypothesis" + (def ? " coq-has-def" : "");
   //a label for the hypothesis
-  let mkLabel = (id: CoqId) => <label key={objectHash(id)}>{id}</label>;
+  const mkLabel = (id: CoqId) => <label key={objectHash(id)}>{id}</label>;
   //this converts the PpString to a CoqPp component
-  let mkdef = (pp?: PpString) =>
+  const mkdef = (pp?: PpString) =>
     pp ? (
       <span className="def">
         <CoqPp content={pp} inline={true} />
@@ -50,7 +50,7 @@ function Hyps({ hyps }: HypsP) {
   return (
     <>
       {hyps.map((v) => {
-        let key = objectHash(v);
+        const key = objectHash(v);
         return <Hyp key={key} hyp={v} />;
       })}
     </>
@@ -86,8 +86,8 @@ export function Hypothesis({ goals, pos, textDoc }: GoalsParams) {
   return (
     <div className="coq-goal-env" ref={ref}>
     <Box summary={'Hypothesis'} pos={pos} textDox={textDoc}>
-      {goals.goals.map((value, idx) => {
-        let key = objectHash(value);
+      {goals.goals.map((value, _idx) => {
+        const key = objectHash(value);
         //another chekc for when a goal does not have hypothesis
         if (value.hyps.length ==0 ) return "No Hypothesis at this point!";
         else return <Hyps hyps={value.hyps} key={key}/>

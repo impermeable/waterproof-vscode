@@ -42,7 +42,7 @@ export const coqLanguage = LRLanguage.define({
                 TacticInput: customTags.tacticInput,
                 TakeInput: customTags.takeInput,
                 Lemma: customTags.lemma,
-                CommentStatement: customTags.comment
+                Comment: customTags.comment
             })
         ]
     })

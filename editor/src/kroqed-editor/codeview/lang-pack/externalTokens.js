@@ -27,3 +27,8 @@ export const TakeInput = new ExternalTokenizer((input, stack) => {
         input.acceptToken(TakeInput, pos);
     }
 }, { contextual: true });
+
+// Note for future reference: The above does not work 
+// since input.read is not certain to behave as expected, 
+// and incrementing the position does not always move by a single unit.
+// Refer to class InputStream @ https://lezer.codemirror.net/docs/ref/#lr.InputStream

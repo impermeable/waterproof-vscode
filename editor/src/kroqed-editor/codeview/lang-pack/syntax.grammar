@@ -1,12 +1,14 @@
 @top Program { Sentence* }
 @external tokens TakeInput from "./externalTokens" { TakeInput }
 
+
 Sentence {
     WaterproofTactic
     Lemma
 }
 
-@skip { space | Comment }
+@skip { space | Comment}
+
 
 // Define local token for tactics, whatever is not TacticEnd 
 // is just TacticInput
@@ -49,7 +51,7 @@ Sentence {
         "Since (" TacticInput ") it holds that (" TacticInput ")." | 
         "Since (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
         "Since (" TacticInput ") we conclude that (" TacticInput ")." | 
-        "Since (" TacticInput ") it suffices to show that (" TacticInput ")."
+        "Since (" TacticInput ") it suffices to show that (" TacticInput ")." |
         "Because (" TacticInput ") both (" TacticInput ") and (" TacticInput ")." | 
         "Because (" TacticInput ") both (" TacticInput ") (" TacticInput ") and (" TacticInput ") (" TacticInput ")." | 
         "Either (" TacticInput ") or (" TacticInput ")."
@@ -70,11 +72,7 @@ Sentence {
 
 // Remaining tokens
 @tokens {
-    CommentOpen { "(*" }
-    CommentClose { "*)" }
-    CommentChar { !CommentClose }
-
-    Comment { CommentOpen CommentChar* CommentClose }
+    Comment { "(*" ![*]* "*)" }
 
     space { " " | "\t" | "\n" | "\r" }
     

@@ -29,7 +29,8 @@ export function Search() {
                     break;
                 // receiving info of the executed commands
                 case MessageType.setData:
-                    //@ts-expect-error
+                    //@ts-expect-error FIXME: setInfo expects string[]
+                    // in theory setData can also contain GoalAnswer
                     setInfo(msg.body);
                     setIsLoading(false);
                     break;
@@ -80,8 +81,8 @@ export function Search() {
 
     //button press search
     const handleSearch = () => {
-        vscode.postMessage({time: date.getTime(), 
-                            type: MessageType.command, 
+        vscode.postMessage({time: date.getTime(),
+                            type: MessageType.command,
                             body: `Search "${searchText.replace(/(\.\s*|\s*)$/s, '')}".`})
         setIsLoading(true);
     }
@@ -91,7 +92,7 @@ export function Search() {
         if (event.key === 'Enter' && event.shiftKey) {
             // Handle Shift + Enter key press logic here
             // Prevent adding a new line in the textarea
-            event.preventDefault(); 
+            event.preventDefault();
              //print the search results
         }
         setCursorPos(searchareaRef.current, "search");

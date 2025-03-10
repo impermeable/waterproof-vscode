@@ -25,7 +25,7 @@ type MessageBase<T extends MessageType, B = undefined> =
     B extends undefined ? { type: T, requestId?: number } : { type: T, body: B, requestId?: number };
 
 export type Message =
-    | MessageBase<MessageType.response, { data: any, requestId: number }>
+    | MessageBase<MessageType.response, { data: unknown, requestId: number }>
     | MessageBase<MessageType.update, { value: string, version: number }>
     | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
     | MessageBase<MessageType.ready>
@@ -33,10 +33,10 @@ export type Message =
     | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
     | MessageBase<MessageType.cursorChange, number>
     | MessageBase<MessageType.lineNumbers, LineNumber>
-    | MessageBase<MessageType.requestGoals, any>
-    | MessageBase<MessageType.renderGoals, any>
-    | MessageBase<MessageType.errorGoals, { error: string }>
-    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: string }>
+    | MessageBase<MessageType.requestGoals, unknown>
+    | MessageBase<MessageType.renderGoals, unknown>
+    | MessageBase<MessageType.errorGoals, unknown>
+    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: string, time: number }>
     | MessageBase<MessageType.command, { command: string, time?: number}>
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
     | MessageBase<MessageType.teacher, boolean>

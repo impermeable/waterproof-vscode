@@ -18,7 +18,8 @@ export function Help() {
         //handling a message
         const handleMessage = (msg: Message) => {
             if (msg.type === MessageType.setData) {
-                //@ts-expect-error
+                //@ts-expect-error FIXME: setInfo expects string[]
+                // in theory setData can also contain GoalAnswer
                 setInfo(msg.body);
                 setIsLoading(false);
             }

@@ -26,12 +26,12 @@ export function InfoPanel() {
   //event : CoqMessageEvent as defined above
   function infoViewDispatch(msg: Message) { // TODO: make this change in logbook as well
     if (msg.type === MessageType.renderGoals) {
-      //@ts-expect-error
       const goals = msg.body;
 
-      // FIXME: The `renderGoals` message type is currently overloaded and used for very different 
+      // FIXME: The `renderGoals` message type is currently overloaded and used for very different
       // functions. This can easily be seen when using global search on `MessageType.renderGoals`.
-      // This should be changed. 
+      // This should be changed.
+      //@ts-expect-error FIXME: `goals` should be properly typed instead of relying on `unknown`.
       setGoals(goals); //setting the information
       setIsLoading(false);
     }

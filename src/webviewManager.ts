@@ -198,11 +198,10 @@ export class WebviewManager extends EventEmitter {
      * @param body The body of the message.
      * @returns A promise that is fulfilled when the response is received.
      */
-    public postMessageWithResponse<R = unknown>(panel: string, type: MessageType, body: unknown): Promise<R> {
+    public postMessageWithResponse<R = unknown>(panel: string, msg: Message): Promise<R> {
         const requestId = this._requestId++;
         const p = new Promise<R>(resolve => this._callbacks.set(requestId, resolve));
-        //@ts-ignore
-        this.postMessage(panel, { type, body, requestId });
+        this.postMessage(panel, msg);
         return p;
     }
 
@@ -229,7 +228,6 @@ export class WebviewManager extends EventEmitter {
                 this.emit(WebviewManagerEvents.editorReady, document);
                 break;
             case MessageType.cursorChange:
-                // @ts-expect-error TODO: Use proper type(check) for messages
                 { const pos = document.positionAt(message.body);
                 this._lineStatus.update(pos);
                 // Update goals components
@@ -269,7 +267,7 @@ export class WebviewManager extends EventEmitter {
     private onToolsMessage(id: string, msg: Message) {
         switch (msg.type) {
             case MessageType.insert:
-                { const id : string = this._active.find(msg.time!)!;
+                { const id : string = this._active.find(msg.body.time)!;
                 this.postMessage(id, { type: MessageType.insert, body: msg.body });
                 break; }
             case MessageType.command:

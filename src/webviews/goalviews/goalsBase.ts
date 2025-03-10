@@ -27,6 +27,9 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
 
     //sends message for errorGoals
     failedGoals(e: unknown) {
+        // FIXME: The error `e` should have a proper type instead of `unknown`.
+        //        See `updateGoals` in extension.ts, where this `failedGoals`
+        //        is called as the result of a Promise rejection.
         this.postMessage({ type: MessageType.errorGoals, body: e});
     }
 

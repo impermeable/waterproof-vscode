@@ -32,7 +32,8 @@ export function ExpandDefinition() {
                     break;
                 // receiving info of the executed commands
                 case MessageType.setData:
-                    //@ts-expect-error
+                    //@ts-expect-error FIXME: setInfo expects string[]
+                    // in theory setData can also contain GoalAnswer
                     setInfo(msg.body);
                     setIsLoading(false);
                     break;
@@ -116,8 +117,8 @@ export function ExpandDefinition() {
     //button press execute
     const handleExecute = () => {
         //Send the message the execute button was pressed
-        vscode.postMessage({time: date.getTime(), 
-                            type: MessageType.command, 
+        vscode.postMessage({time: date.getTime(),
+                            type: MessageType.command,
                             body: `_internal_ Expand the definition of ${inputText1} in (${inputText2.replace(/(\.\s*|\s*)$/s, '')}).`})
         setIsLoading(true);
     };
@@ -136,7 +137,7 @@ export function ExpandDefinition() {
         if (event.key === 'Enter' && event.shiftKey) {
             // Handle Shift + Enter key press logic here
             // Prevent adding a new line in the textarea
-            event.preventDefault(); 
+            event.preventDefault();
         }
     };
 

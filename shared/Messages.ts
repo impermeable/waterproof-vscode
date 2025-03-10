@@ -25,31 +25,31 @@ type MessageBase<T extends MessageType, B = undefined> =
     B extends undefined ? { type: T, requestId?: number } : { type: T, body: B, requestId?: number };
 
 export type Message =
-    | MessageBase<MessageType.response, { data: unknown, requestId: number }>
-    | MessageBase<MessageType.update, { value: string, version: number }>
-    | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
-    | MessageBase<MessageType.ready>
-    | MessageBase<MessageType.editorReady>
-    | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
-    | MessageBase<MessageType.cursorChange, number>
-    | MessageBase<MessageType.lineNumbers, LineNumber>
-    | MessageBase<MessageType.requestGoals, unknown>
-    | MessageBase<MessageType.renderGoals, unknown>
-    | MessageBase<MessageType.errorGoals, unknown>
-    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: string, time: number }>
-    | MessageBase<MessageType.command, { command: string, time?: number}>
-    | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
-    | MessageBase<MessageType.teacher, boolean>
-    | MessageBase<MessageType.setAutocomplete, Completion[]>
-    | MessageBase<MessageType.qedStatus, QedStatus[]>
-    | MessageBase<MessageType.progress, SimpleProgressParams>
-    | MessageBase<MessageType.diagnostics, DiagnosticMessage>
     | MessageBase<MessageType.applyStepError, string>
-    | MessageBase<MessageType.fatalError, { error: string }>
-    | MessageBase<MessageType.updateVersion, { version: number }>
-    | MessageBase<MessageType.syntax, boolean>
+    | MessageBase<MessageType.command, { command: string, time?: number}>
+    | MessageBase<MessageType.cursorChange, number>
+    | MessageBase<MessageType.diagnostics, DiagnosticMessage>
+    | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
     | MessageBase<MessageType.editorHistoryChange, HistoryChangeType>
-    | MessageBase<MessageType.setShowLineNumbers, boolean>;
+    | MessageBase<MessageType.editorReady>
+    | MessageBase<MessageType.errorGoals, unknown>
+    | MessageBase<MessageType.fatalError, { error: string }>
+    | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
+    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: string, time: number }>
+    | MessageBase<MessageType.lineNumbers, LineNumber>
+    | MessageBase<MessageType.progress, SimpleProgressParams>
+    | MessageBase<MessageType.qedStatus, QedStatus[]>
+    | MessageBase<MessageType.ready>
+    | MessageBase<MessageType.renderGoals, unknown>
+    | MessageBase<MessageType.requestGoals, unknown>
+    | MessageBase<MessageType.response, { data: unknown, requestId: number }>
+    | MessageBase<MessageType.setAutocomplete, Completion[]>
+    | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
+    | MessageBase<MessageType.setShowLineNumbers, boolean>
+    | MessageBase<MessageType.syntax, boolean>
+    | MessageBase<MessageType.teacher, boolean>
+    | MessageBase<MessageType.update, { value: string, version: number }>
+    | MessageBase<MessageType.updateVersion, { version: number }>;
 
 /**
  * Message type enum. Every message that is send from the

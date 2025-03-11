@@ -3,10 +3,10 @@ import React, { Suspense, lazy, useEffect, useState } from "react";
 import { GoalAnswer, PpString } from "../../lib/types";
 import { ErrorBrowser } from "../goals/ErrorBrowser";
 import { Goals } from "../goals/Goals";
-import { CoqMessageEvent } from "../lib/CoqMessage";
 import { Hypothesis } from "./Hypothesis";
 
 import "../styles/info.css";
+import { Message, MessageType } from "../../shared";
 
 // Dynamic import because the project uses CommonJS and the module is an ECMAScript module
 // Top level await is supported with other `module` options in tsconfig.json
@@ -21,17 +21,18 @@ export function Debug() {
 
   //handles the message
   //event : CoqMessageEvent as defined above
-  function infoViewDispatch(event: CoqMessageEvent) {
-    if (event.data.type === "renderGoals") {
+  function infoViewDispatch(msg: Message) {
+    if (msg.type === MessageType.renderGoals) {
       // most important case that actually get the information
-      setGoals(event.data.body);
+      setGoals(msg.body);
     }
   }
 
   // Set the callback, adds and removes the event listener
   useEffect(() => {
-    window.addEventListener("message", infoViewDispatch);
-    return () => window.removeEventListener("message", infoViewDispatch);
+    const callback = (ev: MessageEvent<Message>) => {infoViewDispatch(ev.data);};
+    window.addEventListener("message", callback);
+    return () => window.removeEventListener("message", callback);
   }, []);
 
   if (!goals) {

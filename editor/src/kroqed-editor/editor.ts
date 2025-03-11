@@ -257,7 +257,7 @@ export class Editor {
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				"Mod-h": () => {
-					this.post({type: MessageType.command, body: "Help.", time: (new Date()).getTime()});
+					this.post({type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime() }});
 					return true;
 				},
 				"Backspace": deleteSelection,
@@ -325,7 +325,12 @@ export class Editor {
 			// @ts-expect-error TODO: Fix me
 			linenumbers.push(this._mapping?.findPosition(codeCell._getPos() + 1));
 		}
-		this.post({type: MessageType.lineNumbers, body: {linenumbers, version: this._mapping?.version}});
+		if (this._mapping === undefined) {
+			// Fail when the mapping is undefined
+			console.error("Encountered undefined mapping in sendLineNumbers function");
+			return;
+		}
+		this.post({type: MessageType.lineNumbers, body: { linenumbers, version: this._mapping.version }});
 	}
 
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */
@@ -525,32 +530,29 @@ export class Editor {
 		// Blocks added to scope const declarations
 		switch(msg.type) {
 			case MessageType.qedStatus:
-				{ const statuses = msg.body as QedStatus[];  // one status for each input area, in order
+				{ const statuses = msg.body;  // one status for each input area, in order
 				this.updateQedStatus(statuses);
 				break; }
 			case MessageType.setShowLineNumbers:
-				{ const show = msg.body as boolean;
+				{ const show = msg.body;
 				this.setShowLineNumbers(show);
 				break; }
 			case MessageType.lineNumbers:
-				// @ts-expect-error TODO: Fix me
 				this.setLineNumbers(msg.body);
 				break;
 			case MessageType.teacher:
-				// @ts-expect-error TODO: Fix me
 				this.updateLockingState(msg.body);
 				break;
 			case MessageType.progress:
-				{ const progressParams = msg.body as SimpleProgressParams;
+				{ const progressParams = msg.body;
 				this.updateProgressBar(progressParams);
 				break; }
 			case MessageType.diagnostics:
 				{ const diagnostics = msg.body;
-				// @ts-expect-error TODO: Fix me
 				this.parseCoqDiagnostics(diagnostics);
 				break; }
             case MessageType.syntax:
-                initializeTacticCompletion(msg.body as boolean);
+                initializeTacticCompletion(msg.body);
                 break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.

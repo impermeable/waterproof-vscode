@@ -1,7 +1,7 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
 import React, { useEffect, useState } from "react";
 
-import { MessageType } from "../../shared";
+import { Message, MessageType } from "../../shared";
 import "../styles/execute.css";
 import { Messages } from '../goals/Messages';
 
@@ -16,25 +16,23 @@ export function Help() {
     //on changes in component useEffect is run
     useEffect(() => {
         //handling a message
-        const handleMessage = (event) => {
-            switch (event.data.type){
-                // insert message which is either a symbol or tactic
-                case MessageType.insert:
-                    break;
-                // receiving info of the executed commands
-                case MessageType.command:
-                    setInfo(event.data.body);
-                    setIsLoading(false);
-                    break;
+        const handleMessage = (msg: Message) => {
+            if (msg.type === MessageType.setData) {
+                //@ts-expect-error FIXME: setInfo expects string[]
+                // in theory setData can also contain GoalAnswer
+                setInfo(msg.body);
+                setIsLoading(false);
             }
         };
 
+        const callback = (ev: MessageEvent<Message>) => {handleMessage(ev.data);};
+
         //adding event listener to component
-        window.addEventListener('message', handleMessage);
+        window.addEventListener('message', callback);
 
         return () => {
             // on dismount of component the eventlistener is removed
-          window.removeEventListener('message', handleMessage);
+          window.removeEventListener('message', callback);
         };
       }, [ info ]);
 

@@ -3,7 +3,6 @@
   "references": [
     { "path": "src" },
     { "path": "views/goals" },
-    { "path": "test" },
     { "path": "editor"}
   ],
   "compilerOptions": {

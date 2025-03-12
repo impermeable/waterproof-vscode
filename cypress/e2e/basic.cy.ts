@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+import { MessageType } from "../../shared";
 import { setupTest } from "./util";
 
 const edits = [];
@@ -30,7 +31,7 @@ describe('Basic tests', () => {
     cy.get("#editor h1").should("be.visible");
 
     // TODO: This also immediately opens the markdown editor for the H1
-    cy.window().then((win) => { win.postMessage({type: "toggleTeacherMode", body: true}) });
+    cy.window().then((win) => { win.postMessage({type: MessageType.teacher, body: true}) });
     cy.get('coqblock > .cm-editor > .cm-scroller > .cm-content').click(); // to reset h1
     cy.get("#editor h1").should("be.visible");
     cy.get("#editor h1").click();
@@ -38,8 +39,7 @@ describe('Basic tests', () => {
   });
 
   it("Make basic edits to md and coq", () => {
-    cy.window().then((win) => { win.postMessage({type: "toggleTeacherMode", body: true}) });
-
+    cy.window().then((win) => { win.postMessage({type: MessageType.teacher, body: true}) });
     cy.get(".markdown-view").type("\n## Hello World");
     cy.get(".markdown-view").should("contain.text", "Hello World");
     cy.nthCoqCode(0).click(); // to reset h1

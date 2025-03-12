@@ -3,18 +3,9 @@ import React, { useEffect, useState } from 'react';
 
 import { GoalAnswer, PpString } from "../../lib/types";
 import { Messages } from "../goals/Messages";
-import { InfoError, WaitingForInfo } from "../lib/CoqMessage";
 
 import "../styles/info.css";
-
-
-interface RenderGoalsArray {
-  type: "renderGoals";
-  body: GoalAnswer<PpString>[];
-}
-interface CoqMessageEvent extends MessageEvent {
-  data: RenderGoalsArray | WaitingForInfo | InfoError;
-}
+import { Message, MessageType } from "../../shared";
 
 
 export function Logbook() {
@@ -24,19 +15,19 @@ export function Logbook() {
   const [isLoading, setIsLoading] = useState(true);
 
   //message handler
-  function infoViewDispatch(event: CoqMessageEvent) {
-    if (event.data.type === "renderGoals") {
-      setGoalsArray(event.data.body); //setting the information
+  function infoViewDispatch(msg: Message) {
+    if (msg.type === MessageType.renderGoals) {
+      //@ts-expect-error FIXME: renderGoals body is currently unknown.
+      setGoalsArray(msg.body); //setting the information
       setIsLoading(false); //putting loading to false
-    } else if (event.data.type === "waitingForInfo") {
-      setIsLoading(true); //waiting for info therefore loading is true
     }
   }
 
   // Set the callback
   useEffect(() => {
-    window.addEventListener("message", infoViewDispatch);
-    return () => window.removeEventListener("message", infoViewDispatch);
+    const callback = (ev: MessageEvent<Message>) => {infoViewDispatch(ev.data);};
+    window.addEventListener("message", callback);
+    return () => window.removeEventListener("message", callback);
   }, []);
 
   //show that the messages are loading

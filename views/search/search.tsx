@@ -1,7 +1,7 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
 import React, { useEffect, useRef, useState } from "react";
 
-import { MessageType } from "../../shared";
+import { Message, MessageType } from "../../shared";
 import "../styles/execute.css";
 import { Messages } from '../goals/Messages';
 
@@ -21,26 +21,30 @@ export function Search() {
     //on changes in component useEffect is run
     useEffect(() => {
         //handling a message
-        const handleMessage = (event) => {
-            switch (event.data.type){
+        const handleMessage = (msg: Message) => {
+            switch (msg.type){
                 // insert message which is either a symbol or tactic
                 case MessageType.insert:
-                    insertText(event.data.body.symbolUnicode);
+                    insertText(msg.body.symbolUnicode);
                     break;
                 // receiving info of the executed commands
-                case MessageType.command:
-                    setInfo(event.data.body);
+                case MessageType.setData:
+                    //@ts-expect-error FIXME: setInfo expects string[]
+                    // in theory setData can also contain GoalAnswer
+                    setInfo(msg.body);
                     setIsLoading(false);
                     break;
             }
         };
 
+        const callback = (ev: MessageEvent<Message>) => {handleMessage(ev.data);};
+
         //adding event listener to component
-        window.addEventListener('message', handleMessage);
+        window.addEventListener('message', callback);
 
         return () => {
             // on dismount of component the eventlistener is removed
-          window.removeEventListener('message', handleMessage);
+          window.removeEventListener('message', callback);
         };
       }, [ cursorSearch, searchText, current, info ]);
 
@@ -77,8 +81,8 @@ export function Search() {
 
     //button press search
     const handleSearch = () => {
-        vscode.postMessage({time: date.getTime(), 
-                            type: MessageType.command, 
+        vscode.postMessage({time: date.getTime(),
+                            type: MessageType.command,
                             body: `Search "${searchText.replace(/(\.\s*|\s*)$/s, '')}".`})
         setIsLoading(true);
     }
@@ -88,7 +92,7 @@ export function Search() {
         if (event.key === 'Enter' && event.shiftKey) {
             // Handle Shift + Enter key press logic here
             // Prevent adding a new line in the textarea
-            event.preventDefault(); 
+            event.preventDefault();
              //print the search results
         }
         setCursorPos(searchareaRef.current, "search");

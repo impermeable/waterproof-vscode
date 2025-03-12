@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+import { QedStatus } from "../../shared";
 import { Message, MessageType } from "../../shared/Messages";
 
 const edits = [];
@@ -28,7 +29,7 @@ const messages: Array<Message> = [
     {
         "type": MessageType.qedStatus,
         "body": [
-            "invalid"
+          QedStatus.InvalidInputArea
         ]
     },
     {
@@ -73,9 +74,9 @@ describe('TestingTest', () => {
         window.acquireVsCodeApi = function () {
           return {
             postMessage: (msg: Message) => {
-              if (msg.type === "ready") {
+              if (msg.type === MessageType.ready) {
                 window.postMessage({
-                    "type": "init",
+                    "type": MessageType.init,
                     "body": {
                         "value": "<input-area>\n```coq\nCompute 3 + 3.\n```\n</input-area>",
                         "format": "MarkdownV",
@@ -86,8 +87,8 @@ describe('TestingTest', () => {
                 for (const message of messages) {
                   window.postMessage(message);
                 }
-                
-              } else if (msg.type === "docChange") {
+
+              } else if (msg.type === MessageType.docChange) {
                 // @ts-expect-error Okay for test purposes
                 edits.push(msg.body);
               }

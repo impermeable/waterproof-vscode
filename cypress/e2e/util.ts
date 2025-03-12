@@ -1,6 +1,7 @@
+/// <reference types="cypress" />
 import {Message, MessageType} from "../../shared/Messages";
 /**
- * Sets up the test harness and initializes the editor after receiving the 
+ * Sets up the test harness and initializes the editor after receiving the
  * ready message from the editor.
  * @param initialDocument The initial document to load in the editor.
  * @param edits Array where the `docChange` events will be stored.
@@ -29,6 +30,7 @@ export function setupTest(initialDocument: string, edits: unknown[], callbacks?:
                             if (callbacks) {
                                 const callback = callbacks[msg.type];
                                 if (callback !== undefined)
+                                    //@ts-expect-error Fine in tests
                                     callback(msg.body);
                             }
                         }

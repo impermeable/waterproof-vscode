@@ -22,7 +22,6 @@ let customTags = {
 export let highlight = HighlightStyle.define([
     { tag: customTags.waterproofTactic, color: "#5EC300" },
     { tag: customTags.tacticInput, color: "#FF0000" },
-    { tag: customTags.takeInput, color: "#338FFF" },
     { tag: customTags.lemma, color: "#FF00F7" },
     { tag: customTags.comment, color: "#0000FF" },
 ])
@@ -39,8 +38,8 @@ export const coqLanguage = LRLanguage.define({
             // }),
             styleTags({
                 WaterproofTactic: customTags.waterproofTactic,
+                WaterproofTacticZero: customTags.waterproofTactic,
                 TacticInput: customTags.tacticInput,
-                TakeInput: customTags.takeInput,
                 Lemma: customTags.lemma,
                 Comment: customTags.comment
             })

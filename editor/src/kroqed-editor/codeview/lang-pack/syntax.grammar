@@ -1,9 +1,9 @@
 @top Program { Sentence* }
-@external tokens TakeInput from "./externalTokens" { TakeInput }
+// @external tokens TakeInput from "./externalTokens" { TakeInput }
 
 
 Sentence {
-    WaterproofTactic
+    WaterproofTactic |
     Lemma
 }
 
@@ -13,20 +13,21 @@ Sentence {
 // Define local token for tactics, whatever is not TacticEnd 
 // is just TacticInput
 @local tokens {
-    TacticEnd[@name='dotSpace'] { '.' space* }
+    TacticEnd[@name='dotSpace'] { '.' }
     @else TacticInput
 }
 
 // Skip WaterproofTactics
 @skip {} {
-    WaterproofTactic {
-        // TODO: fix Take, is external tokeniser necessary?
-        "Take" TakeInput ":" TacticInput TacticEnd | 
-        "Help." | 
-        "We argue by contradiction." | 
-        "Contradiction." | 
-        "We show both statements." | 
-        "We show both directions." | 
+    WaterproofTactic { 
+        // Zero Input Tactics
+        "Help" TacticEnd | 
+        "We argue by contradiction" TacticEnd| 
+        "Contradiction" TacticEnd| 
+        "We show both statements"  TacticEnd| 
+        "We show both directions" TacticEnd|
+        // Single Input Tactics
+        "Take " TacticInput TacticEnd |
         "We need to show that " TacticInput TacticEnd | 
         "We conclude that " TacticInput TacticEnd | 
         "Assume that " TacticInput TacticEnd | 
@@ -39,11 +40,12 @@ Sentence {
         "We use induction on " TacticInput TacticEnd | 
         "Indeed, " TacticInput TacticEnd |
         "Use " TacticInput TacticEnd |
+        "Choose " TacticInput TacticEnd | 
+        // Double Input Tactics
         // TODO: Figure out approach for tactics with 2 or more TacticInput(s)
         "Expand the definition of " TacticInput " in " TacticInput TacticEnd | 
         "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
         "Obtain " TacticInput " according to " TacticInput TacticEnd | 
-        "Choose " TacticInput " :=" TacticInput TacticEnd | 
         "By (" TacticInput ") we conclude that " TacticInput TacticEnd | 
         "By (" TacticInput ") it holds that " TacticInput TacticEnd | 
         "Define " TacticInput " := " TacticInput TacticEnd | 
@@ -59,14 +61,14 @@ Sentence {
 }
 
 @local tokens {
-    LemmaEnd[@name='dotSpace'] { '.' space* }
+    LemmaEnd[@name='dotSpace'] { '.'}
     @else LemmaStatement
 }
 
-// Skip WaterproofTactics
+// Skip Lemma
 @skip {} {
     Lemma {
-        "Lemma" LemmaStatement LemmaEnd 
+        "Lemma " LemmaStatement LemmaEnd 
     }
 }
 
@@ -79,7 +81,7 @@ Sentence {
 }
 
 @precedence {
-    WaterproofTactic, CoqSentence, BlockComment
+    Lemma, WaterproofTactic
 }
 
 @detectDelim

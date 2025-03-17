@@ -108,8 +108,10 @@ export class VersionChecker {
             const groups = regex.exec(stdout)?.groups;
             if (!groups) throw new Error("Failed to parse version string.");
             return Version.fromString(groups["version"]);
-        } catch (err: any) {
-            return { reason: err.message };
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
         }
     }
 
@@ -132,8 +134,10 @@ export class VersionChecker {
             const versionCoqWaterproof = Version.fromString(wpVersion);
             const versionRequiredCoq = Version.fromString(reqCoqVersion);
             return { wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq };
-        } catch (err: any) {
-            return { reason: err.message };
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
         }
     }
 
@@ -149,15 +153,17 @@ export class VersionChecker {
             const stdout = await this.exec(command);
             const version = Version.fromString(stdout.trim());
             return version;
-        } catch (err: any) {
-            return { reason: err.message };
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
         }
     }
 
     /** Wrapper around shellIntegration  */
     private async exec(command: string): Promise<string> {
         wpl.log(`Running command: ${command}`)
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             const myTerm = window.createTerminal(`Waterproof commands -- ${command}`)
             let fired = false;
             

@@ -1,49 +1,86 @@
 import { DiagnosticSeverity } from "vscode";
+import { FileFormat } from "./FileFormat";
+import { LineNumber } from "./LineNumber";
+import { DocChange, WrappingDocChange } from "./DocChange";
+import { QedStatus } from "./QedStatus";
+import { Completion } from "@codemirror/autocomplete";
+import { GoalAnswer, PpString } from "../lib/types";
 
-/**
- * Interface for the message types. Every message needs to have a `type`.
- * `body` and `requestID` are optional.
- */
-export type Message = {
-    type: MessageType;
-    body?: any;
-    requestId?: number;
-    time?: number,
-}
+/** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)
+ *
+ * Notes on the type former:
+ * - T extends MessageType makes sure T is a member of the MessageType enum.
+ * - B = undefined, defaults B to undefined (so we don't have to provide for messages that don't include a body)
+ * - B extends undefined ? A : B, is the usual ternary operator `if`. When `B extends undefined` (B = undefined)
+ *   then we choose A, otherwise (B is an object) we choose B.
+ *
+ * Ex: MessageBase<MessageType.ready> does not contain a body and expands to { type : MessageType.ready }
+ *     MessageBase<MessageType.update, { value: string, version: number }> does contain a body and expands to
+ *     {
+ *          type: MessageType.update,
+ *          body: { value: string, version: number }
+ *     }
+*/
+type MessageBase<T extends MessageType, B = undefined> =
+    B extends undefined ? { type: T, requestId?: number } : { type: T, body: B, requestId?: number };
+
+export type Message =
+    | MessageBase<MessageType.applyStepError, string>
+    | MessageBase<MessageType.command, { command: string, time?: number}>
+    | MessageBase<MessageType.cursorChange, number>
+    | MessageBase<MessageType.diagnostics, DiagnosticMessage>
+    | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
+    | MessageBase<MessageType.editorHistoryChange, HistoryChangeType>
+    | MessageBase<MessageType.editorReady>
+    | MessageBase<MessageType.errorGoals, unknown>
+    | MessageBase<MessageType.fatalError, { error: string }>
+    | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
+    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: string, time: number }>
+    | MessageBase<MessageType.lineNumbers, LineNumber>
+    | MessageBase<MessageType.progress, SimpleProgressParams>
+    | MessageBase<MessageType.qedStatus, QedStatus[]>
+    | MessageBase<MessageType.ready>
+    | MessageBase<MessageType.renderGoals, unknown>
+    | MessageBase<MessageType.requestGoals, unknown>
+    | MessageBase<MessageType.response, { data: unknown, requestId: number }>
+    | MessageBase<MessageType.setAutocomplete, Completion[]>
+    | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
+    | MessageBase<MessageType.setShowLineNumbers, boolean>
+    | MessageBase<MessageType.syntax, boolean>
+    | MessageBase<MessageType.teacher, boolean>
+    | MessageBase<MessageType.update, { value: string, version: number }>
+    | MessageBase<MessageType.updateVersion, { version: number }>;
 
 /**
  * Message type enum. Every message that is send from the
  * extension host to the editor (and vice versa) needs to have a type.
  */
-export enum MessageType {
-    response = "response",
-    update = "update",
-    init = "init",
-    ready = "ready",
-    /**
-     * A notification sent from the editor to the extension when the editor is (1) initialized, or
-     * (2) synched (e.g., after an undo, redo, or refocus).
-     */
-    editorReady = "editorReady",
-    docChange = "docChange",
-    cursorChange = "cursorChange",
-    lineNumbers = "lineNumbers",
-    requestGoals = "waitingForInfo",
-    renderGoals = "renderGoals",
-    errorGoals = "infoError", // this should probably be changed to a generic error message
-    insert = "insertSymbol",
-    command = "command",
-    teacher = "toggleTeacherMode",
-    setAutocomplete = "autocomplete",
-    qedStatus = "qed",
-    progress = "progress",
-    diagnostics = "diagnostics",
-    applyStepError = "applyStepError",
-    fatalError = "fatal",
-    updateVersion = "updateTextDocVersion",
-    syntax= "setSyntaxMode",
-    editorHistoryChange = "editorHistoryChange",
-    setShowLineNumbers = "setShowLineNumbers",
+export const enum MessageType {
+    response,
+    update,
+    init,
+    ready,
+    editorReady,
+    docChange,
+    cursorChange,
+    lineNumbers,
+    requestGoals,
+    renderGoals,
+    errorGoals,
+    insert,
+    command,
+    teacher,
+    setAutocomplete,
+    qedStatus,
+    progress,
+    diagnostics,
+    applyStepError,
+    fatalError,
+    updateVersion,
+    syntax,
+    editorHistoryChange,
+    setShowLineNumbers,
+    setData,
 }
 
 export const enum HistoryChangeType {

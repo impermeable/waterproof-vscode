@@ -22,7 +22,7 @@ export function getFormatFromExtension(doc: TextDocument): FileFormat {
 }
 
 export function isIllegalFileName(fileName: string): boolean {
-    let substrings = [" ","-","(",")"]
+    const substrings = [" ","-","(",")"]
     if (substrings.some(v => fileName.includes(v))) {
         return true;
     }

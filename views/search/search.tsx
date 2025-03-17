@@ -1,8 +1,7 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
-import objectHash from "object-hash";
 import React, { useEffect, useRef, useState } from "react";
 
-import { MessageType } from "../../shared";
+import { Message, MessageType } from "../../shared";
 import "../styles/execute.css";
 import { Messages } from '../goals/Messages';
 
@@ -18,32 +17,34 @@ export function Search() {
     const [isLoading, setIsLoading] = useState(false);
 
     const searchareaRef =  useRef(null);
-    const input1Ref = useRef(null);
-    const input2Ref = useRef(null);
 
     //on changes in component useEffect is run
     useEffect(() => {
         //handling a message
-        const handleMessage = (event) => {
-            switch (event.data.type){
+        const handleMessage = (msg: Message) => {
+            switch (msg.type){
                 // insert message which is either a symbol or tactic
                 case MessageType.insert:
-                    insertText(event.data.body.symbolUnicode);
+                    insertText(msg.body.symbolUnicode);
                     break;
                 // receiving info of the executed commands
-                case MessageType.command:
-                    setInfo(event.data.body);
+                case MessageType.setData:
+                    //@ts-expect-error FIXME: setInfo expects string[]
+                    // in theory setData can also contain GoalAnswer
+                    setInfo(msg.body);
                     setIsLoading(false);
                     break;
             }
         };
 
+        const callback = (ev: MessageEvent<Message>) => {handleMessage(ev.data);};
+
         //adding event listener to component
-        window.addEventListener('message', handleMessage);
+        window.addEventListener('message', callback);
 
         return () => {
             // on dismount of component the eventlistener is removed
-          window.removeEventListener('message', handleMessage);
+          window.removeEventListener('message', callback);
         };
       }, [ cursorSearch, searchText, current, info ]);
 
@@ -60,9 +61,9 @@ export function Search() {
 
     //inserting text at the previous cursor position
     const insertText = (textToInsert: string) => {
-        var textarea = null;
-        var cursor = 0;
-        var value = "";
+        let textarea = null;
+        let cursor = 0;
+        let value = "";
         textarea = searchareaRef.current;
         cursor = cursorSearch;
         value = searchText;
@@ -80,69 +81,31 @@ export function Search() {
 
     //button press search
     const handleSearch = () => {
-        vscode.postMessage({time: date.getTime(), 
-                            type: MessageType.command, 
+        vscode.postMessage({time: date.getTime(),
+                            type: MessageType.command,
                             body: `Search "${searchText.replace(/(\.\s*|\s*)$/s, '')}".`})
         setIsLoading(true);
     }
-
-    //execute by pressing search + enter in the first input field
-    const handleKeyDown = (event) => {
-        if (event.key === 'Enter' && event.shiftKey) {
-            // Prevents adding a new line in the textarea
-            event.preventDefault();
-        }
-        setCursorPos(input1Ref.current, "input1");
-    };
-
-    //execute by pressing search + enter in the second input field
-    const handleKeyDown2 = (event) => {
-        if (event.key === 'Enter' && event.shiftKey) {
-            // Handle Shift + Enter key press logic here
-            // Prevent adding a new line in the textarea
-            event.preventDefault(); 
-        }
-    };
 
     //search by pressing shift + enter
     const handleKeyDownSearch = (event) => {
         if (event.key === 'Enter' && event.shiftKey) {
             // Handle Shift + Enter key press logic here
             // Prevent adding a new line in the textarea
-            event.preventDefault(); 
+            event.preventDefault();
              //print the search results
         }
         setCursorPos(searchareaRef.current, "search");
     };
 
-    //handle change in the first input of execute
-    const handleChange = (event) => {
-        setCursorPos(input1Ref.current, "input1");
-    };
-
-    //handle change in the second input of execute
-    const handleChange2 = (event) => {
-        setCursorPos(input2Ref.current, "input2");
-    };
-
     //handle change in the search input
-    const handleChangeSearch = (event) => {
+    const handleChangeSearch = (_) => {
         setCursorPos(searchareaRef.current, "search");
     };
 
     // handle click in the search bar
     const onClickSearch = ()=> {
         setCursorPos(searchareaRef.current, "search");
-    }
-
-    //handle click in the first input of execute
-    const onClick1 = () => {
-        setCursorPos(input1Ref.current, "input1");
-    }
-
-    //handle click in the second input of execute
-    const onClick2 =() => {
-        setCursorPos(input2Ref.current, "input2");
     }
 
     return (

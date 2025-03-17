@@ -27,7 +27,7 @@ const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOp
 
 
 export function activate(context: ExtensionContext): void {
-    let extension: Waterproof = new Waterproof(context, clientFactory);
+    const extension: Waterproof = new Waterproof(context, clientFactory);
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();

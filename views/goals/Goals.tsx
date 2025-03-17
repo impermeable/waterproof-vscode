@@ -1,5 +1,4 @@
 import $ from "jquery";
-import objectHash from "object-hash";
 import { PropsWithChildren, useLayoutEffect, useRef } from "react";
 import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 import { Goal, GoalConfig, PpString } from "../../lib/types";
@@ -25,10 +24,6 @@ function Goal({ goal }: GoalP) {
     if (ref.current) {
       FormatPrettyPrint.adjustBreaks($(ref.current));
     }
-    // See Pfff.v:17160 for tests.
-    if (tyRef.current) {
-      tyRef.current.scrollIntoView();
-    }
   });
 
   return (
@@ -51,7 +46,7 @@ type GoalsListP = PropsWithChildren<{
   textDoc: VersionedTextDocumentIdentifier
 }>;
 
-//function that displays a list of goals if it exists 
+//function that displays a list of goals if it exists
 function GoalsList({
   goals,
   header,
@@ -60,7 +55,52 @@ function GoalsList({
   pos,
   textDoc
 }: GoalsListP) {
-  let count = goals.length;
+  const count = goals.length;
+
+  //if there are no goals then this is displayed
+  if (count == 0) {
+    if (show_on_empty) {
+      return (
+        <Box summary="Proof finished" pos={pos} textDox={textDoc}>{bullet_msg ? (
+          <div className="aside">
+            <CoqPp content={bullet_msg} inline={true} />
+          </div>
+        ) : null}</Box>
+      );
+    } else {
+      return null;
+    }
+  //One goal, the goals is displayed
+  } else if (count == 1) {
+    return (
+      <Box summary={`${header}`} pos={pos} textDox={textDoc}>
+          <Goal key={0} goal={goals[0]} idx={0} />
+      </Box>
+    );
+  //Numerous goals, only the first goal is displayed, the other goals are hidden.
+  } else {
+    return (
+      <div>
+        <Box summary={`${header}`} pos={pos} textDox={textDoc}>
+          <Goal key={0} goal={goals[0]} idx={0} />
+        </Box>
+        <Box summary={`Afterwards, we need to complete other subproofs`} pos={pos} textDox={textDoc}>
+        </Box>
+      </div>
+    );
+  }
+
+}
+
+function GoalsRemaining({
+  goals,
+  header,
+  show_on_empty,
+  bullet_msg,
+  pos,
+  textDoc
+}: GoalsListP) {
+  const count = goals.length;
 
   //if there are no goals then this is displayed
   if (count == 0) {
@@ -80,10 +120,6 @@ function GoalsList({
   //if thare are goals then this maps over the goals and display them by using the Goal component
   return (
     <Box summary={`${header}`} pos={pos} textDox={textDoc}>
-      {goals.map((value, idx) => {
-        let key = objectHash(value);
-        return <Goal key={key} goal={value} idx={idx + 1} />;
-      })}
     </Box>
   );
 }
@@ -95,36 +131,44 @@ type StackSummaryP = PropsWithChildren<{
   textDoc: VersionedTextDocumentIdentifier
 }>;
 
-//goals can have multiple layers which are stacked. 
+//goals can have multiple layers which are stacked.
 //the following function handles the display of stacked goals
 function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
-  let count = stack.length;
+  const count = stack.length;
   if (count <= idx) return null;
 
   const [l, r] = stack[idx];
   const goals = l.concat(r);
-  //defines the level of the goal using idx
-  let level_indicator =
-    idx === 0 ? "the same bullet level" : `the -${idx} bullet level`;
 
-  return (
-    <div>
-      {/* uses GoalsList to show the goals as a list within a stack */}
-      <GoalsList
-        goals={goals}
-        header={`Remaining subproofs/steps (some statements/cases remain to be shown)`}
-        show_on_empty={false}
-        pos={pos}
-        textDoc={textDoc}
-      />
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* recursively calls itself to get the different level of goals */}
-        <StackGoals idx={idx + 1} stack={stack} pos={pos} textDoc={textDoc} />
+  if (idx == 0) {
+    return (
+      <div>
+        {/* uses GoalsList to show the goals as a list within a stack */}
+        <GoalsRemaining
+          goals={goals}
+          header={`Afterwards, we need to complete other subproofs`}
+          show_on_empty={false}
+          pos={pos}
+          textDoc={textDoc}
+        />
       </div>
-    </div>
-  );
-}
-//type that has goals, position and textdocument and takes its children 
+    );
+  } else {
+    return (
+      <div>
+        {/* uses GoalsList to show the goals as a list within a stack */}
+        <GoalsRemaining
+          goals={goals}
+          header={`Afterwards, we need to complete other subproofs`}
+          show_on_empty={false}
+          pos={pos}
+          textDoc={textDoc}
+        />
+      </div>
+    )
+    }
+  }
+//type that has goals, position and textdocument and takes its children
 type GoalsParams = PropsWithChildren<{ goals?: GoalConfig<PpString>, pos: Position, textDoc: VersionedTextDocumentIdentifier }>;
 
 //the component that is used by other components
@@ -137,39 +181,77 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
     </Box>
   }
 
-  return (
-    <div className="goal-panel">
-      {/* primary list of goals */}
-      <GoalsList
-        goals={goals.goals}
-        header={"We need to show"}
-        show_on_empty={true}
-        bullet_msg={goals.bullet}
-        pos={pos}
-        textDoc={textDoc}
-      />
-      {/* stacking goals that are on different levels */}
-      <div style={{ marginLeft: "0.5ex" }}>
-        <StackGoals idx={0} stack={goals.stack} pos={pos} textDoc={textDoc} />
-      </div>
-      <div style={{ marginLeft: "0.5ex" }}>
-        {/* a list for the goals that are on the shelf */}
+  const count = goals.goals.length
+
+  if (count <= 1) {
+    return (
+      <div className="goal-panel">
+        {/* primary list of goals */}
         <GoalsList
-          goals={goals.shelf}
-          header={"Shelf"}
-          show_on_empty={false} // these goals are not shown if they do not exist
+          goals={goals.goals}
+          header={"We need to show"}
+          show_on_empty={true}
+          bullet_msg={goals.bullet}
           pos={pos}
           textDoc={textDoc}
         />
-        {/* a list for the goals that are given up */}
-        <GoalsList 
-          goals={goals.given_up}
-          header={"Given Up"}
-          show_on_empty={false} // these goals are not shown if they do not exist
-          pos={pos}
-          textDoc={textDoc}
-        />
+        {/* stacking goals that are on different levels */}
+        <div style={{ marginLeft: "0.5ex" }}>
+          <StackGoals idx={0} stack={goals.stack} pos={pos} textDoc={textDoc} />
+        </div>
+        <div style={{ marginLeft: "0.5ex" }}>
+          {/* a list for the goals that are on the shelf */}
+          <GoalsList
+            goals={goals.shelf}
+            header={"Shelf"}
+            show_on_empty={false} // these goals are not shown if they do not exist
+            pos={pos}
+            textDoc={textDoc}
+          />
+          {/* a list for the goals that are given up */}
+          <GoalsList
+            goals={goals.given_up}
+            header={"Given Up"}
+            show_on_empty={false} // these goals are not shown if they do not exist
+            pos={pos}
+            textDoc={textDoc}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  } else {
+
+    return (
+      <div className="goal-panel">
+        {/* primary list of goals */}
+        <GoalsList
+          goals={goals.goals}
+          header={"We need to show"}
+          show_on_empty={true}
+          bullet_msg={goals.bullet}
+          pos={pos}
+          textDoc={textDoc}
+        />
+
+        <div style={{ marginLeft: "0.5ex" }}>
+          {/* a list for the goals that are on the shelf */}
+          <GoalsList
+            goals={goals.shelf}
+            header={"Shelf"}
+            show_on_empty={false} // these goals are not shown if they do not exist
+            pos={pos}
+            textDoc={textDoc}
+          />
+          {/* a list for the goals that are given up */}
+          <GoalsList
+            goals={goals.given_up}
+            header={"Given Up"}
+            show_on_empty={false} // these goals are not shown if they do not exist
+            pos={pos}
+            textDoc={textDoc}
+          />
+        </div>
+      </div>
+    );
+  }
 }

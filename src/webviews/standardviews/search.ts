@@ -14,7 +14,7 @@ export class Search extends CoqWebview implements IExecutor {
         super(extensionUri, "search", true);
         this.readyPanel();
         // Set up an event listener for WebviewEvents.change event
-        this.on(WebviewEvents.change, (e) => {
+        this.on(WebviewEvents.change, (_e) => {
             switch (this.state) { // Check the state of the webview
                 // If the webview is open
                 case WebviewState.open:
@@ -36,9 +36,9 @@ export class Search extends CoqWebview implements IExecutor {
 
     setResults(results: string[]): void {
         // Set the data property to the provided results
-        this.data = results;        
+        this.data = results;
         // Send a postMessage to the webview with the MessageType.command and the data
-        this.postMessage({ type: MessageType.command, body: this.data })
+        this.postMessage({ type: MessageType.setData, body: this.data })
     }
 
 }

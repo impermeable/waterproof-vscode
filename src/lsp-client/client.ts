@@ -1,5 +1,5 @@
 import { Completion } from "@codemirror/autocomplete";
-import { DiagnosticSeverity, Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
+import { Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
@@ -23,6 +23,8 @@ interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
 }
 
+// Seems to be needed for the mixin class below
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
 
 /**
@@ -53,7 +55,9 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
          * Initializes the client.
          * @param args the arguments for the base `LanguageClient`
          */
-        constructor(...args: any[]) {
+        // Needed for the mixin class
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        constructor(...args: any[]) { 
             super(...args);
             this.sentenceManager = new SentenceManager();
             console.log("CoqLspClient constructor");

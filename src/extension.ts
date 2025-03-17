@@ -7,7 +7,9 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri} from "vscode";
+    Uri,
+    env,
+    UIKind} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -77,7 +79,7 @@ export class Waterproof implements Disposable {
      *
      * @param context the extension context object
      */
-    constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory) {
+    constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory, private readonly _isWeb = false) {
         checkConflictingExtensions();
         excludeCoqFileTypes();
 
@@ -399,12 +401,13 @@ export class Waterproof implements Disposable {
         const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
         const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
         const versionChecker = new VersionChecker(WaterproofConfigHelper.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-        //
-        const foundServer = await versionChecker.prelaunchChecks();
-
+        
+        const foundServer = this._isWeb ? true : await versionChecker.prelaunchChecks();
+        
         if (foundServer) {
-
-            versionChecker.run();
+            if (!this._isWeb) {
+                versionChecker.run();
+            }
 
             if (this.client?.isRunning()) {
                 return Promise.reject(new Error("Cannot initialize client; one is already running."))

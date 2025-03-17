@@ -8,7 +8,7 @@ import { SequentialEditor } from "./edit";
 import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
-import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
+import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { HistoryChangeType } from "../../shared/Messages";
@@ -83,15 +83,7 @@ export class ProseMirrorWebview extends EventEmitter {
             this.undoHandler.bind(this),
             this.redoHandler.bind(this));
 
-        // TODOURGENT: Fix 
-        const basename = (str : string) => {
-           var base = new String(str).substring(str.lastIndexOf('/') + 1); 
-            if(base.lastIndexOf(".") != -1)       
-                base = base.substring(0, base.lastIndexOf("."));
-           return base;
-        }
-
-        const fileName = basename(doc.uri.fsPath)
+        const fileName = WaterproofFileUtil.getBasename(doc.uri)
         
         if (isIllegalFileName(fileName)) {
             const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "-", "(", ")". Please rename the file.`

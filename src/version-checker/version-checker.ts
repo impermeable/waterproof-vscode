@@ -44,7 +44,7 @@ export class VersionChecker {
      */
     public async prelaunchChecks(): Promise<boolean> {
         const version = await this.checkLSPBinary();
-        console.log("Version of coq-lsp: ", version);
+        wpl.log(`Version of coq-lsp: ${version}`);
         if (!isVersionError(version)) {
             if (version.needsUpdate(this._reqVersionCoqLSP)) {
                 this.informUpdateAvailable("coq-lsp", this._reqVersionCoqLSP, version);
@@ -122,7 +122,7 @@ export class VersionChecker {
         const ext = process.platform === "win32" ? ".exe" : "";
         
         const coqtopPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `coqtop${ext}`);
-        wpl.log(`coqtopPath: ${coqtopPath}`)
+        wpl.debug(`coqtopPath: ${coqtopPath}`)
         const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
         const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
     
@@ -166,16 +166,15 @@ export class VersionChecker {
                     const execution = shellIntegration.executeCommand(command);
                     const outputStream = execution.read();
                     fired = true;
-                    wpl.log(`Type of outputStream: ${typeof outputStream}`)
-                    console.log(`Output stream:`, outputStream)
+                    wpl.debug(`Type of outputStream: ${typeof outputStream}`)
+                    wpl.debug(`Output stream: ${outputStream}`)
                     window.onDidEndTerminalShellExecution(async event => {
                         if (event.execution === execution) {
-                            
                             let output = "";
                             for await (const data of outputStream) {
                                 output += data
                             }
-                            wpl.log(`Output of ran command ${output.substring(8)}`)
+                            wpl.debug(`Output of ran command ${output.substring(8)}`)
                             myTerm.hide();
                             myTerm.dispose();
                             // Remove terminal-artifacts from the output by taking the first 8 characters

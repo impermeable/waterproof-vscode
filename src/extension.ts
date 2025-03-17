@@ -32,7 +32,7 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
-import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
+import { WaterproofConfigHelper, WaterproofLogger as wpl } from "./helpers";
 
 
 
@@ -191,7 +191,7 @@ export class Waterproof implements Disposable {
                 try {
                     workspace.getConfiguration().update("waterproof.path", defaultValue, ConfigurationTarget.Global).then(() => {
                         setTimeout(() => {
-                            WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.path.toString());
+                            wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.path.toString());
                             window.showInformationMessage(`Waterproof Path setting succesfully updated!`);
                         }, 100);
                     });
@@ -214,7 +214,7 @@ export class Waterproof implements Disposable {
             try {
                 workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
                     setTimeout(() => {
-                        WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
+                        wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
 
                         window.showInformationMessage(`Waterproof args setting succesfully updated!`);
                     }, 100);
@@ -303,7 +303,7 @@ export class Waterproof implements Disposable {
         try {
             workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
                 setTimeout(() => {
-                    WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
+                    wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
                 }, 100);
             });
         } catch (e) {
@@ -396,7 +396,7 @@ export class Waterproof implements Disposable {
      * Create the lsp client and update relevant status components
      */
     async initializeClient(): Promise<void> {
-        console.log("Running initializeClient");
+        wpl.log("Running initializeClient");
         // Run the version checker.
         const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
         const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
@@ -426,7 +426,7 @@ export class Waterproof implements Disposable {
                 initializationOptions: serverOptions,
                 markdown: { isTrusted: true, supportHtml: true },
             };
-            console.log("Calling clientFactory");
+            wpl.log("Calling clientFactory");
             this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
             return this.client.startWithHandlers(this.webviewManager).then(
                 () => {

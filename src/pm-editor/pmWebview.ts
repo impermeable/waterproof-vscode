@@ -13,8 +13,6 @@ import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { HistoryChangeType } from "../../shared/Messages";
 
-import * as path from 'path';
-
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
     private _panel: WebviewPanel;

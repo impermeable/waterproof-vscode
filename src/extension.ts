@@ -7,9 +7,7 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri,
-    env,
-    UIKind} from "vscode";
+    Uri} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -274,8 +272,8 @@ export class Waterproof implements Disposable {
      * Attempts to install all required libraries
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
      */
-    private async autoInstall(command: string): Promise<Boolean> {
-        return new Promise((resolve, reject) => {
+    private async autoInstall(command: string): Promise<boolean> {
+        return new Promise((resolve, _reject) => {
             const myTerm = window.createTerminal(`AutoInstall Waterproof`)
             window.onDidChangeTerminalShellIntegration(async ({ terminal, shellIntegration}) => {
                 if (terminal === myTerm) {

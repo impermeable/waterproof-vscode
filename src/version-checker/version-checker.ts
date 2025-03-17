@@ -1,4 +1,4 @@
-import { ExtensionContext, UIKind, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
+import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
 // import { exec, spawn } from "child_process";
 // import path = require("path");
 import { Version, VersionRequirement } from "./version";

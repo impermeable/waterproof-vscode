@@ -12,9 +12,10 @@ import { Waterproof } from "./extension";
  * @param wsConfig the workspace configuration of Waterproof
  * @returns an LSP client with the added functionality of `CoqFeatures`
  */
-const clientFactory: CoqLspClientFactory = (context: ExtensionContext, clientOptions: LanguageClientOptions, wsConfig: WorkspaceConfiguration) => {
+const clientFactory: CoqLspClientFactory = (context: ExtensionContext, clientOptions: LanguageClientOptions, _wsConfig: WorkspaceConfiguration) => {
     const serverMain = Uri.joinPath(context.extensionUri, 'out/src/mainBrowser.js');
-	const worker = new Worker(serverMain.toString(true));
+    // Start our own webworker
+    new Worker(serverMain.toString(true));
     const lspWorker = new Worker(Uri.joinPath(context.extensionUri, 'out/coq_lsp_worker.bc.js').toString(true));
     return new (CoqLspClient(LanguageClient))(
         "waterproof",
@@ -27,7 +28,7 @@ const clientFactory: CoqLspClientFactory = (context: ExtensionContext, clientOpt
 
 export function activate(context: ExtensionContext): void {
     console.log("Browser activate function");
-    let extension: Waterproof = new Waterproof(context, clientFactory, true);
+    const extension: Waterproof = new Waterproof(context, clientFactory, true);
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();

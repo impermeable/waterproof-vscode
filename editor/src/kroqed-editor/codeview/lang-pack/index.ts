@@ -41,9 +41,14 @@ export const coqLanguage = LRLanguage.define({
                 TacticInput: customTags.tacticInput,
                 Lemma: customTags.lemma,
                 Comment: customTags.comment,
-                WaterproofByTactic: customTags.waterproofTactic,
-                TacticByMiddle: customTags.waterproofTactic,
-                TacticByInput: customTags.tacticInput
+                // Also update each of the middle tokens to match the tactics
+                TacticMiddleByOrSince: customTags.waterproofTactic,
+                TacticMiddleExpand: customTags.waterproofTactic,
+                TacticMiddleObtain: customTags.waterproofTactic,
+                TacticMiddleDefine: customTags.waterproofTactic,
+                TacticMiddleBecauseFirst: customTags.waterproofTactic,
+                TacticMiddleBecauseSecond: customTags.waterproofTactic,
+                TacticMiddleEither: customTags.waterproofTactic
             })
         ]
     })

@@ -4,7 +4,6 @@
 
 Sentence {
     WaterproofTactic |
-    WaterproofByTactic |
     Lemma
 }
 
@@ -15,6 +14,15 @@ Sentence {
 // is just TacticInput
 @local tokens {
     TacticEnd[@name='dotSpace'] { '.' }
+    // If overlap between tactics is an issue, probably better to create a token per phrase
+    // This would mean tactics have to be hardcoded per possible configuration however...
+    TacticMiddleByOrSince{" it suffices to show that " | " we conclude that " | " it holds that "}
+    TacticMiddleExpand{" in "}
+    TacticMiddleObtain{" according to "}
+    TacticMiddleDefine{" := "}
+    TacticMiddleBecauseFirst{" both "}
+    TacticMiddleBecauseSecond{" and "}
+    TacticMiddleEither{" or "}
     @else TacticInput
 }
 
@@ -27,14 +35,15 @@ Sentence {
         "Contradiction" TacticEnd| 
         "We show both statements"  TacticEnd| 
         "We show both directions" TacticEnd|
+        "We now show the induction step" TacticEnd|
         // Single Input Tactics
         "Take " TacticInput TacticEnd |
         "We need to show that " TacticInput TacticEnd | 
         "We conclude that " TacticInput TacticEnd | 
+        "Case " TacticInput TacticEnd |
         "Assume that " TacticInput TacticEnd |
         "Obtain such a " TacticInput TacticEnd | 
         "(& " TacticInput " )." | 
-        "Obtain such a " TacticInput TacticEnd | 
         "It suffices to show that " TacticInput TacticEnd | 
         "It holds that " TacticInput TacticEnd | 
         "It holds that " TacticInput TacticEnd | 
@@ -43,43 +52,20 @@ Sentence {
         "Indeed, " TacticInput TacticEnd |
         "Use " TacticInput TacticEnd |
         "Choose " TacticInput TacticEnd | 
+        "We first show the base case " TacticInput TacticEnd | 
         // Multi Input Tactics
-        // TODO: Figure out approach for tactics with 2 or more TacticInput(s)
-        "Expand the definition of " TacticInput " in " TacticInput TacticEnd | 
-        // "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
-        "Obtain " TacticInput " according to " TacticInput TacticEnd | 
-        // "By (" TacticInput ") we conclude that " TacticInput TacticEnd | 
-        // "By (" TacticInput ") it holds that " TacticInput TacticEnd | 
-        "Define " TacticInput " := " TacticInput TacticEnd | 
-        "Since (" TacticInput ") it holds that (" TacticInput ")." | 
-        "Since (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
-        "Since (" TacticInput ") we conclude that (" TacticInput ")." | 
-        "Since (" TacticInput ") it suffices to show that (" TacticInput ")." |
-        "Because (" TacticInput ") both (" TacticInput ") and (" TacticInput ")." | 
-        "Because (" TacticInput ") both (" TacticInput ") (" TacticInput ") and (" TacticInput ") (" TacticInput ")." | 
-        "Either (" TacticInput ") or (" TacticInput ")."
+        "Expand the definition of " TacticInput TacticMiddleExpand TacticInput TacticEnd | 
+        "Obtain " TacticInput TacticMiddleObtain TacticInput TacticEnd | 
+        "By " TacticInput TacticMiddleByOrSince TacticInput TacticEnd | 
+        "Define " TacticInput TacticMiddleDefine TacticInput TacticEnd | 
+        "Since " TacticInput TacticMiddleByOrSince TacticInput TacticEnd | 
+        "Because " TacticInput TacticMiddleBecauseFirst TacticInput TacticMiddleBecauseSecond TacticInput TacticEnd | 
+        "Either " TacticInput TacticMiddleEither TacticInput TacticEnd
     }
 }
 
 
-// The method below works for the 'By' example of a two input tactic, Im pretty sure this can be merged back with the rest of the tactic above by modifying the local tokens.
 
-// Define local token for tactics, whatever is not TacticEnd 
-// is just TacticInput
-@local tokens {
-    TacticByEnd[@name='dotSpace'] { '.' }
-    TacticByMiddle{" it suffices to show that " | " we conclude that " | " it holds that "}
-    @else TacticByInput
-}
-
-// Skip WaterproofTactics
-@skip {} {
-    WaterproofByTactic {  
-        "By " TacticByInput TacticByMiddle TacticByInput TacticByEnd | 
-        "By " TacticByInput TacticByMiddle TacticByInput TacticByEnd | 
-        "By " TacticByInput TacticByMiddle TacticByInput TacticByEnd 
-    }
-}
 
 @local tokens {
     LemmaEnd[@name='dotSpace'] { '.'}

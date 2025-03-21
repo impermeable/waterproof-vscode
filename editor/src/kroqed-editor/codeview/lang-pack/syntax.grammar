@@ -4,6 +4,7 @@
 
 Sentence {
     WaterproofTactic |
+    WaterproofByTactic |
     Lemma
 }
 
@@ -30,7 +31,8 @@ Sentence {
         "Take " TacticInput TacticEnd |
         "We need to show that " TacticInput TacticEnd | 
         "We conclude that " TacticInput TacticEnd | 
-        "Assume that " TacticInput TacticEnd | 
+        "Assume that " TacticInput TacticEnd |
+        "Obtain such a " TacticInput TacticEnd | 
         "(& " TacticInput " )." | 
         "Obtain such a " TacticInput TacticEnd | 
         "It suffices to show that " TacticInput TacticEnd | 
@@ -41,15 +43,14 @@ Sentence {
         "Indeed, " TacticInput TacticEnd |
         "Use " TacticInput TacticEnd |
         "Choose " TacticInput TacticEnd | 
-        // Double Input Tactics
+        // Multi Input Tactics
         // TODO: Figure out approach for tactics with 2 or more TacticInput(s)
         "Expand the definition of " TacticInput " in " TacticInput TacticEnd | 
-        "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
+        // "By (" TacticInput ") it suffices to show that " TacticInput TacticEnd | 
         "Obtain " TacticInput " according to " TacticInput TacticEnd | 
-        "By (" TacticInput ") we conclude that " TacticInput TacticEnd | 
-        "By (" TacticInput ") it holds that " TacticInput TacticEnd | 
+        // "By (" TacticInput ") we conclude that " TacticInput TacticEnd | 
+        // "By (" TacticInput ") it holds that " TacticInput TacticEnd | 
         "Define " TacticInput " := " TacticInput TacticEnd | 
-        // TODO
         "Since (" TacticInput ") it holds that (" TacticInput ")." | 
         "Since (" TacticInput ") it holds that (" TacticInput ") (" TacticInput ")." | 
         "Since (" TacticInput ") we conclude that (" TacticInput ")." | 
@@ -57,6 +58,26 @@ Sentence {
         "Because (" TacticInput ") both (" TacticInput ") and (" TacticInput ")." | 
         "Because (" TacticInput ") both (" TacticInput ") (" TacticInput ") and (" TacticInput ") (" TacticInput ")." | 
         "Either (" TacticInput ") or (" TacticInput ")."
+    }
+}
+
+
+// The method below works for the 'By' example of a two input tactic, Im pretty sure this can be merged back with the rest of the tactic above by modifying the local tokens.
+
+// Define local token for tactics, whatever is not TacticEnd 
+// is just TacticInput
+@local tokens {
+    TacticByEnd[@name='dotSpace'] { '.' }
+    TacticByMiddle{" it suffices to show that " | " we conclude that " | " it holds that "}
+    @else TacticByInput
+}
+
+// Skip WaterproofTactics
+@skip {} {
+    WaterproofByTactic {  
+        "By " TacticByInput TacticByMiddle TacticByInput TacticByEnd | 
+        "By " TacticByInput TacticByMiddle TacticByInput TacticByEnd | 
+        "By " TacticByInput TacticByMiddle TacticByInput TacticByEnd 
     }
 }
 

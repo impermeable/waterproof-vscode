@@ -6,6 +6,10 @@ export const
   WaterproofTactic = 4,
   TacticEnd = 5,
   TacticInput = 6,
-  Lemma = 7,
-  LemmaStatement = 8,
-  LemmaEnd = 9
+  WaterproofByTactic = 7,
+  TacticByInput = 8,
+  TacticByMiddle = 9,
+  TacticByEnd = 10,
+  Lemma = 11,
+  LemmaStatement = 12,
+  LemmaEnd = 13

@@ -38,10 +38,12 @@ export const coqLanguage = LRLanguage.define({
             // }),
             styleTags({
                 WaterproofTactic: customTags.waterproofTactic,
-                WaterproofTacticZero: customTags.waterproofTactic,
                 TacticInput: customTags.tacticInput,
                 Lemma: customTags.lemma,
-                Comment: customTags.comment
+                Comment: customTags.comment,
+                WaterproofByTactic: customTags.waterproofTactic,
+                TacticByMiddle: customTags.waterproofTactic,
+                TacticByInput: customTags.tacticInput
             })
         ]
     })

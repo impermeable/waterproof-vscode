@@ -7,7 +7,7 @@ Sentence {
     Lemma
 }
 
-@skip { space | Comment}
+@skip { space | Comment | ProofandQed}
 
 
 // Define local token for tactics, whatever is not TacticEnd 
@@ -84,6 +84,8 @@ Sentence {
     Comment { "(*" ![*]* "*)" }
 
     space { " " | "\t" | "\n" | "\r" }
+
+    ProofandQed {"Proof" | "Qed"}
     
 }
 

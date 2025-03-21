@@ -15,7 +15,8 @@ let customTags = {
     tacticInput: Tag.define(),
     takeInput: Tag.define(),
     lemma: Tag.define(),
-    comment: Tag.define()
+    comment: Tag.define(),
+    proofQed: Tag.define()
 }
 
 // Highlighting specific elements of the Coq language
@@ -24,6 +25,7 @@ export let highlight = HighlightStyle.define([
     { tag: customTags.tacticInput, color: "#FF0000" },
     { tag: customTags.lemma, color: "#FF00F7" },
     { tag: customTags.comment, color: "#0000FF" },
+    { tag: customTags.proofQed, color: "#FFE100" },
 ])
 
 // Defining the Coq language syntax, highlighting and indentation
@@ -41,6 +43,7 @@ export const coqLanguage = LRLanguage.define({
                 TacticInput: customTags.tacticInput,
                 Lemma: customTags.lemma,
                 Comment: customTags.comment,
+                ProofandQed: customTags.proofQed,
                 // Also update each of the middle tokens to match the tactics
                 TacticMiddleByOrSince: customTags.waterproofTactic,
                 TacticMiddleExpand: customTags.waterproofTactic,

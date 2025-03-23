@@ -42,8 +42,8 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
-        to: number, 
-        from: number, 
+        to: number,
+        from: number,
         content: string
      }[];
 
@@ -60,13 +60,13 @@ export class ProseMirrorWebview extends EventEmitter {
         return !this._workspaceEditor.isInProgress;
     }
 
-    
-    // Handlers for undo and redo actions. 
+
+    // Handlers for undo and redo actions.
     // These can either be triggered by the user via a keybinding or by the undo/redo command
     //     under `edit > edit` and `edit > undo` in the menubar.
     private undoHandler() {
         this.sendHistoryChangeToEditor(HistoryChangeType.Undo);
-        
+
     };
     private redoHandler() {
         this.sendHistoryChangeToEditor(HistoryChangeType.Redo);
@@ -77,15 +77,15 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this._provider = provider;
         this._provider.disposeHistoryCommandListeners(this);
-        this._provider.registerHistoryCommandListeners(this, 
-            this.undoHandler.bind(this), 
+        this._provider.registerHistoryCommandListeners(this,
+            this.undoHandler.bind(this),
             this.redoHandler.bind(this));
 
 
         var path = require('path')
 
         const fileName = path.basename(doc.uri.fsPath)
-        
+
         if (isIllegalFileName(fileName)) {
             const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "\-", "\(", "\)". Please rename the file.`
             window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
@@ -176,6 +176,13 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         }));
 
+        this._disposables.push(workspace.onDidSaveTextDocument(e => {
+            if (e.uri.toString() === this._document.uri.toString()) {
+                this.updateOnSave();  // Ensure the editor updates after saving
+            }
+        }));
+
+
         this._disposables.push(workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration("waterproof.teacherMode")) {
                 this.updateTeacherMode();
@@ -211,11 +218,11 @@ export class ProseMirrorWebview extends EventEmitter {
             if (e.webviewPanel.active) {
                 this.syncWebview();
                 this.emit(WebviewEvents.change, WebviewState.focus);
-                
+
                 // Overwrite the undo and redo commands
                 this._provider.registerHistoryCommandListeners(
-                    this, 
-                    this.undoHandler.bind(this), 
+                    this,
+                    this.undoHandler.bind(this),
                     this.redoHandler.bind(this));
             } else {
                 // Dispose of the overwritten undo and redo commands when the editor is not active.
@@ -263,6 +270,10 @@ export class ProseMirrorWebview extends EventEmitter {
 
         // send any cached messages
         for (const m of this._cachedMessages.values()) this.postMessage(m);
+    }
+
+    private updateOnSave() {
+        //TODO: implement updateOnSave correctly.
     }
 
     private updateLineNumberStatusInEditor() {
@@ -328,7 +339,7 @@ export class ProseMirrorWebview extends EventEmitter {
         }
     }
 
-    // Restore the document to the last correct state, that is, a state for which the content 
+    // Restore the document to the last correct state, that is, a state for which the content
     //  outside of the <input-area> tags is correct.
     private restore() {
         this._workspaceEditor.edit(edit => {
@@ -359,7 +370,7 @@ export class ProseMirrorWebview extends EventEmitter {
         if (!this._teacherMode && this._enforceCorrectNonInputArea) {
             let foundDefect = false;
             const nonInputRegions = getNonInputRegions(this._document.getText());
-            if (nonInputRegions.length !== this._nonInputRegions.length) { 
+            if (nonInputRegions.length !== this._nonInputRegions.length) {
                 foundDefect = true;
             } else {
                 for (let i = 0; i < this._nonInputRegions.length; i++) {
@@ -370,7 +381,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 }
             }
 
-            if (foundDefect) { 
+            if (foundDefect) {
                 showRestoreMessage(this.restore.bind(this));
             } else {
                 this._lastCorrectDocString = this._document.getText();

@@ -20,6 +20,7 @@ export enum MessageType {
     update = "update",
     init = "init",
     ready = "ready",
+    updateDocument = "updateDocument",
     /**
      * A notification sent from the editor to the extension when the editor is (1) initialized, or
      * (2) synched (e.g., after an undo, redo, or refocus).

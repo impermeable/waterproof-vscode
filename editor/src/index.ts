@@ -20,7 +20,7 @@ window.onload = () => {
 		throw Error("Editor element cannot be null (no element with id 'editor' found)");
 	}
 
-	
+
 	const vscode = acquireVsCodeApi() as VSCodeAPI;
 	if (vscode == null) {
 		throw Error("Could not acquire the vscode api.");
@@ -36,6 +36,9 @@ window.onload = () => {
 		switch(msg.type) {
 			case MessageType.init:
 				theEditor.init(msg.body.value, msg.body.format, msg.body.version);
+				break;
+			case MessageType.updateDocument:
+				theEditor.updateDocument(msg.body.value, msg.body.version);
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.

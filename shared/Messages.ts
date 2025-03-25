@@ -33,7 +33,6 @@ export type Message =
     | MessageBase<MessageType.editorHistoryChange, HistoryChangeType>
     | MessageBase<MessageType.editorReady>
     | MessageBase<MessageType.errorGoals, unknown>
-    | MessageBase<MessageType.fatalError, { error: string }>
     | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
     | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: "symbol" | "tactics", time: number }>
     | MessageBase<MessageType.lineNumbers, LineNumber>
@@ -56,31 +55,30 @@ export type Message =
  * extension host to the editor (and vice versa) needs to have a type.
  */
 export const enum MessageType {
-    response,
-    update,
-    init,
-    ready,
-    editorReady,
-    docChange,
-    cursorChange,
-    lineNumbers,
-    requestGoals,
-    renderGoals,
-    errorGoals,
-    insert,
-    command,
-    teacher,
-    setAutocomplete,
-    qedStatus,
-    progress,
-    diagnostics,
     applyStepError,
-    fatalError,
-    updateVersion,
-    syntax,
+    command,
+    cursorChange,
+    diagnostics,
+    docChange,
     editorHistoryChange,
-    setShowLineNumbers,
+    editorReady,
+    errorGoals,
+    init,
+    insert,
+    lineNumbers,
+    progress,
+    qedStatus,
+    ready,
+    renderGoals,
+    requestGoals,
+    response,
+    setAutocomplete,
     setData,
+    setShowLineNumbers,
+    syntax,
+    teacher,
+    update,
+    updateVersion,
 }
 
 export const enum HistoryChangeType {

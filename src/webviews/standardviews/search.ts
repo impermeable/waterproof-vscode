@@ -37,7 +37,7 @@ export class Search extends CoqWebview implements IExecutor {
     setResults(results: string[]): void {
         // Set the data property to the provided results
         this.data = results;
-        // Send a postMessage to the webview with the MessageType.command and the data
+        // Send a postMessage to the webview with the MessageType.setData and the data
         this.postMessage({ type: MessageType.setData, body: this.data })
     }
 

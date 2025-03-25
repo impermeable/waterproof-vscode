@@ -27,34 +27,37 @@ Notes on the type former:
 ## Messages
 ### `applyStepError`
 #### Description
+The editor sends this message when it encounters an error when trying to apply a step from the ProseMirror transaction steps. Used in `dispatchTransaction` in [editor](../editor/src/kroqed-editor/editor.ts).
 
 #### Body
 ```ts
-string
+string // The error message that was reported
 ```
 
 ### `command`
 #### Description
-
+Send by a panel or editor when a 'command' should be executed in the language server. For instance, when the user executes the `Help` command in Waterproof. This message is sent from the panel in charge to the extension with `command: "Help."`.
 
 #### Body
 ```ts
 {
-    command: string, // The command to execute (eg. 'Help.')
+    command: string, // The command to execute (eg. 'Help.' or 'Search "term".')
     time?: number    // Time that the command was sent
 }
 ```
 
 ### `cursorChange`
 #### Description
+The editor sends a `cursorChange` message to the extension when the position of the cursor is updated (The ProseMirror selection is updated).
 
 #### Body
 ```ts
-number
+number // Position of the cursor (offset based) after mapping
 ```
 
 ### `diagnostics`
 #### Description
+Message that contains the diagnostics in the current document which the extension received from the LSP server. Send to the editor upon receiving from the LSP server.
 
 #### Body
 ```ts
@@ -63,15 +66,16 @@ DiagnosticMessage // Type containing the diagnostics as well as the version of t
 
 ### `docChange`
 #### Description
+This message is send by the editor for every change that the extension should apply to the document on disk. The 'steps' are mapped trhough the mapping via the `stepUpdate` member function of the mapping.
 
 #### Body
 ```ts
-docChange
+DocChange | WrappingDocChange // Either the document change that happened (regular insertions or deletions) or a wrapping document change (two insertions that happen *around* some other text, eg when creating an input area)
 ```
 
 ### `editorHistoryChange`
 #### Description
-Message sent from the editor to the extension to enqueue a history edit (undo or redo operation).
+Send from the editor to the extension to enqueue a history edit (undo or redo operation).
 
 #### Body
 ```ts
@@ -93,18 +97,10 @@ This message does not have a body.
 errorGoals
 ```
 
-### `fatalError`
-#### Description
-
-#### Body
-```ts
-fatalError
-```
-
 ### `init`
 
 #### Description
-Message sent by extension to start initialization of the webview editor, includes the initial document in the body.
+Send by the extension to start initialization of the webview editor, includes the initial document in the body. The file format is specified in the shared folder as well, currently `.mv` and `.v` are supported.
 
 #### Body
 ```ts
@@ -117,7 +113,7 @@ Message sent by extension to start initialization of the webview editor, include
 
 ### `insert`
 #### Description
-Message sent by the extension to inform the editor that a symbol should be inserted.
+Send by the extension to inform the editor that a symbol should be inserted.
 
 #### Body
 ```ts
@@ -131,18 +127,24 @@ Message sent by the extension to inform the editor that a symbol should be inser
 
 ### `lineNumbers`
 #### Description
+Send in both directions:
+
+- `editor -> extension` to request updates to the set of line numbers.
+- `extension -> editor` to update the set of line numbers.
+
 
 #### Body
 ```ts
-lineNumbers
+LineNumber // Contains line numbers (as array) and the version of the document they correspond to.
 ```
 
 ### `progress`
 #### Description
 
+
 #### Body
 ```ts
-progress
+SimpleProgressParams // Contains number of lines and a list of program info.
 ```
 
 ### `qedStatus`

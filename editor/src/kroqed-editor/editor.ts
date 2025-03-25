@@ -50,7 +50,7 @@ type DiagnosticObjectProse = {message: string, start: number, end: number, $star
  *
  * Stores the state of the editor.
  */
-export class Editor {
+export class WaterproofEditor {
 	// The vscode api
 	private _api: VSCodeAPI;
 

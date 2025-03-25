@@ -1,12 +1,12 @@
 import { MessageType } from "../../../../shared";
-import { Editor } from "../editor";
+import { WaterproofEditor } from "../editor";
 
 /**
  * Creates a context menu given the current editor.
  * @param editor The editor in use.
  * @returns HTMLDivElement storing the context menu element.
  */
-export function createContextMenuHTML(editor: Editor): HTMLDivElement {
+export function createContextMenuHTML(editor: WaterproofEditor): HTMLDivElement {
     // Creating the container elements.
     const divContainer = document.createElement("div");
     const listContainer = document.createElement("ul");

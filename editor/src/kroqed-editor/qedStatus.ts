@@ -3,7 +3,7 @@ import { EditorState, Plugin, PluginKey, PluginSpec } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 import { findDescendantsWithType } from './kroqed-utils';
 import { QedStatus } from '../../../shared';
-import { Editor } from './editor';
+import { WaterproofEditor } from './editor';
 
 // Define interface for UpdateStatusPluginState
 export interface IUpdateStatusPluginState {
@@ -26,7 +26,7 @@ const statusToDecoration = (status: QedStatus) => {
 };
 
 // Plugin specification
-const UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginState> => {
+const UpdateStatusPluginSpec = (editor: WaterproofEditor): PluginSpec<IUpdateStatusPluginState> => {
   return {
     key: UPDATE_STATUS_PLUGIN_KEY,
     state: {
@@ -97,4 +97,4 @@ const UpdateStatusPluginSpec = (editor: Editor): PluginSpec<IUpdateStatusPluginS
 }
 
 // Create a new instance of the plugin
-export const updateStatusPlugin = (editor: Editor) => { return new Plugin(UpdateStatusPluginSpec(editor)) };
+export const updateStatusPlugin = (editor: WaterproofEditor) => { return new Plugin(UpdateStatusPluginSpec(editor)) };

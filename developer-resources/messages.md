@@ -140,7 +140,7 @@ LineNumber // Contains line numbers (as array) and the version of the document t
 
 ### `progress`
 #### Description
-
+Send by the extension and used in the editor to determine up to what point the current file has been verified.
 
 #### Body
 ```ts
@@ -149,10 +149,11 @@ SimpleProgressParams // Contains number of lines and a list of program info.
 
 ### `qedStatus`
 #### Description
+Send by the extension to the editor. This message includes the status for all the input areas. This includes whether they are checked and whether they are correct.
 
 #### Body
 ```ts
-qedStatus
+QedStatus[] // Status per input area, see QedStatus.ts
 ```
 
 ### `ready`
@@ -164,18 +165,11 @@ This message does not have a body.
 
 ### `renderGoals`
 #### Description
+Message send by the extension when the set of goals changes. Panels (goal, logbook, info) listen to this message to update the set of goals that they show.
 
 #### Body
 ```ts
-renderGoals
-```
-
-### `requestGoals`
-#### Description
-
-#### Body
-```ts
-requestGoals
+unknown // TODO: Currently there is no real guarantee on what kind of data is included.
 ```
 
 ### `response`

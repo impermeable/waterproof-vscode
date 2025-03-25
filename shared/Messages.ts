@@ -40,7 +40,6 @@ export type Message =
     | MessageBase<MessageType.qedStatus, QedStatus[]>
     | MessageBase<MessageType.ready>
     | MessageBase<MessageType.renderGoals, unknown>
-    | MessageBase<MessageType.requestGoals, unknown>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
@@ -68,7 +67,6 @@ export const enum MessageType {
     qedStatus,
     ready,
     renderGoals,
-    requestGoals,
     response,
     setAutocomplete,
     setData,

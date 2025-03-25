@@ -35,7 +35,7 @@ export type Message =
     | MessageBase<MessageType.errorGoals, unknown>
     | MessageBase<MessageType.fatalError, { error: string }>
     | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
-    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: string, time: number }>
+    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: "symbol" | "tactics", time: number }>
     | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, QedStatus[]>

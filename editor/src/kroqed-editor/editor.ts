@@ -33,6 +33,7 @@ import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
+import { Positioned } from "./utilities/types";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -285,20 +286,20 @@ export class WaterproofEditor {
 
 		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
 		if (!nodeViews) return;
-		const nodeViewsWithPositions = Array.from(nodeViews).map((codeblock) => {
+		const positionedNodeViews: Array<Positioned<CodeBlockView>> = Array.from(nodeViews).map((codeblock) => {
 			return {
-				codeblock,
+				obj: codeblock,
 				pos: codeblock._getPos()
 			}
 		});
 
 		let theView: CodeBlockView | undefined = undefined;
 		let pos = view.state.doc.content.size;
-		for(const obj of nodeViewsWithPositions) {
-			if (obj.pos === undefined) continue;
-			if(from - obj.pos < pos && obj.pos < from) {
-				pos = from - obj.pos;
-				theView = obj.codeblock;
+		for (const nodeView of positionedNodeViews) {
+			if (nodeView.pos === undefined) continue;
+			if (from - nodeView.pos < pos && nodeView.pos < from) {
+				pos = from - nodeView.pos;
+				theView = nodeView.obj;
 			}
 		}
 		if (!theView) return;

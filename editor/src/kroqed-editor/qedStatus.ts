@@ -1,7 +1,7 @@
 // Importing necessary modules from prosemirror-state and prosemirror-view
 import { EditorState, Plugin, PluginKey, PluginSpec } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
-import { findDescendantsWithType } from './kroqed-utils';
+import { findDescendantsWithType } from './utilities';
 import { QedStatus } from '../../../shared';
 import { WaterproofEditor } from './editor';
 

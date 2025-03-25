@@ -15,10 +15,10 @@ import { GoalAnswer, PpString } from "../lib/types";
  *   then we choose A, otherwise (B is an object) we choose B.
  *
  * Ex: MessageBase<MessageType.ready> does not contain a body and expands to { type : MessageType.ready }
- *     MessageBase<MessageType.update, { value: string, version: number }> does contain a body and expands to
+ *     MessageBase<MessageType.command, { command: string, time?: number}> does contain a body and expands to
  *     {
- *          type: MessageType.update,
- *          body: { value: string, version: number }
+ *         command: string,
+ *         time?: number
  *     }
 */
 type MessageBase<T extends MessageType, B = undefined> =
@@ -46,9 +46,7 @@ export type Message =
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.syntax, boolean>
-    | MessageBase<MessageType.teacher, boolean>
-    | MessageBase<MessageType.update, { value: string, version: number }>
-    | MessageBase<MessageType.updateVersion, { version: number }>;
+    | MessageBase<MessageType.teacher, boolean>;
 
 /**
  * Message type enum. Every message that is send from the
@@ -77,8 +75,6 @@ export const enum MessageType {
     setShowLineNumbers,
     syntax,
     teacher,
-    update,
-    updateVersion,
 }
 
 export const enum HistoryChangeType {

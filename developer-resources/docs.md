@@ -17,11 +17,11 @@ Notes on the type former:
 ### Examples:
 `MessageBase<MessageType.ready>` does not contain a body and expands to the type `{ type : MessageType.ready }`
 
-`MessageBase<MessageType.update, { value: string, version: number }>` does contain a body and expands to
+`MessageBase<MessageType.command, { command: string, time?: number}>` does contain a body and expands to
 ```ts
 {
-    type: MessageType.update,
-    body: { value: string, version: number }
+    command: string,
+    time?: number
 }
 ```
 ## Messages
@@ -157,11 +157,10 @@ qedStatus
 
 ### `ready`
 #### Description
+The editor sends this message to the extension when it is initialized and ready to react to other messages.
 
 #### Body
-```ts
-ready
-```
+This message does not have a body.
 
 ### `renderGoals`
 #### Description
@@ -181,26 +180,32 @@ requestGoals
 
 ### `response`
 #### Description
+This message is the response of another message and will call the callback associated with this request (passes the body as arguments to the callback function). See [`webviewManager.ts`](../src/webviewManager.ts) for the implementation.
 
 #### Body
 ```ts
-response
+{
+    data: unknown,      // The data belonging to the callback
+    requestId: number   // (Unique) id that this response belongs to
+}
 ```
 
 ### `setAutocomplete`
 #### Description
+Send by the extension to the editor when the set of autocompletions changes, for example when a new definition was added to the document.
 
 #### Body
 ```ts
-setAutocomplete
+Completion[] // The array of completions every CodeMirror cell receives.
 ```
 
 ### `setData`
 #### Description
+Message send by panel controllers to panels to update the data shown within the panel. For example, the goals controller updates the goals shown in the panel.
 
 #### Body
 ```ts
-setData
+string[] | GoalAnswer<PpString> // TODO
 ```
 
 ### `setShowLineNumbers`
@@ -214,10 +219,11 @@ boolean // Flag indicating whether line numbers should be turned on or off
 
 ### `syntax`
 #### Description
+Message send by the extension when the syntax mode should be updated. Currently, the two available modes are Waterproof syntax (`false`) or plain Coq syntax (`true`).
 
 #### Body
 ```ts
-syntax
+boolean // If true, standard Coq syntax completions are given. If false, Waterproof tactic completions are given instead.
 ```
 
 ### `teacher`
@@ -228,82 +234,3 @@ Sent from the extension to the editor to enable/disable teacher mode in the edit
 ```ts
 boolean // Flag indicating whether teacher mode should be turned on or off
 ```
-
-### `update`
-#### Description
-
-#### Body
-```ts
-update
-```
-
-### `updateVersion`
-#### Description
-
-#### Body
-```ts
-updateVersion
-```
-
-# Old
-
-#### `MessageType.getFileData`
-The message sent by VSCode to query the current document content. Body:
-```ts
-{
-    type: MessageType.getFileData,
-    requestId: <number>
-}
-```
-
-#### `MessageType.response`
-Response message sent from the editor, will resolve a promise on the Extension side.
-```ts
-{
-    type: MessageType.response,
-    requestId: <number>,
-    body: any
-}
-```
-
-#### `MessageType.redo`
-Message sent by VSCode when the editor should execute an undo event.
-```ts
-{
-    type: MessageType.redo
-}
-```
-
-#### `MessageType.undo`
-Message sent by VSCode when the editor should execute a redo event.
-```ts
-{
-    type: MessageType.undo
-}
-```
-
-#### `MessageType.update`
-Message sent by the Extension Host to inform the internal editor that the content has been updated.
-```ts
-{
-    type: MessageType.update
-}
-```
-
-#### `MessageType.ready`
-Message sent by the editor to inform the Extension Host that it is ready to recieve messages.
-```ts
-{
-    type: MessageType.ready
-}
-```
-
-
-#### `MessageType.docChange`
-Message sent by the editor to inform the Extension Host that an edit has been made in the prosemirror instance.
-```ts
-{
-    type: MessageType.docChange
-}
-```
-

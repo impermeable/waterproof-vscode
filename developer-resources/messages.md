@@ -75,7 +75,7 @@ DocChange | WrappingDocChange // Either the document change that happened (regul
 
 ### `editorHistoryChange`
 #### Description
-Send from the editor to the extension to enqueue a history edit (undo or redo operation).
+Send from the extension to the editor to inform the editor that it should perform either an undo or a redo operation.
 
 #### Body
 ```ts

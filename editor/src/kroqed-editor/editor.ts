@@ -274,7 +274,7 @@ export class WaterproofEditor {
 		];
 	}
 
-	handleSnippet(template: string) {
+	public handleSnippet(template: string) {
 		const view = this._view!;
 		// Get the first selection.
 		const from = view.state.selection.from;
@@ -308,7 +308,7 @@ export class WaterproofEditor {
 	}
 
 	/** Called on every selection update. */
-	updateCursor(pos: Selection) : void {
+	public updateCursor(pos: Selection) : void {
 		// If this is not a cursor update return
 		if (!(pos instanceof TextSelection)) return;
 		if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
@@ -316,7 +316,7 @@ export class WaterproofEditor {
 	}
 
 	/** Called on every transaction update in which the textdocument was modified */
-	sendLineNumbers() {
+	public sendLineNumbers() {
 		if (!this._lineNumbersShown) return;
 		if (!this._view || COQ_CODE_PLUGIN_KEY.getState(this._view.state) === undefined) return;
 		const linenumbers = Array<number>();
@@ -334,7 +334,7 @@ export class WaterproofEditor {
 	}
 
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */
-	setLineNumbers(msg: LineNumber) {
+	public setLineNumbers(msg: LineNumber) {
 		if (!this._view || !this._mapping || msg.version < this._mapping.version) return;
 		const state = COQ_CODE_PLUGIN_KEY.getState(this._view.state);
 		if (!state) return;
@@ -342,7 +342,7 @@ export class WaterproofEditor {
 		this._view.dispatch(tr);
 	}
 
-	handleHistoryChange(type: HistoryChangeType) {
+	public handleHistoryChange(type: HistoryChangeType) {
 		const view = this._view;
 		if (!view) return;
 		const func = type === HistoryChangeType.Undo ? undo : redo;
@@ -356,7 +356,7 @@ export class WaterproofEditor {
 	 * @param symbolLaTeX The LaTeX command(s) to produce the character.
 	 * @returns Whether the operation was a success.
 	 */
-	insertSymbol(symbolUnicode: string, _symbolLaTeX: string): boolean {
+	public insertSymbol(symbolUnicode: string, _symbolLaTeX: string): boolean {
 		// If there is no view at the moment this is a no-op.
 		if (!this._view) return false;
 		let state = this._view.state;
@@ -410,7 +410,7 @@ export class WaterproofEditor {
 	/**
 	 * Toggles line numbers for all codeblocks.
 	 */
-	private setShowLineNumbers(show: boolean) {
+	public setShowLineNumbers(show: boolean) {
 		this._lineNumbersShown = show;
 		const view = this._view;
 		if (view === undefined) return;
@@ -432,7 +432,7 @@ export class WaterproofEditor {
 	 *
 	 * @param isTeacher represents the mode selected by user
 	 */
-	updateLockingState(isTeacher: boolean) : void {
+	public updateLockingState(isTeacher: boolean) : void {
 		if (!this._view) return;
 		const state = this._view.state;
 		const trans = state.tr;
@@ -440,7 +440,7 @@ export class WaterproofEditor {
 		this._view.dispatch(trans);
 	}
 
-	updateProgressBar(progressParams: SimpleProgressParams): void {
+	public updateProgressBar(progressParams: SimpleProgressParams): void {
 		if (!this._view) return;
 		const state = this._view.state;
 		const tr = state.tr;
@@ -448,7 +448,7 @@ export class WaterproofEditor {
 		this._view.dispatch(tr);
 	}
 
-	updateQedStatus(status: QedStatus[]) : void {
+	public updateQedStatus(status: QedStatus[]) : void {
 		if (!this._view) return;
 		const state = this._view.state;
 		const tr = state.tr;
@@ -456,7 +456,11 @@ export class WaterproofEditor {
 		this._view.dispatch(tr);
 	}
 
-	parseCoqDiagnostics(msg: DiagnosticMessage) {
+	public initTacticCompletion(useTacticsCoq: boolean) {
+		initializeTacticCompletion(useTacticsCoq);
+	}
+
+	public parseCoqDiagnostics(msg: DiagnosticMessage) {
 		if (this._mapping === undefined || msg.version < this._mapping.version) return;
 
 		const diagnostics = msg.positionedDiagnostics;
@@ -522,43 +526,6 @@ export class WaterproofEditor {
 		return this.currentProseDiagnostics.filter((value) => {
 			return ((low <= value.end) && (value.start <= high) && (value.severity) <= truncationLevel);
 		});
-	}
-
-
-	/** Handle a message from vscode */
-	handleMessage(msg: Message) {
-		// Blocks added to scope const declarations
-		switch(msg.type) {
-			case MessageType.qedStatus:
-				{ const statuses = msg.body;  // one status for each input area, in order
-				this.updateQedStatus(statuses);
-				break; }
-			case MessageType.setShowLineNumbers:
-				{ const show = msg.body;
-				this.setShowLineNumbers(show);
-				break; }
-			case MessageType.lineNumbers:
-				this.setLineNumbers(msg.body);
-				break;
-			case MessageType.teacher:
-				this.updateLockingState(msg.body);
-				break;
-			case MessageType.progress:
-				{ const progressParams = msg.body;
-				this.updateProgressBar(progressParams);
-				break; }
-			case MessageType.diagnostics:
-				{ const diagnostics = msg.body;
-				this.parseCoqDiagnostics(diagnostics);
-				break; }
-            case MessageType.syntax:
-                initializeTacticCompletion(msg.body);
-                break;
-			default:
-				// If we reach this 'default' case, then we have encountered an unknown message type.
-				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
-				break;
-		}
 	}
 
 	/**

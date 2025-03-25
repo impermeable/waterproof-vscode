@@ -63,11 +63,37 @@ window.onload = () => {
 			case MessageType.fatalError:
 				// TODO: show skull
 				break;
+			case MessageType.qedStatus:
+				{ const statuses = msg.body;  // one status for each input area, in order
+				theEditor.updateQedStatus(statuses);
+				break; }
+			case MessageType.setShowLineNumbers:
+				{ const show = msg.body;
+				theEditor.setShowLineNumbers(show);
+				break; }
 			case MessageType.editorHistoryChange:
 				theEditor.handleHistoryChange(msg.body);
 				break;
+			case MessageType.lineNumbers:
+				theEditor.setLineNumbers(msg.body);
+				break;
+			case MessageType.teacher:
+				theEditor.updateLockingState(msg.body);
+				break;
+			case MessageType.progress:
+				{ const progressParams = msg.body;
+				theEditor.updateProgressBar(progressParams);
+				break; }
+			case MessageType.diagnostics:
+				{ const diagnostics = msg.body;
+				theEditor.parseCoqDiagnostics(diagnostics);
+				break; }
+			case MessageType.syntax:
+				theEditor.initTacticCompletion(msg.body);
+				break;
 			default:
-				theEditor.handleMessage(msg);
+				// If we reach this 'default' case, then we have encountered an unknown message type.
+				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
 				break;
 		}
 	});

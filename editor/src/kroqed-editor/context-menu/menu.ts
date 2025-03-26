@@ -1,4 +1,3 @@
-import { MessageType } from "../../../../shared";
 import { WaterproofEditor } from "../editor";
 
 /**
@@ -11,9 +10,6 @@ export function createContextMenuHTML(editor: WaterproofEditor): HTMLDivElement 
     const divContainer = document.createElement("div");
     const listContainer = document.createElement("ul");
 
-    // We need a time value for sending commands to coq-lsp.
-    const date = new Date();
-
     divContainer.classList.add("context-menu");
     divContainer.style.display = "none";
     listContainer.classList.add("menu");
@@ -21,7 +17,7 @@ export function createContextMenuHTML(editor: WaterproofEditor): HTMLDivElement 
     // Create a 'Help' button. On execution will send a command to coq-lsp to query for help,
     // this result is then displayed in a popup within the editor.
     listContainer.appendChild(contextMenuButton("?", "Help", () => {
-        editor.post({type: MessageType.command, body: { command: "Help.", time: date.getTime()} });
+        editor.executeCommand("Help.");
     }));
 
     listContainer.appendChild(contextMenuButton("X", "Close", () => {}));

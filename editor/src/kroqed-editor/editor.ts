@@ -8,7 +8,7 @@ import { EditorView } from "prosemirror-view";
 import { undo, redo, history } from "prosemirror-history";
 import { createProseMirrorDocument } from "./prosedoc-construction/construct-document";
 
-import { DocChange, FileFormat, LineNumber, Message, MessageType, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
+import { DocChange, FileFormat, LineNumber, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
 import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
 import { createHintPlugin } from "./hinting";
 import { INPUT_AREA_PLUGIN_KEY, inputAreaPlugin } from "./inputArea";
@@ -33,15 +33,8 @@ import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
-import { Positioned } from "./utilities/types";
+import { Positioned, WaterproofEditorConfig } from "./utilities/types";
 
-/**
- * Very basic representation of the acquirable VSCodeApi.
- * At least supports `postMessage(message: Message)`.
- */
-interface VSCodeAPI {
-	postMessage: (message: Message) => void;
-}
 
 /** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
 type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: DiagnosticSeverity};
@@ -52,8 +45,8 @@ type DiagnosticObjectProse = {message: string, start: number, end: number, $star
  * Stores the state of the editor.
  */
 export class WaterproofEditor {
-	// The vscode api
-	private _api: VSCodeAPI;
+
+	private _editorConfig: WaterproofEditorConfig;
 
 	// The schema used in this prosemirror editor.
 	private _schema: Schema;
@@ -78,11 +71,11 @@ export class WaterproofEditor {
 
 	private _lineNumbersShown: boolean = false;
 
-	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement) {
-		this._api = vscodeapi;
+	constructor (editorElement: HTMLElement, config: WaterproofEditorConfig) {
 		this._schema = TheSchema;
 		this._editorElem = editorElement;
 		this.currentProseDiagnostics = [];
+		this._editorConfig = config;
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -136,15 +129,16 @@ export class WaterproofEditor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		const newContent = checkPrePost(content, (msg: Message) => {
-			this.post(msg);
-		});
-		if (newContent !== content) version = version + 1;
+		const {resultingDocument, documentChange} = checkPrePost(content);
+		if (documentChange !== undefined) {
+			this._editorConfig.api.documentChange(documentChange);
+		}
+		if (resultingDocument !== content) version = version + 1;
 
-		const parsedContent = this._translator.toProsemirror(newContent);
+		const parsedContent = this._translator.toProsemirror(resultingDocument);
 		// this._contentElem.innerHTML = parsedContent;
 
-		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
+		const proseDoc = createProseMirrorDocument(resultingDocument, fileFormat);
 
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
 		this.createProseMirrorEditor(proseDoc);
@@ -153,7 +147,7 @@ export class WaterproofEditor {
 		this.sendLineNumbers();
 
 		// notify extension that editor has loaded
-		this.post({ type: MessageType.editorReady });
+		this._editorConfig.api.editorReady();
 	}
 
 	get state(): EditorState | undefined {
@@ -174,14 +168,14 @@ export class WaterproofEditor {
 					if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
-							const obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
-							this.post({type: MessageType.docChange, body: obj});
+							const change: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
+							this._editorConfig.api.documentChange(change);
 						} catch (error) {
 							console.error((error as Error).message);
 
 
 							// Send message to VSCode that an error has occured
-							this.post({type: MessageType.applyStepError, body: (error as Error).message})
+							this._editorConfig.api.applyStepError((error as Error).message);
 
 							// Set global locking mode
 							const tr = view.state.tr;
@@ -258,7 +252,7 @@ export class WaterproofEditor {
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				"Mod-h": () => {
-					this.post({type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime() }});
+					this.executeCommand("Help.");
 					return true;
 				},
 				"Backspace": deleteSelection,
@@ -313,7 +307,7 @@ export class WaterproofEditor {
 		// If this is not a cursor update return
 		if (!(pos instanceof TextSelection)) return;
 		if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
-		this.post({type: MessageType.cursorChange, body: this._mapping.findPosition(pos.$head.pos)});
+		this._editorConfig.api.cursorChange(this._mapping.findPosition(pos.$head.pos));
 	}
 
 	/** Called on every transaction update in which the textdocument was modified */
@@ -331,7 +325,7 @@ export class WaterproofEditor {
 			console.error("Encountered undefined mapping in sendLineNumbers function");
 			return;
 		}
-		this.post({type: MessageType.lineNumbers, body: { linenumbers, version: this._mapping.version }});
+		this._editorConfig.api.lineNumbers(linenumbers, this._mapping.version);
 	}
 
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */
@@ -529,11 +523,8 @@ export class WaterproofEditor {
 		});
 	}
 
-	/**
-	 * Wrapper around `this._api.postMessage(msg: Message)`
-	 * @param message The message to post to the extension host
-	 */
-	post(message: Message): void {
-		this._api.postMessage(message);
+	// Editor API
+	public executeCommand(command: string) {
+		this._editorConfig.api.executeCommand(command, (new Date()).getTime());
 	}
 }

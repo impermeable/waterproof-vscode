@@ -28,7 +28,7 @@ import "prosemirror-view/style/prosemirror.css";
 import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
-import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
+import { InsertionPlace, cmdInsertCode, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
@@ -259,8 +259,8 @@ export class WaterproofEditor {
 				"Delete": deleteSelection,
 				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),
 				"Mod-M": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Above),
-				"Mod-q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Underneath),
-				"Mod-Q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Above),
+				"Mod-q": cmdInsertCode(this._schema, this._filef, InsertionPlace.Underneath),
+				"Mod-Q": cmdInsertCode(this._schema, this._filef, InsertionPlace.Above),
 				"Mod-l": cmdInsertLatex(this._schema, this._filef, InsertionPlace.Underneath),
 				"Mod-L": cmdInsertLatex(this._schema, this._filef, InsertionPlace.Above),
 				// We bind Ctrl/Cmd+. to selecting the parent node of the currently selected node.

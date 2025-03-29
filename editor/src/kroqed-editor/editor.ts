@@ -12,7 +12,7 @@ import { DocChange, FileFormat, LineNumber, QedStatus, SimpleProgressParams, Wra
 import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
 import { createHintPlugin } from "./hinting";
 import { INPUT_AREA_PLUGIN_KEY, inputAreaPlugin } from "./inputArea";
-import { TheSchema } from "./kroqed-schema";
+import { WaterproofSchema } from "./schema";
 import { TextDocMapping } from "./mappingModel";
 import { REAL_MARKDOWN_PLUGIN_KEY, coqdocPlugin, realMarkdownPlugin } from "./markup-views";
 import { menuPlugin } from "./menubar";
@@ -72,7 +72,7 @@ export class WaterproofEditor {
 	private _lineNumbersShown: boolean = false;
 
 	constructor (editorElement: HTMLElement, config: WaterproofEditorConfig) {
-		this._schema = TheSchema;
+		this._schema = WaterproofSchema;
 		this._editorElem = editorElement;
 		this.currentProseDiagnostics = [];
 		this._editorConfig = config;

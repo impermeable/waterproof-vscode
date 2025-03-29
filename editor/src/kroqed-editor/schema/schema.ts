@@ -1,5 +1,5 @@
 import { Node as PNode, Schema } from "prosemirror-model";
-import { QedStatus } from "../../../shared";
+import { QedStatus } from "../../../../shared";
 
 const cell = "(markdown | hint | coqblock | input | math_display)";
 const containercontent = "(markdown | coqblock | math_display)";
@@ -17,7 +17,7 @@ const containercontent = "(markdown | coqblock | math_display)";
  *
  * see [notes](notes.txt)
  */
-export const TheSchema: Schema = new Schema({
+export const WaterproofSchema: Schema = new Schema({
 	nodes: {
 		doc: {
 			content: `${cell}*`

@@ -8,7 +8,7 @@
 import { createProseMirrorDocument } from "../../editor/src/kroqed-editor/prosedoc-construction/construct-document";
 import { FileFormat } from "../../shared";
 import { FileTranslator } from "../../editor/src/kroqed-editor/translation"
-import { TheSchema } from "../../editor/src/kroqed-editor/kroqed-schema";
+import { WaterproofSchema } from "../../editor/src/kroqed-editor/schema";
 import { DOMParser} from "prosemirror-model";
 import { expect } from "@jest/globals";
 
@@ -34,9 +34,9 @@ input area test
 (** * Coqdoc Header %2x^2 + 4 <1% *)
 (* regular comment *)
 Compute 5 + 10.
-(** Some random text 
+(** Some random text
 $\text{display math} $ *)
-(** 
+(**
 - Item 1
 - Item 2 *)
 \`\`\``;
@@ -49,7 +49,7 @@ test("createProseMirrorDocument", () => {
     const translatedString = translator.toProsemirror(inputDocument);
     const div = document.createElement("div");
     div.innerHTML = translatedString;
-    const oldOutputNode = DOMParser.fromSchema(TheSchema).parse(div);
+    const oldOutputNode = DOMParser.fromSchema(WaterproofSchema).parse(div);
     const oldJsonOutput = oldOutputNode.toJSON();
 
     expect(jsonOutput).toMatchObject(oldJsonOutput);

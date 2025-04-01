@@ -1,6 +1,5 @@
-import { EventEmitter } from "stream";
 import { TextDocument, Uri, window } from "vscode";
-
+import { EventEmitter } from "events";
 import { Message, MessageType } from "../shared";
 import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";

@@ -29,11 +29,9 @@ import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
-import { readFile } from "fs";
-import { join as joinPath} from "path";
-import { homedir } from "os";
-import { WaterproofConfigHelper, WaterproofLogger } from "./helpers";
-import { exec } from "child_process"
+import { Utils } from "vscode-uri";
+import { WaterproofConfigHelper, WaterproofLogger as wpl } from "./helpers";
+
 
 
 export function activate(_context: ExtensionContext): void {
@@ -79,7 +77,7 @@ export class Waterproof implements Disposable {
      *
      * @param context the extension context object
      */
-    constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory) {
+    constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory, private readonly _isWeb = false) {
         checkConflictingExtensions();
         excludeCoqFileTypes();
 
@@ -191,7 +189,7 @@ export class Waterproof implements Disposable {
                 try {
                     workspace.getConfiguration().update("waterproof.path", defaultValue, ConfigurationTarget.Global).then(() => {
                         setTimeout(() => {
-                            WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.path.toString());
+                            wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.path.toString());
                             window.showInformationMessage(`Waterproof Path setting succesfully updated!`);
                         }, 100);
                     });
@@ -214,7 +212,7 @@ export class Waterproof implements Disposable {
             try {
                 workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
                     setTimeout(() => {
-                        WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
+                        wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
 
                         window.showInformationMessage(`Waterproof args setting succesfully updated!`);
                     }, 100);
@@ -276,14 +274,18 @@ export class Waterproof implements Disposable {
      */
     private async autoInstall(command: string): Promise<boolean> {
         return new Promise((resolve, _reject) => {
-            exec(command, (err, _stdout, _stderr) => {
-                if (err) {
-                    // Simple fixed scripts are run, the user is able to stop these but they are not considered errors
-                    // as the user has freedom to choose the steps and can rerun the command.
+            const myTerm = window.createTerminal(`AutoInstall Waterproof`)
+            window.onDidChangeTerminalShellIntegration(async ({ terminal, shellIntegration}) => {
+                if (terminal === myTerm) {
+                    const execution = shellIntegration.executeCommand(command);
+                    window.onDidEndTerminalShellExecution(event => {
+                        if (event.execution === execution) {
+                            this.initializeClient();
+                            resolve(true);
+                        }
+                    })
                 }
-                this.initializeClient();
-                resolve(true)
-            });
+            })
         });
     }
 
@@ -299,7 +301,7 @@ export class Waterproof implements Disposable {
         try {
             workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
                 setTimeout(() => {
-                    WaterproofLogger.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
+                    wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
                 }, 100);
             });
         } catch (e) {
@@ -308,27 +310,25 @@ export class Waterproof implements Disposable {
     }
 
     private async waterproofTutorialCommand(): Promise<void> {
-        const defaultUri = workspace.workspaceFolders ?
-            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "waterproof_tutorial.mv")) :
-            Uri.file(joinPath(homedir(), "waterproof_tutorial.mv"));
+        const defaultUri = Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in saving the Waterproof tutorial file");
                 return;
             }
-            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "waterproof_tutorial.mv").fsPath;
-            readFile(newFilePath, (err, data) => {
-                if (err) {
+            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "waterproof_tutorial.mv");
+            workspace.fs.readFile(newFilePath)
+                .then((data) => {
+                    workspace.fs.writeFile(uri, data).then(() => {
+                        // Open the file using the waterproof editor
+                        // TODO: Hardcoded `coqEditor.coqEditor`.
+                        commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+                    });                    
+                }, (err) => {
                     window.showErrorMessage("Could not a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
-                    return;
-                }
-                workspace.fs.writeFile(uri, data).then(() => {
-                    // Open the file using the waterproof editor
-                    // TODO: Hardcoded `coqEditor.coqEditor`.
-                    commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-                });
-            })
+                    return;                   
+                })
         });
     }
 
@@ -338,27 +338,25 @@ export class Waterproof implements Disposable {
      * or by using the File -> New File... option.
      */
     private async newFileCommand(): Promise<void> {
-        const defaultUri = workspace.workspaceFolders ?
-            Uri.file(joinPath(workspace.workspaceFolders[0].uri.fsPath, "new_waterproof_document.mv")) :
-            Uri.file(joinPath(homedir(), "new_waterproof_document.mv"));
+        const defaultUri = Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in creating a new waterproof document");
                 return;
             }
-            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "empty_waterproof_document.mv").fsPath;
-            readFile(newFilePath, (err, data) => {
-                if (err) {
+            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "empty_waterproof_document.mv");
+            workspace.fs.readFile(newFilePath)
+                .then((data) => {
+                    workspace.fs.writeFile(uri, data).then(() => {
+                        // Open the file using the waterproof editor
+                        // TODO: Hardcoded `coqEditor.coqEditor`.
+                        commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+                    });                    
+                }, (err) => {
                     window.showErrorMessage("Could not a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
-                    return;
-                }
-                workspace.fs.writeFile(uri, data).then(() => {
-                    // Open the file using the waterproof editor
-                    // TODO: Hardcoded `coqEditor.coqEditor`.
-                    commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-                });
-            })
+                    return;                   
+                })
         });
     }
 
@@ -396,17 +394,18 @@ export class Waterproof implements Disposable {
      * Create the lsp client and update relevant status components
      */
     async initializeClient(): Promise<void> {
-
+        wpl.log("Running initializeClient");
         // Run the version checker.
         const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
         const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
         const versionChecker = new VersionChecker(WaterproofConfigHelper.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-        //
-        const foundServer = await versionChecker.prelaunchChecks();
-
+        
+        const foundServer = this._isWeb ? true : await versionChecker.prelaunchChecks();
+        
         if (foundServer) {
-
-            versionChecker.run();
+            if (!this._isWeb) {
+                versionChecker.run();
+            }
 
             if (this.client?.isRunning()) {
                 return Promise.reject(new Error("Cannot initialize client; one is already running."))
@@ -425,8 +424,8 @@ export class Waterproof implements Disposable {
                 initializationOptions: serverOptions,
                 markdown: { isTrusted: true, supportHtml: true },
             };
-
-            this.client = this.clientFactory(clientOptions, WaterproofConfigHelper.configuration);
+            wpl.log("Calling clientFactory");
+            this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
             return this.client.startWithHandlers(this.webviewManager).then(
                 () => {
                     // show user that LSP is working

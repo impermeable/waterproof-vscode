@@ -1,8 +1,9 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
-import { exec } from "child_process";
-import * as path from 'path';
+// import { exec, spawn } from "child_process";
+// import path = require("path");
 import { Version, VersionRequirement } from "./version";
 import { COMPARE_MODE } from "./types";
+import { WaterproofFileUtil, WaterproofLogger as wpl } from "../helpers";
 
 export type VersionError = {
     reason: string;
@@ -43,6 +44,7 @@ export class VersionChecker {
      */
     public async prelaunchChecks(): Promise<boolean> {
         const version = await this.checkLSPBinary();
+        wpl.log(`Version of coq-lsp: ${version}`);
         if (!isVersionError(version)) {
             if (version.needsUpdate(this._reqVersionCoqLSP)) {
                 this.informUpdateAvailable("coq-lsp", this._reqVersionCoqLSP, version);
@@ -95,19 +97,22 @@ export class VersionChecker {
      * @returns 
      */
     public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {
-        return new Promise((resolve, reject) => {
-            if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
-            const coqcBinary = path.join(path.parse(this._wpPath).dir, "coqc");
-            const command = `${coqcBinary} --version`;
-            const regex = /version (?<version>\d+\.\d+\.\d+)/g;
+        if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
 
-            exec(command, (err, stdout, _stderr) => {
-                if (err) resolve({ reason: err.message });
-                const groups = regex.exec(stdout)?.groups;
-                if (groups === undefined) reject("Regex matching on version string went wrong");
-                resolve(Version.fromString(groups!["version"]));
-            });
-        });
+        const coqcBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "coqc");
+        const command = `${coqcBinary} --version`;
+        const regex = /version (?<version>\d+\.\d+\.\d+)/g;
+    
+        try {
+            const stdout = await this.exec(command);
+            const groups = regex.exec(stdout)?.groups;
+            if (!groups) throw new Error("Failed to parse version string.");
+            return Version.fromString(groups["version"]);
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
+        }
     }
 
     /**
@@ -115,23 +120,25 @@ export class VersionChecker {
      * @returns 
      */
     public async checkWaterproofLib(): Promise<{ wpVersion: Version, requiredCoqVersion: Version } | VersionError> {
-        return new Promise((resolve, _reject) => {
-            if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
-            const ext = process.platform === "win32" ? ".exe" : "";
-            const coqtopPath = path.join(path.parse(this._wpPath).dir, `coqtop${ext}`);
-
-            const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
-            const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
-            exec(command, (err, stdout, _stderr) => {
-                if (err) return resolve({ reason: err.message });
-
-                const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
-                const versionCoqWaterproof = Version.fromString(wpVersion);
-                const versionRequiredCoq = Version.fromString(reqCoqVersion);
-
-                resolve({ wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq });
-            });
-        });
+        if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
+        const ext = process.platform === "win32" ? ".exe" : "";
+        
+        const coqtopPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `coqtop${ext}`);
+        wpl.debug(`coqtopPath: ${coqtopPath}`)
+        const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
+        const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
+    
+        try {
+            const stdout = await this.exec(command);
+            const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
+            const versionCoqWaterproof = Version.fromString(wpVersion);
+            const versionRequiredCoq = Version.fromString(reqCoqVersion);
+            return { wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq };
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
+        }
     }
 
     /**
@@ -139,15 +146,49 @@ export class VersionChecker {
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
      */
     private async checkLSPBinary(): Promise<Version | VersionError> {
-        return new Promise((resolve, _reject) => {
-            if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
-            const command = `${this._wpPath} --version`;
+        if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
+        const command = `${this._wpPath} --version`;
+    
+        try {
+            const stdout = await this.exec(command);
+            const version = Version.fromString(stdout.trim());
+            return version;
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
+        }
+    }
 
-            exec(command, (err, stdout, _stderr) => {
-                if (err) return resolve({ reason: err.message });
-                const version = Version.fromString(stdout.trim());
-                resolve(version);
-            });
+    /** Wrapper around shellIntegration  */
+    private async exec(command: string): Promise<string> {
+        wpl.log(`Running command: ${command}`)
+        return new Promise((resolve, _reject) => {
+            const myTerm = window.createTerminal(`Waterproof commands -- ${command}`)
+            let fired = false;
+            
+            window.onDidChangeTerminalShellIntegration(async ({ terminal, shellIntegration}) => {
+                if (terminal === myTerm && !fired) {
+                    const execution = shellIntegration.executeCommand(command);
+                    const outputStream = execution.read();
+                    fired = true;
+                    wpl.debug(`Type of outputStream: ${typeof outputStream}`)
+                    wpl.debug(`Output stream: ${outputStream}`)
+                    window.onDidEndTerminalShellExecution(async event => {
+                        if (event.execution === execution) {
+                            let output = "";
+                            for await (const data of outputStream) {
+                                output += data
+                            }
+                            wpl.debug(`Output of ran command ${output.substring(8)}`)
+                            myTerm.hide();
+                            myTerm.dispose();
+                            // Remove terminal-artifacts from the output by taking the first 8 characters
+                            resolve(output.substring(8));
+                        }
+                    })
+                }
+            })
         });
     }
 

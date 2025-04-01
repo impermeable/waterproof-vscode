@@ -1,5 +1,5 @@
 import { Uri } from "vscode";
-import { GoalAnswer, GoalRequest, PpString } from "../../../lib/types";
+import { GoalAnswer, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { IGoalsComponent } from "../../components";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
@@ -13,11 +13,6 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
     constructor(extensionUri: Uri, config: CoqLspClientConfig, name: string) {
         super(extensionUri,name);
         this.config = config;
-    }
-
-    //sends message for requestGoals
-    goalRequestSent(cursor: GoalRequest) {
-        this.postMessage({ type: MessageType.requestGoals, body: cursor });
     }
 
     //sends message for renderGoals

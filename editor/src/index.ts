@@ -85,9 +85,6 @@ window.onload = () => {
 					?.activeNodeViews
 					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
 				break; }
-			case MessageType.fatalError:
-				// TODO: show skull
-				break;
 			case MessageType.qedStatus:
 				{ const statuses = msg.body;  // one status for each input area, in order
 				editor.updateQedStatus(statuses);

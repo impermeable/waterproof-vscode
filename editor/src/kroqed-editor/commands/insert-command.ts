@@ -124,7 +124,7 @@ export function getLatexInsertCommand(
  * @param coqcodeNodeType The node type of a coqcode node.
  * @returns The insertion command.
  */
-export function getCoqInsertCommand(
+export function getCodeInsertCommand(
     filef: FileFormat, 
     insertionFunction: InsertionFunction,
     place: InsertionPlace,

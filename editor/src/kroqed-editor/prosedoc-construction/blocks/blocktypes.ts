@@ -1,4 +1,4 @@
-import { TheSchema } from "../../kroqed-schema";
+import { WaterproofSchema } from "../../schema";
 import { BLOCK_NAME, Block, BlockRange } from "./block";
 import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
 import { coqCode, coqDoc, coqMarkdown, coqblock, hint, inputArea, markdown, mathDisplay } from "./schema";
@@ -33,7 +33,7 @@ export class HintBlock implements Block {
 
     // Note: Hint blocks have a title attribute.
     constructor( public stringContent: string, public title: string, public range: BlockRange ) {
-        this.innerBlocks = createInputAndHintInnerBlocks(stringContent); 
+        this.innerBlocks = createInputAndHintInnerBlocks(stringContent);
     };
 
     toProseMirror() {
@@ -95,7 +95,7 @@ export class MarkdownBlock implements Block {
     public type = BLOCK_NAME.MARKDOWN;
     public isNewLineOnly = false;
 
-    constructor( public stringContent: string, public range: BlockRange ) { 
+    constructor( public stringContent: string, public range: BlockRange ) {
         if (stringContent === "\n") this.isNewLineOnly = true;
     };
 
@@ -154,7 +154,7 @@ export class CoqCodeBlock implements Block {
     toProseMirror() {
         if (this.stringContent === "") {
             // If the string content is empty, we create an empty coqcode node.
-            return TheSchema.nodes.coqcode.create();
+            return WaterproofSchema.nodes.coqcode.create();
         }
         return coqCode(this.stringContent);
     }

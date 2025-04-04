@@ -3,7 +3,7 @@ import { Schema } from "prosemirror-model";
 import { Command, PluginView, Plugin, PluginKey } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
-import { cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, InsertionPlace, liftWrapper } from "../commands";
+import { cmdInsertCode, cmdInsertLatex, cmdInsertMarkdown, InsertionPlace, liftWrapper } from "../commands";
 import { OS } from "../osType";
 import { FileFormat } from "../../../../shared";
 
@@ -35,14 +35,14 @@ function createMenuItem(displayedText: string, tooltipText: string, cmd: Command
 }
 
 /**
- * Class implementing a prosemirror `PluginView`. 
+ * Class implementing a prosemirror `PluginView`.
  * Shows menubar above the prosemirror editor.
  */
 class MenuView implements PluginView {
     items: MenuEntry[];
     view: EditorView;
     public menubarDOM: HTMLElement;
-    
+
     constructor(items: MenuEntry[], view: EditorView) {
         this.items = items;
         this.view = view;
@@ -50,26 +50,26 @@ class MenuView implements PluginView {
         // Create menubar dom container.
         this.menubarDOM = document.createElement("div");
         this.menubarDOM.classList.add("menubar");
-        
+
         for(const item of items) {
             // Append the menu item to the menubar DOM element.
             item.dom.style.width = "40px"
             this.menubarDOM.appendChild(item.dom);
         }
-        
+
         // Update the view
         this.update(view);
-        
+
         // Add event listeners to every menubar item
         this.menubarDOM.addEventListener("mousedown", (event) => {
             // Get the target DOM Node.
             const mouseTarget = event.target as Node;
             // Prevent default behaviour.
             event.preventDefault();
-        
+
             view.focus();
 
-            // Add the correct callback to all the items. 
+            // Add the correct callback to all the items.
             for(const item of items) {
                 if (item.dom.contains(mouseTarget)) {
                     // This item was clicked, execute the command and update this view.
@@ -80,15 +80,15 @@ class MenuView implements PluginView {
             this.update(view);
         });
     }
-    
+
     update(view: EditorView) {
         // Whether we are currently in teacher mode.
         const inTeacherMode = MENU_PLUGIN_KEY.getState(view.state)?.teacher;
 
         for(const item of this.items) {
-            const active = item.cmd(this.view.state, undefined, this.view); 
+            const active = item.cmd(this.view.state, undefined, this.view);
             /* From https://prosemirror.net/examples/menu/
-            "To update the menu for a new state, all commands are run without dispatch function, 
+            "To update the menu for a new state, all commands are run without dispatch function,
             and the items for those that return false are hidden."
             */
             // Instead of hiding the item we set the opacity to something low
@@ -103,9 +103,9 @@ class MenuView implements PluginView {
             }
         }
     }
-    
-    destroy() { 
-        // On destroy remove the dom node. 
+
+    destroy() {
+        // On destroy remove the dom node.
         this.menubarDOM.remove();
     }
 }
@@ -128,7 +128,7 @@ const DEBUG = false;
 /**
  * Creates the default menu bar.
  * @param schema The schema in use for the editor.
- * @param outerView The outer (prosemirror)editor. 
+ * @param outerView The outer (prosemirror)editor.
  * @param filef The file format of the current file. Some commands will behave differently in `.mv` vs `.v` context.
  * @returns A new `MenuView` filled with default menu items.
  */
@@ -141,8 +141,8 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: FileFor
     // Create the list of menu entries.
     const items: MenuEntry[] = [
         // Insert Coq command
-        createMenuItem("Math↓", `Insert new verified math block underneath (${keyBinding("q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
-        createMenuItem("Math↑", `Insert new verified math block above (${keyBinding("Q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
+        createMenuItem("Math↓", `Insert new verified math block underneath (${keyBinding("q")})`, cmdInsertCode(schema, filef, InsertionPlace.Underneath), false),
+        createMenuItem("Math↑", `Insert new verified math block above (${keyBinding("Q")})`, cmdInsertCode(schema, filef, InsertionPlace.Above), false),
         // Insert Markdown
         createMenuItem("Text↓", `Insert new text block underneath (${keyBinding("m")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Underneath), false),
         createMenuItem("Text↑", `Insert new text block above (${keyBinding("M")})`, cmdInsertMarkdown(schema, filef, InsertionPlace.Above), false),
@@ -157,7 +157,7 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: FileFor
         createMenuItem("↑", "Lift selected node (Reverts the effect of making a 'hint' or 'input area')", liftWrapper, true)
     ]
 
-    // If the DEBUG variable is set to `true` then we display a `dump` menu item, which outputs the current 
+    // If the DEBUG variable is set to `true` then we display a `dump` menu item, which outputs the current
     // document in the console as a JSON object.
     if (DEBUG) {
         items.push(createMenuItem("DUMP DOC", "", (state, dispatch) => {
@@ -169,7 +169,7 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: FileFor
             return true;
         }, false));
     }
-    
+
     // Return a new MenuView with the previously created items.
     return new MenuView(items, outerView);
 }
@@ -204,13 +204,13 @@ export function menuPlugin(schema: Schema, filef: FileFormat, os: OS) {
                 throw Error("outerView.dom.parentNode cannot be null here");
             }
             // We insert the menubar before the prosemirror in the DOM tree.
-            parentNode.insertBefore(menuView.menubarDOM, outerView.dom);  
-            
+            parentNode.insertBefore(menuView.menubarDOM, outerView.dom);
+
             // Return the plugin view.
             return menuView
-        }, 
+        },
         // Set the key (uniquely associates this key to this plugin)
-        key: MENU_PLUGIN_KEY, 
+        key: MENU_PLUGIN_KEY,
         state: {
             init(_config, _instance): IMenuPluginState {
                 // Initially teacher mode is set to true.

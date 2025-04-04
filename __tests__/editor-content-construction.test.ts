@@ -111,71 +111,66 @@ test("TEMP: Leave <hr> in markdown untouched #2", () => {
 });
 
 test("checkPrePost #1", () => {
-    const pm = new PostManager();
-    expect(checkPrePost("```coq\nLemma.\n```", (msg) => pm.post(msg))).toBe("\n```coq\nLemma.\n```\n");
-    expect(pm.storage).toStrictEqual<Array<Message>>([{
-        type: MessageType.docChange, 
-        body: {
-            firstEdit: {
-                startInFile: 0, 
-                endInFile: 0, 
-                finalText: "\n"
-            }, 
-            secondEdit: {
-                startInFile: 17, 
-                endInFile: 17, 
-                finalText: "\n"
+    expect(checkPrePost("```coq\nLemma.\n```"))
+        .toStrictEqual({
+            resultingDocument: "\n```coq\nLemma.\n```\n",
+            documentChange: {
+                firstEdit: {
+                    startInFile: 0,
+                    endInFile: 0,
+                    finalText: "\n"
+                },
+                secondEdit: {
+                    startInFile: 17,
+                    endInFile: 17,
+                    finalText: "\n"
+                }
             }
-        }
-    }]);
+        });
 });
 
 test("checkPrePost #2", () => {
-    const pm = new PostManager();
-    expect(checkPrePost("```coq\nLemma.\n```\n# Some markdown", (msg) => pm.post(msg))).toBe("\n```coq\nLemma.\n```\n# Some markdown");
-    expect(pm.storage).toStrictEqual<Array<Message>>([
-        {
-            type: MessageType.docChange,
-            body: {
+    expect(checkPrePost("```coq\nLemma.\n```\n# Some markdown"))
+        .toStrictEqual({
+            resultingDocument: "\n```coq\nLemma.\n```\n# Some markdown",
+            documentChange: {
                 firstEdit: {
-                    startInFile: 0, 
-                    endInFile: 0, 
+                    startInFile: 0,
+                    endInFile: 0,
                     finalText: "\n"
-                }, 
+                },
                 secondEdit: {
-                    startInFile: 33, 
-                    endInFile: 33, 
+                    startInFile: 33,
+                    endInFile: 33,
                     finalText: ""
                 }
             }
-        }
-    ]);
+        });
 });
 
 test("checkPrePost #3", () => {
-    const pm = new PostManager();
-    expect(checkPrePost("# Some markdown\n```coq\nLemma.\n```", (msg) => pm.post(msg))).toBe("# Some markdown\n```coq\nLemma.\n```\n");
-    expect(pm.storage).toStrictEqual<Array<Message>>([
-        {
-            type: MessageType.docChange,
-            body: {
+    expect(checkPrePost("# Some markdown\n```coq\nLemma.\n```"))
+        .toStrictEqual({
+            resultingDocument: "# Some markdown\n```coq\nLemma.\n```\n",
+            documentChange: {
                 firstEdit: {
-                    startInFile: 0, 
-                    endInFile: 0, 
+                    startInFile: 0,
+                    endInFile: 0,
                     finalText: ""
-                }, 
+                },
                 secondEdit: {
-                    startInFile: 33, 
+                    startInFile: 33,
                     endInFile: 33,
                     finalText: "\n"
                 }
             }
-        }
-    ]);
+        });
 });
 
 test("checkPrePost #4", () => {
-    const pm = new PostManager();
-    expect(checkPrePost("# Some markdown\n```coq\nLemma.\n```\n# Some markdown", (msg) => pm.post(msg))).toBe("# Some markdown\n```coq\nLemma.\n```\n# Some markdown");
-    expect(pm.storage).toStrictEqual<Array<Message>>([]);
+    expect(checkPrePost("# Some markdown\n```coq\nLemma.\n```\n# Some markdown"))
+        .toStrictEqual({
+            resultingDocument: "# Some markdown\n```coq\nLemma.\n```\n# Some markdown",
+            documentChange: undefined
+        });
 });

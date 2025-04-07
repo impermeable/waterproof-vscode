@@ -1,4 +1,4 @@
-import { extensions, window, workspace } from "vscode";
+import { extensions, window, commands, workspace } from "vscode";
 
 /**
  * Returns a random alphanumerical string of length 32.
@@ -33,6 +33,26 @@ export function checkConflictingExtensions() {
 }
 
 /**
+ * Checks whether the user has enabled the setting `trimTrailingWhitespace`, and warns the
+ * user in that case.
+ */
+export function checkTrimmingWhitespace() {
+    const config = workspace.getConfiguration('files');
+    const isTrimTrailingWhitespaceEnabled = config.get<boolean>('trimTrailingWhitespace');
+    if (isTrimTrailingWhitespaceEnabled) {
+        window.showWarningMessage(
+            "The setting `Trim Trailing Whitespace` is enabled. This may cause unexpected behaviour, and is strongly suggested to turned off.",
+            "Open Settings",
+            "Dismiss"
+        ).then(selection => {
+            if (selection === "Open Settings") {
+                commands.executeCommand('workbench.action.openSettings', 'Trim Trailing Whitespace');
+            }
+        });
+    }
+}
+
+/**
  * Checks whether the user wants to ignore Coq object files and adjusts the workspace
  * configuration accordingly.
  */
@@ -40,7 +60,7 @@ export function excludeCoqFileTypes() {
     const activationConfig = workspace.getConfiguration();
     const updateIgnores = activationConfig.get("waterproof.updateIgnores") ?? true;
     if (updateIgnores) {
-        // TODO: Look at 
+        // TODO: Look at
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fexc : any = activationConfig.get("files.exclude");
         activationConfig.update("files.exclude", {

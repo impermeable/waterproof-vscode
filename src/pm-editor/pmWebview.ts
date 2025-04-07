@@ -177,6 +177,12 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         }));
 
+        this._disposables.push(workspace.onDidSaveTextDocument(e => {
+            if (e.uri.toString() === this._document.uri.toString()) {
+                this.updateOnSave();  // Ensure the editor updates after saving
+            }
+        }));
+
         this._disposables.push(workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration("waterproof.teacherMode")) {
                 this.updateTeacherMode();
@@ -264,6 +270,16 @@ export class ProseMirrorWebview extends EventEmitter {
 
         // send any cached messages
         for (const m of this._cachedMessages.values()) this.postMessage(m);
+    }
+
+    private updateOnSave() {
+        this.postMessage({
+            type: MessageType.updateDocument,
+            body: {
+                value: this._document.getText(),
+                version: this._document.version,
+            }
+        });
     }
 
     private updateLineNumberStatusInEditor() {

@@ -35,6 +35,7 @@ export type Message =
     | MessageBase<MessageType.errorGoals, unknown>
     | MessageBase<MessageType.fatalError, { error: string }>
     | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
+    | MessageBase<MessageType.updateDocument, {value: string, version: number}>
     | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: string, time: number }>
     | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>
@@ -60,6 +61,7 @@ export const enum MessageType {
     update,
     init,
     ready,
+    updateDocument,
     editorReady,
     docChange,
     cursorChange,

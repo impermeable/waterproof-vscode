@@ -15,7 +15,7 @@ import { CoqnitiveStatusBar } from "./components/enableButton";
 import { CoqLspClient, CoqLspClientConfig, CoqLspClientFactory, CoqLspServerConfig } from "./lsp-client/clientTypes";
 import { executeCommand } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
-import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
+import { checkConflictingExtensions, checkTrimmingWhitespace, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
@@ -82,6 +82,7 @@ export class Waterproof implements Disposable {
     constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory) {
         checkConflictingExtensions();
         excludeCoqFileTypes();
+        checkTrimmingWhitespace();
 
         this.context = context;
         this.clientFactory = clientFactory;

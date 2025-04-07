@@ -34,6 +34,7 @@ export type Message =
     | MessageBase<MessageType.editorReady>
     | MessageBase<MessageType.errorGoals, unknown>
     | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
+    | MessageBase<MessageType.updateDocument, {value: string, version: number}>
     | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: "symbol" | "tactics", time: number }>
     | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>

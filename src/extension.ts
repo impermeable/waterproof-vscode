@@ -462,7 +462,7 @@ export class Waterproof implements Disposable {
                 },
                 reason => {
                     const message = reason.toString();
-                    WaterproofLogger.error(`Error during client initialization: ${message}`);
+                    WaterproofLogger.log(`Error during client initialization: ${message}`);
                     this.statusBar.failed(message);
                     throw reason;  // keep chain rejected
                 }

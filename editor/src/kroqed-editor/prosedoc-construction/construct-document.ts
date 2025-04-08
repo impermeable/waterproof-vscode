@@ -102,5 +102,7 @@ export function createProseMirrorDocument(input: string, fileFormat: FileFormat)
     }
 
     // 2.2 Construct the document and return
-    return constructDocument(blocks);
+    let document = constructDocument(blocks)
+    console.log(document)
+    return document;
 }

@@ -21,6 +21,7 @@ import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
 import { createContextMenuHTML } from "./context-menu";
 import { initializeTacticCompletion } from "./autocomplete/tactics";
+import { TextDocMappingNew } from "./mappingModel/treestructure/newmapping";
 
 // CSS imports
 import "katex/dist/katex.min.css";
@@ -144,6 +145,8 @@ export class Editor {
 		// this._contentElem.innerHTML = parsedContent;
 
 		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
+
+		let test_mapping = new TextDocMappingNew(proseDoc, version)
 
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
 		this.createProseMirrorEditor(proseDoc);

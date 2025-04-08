@@ -483,7 +483,6 @@ export class Waterproof implements Disposable {
     private async updateGoals(document: TextDocument, position: Position): Promise<void> {
         if (!this.client.isRunning()) return;
         const params = this.client.createGoalsRequestParameters(document, position);
-        for (const g of this.goalsComponents) g.goalRequestSent(params)
         this.client.requestGoals(params).then(
             response => {
                 for (const g of this.goalsComponents) g.updateGoals(response)

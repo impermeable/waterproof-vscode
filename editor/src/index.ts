@@ -60,9 +60,6 @@ window.onload = () => {
 					?.activeNodeViews
 					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
 				break; }
-			case MessageType.fatalError:
-				// TODO: show skull
-				break;
 			case MessageType.editorHistoryChange:
 				theEditor.handleHistoryChange(msg.body);
 				break;

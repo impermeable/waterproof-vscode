@@ -310,7 +310,7 @@ export class Waterproof implements Disposable {
     }
 
     private async waterproofTutorialCommand(): Promise<void> {
-        const defaultUri = Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv");
+        const defaultUri = Utils.joinPath(workspace.workspaceFolders![0].uri, "waterproof_tutorial.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in saving the Waterproof tutorial file");

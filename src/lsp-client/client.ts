@@ -17,7 +17,7 @@ import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
-import { WaterproofConfigHelper } from "../helpers";
+import { WaterproofConfigHelper, WaterproofLogger as wpl } from "../helpers";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -60,7 +60,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         constructor(...args: any[]) { 
             super(...args);
             this.sentenceManager = new SentenceManager();
-            console.log("CoqLspClient constructor");
+            wpl.debug("CoqLspClient constructor");
             // forward progress notifications to editor
             this.fileProgressComponents.push({
                 dispose() { /* noop */ },

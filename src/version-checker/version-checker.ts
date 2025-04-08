@@ -1,6 +1,4 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
-// import { exec, spawn } from "child_process";
-// import path = require("path");
 import { Version, VersionRequirement } from "./version";
 import { COMPARE_MODE } from "./types";
 import { WaterproofFileUtil, WaterproofLogger as wpl } from "../helpers";

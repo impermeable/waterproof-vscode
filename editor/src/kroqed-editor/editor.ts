@@ -155,10 +155,6 @@ export class Editor {
 		this.post({ type: MessageType.editorReady });
 	}
 
-	updateDocument(newContent: string, version: number) {
-		//TODO: correct implementation of updateDocument.
-	}
-
 	get state(): EditorState | undefined {
 		return this._view?.state;
 	}

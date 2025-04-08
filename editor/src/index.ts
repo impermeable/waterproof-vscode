@@ -37,9 +37,6 @@ window.onload = () => {
 			case MessageType.init:
 				theEditor.init(msg.body.value, msg.body.format, msg.body.version);
 				break;
-			case MessageType.updateDocument:
-				theEditor.updateDocument(msg.body.value, msg.body.version);
-				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
 				const { symbolUnicode, symbolLatex } = msg.body;

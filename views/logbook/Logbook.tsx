@@ -3,40 +3,31 @@ import React, { useEffect, useState } from 'react';
 
 import { GoalAnswer, PpString } from "../../lib/types";
 import { Messages } from "../goals/Messages";
-import { InfoError, WaitingForInfo } from "../lib/CoqMessage";
 
 import "../styles/info.css";
-
-
-interface RenderGoalsArray {
-  type: "renderGoals";
-  body: GoalAnswer<PpString>[];
-}
-interface CoqMessageEvent extends MessageEvent {
-  data: RenderGoalsArray | WaitingForInfo | InfoError;
-}
+import { Message, MessageType } from "../../shared";
 
 
 export function Logbook() {
   //saves the goals for the logbook
-  let [goalsArray, setGoalsArray] = useState<GoalAnswer<PpString>[]>();
+  const [goalsArray, setGoalsArray] = useState<GoalAnswer<PpString>[]>();
   //boolean to check if the messages are still loading
   const [isLoading, setIsLoading] = useState(true);
 
   //message handler
-  function infoViewDispatch(event: CoqMessageEvent) {
-    if (event.data.type === "renderGoals") {
-      setGoalsArray(event.data.body); //setting the information
+  function infoViewDispatch(msg: Message) {
+    if (msg.type === MessageType.renderGoals) {
+      //@ts-expect-error FIXME: renderGoals body is currently unknown.
+      setGoalsArray(msg.body); //setting the information
       setIsLoading(false); //putting loading to false
-    } else if (event.data.type === "waitingForInfo") {
-      setIsLoading(true); //waiting for info therefore loading is true
     }
   }
 
   // Set the callback
   useEffect(() => {
-    window.addEventListener("message", infoViewDispatch);
-    return () => window.removeEventListener("message", infoViewDispatch);
+    const callback = (ev: MessageEvent<Message>) => {infoViewDispatch(ev.data);};
+    window.addEventListener("message", callback);
+    return () => window.removeEventListener("message", callback);
   }, []);
 
   //show that the messages are loading
@@ -48,8 +39,8 @@ export function Logbook() {
   return (
     <div className="info-panel-container">
       <div className="info-panel">
-      {goalsArray.map((value, idx) => {
-          let key = objectHash(value);
+      {goalsArray.map((value, _) => {
+          const key = objectHash(value);
           return <Messages key={key} answer={value} />;
         })}
       </div>

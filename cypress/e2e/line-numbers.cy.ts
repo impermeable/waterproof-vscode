@@ -7,7 +7,7 @@ const edits = [];
 const initialDocument = "# Title\n<input-area>\n```coq\nDefinition foo := 42.\n```\n</input-area>\n";
 
 const callbacks = {
-    [MessageType.lineNumbers]: (data: any) => {
+    [MessageType.lineNumbers]: (data: { linenumbers: number[]; }) => {
         // convert the zero based offset in `data.linenumbers` to line numbers.
         const lineNumbers = data.linenumbers.map((n: number) => 
             initialDocument.substring(0, n).split("\n").length - 1);

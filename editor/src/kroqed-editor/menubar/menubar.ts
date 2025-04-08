@@ -1,11 +1,11 @@
 import { selectParentNode, wrapIn } from "prosemirror-commands";
 import { Schema } from "prosemirror-model";
-import { Command, PluginView, Plugin, EditorState, Transaction, PluginKey } from "prosemirror-state";
+import { Command, PluginView, Plugin, PluginKey } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 import { cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown, InsertionPlace, liftWrapper } from "../commands";
-import { COQ_CODE_PLUGIN_KEY } from "../codeview/coqcodeplugin";
 import { OS } from "../osType";
+import { FileFormat } from "../../../../shared";
 
 /** MenuEntry type contains the DOM, whether to only show it in teacher mode and the command to execute on click */
 type MenuEntry = {
@@ -63,7 +63,7 @@ class MenuView implements PluginView {
         // Add event listeners to every menubar item
         this.menubarDOM.addEventListener("mousedown", (event) => {
             // Get the target DOM Node.
-            let mouseTarget = event.target as Node;
+            const mouseTarget = event.target as Node;
             // Prevent default behaviour.
             event.preventDefault();
         
@@ -86,7 +86,7 @@ class MenuView implements PluginView {
         const inTeacherMode = MENU_PLUGIN_KEY.getState(view.state)?.teacher;
 
         for(const item of this.items) {
-            let active = item.cmd(this.view.state, undefined, this.view); 
+            const active = item.cmd(this.view.state, undefined, this.view); 
             /* From https://prosemirror.net/examples/menu/
             "To update the menu for a new state, all commands are run without dispatch function, 
             and the items for those that return false are hidden."
@@ -132,14 +132,14 @@ const DEBUG = false;
  * @param filef The file format of the current file. Some commands will behave differently in `.mv` vs `.v` context.
  * @returns A new `MenuView` filled with default menu items.
  */
-function createDefaultMenu(schema: Schema, outerView: EditorView, filef: any, os: OS): MenuView {
+function createDefaultMenu(schema: Schema, outerView: EditorView, filef: FileFormat, os: OS): MenuView {
 
     // Platform specific keybinding string:
     const cmdOrCtrl = os == OS.MacOS ? "Cmd" : "Ctrl";
     const keyBinding = (key: string): string => `${cmdOrCtrl}-${key}`;
 
     // Create the list of menu entries.
-    let items: MenuEntry[] = [
+    const items: MenuEntry[] = [
         // Insert Coq command
         createMenuItem("Math↓", `Insert new verified math block underneath (${keyBinding("q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Underneath), false),
         createMenuItem("Math↑", `Insert new verified math block above (${keyBinding("Q")})`, cmdInsertCoq(schema, filef, InsertionPlace.Above), false),
@@ -192,14 +192,14 @@ export const MENU_PLUGIN_KEY = new PluginKey<IMenuPluginState>("prosemirror-menu
  * @param filef The file format of the currently opened file.
  * @returns A prosemirror `Plugin` type containing the menubar.
  */
-export function menuPlugin(schema: Schema, filef: any, os: OS) {
+export function menuPlugin(schema: Schema, filef: FileFormat, os: OS) {
     return new Plugin({
         // This plugin has an associated `view`. This allows it to add DOM elements.
         view(outerView) {
             // Create the default menu.
-            let menuView = createDefaultMenu(schema, outerView, filef, os);
+            const menuView = createDefaultMenu(schema, outerView, filef, os);
             // Get the parent node (the parent node of the outer prosemirror dom)
-            let parentNode = outerView.dom.parentNode;
+            const parentNode = outerView.dom.parentNode;
             if (parentNode == null) {
                 throw Error("outerView.dom.parentNode cannot be null here");
             }
@@ -212,13 +212,13 @@ export function menuPlugin(schema: Schema, filef: any, os: OS) {
         // Set the key (uniquely associates this key to this plugin)
         key: MENU_PLUGIN_KEY, 
         state: {
-            init(config, instance): IMenuPluginState {
+            init(_config, _instance): IMenuPluginState {
                 // Initially teacher mode is set to true.
                 return {
                     teacher: true
                 }
             },
-            apply(tr, value, oldState, newState) {
+            apply(tr, value, _oldState, _newState) {
                 // Upon recieving a transaction with meta information...
                 let teacherState = !tr.getMeta(INPUT_AREA_PLUGIN_KEY);
                 // we check if the teacherState variable is set and if so,

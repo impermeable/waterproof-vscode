@@ -1,11 +1,9 @@
 import React from "react";
-import { GoalAnswer, GoalRequest, Pp, PpString } from "../../lib/types";
-import { PropsWithChildren, DetailsHTMLAttributes } from "react";
+import { PropsWithChildren} from "react";
 import "../styles/box.css";
 import {
   VersionedTextDocumentIdentifier,
   Position,
-  Range,
 } from "vscode-languageserver-types";
 
 //type that makes sure the children components are also passed 
@@ -24,10 +22,10 @@ export type DetailsP = PropsWithChildren<
 //position is the position in the textdocument
 //textDox is the corresponding file
 export function Box({ summary, children, pos, textDox  }: DetailsP) {
-    let uri = textDox.uri.split("/").slice(-1)[0];
-    let line = pos.line + 1; // 1-based position
-    let character = pos.character + 1; // 1-based character
-    let info = (
+    const uri = textDox.uri.split("/").slice(-1)[0];
+    const line = pos.line + 1; // 1-based position
+    const character = pos.character + 1; // 1-based character
+    const info = (
     <span>
       {uri}:{line}:{character}
     </span>

@@ -16,6 +16,8 @@ Cypress.Commands.add("nthCoqCode", (n) => {
     cy.get('coqblock > .cm-editor > .cm-scroller > .cm-content').eq(n)
 });
 
+// TODO: Fix this
+// eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace Cypress {
     interface Chainable {
       /** Command to find all Waterproof input-areas. */ 

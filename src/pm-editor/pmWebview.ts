@@ -1,5 +1,5 @@
 import { EventEmitter } from "stream";
-import { Disposable, EndOfLine, Position, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
+import { Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
 import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNumber } from "../../shared";
 import { getNonce } from "../util";
@@ -12,6 +12,8 @@ import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { HistoryChangeType } from "../../shared/Messages";
+
+import * as path from 'path';
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -82,12 +84,11 @@ export class ProseMirrorWebview extends EventEmitter {
             this.redoHandler.bind(this));
 
 
-        var path = require('path')
 
         const fileName = path.basename(doc.uri.fsPath)
 
         if (isIllegalFileName(fileName)) {
-            const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "\-", "\(", "\)". Please rename the file.`
+            const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "-", "(", ")". Please rename the file.`
             window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
             WaterproofLogger.log("Error: Illegal file name encountered.");
         }
@@ -120,7 +121,7 @@ export class ProseMirrorWebview extends EventEmitter {
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
                 "We will convert the document to use unix line endings (LF).");
-            let editor = await window.showTextDocument(doc);
+            const editor = await window.showTextDocument(doc);
             if (editor !== null) {
                 await editor.edit(builder => {
                     builder.setEndOfLine(EndOfLine.LF);
@@ -201,7 +202,7 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this._disposables.push(this._panel.onDidDispose(() => {
             this._panel.dispose();
-            for (let d of this._disposables) {
+            for (const d of this._disposables) {
                 d.dispose();
             }
             this.emit(WebviewEvents.dispose);

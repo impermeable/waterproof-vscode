@@ -18,10 +18,10 @@ export function createContextMenuHTML(editor: Editor): HTMLDivElement {
     divContainer.style.display = "none";
     listContainer.classList.add("menu");
 
-    // Create a 'Help' button. On execution will send a command to coq-lsp to query for help, 
+    // Create a 'Help' button. On execution will send a command to coq-lsp to query for help,
     // this result is then displayed in a popup within the editor.
     listContainer.appendChild(contextMenuButton("?", "Help", () => {
-        editor.post({type: MessageType.command, body: "Help.", time: date.getTime()});
+        editor.post({type: MessageType.command, body: { command: "Help.", time: date.getTime()} });
     }));
 
     listContainer.appendChild(contextMenuButton("X", "Close", () => {}));
@@ -36,7 +36,7 @@ export function createContextMenuHTML(editor: Editor): HTMLDivElement {
  * @param buttonCallback The callback which will be called when the button is pressed.
  * @returns HTMLLiElement representing the button.
  */
-function contextMenuButton(icon: string, buttonName: string, buttonCallback: () => any): HTMLLIElement {
+function contextMenuButton(icon: string, buttonName: string, buttonCallback: () => unknown): HTMLLIElement {
     const element = document.createElement("li");
     // <i aria-hidden="true">?
     const a = document.createElement("a");

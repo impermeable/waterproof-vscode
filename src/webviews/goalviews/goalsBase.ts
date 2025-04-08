@@ -1,5 +1,5 @@
 import { Uri } from "vscode";
-import { GoalAnswer, GoalRequest, PpString } from "../../../lib/types";
+import { GoalAnswer, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { IGoalsComponent } from "../../components";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
@@ -15,18 +15,16 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
         this.config = config;
     }
 
-    //sends message for requestGoals
-    goalRequestSent(cursor: GoalRequest) {
-        this.postMessage({ type: MessageType.requestGoals, body: cursor});
-    }
-
     //sends message for renderGoals
     updateGoals(goals: GoalAnswer<PpString> | undefined) {
-        this.postMessage({ type: MessageType.renderGoals, body: goals});
+        this.postMessage({ type: MessageType.renderGoals, body: goals });
     }
 
     //sends message for errorGoals
-    failedGoals(e: any) {
+    failedGoals(e: unknown) {
+        // FIXME: The error `e` should have a proper type instead of `unknown`.
+        //        See `updateGoals` in extension.ts, where this `failedGoals`
+        //        is called as the result of a Promise rejection.
         this.postMessage({ type: MessageType.errorGoals, body: e});
     }
 

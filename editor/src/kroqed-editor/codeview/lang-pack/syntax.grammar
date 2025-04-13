@@ -4,7 +4,8 @@
 
 Sentence {
     WaterproofTactic |
-    Lemma
+    Lemma |
+    Statement
 }
 
 @skip { space | Comment | ProofandQed}
@@ -16,15 +17,17 @@ Sentence {
     TacticEnd[@name='dotSpace'] { '.' }
     // If overlap between tactics is an issue, probably better to create a token per phrase
     // This would mean tactics have to be hardcoded per possible configuration however...
-    TacticMiddleByOrSince{" it suffices to show that " | " we conclude that " | " it holds that "}
+    TacticMiddleByOrSince{"it suffices to show that" | "we" space+ "conclude" space+ "that" | "it holds that" }
     TacticMiddleExpand{" in "}
-    TacticMiddleObtain{" according to "}
+    TacticMiddleObtain{"according to"}
     TacticMiddleDefine{" := "}
     TacticMiddleBecauseFirst{" both "}
     TacticMiddleBecauseSecond{" and "}
     TacticMiddleEither{" or "}
     @else TacticInput
 }
+
+// TODO : Update the space+ addition to all tactics
 
 // Skip WaterproofTactics
 @skip {} {
@@ -38,10 +41,10 @@ Sentence {
         "We now show the induction step" TacticEnd|
         // Single Input Tactics
         "Take " TacticInput TacticEnd |
-        "We need to show that " TacticInput TacticEnd | 
-        "We conclude that " TacticInput TacticEnd | 
+        "We" space+ "need" space+ "to" space+ "show" space+ "that" TacticInput TacticEnd | 
+        "We" space+ "conclude" space+ "that" TacticInput TacticEnd | 
         "Case " TacticInput TacticEnd |
-        "Assume that " TacticInput TacticEnd |
+        "Assume" space+ "that" TacticInput TacticEnd |
         "Obtain such a " TacticInput TacticEnd | 
         "(& " TacticInput " )." | 
         "It suffices to show that " TacticInput TacticEnd | 
@@ -64,9 +67,6 @@ Sentence {
     }
 }
 
-
-
-
 @local tokens {
     LemmaEnd[@name='dotSpace'] { '.'}
     @else LemmaStatement
@@ -79,18 +79,34 @@ Sentence {
     }
 }
 
+@local tokens {
+    StatementEnd[@name='dotSpace'] { '.'}
+    @else StatementInput
+}
+
+// Skip Statement
+@skip {} {
+    Statement {
+        "Require Import " StatementInput StatementEnd space |
+        "Waterproof " StatementInput StatementEnd space |
+        "Set Default " StatementInput StatementEnd space |
+        "Open Scope " StatementInput StatementEnd space |
+        "Notation " StatementInput StatementEnd space |
+        "Section " StatementInput StatementEnd space |
+        "Variable " StatementInput StatementEnd space |
+        "Parameter " StatementInput StatementEnd space 
+    }
+}
+
 // Remaining tokens
 @tokens {
     Comment { "(*" ![*]* "*)" }
 
     space { " " | "\t" | "\n" | "\r" }
 
-    ProofandQed {"Proof" | "Qed"}
-    
-}
+    ProofandQed {"Proof" | "Qed"} 
 
-@precedence {
-    Lemma, WaterproofTactic
+    //TacticInput { ![.]+ } // Exclude overlapping characters explicitly
 }
 
 @detectDelim

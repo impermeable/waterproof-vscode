@@ -16,4 +16,7 @@ export const
   TacticMiddleEither = 14,
   Lemma = 15,
   LemmaStatement = 16,
-  LemmaEnd = 17
+  LemmaEnd = 17,
+  Statement = 18,
+  StatementInput = 19,
+  StatementEnd = 20

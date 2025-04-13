@@ -14,6 +14,7 @@ let customTags = {
     waterproofTactic: Tag.define(),
     tacticInput: Tag.define(),
     takeInput: Tag.define(),
+    lemmaStatement: Tag.define(),
     lemma: Tag.define(),
     comment: Tag.define(),
     proofQed: Tag.define()
@@ -23,6 +24,7 @@ let customTags = {
 export let highlight = HighlightStyle.define([
     { tag: customTags.waterproofTactic, color: "#5EC300" },
     { tag: customTags.tacticInput, color: "#FF0000" },
+    { tag: customTags.lemmaStatement, color: "#DB6B16" },
     { tag: customTags.lemma, color: "#FF00F7" },
     { tag: customTags.comment, color: "#0000FF" },
     { tag: customTags.proofQed, color: "#FFE100" },
@@ -44,6 +46,7 @@ export const coqLanguage = LRLanguage.define({
                 Lemma: customTags.lemma,
                 Comment: customTags.comment,
                 ProofandQed: customTags.proofQed,
+                LemmaStatement: customTags.lemmaStatement,
                 // Also update each of the middle tokens to match the tactics
                 TacticMiddleByOrSince: customTags.waterproofTactic,
                 TacticMiddleExpand: customTags.waterproofTactic,

@@ -164,10 +164,10 @@ export class Waterproof implements Disposable {
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
         const logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("logbook", logbook);
-        this.goalsComponents.push(logbook);
+        //this.goalsComponents.push(logbook);
         const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("debug", debug);
-        this.goalsComponents.push(debug);
+        //this.goalsComponents.push(debug);
 
         this.sidePanelProvider = addSidePanel(context, this.webviewManager);
 

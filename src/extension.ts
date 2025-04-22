@@ -353,7 +353,7 @@ export class Waterproof implements Disposable {
                         commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
                     });                    
                 }, (err) => {
-                    window.showErrorMessage("Could not a new Waterproof file.");
+                    window.showErrorMessage("Could not create a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
                     return;                   
                 })

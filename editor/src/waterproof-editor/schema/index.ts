@@ -1,0 +1,1 @@
+export { WaterproofSchema } from "./schema";

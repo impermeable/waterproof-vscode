@@ -6,18 +6,14 @@ export class FileTranslator {
     private _filef: FileFormat;
 
     /**
-     * Create a new file format translator. 
+     * Create a new file format translator.
      * @param fileFormat The input file format to use. Can be either `FileFormat.MarkdownV` for .mv files or
      * `FileFormat.RegularV` for regular coq files.
      */
     constructor(fileFormat: FileFormat) {
         this._filef = fileFormat;
-        switch (this._filef) {
-            case FileFormat.Unknown: 
-                throw new Error("Cannot initialize Translator for `unknown` file type.");
-        }
     }
-    
+
     /**
      * Get the file format this FileTranslator was configured for.
      */
@@ -26,20 +22,18 @@ export class FileTranslator {
     }
 
     /**
-     * Convert an input file to a prosemirror compatible HTML representation. 
+     * Convert an input file to a prosemirror compatible HTML representation.
      * Input format is set by `fileFormat` in the constructor.
-     * @param inputDocument The input document read from disk. 
+     * @param inputDocument The input document read from disk.
      * @returns A prosemirror compatible HTML document (as string).
      */
     public toProsemirror(inputDocument: string): string {
         switch (this._filef) {
             case FileFormat.MarkdownV:
-                return translateMvToProsemirror(inputDocument); // 
+                return translateMvToProsemirror(inputDocument);
             case FileFormat.RegularV:
                 // TODO: Parser for regular .v
                 return translateMvToProsemirror(inputDocument);
-            case FileFormat.Unknown: 
-                throw new Error("Cannot convert from unknown format");
         }
     }
 }

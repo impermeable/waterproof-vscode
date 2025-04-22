@@ -1,5 +1,5 @@
 import { ReplaceStep } from "prosemirror-transform";
-import { DocChange } from "../../../../../shared";
+import { DocChange } from "../../../../shared";
 import { HtmlTagInfo, OperationType, ParsedStep, StringCell } from "./types";
 import { getTextOffset } from "./helper-functions";
 
@@ -25,7 +25,7 @@ export class TextUpdate {
         /** Key of the stringCell in which step occurs */
         let correctCellKey = 0;
 
-        for (const [key,_value] of stringBlocks) {
+        for (const [key, _value] of stringBlocks) {
             if (key > step.from) break;
             correctCellKey = key;
         }
@@ -37,11 +37,11 @@ export class TextUpdate {
         /** Check that the change is, indeed, happening within a stringcell */
         if (targetCell.endProse < step.from) throw new Error(" Step does not happen within cell ");
 
-        /** The offset within the correct stringCell for the step action */ 
+        /** The offset within the correct stringCell for the step action */
         const offsetBegin = step.from - targetCell.startProse;
 
-        /** The offset within the correct stringCell for the step action */ 
-        const offsetEnd = step.to - targetCell.startProse;  
+        /** The offset within the correct stringCell for the step action */
+        const offsetEnd = step.to - targetCell.startProse;
 
         const text = step.slice.content.firstChild && step.slice.content.firstChild.text ? step.slice.content.firstChild.text : "";
 
@@ -71,7 +71,7 @@ export class TextUpdate {
             }
             newMap.set(newkey,newvalue);
         }
-        
+
 
         const newHtmlMap = new Map<number,HtmlTagInfo>();
         const newHtmlMapS = new Map<number,HtmlTagInfo>();
@@ -84,7 +84,7 @@ export class TextUpdate {
             }
             newHtmlMap.set(newkey,newvalue);
         }
-        
+
         for (const [key, value] of startHtmlMap) {
             let newkey = key; const newvalue = structuredClone(value);
             if (key >= step.to) {

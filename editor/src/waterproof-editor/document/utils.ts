@@ -3,14 +3,14 @@ import { Block } from "./blocks";
 /**
  * Convert a list of blocks to a prosemirror compatible node list.
  * @param blocks Input array of blocks.
- * @returns ProseMirror nodes. 
+ * @returns ProseMirror nodes.
  */
 export function blocksToProseMirrorNodes(blocks: Block[]) {
     return blocks.map((block) => block.toProseMirror());
 }
 
 /**
- * Helper function to sort block type objects. Will sort based on the range object of the block. 
+ * Helper function to sort block type objects. Will sort based on the range object of the block.
  * Sorts in ascending (`range.from`) order.
  * @param blocks Blocks to sort.
  * @returns Sorted array of blocks.
@@ -21,7 +21,7 @@ export function sortBlocks(blocks: Block[]) {
 
 /**
  * Map `f` over every consecutive pair from the `input` array.
- * @param input Input array. 
+ * @param input Input array.
  * @param f Function to map over the pairs.
  * @returns The result of mapping `f` over every consecutive pair. Will return an empty array if the input array has length < 2.
  */
@@ -51,10 +51,17 @@ export const extractInterBlockRanges = (blocks: Array<Block>, inputDocument: str
     return ranges;
 }
 
-export function maskInputAndHints(inputDocument: string, blocks: Block[]): string {
+/**
+ * Utility function to mask regions of a document covered by blocks.
+ * @param inputDocument The input document on which to apply the masking.
+ * @param blocks The blocks that will mask content from the input document.
+ * @param mask The mask to use (defaults to `" "`).
+ * @returns The document (`string`) with the ranges covered by the blocks in `blocks` masked using `mask`.
+ */
+export function maskInputAndHints(inputDocument: string, blocks: Block[], mask: string = " "): string {
     let maskedString = inputDocument;
     for (const block of blocks) {
-        maskedString = maskedString.substring(0, block.range.from) + " ".repeat(block.range.to - block.range.from) + maskedString.substring(block.range.to);
+        maskedString = maskedString.substring(0, block.range.from) + mask.repeat(block.range.to - block.range.from) + maskedString.substring(block.range.to);
     }
     return maskedString;
 }

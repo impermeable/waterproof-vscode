@@ -1,15 +1,13 @@
-import { FileFormat } from "../../../../shared";
-import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractBlocksUsingRanges, extractMathDisplayBlocks } from "./block-extraction";
-import { Block } from "./blocks";
-import { CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock } from "./blocks/blocktypes";
-import { root } from "./blocks/schema";
-import { isCoqBlock } from "./blocks/typeguards";
-import { extractInterBlockRanges, maskInputAndHints, sortBlocks } from "./utils";
-import { Node as ProseNode } from "prosemirror-model";
+import { FileFormat } from "../../../shared";
+import { extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractCoqBlocks, extractBlocksUsingRanges } from "./block-extraction";
+import { Block, CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock } from "../waterproof-editor/document";
+import { isCoqBlock } from "../waterproof-editor/document/blocks/typeguards";
+import { maskInputAndHints, sortBlocks, extractInterBlockRanges } from "../waterproof-editor/document/utils";
+import { createCoqInnerBlocks } from "./inner-blocks";
 
 // 0A. Extract the top level blocks from the input document.
-export function topLevelBlocksMV(inputDocument: string): Block[] {
-    // There are five different 'top level' blocks, 
+export function blocksFromMV(inputDocument: string): Block[] {
+    // There are five different 'top level' blocks,
     // - hint
     // - input_area
     // - math_display
@@ -21,7 +19,7 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
     const inputAreaBlocks: InputAreaBlock[] = extractInputBlocks(inputDocument);
 
     // 0A.2 Mask the hint and input area blocks in the input document.
-    //     Done to make extraction of coq and math display easier, since 
+    //     Done to make extraction of coq and math display easier, since
     //     we don't have to worry about the hint and input area blocks.
     inputDocument = maskInputAndHints(inputDocument, [...hintBlocks, ...inputAreaBlocks]);
 
@@ -35,7 +33,7 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
 
     // 0A.5 Extract the markdown blocks based on the ranges.
     const markdownBlocks = extractBlocksUsingRanges<MarkdownBlock>(inputDocument, markdownRanges, MarkdownBlock);
-    
+
     // Note: Blocks parse their own inner blocks.
 
     // 0A.6 Prune empty blocks.
@@ -46,14 +44,14 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
 }
 
 // 0B. Extract the top level blocks from the input document.
-export function topLevelBlocksV(inputDocument: string): Block[] {
-    // There are three different 'top level' blocks, 
+export function blocksFromV(inputDocument: string): Block[] {
+    // There are three different 'top level' blocks,
     // - Hint
     // - InputArea
     // - Coq
 
     // We should also allow input and hints as we do with v files.
-    // The syntax is 
+    // The syntax is
     // (* begin hint : [hint description] *) and (* end hint *)
     // (* begin input *) and (* end input *)
 
@@ -61,11 +59,11 @@ export function topLevelBlocksV(inputDocument: string): Block[] {
     const inputAreaBlocks = extractInputBlocks(inputDocument, FileFormat.RegularV);
     const blocks = [...hintBlocks, ...inputAreaBlocks];
     const coqBlockRanges = extractInterBlockRanges(blocks, inputDocument);
-    
+
     // Extract the coq blocks based on the ranges.
     const coqBlocks = coqBlockRanges.map(range => {
         const content = inputDocument.slice(range.from, range.to);
-        return new CoqBlock(content, "", "", "", "", range);
+        return new CoqBlock(content, "", "", "", "", range, createCoqInnerBlocks);
     });
 
     const sortedBlocks = sortBlocks([...hintBlocks, ...inputAreaBlocks, ...coqBlocks]);
@@ -75,32 +73,4 @@ export function topLevelBlocksV(inputDocument: string): Block[] {
         return true;
     });
     return prunedBlocks;
-}
-
-
-
-// 1. Construct the prosemirror document from the top level blocks.
-export function constructDocument(blocks: Block[]): ProseNode {
-    const documentContent: ProseNode[] = blocks.map(block => block.toProseMirror());
-    return root(documentContent);
-}
-
-// 2. Construct the prosemirror document from the input document.
-export function createProseMirrorDocument(input: string, fileFormat: FileFormat): ProseNode {
-    let blocks: Block[];
-
-    // 2.1 We differentiate between the two supported file formats
-    switch (fileFormat) {
-        case FileFormat.MarkdownV:
-            blocks = topLevelBlocksMV(input);
-            break;
-        case FileFormat.RegularV:
-            blocks = topLevelBlocksV(input);
-            break;
-        case FileFormat.Unknown:
-            throw new Error("Unknown file format in prosemirror document constructor");
-    }
-
-    // 2.2 Construct the document and return
-    return constructDocument(blocks);
 }

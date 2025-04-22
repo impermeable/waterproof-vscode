@@ -1,17 +1,17 @@
 import { Step, ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
-import { DocChange, WrappingDocChange } from "../../../../../shared";
+import { DocChange, WrappingDocChange } from "../../../../shared";
 import { getEndHtmlTagText, getStartHtmlTagText} from "./helper-functions";
 import { StringCell, HtmlTagInfo, ParsedStep} from "./types";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
-
+import { WaterproofMapping } from "../../waterproof-editor";
 
 /**
  * A type to specify an HTML tag in the prosemirror content elem.
  */
 interface TagInformation {
     /** The starting index of the tag in the input string */
-    start: number; 
+    start: number;
     /** The ending index of the tag in the input string */
     end: number;
     /** The number of 'hidden' newlines the starting tag encodes in the original vscode document */
@@ -28,11 +28,11 @@ interface TagInformation {
  * it could possibly be simpler to do all this with the EditorState document node (textContent attribute).
  * However, we had thought this approach would be somewhat viable and nice for large documents, as you are not
  * sending the entire doc back and forth, but it comes at the cost of complexity.
- * 
+ *
  * This class is responsible for keeping track of the mapping between the prosemirror state and the vscode Text
  * Document model
  */
-export class TextDocMappingV {
+export class TextDocMappingMV implements WaterproofMapping {
     /** This stores the String cells of the entire document */
     private stringBlocks: Map<number, StringCell>;
     /** This stores the inverted mapping of stringBlocks  */
@@ -56,9 +56,9 @@ export class TextDocMappingV {
         "coqdown",
     ]);
 
-    /** 
+    /**
      * Constructs a prosemirror view vsode mapping for the inputted prosemirror html elem
-     * 
+     *
      * @param inputString a string contatining the prosemirror content html elem
      */
     constructor(inputString: string, versionNum: number) {
@@ -114,7 +114,7 @@ export class TextDocMappingV {
 
     /**
      * Initializes the mapping according to the inputed html content elem
-     * 
+     *
      * @param inputString the string of the html elem
      */
     private initialize(inputString: string) : void {
@@ -122,16 +122,19 @@ export class TextDocMappingV {
         const stack = new Array<{ tag: string, offsetPost: number}>;
 
         /** The current index we are at within the prosemirror content elem */
-        let offsetProse: number = 0; 
+        let offsetProse: number = 0;
 
         /** The current index we are at within the raw vscode text document */
         let offsetText: number = 0;
 
+        /** This represents whether we are currently within a coqdoc block */
+        let inCoqdoc: boolean = false;
+
         // Continue until the entire string has been parsed
-        while(inputString.length > 0) { 
-            const next: TagInformation = TextDocMappingV.getNextHTMLtag(inputString);
+        while(inputString.length > 0) {
+            const next: TagInformation = TextDocMappingMV.getNextHTMLtag(inputString);
             let nextCell: StringCell | undefined = undefined;
-            
+
             /** The number of characters the tag `next` takes up in the raw vscode doc. */
             let textCost = 0;
 
@@ -139,12 +142,14 @@ export class TextDocMappingV {
             if (stack.length && stack[stack.length - 1].tag === next.content) {
                 const stackTag = stack.pop();
                 if (stackTag === undefined) throw new Error(" Stack returned undefined in initialization of vscode mapping");
-                nextCell = { 
-                    startProse: offsetProse, endProse: offsetProse + next.start, 
+                nextCell = {
+                    startProse: offsetProse, endProse: offsetProse + next.start,
                     startText: offsetText, endText: offsetText + next.start,
                 };
+                if (next.content == "coqdoc") inCoqdoc = false;
+                if (next.content == "math-display" && !inCoqdoc) textCost += 1; // Two dollar signs outside coqdoc cells
                 textCost += stackTag.offsetPost; // Increment for the post newlines
-                textCost += getEndHtmlTagText(next.content).length;                
+                textCost += getEndHtmlTagText(next.content).length;
             } else { // Otherwise `next` opens a block
                 stack.push({ tag: next.content, offsetPost: next.postNumber}); // Push new tag to stack
                 // Add text offset based on tag
@@ -153,6 +158,8 @@ export class TextDocMappingV {
 
                 textCost += next.preNumber;
 
+                if (next.content == "coqdoc") inCoqdoc = true;
+                if (next.content == "math-display" && !inCoqdoc) textCost += 1; // Two dollar signs outside coqdown cells
             }
             // Update offsets, so we are at the start of this tag
             offsetText += next.start;
@@ -170,16 +177,16 @@ export class TextDocMappingV {
 
             // Check if the nextCell should be pushed
             switch(next.content) {
-                case "coqcode": 
+                case "markdown": case "coqcode":
                 case "math-display": case "coqdown":
                     // If the nextcell is set, push it to mapping
                     if(!(nextCell === undefined)) this.stringBlocks.set(nextCell.startProse, nextCell);
                     break;
             }
-            
+
             // Update the input string and cut off the processed text
             inputString = inputString.slice(next.end);
-            
+
         }
         this.updateInvMapping();
     }
@@ -192,16 +199,16 @@ export class TextDocMappingV {
             if (key > step.from) break;
             correctCellKey = key;
         }
-        const targetCell = this.stringBlocks.get(correctCellKey);
-        return targetCell !== undefined && step.to <= targetCell.endProse;
+        const cell = this.stringBlocks.get(correctCellKey);
+        return cell !== undefined && step.to <= cell.endProse;
     }
 
     /** Called whenever a step is made in the editor */
-    public stepUpdate(step: Step) : DocChange | WrappingDocChange {
-        if (!(step instanceof ReplaceStep || step instanceof ReplaceAroundStep)) 
+    public update(step: Step) : DocChange | WrappingDocChange {
+        if (!(step instanceof ReplaceStep || step instanceof ReplaceAroundStep))
             throw new Error("Step update (in textDocMapping) should not be called with a non document changing step");
 
-        /** Check whether the edit is a text edit and occurs within a stringcell */ 
+        /** Check whether the edit is a text edit and occurs within a stringcell */
         const isText: boolean = (step.slice.content.firstChild === null) ? this.inStringCell(step) : step.slice.content.firstChild.type.name === "text";
 
         let result : ParsedStep;
@@ -222,7 +229,7 @@ export class TextDocMappingV {
             if(this.checkDocChange(result.result)) this._version++;
         } else {
             if(this.checkDocChange(result.result.firstEdit) || this.checkDocChange(result.result.secondEdit)) this._version++;
-        }      
+        }
 
         return result.result;
     }
@@ -237,7 +244,7 @@ export class TextDocMappingV {
 
     /**
      * This checks if the doc change actually changed the document, since vscode
-     * does not register empty changes 
+     * does not register empty changes
      */
     private checkDocChange(change: DocChange) : boolean {
         if (change.endInFile === change.startInFile && change.finalText.length == 0) return false;
@@ -245,17 +252,17 @@ export class TextDocMappingV {
     }
 
     /**
-     * Function that returns the next valid html tag in a string. 
+     * Function that returns the next valid html tag in a string.
      * Throws an error if no valid html tag is found.
-     * @param The string that contains html tags  
+     * @param The string that contains html tags
      * @returns The first valid html tag in the string and the position of this tag in the string
      */
-    public static getNextHTMLtag(input: string): TagInformation { 
+    public static getNextHTMLtag(input: string): TagInformation {
 
         // Find all html tags (this is necessary for the position and for invalid matches)
-        const matches = Array.from(input.matchAll(/<(\/)?([\w-]+)( [^]*?)?>/g));
+        const matches = Array.from(input.matchAll(/<(\/)?(input-area|coqblock|coqcode|markdown|math-display|hint|coqdoc|coqdown)( [^>]*)?>/g));
 
-        // Loop through all matches 
+        // Loop through all matches
         for (const match of matches) {
 
             // Check if there are no weird matches that we should throw an error on
@@ -274,7 +281,7 @@ export class TextDocMappingV {
                 const end = start + length;
 
                 // Check if the HTML tag is a valid HTML tag in our parser
-                if (TextDocMappingV.HTMLtags.has(match[2])) {
+                if (TextDocMappingMV.HTMLtags.has(match[2])) {
 
                     // For entry coqblocks we must extract more information about the starting and ending newline
                     if (match[2] === "coqblock" && match[1] == undefined) {
@@ -304,7 +311,7 @@ export class TextDocMappingV {
                             if (postPreWhiteMatch[1] === "newLine") {
                                 preNum++;
                             }
-                        }   
+                        }
 
                         // We check for the pre whiteline in front of the closing coqblock tag
                         const prePostWhiteMatch = Array.from(whiteSpaceMatch.matchAll(/postPreWhite="(\w*?)"/g))[0]
@@ -327,8 +334,8 @@ export class TextDocMappingV {
                         }
 
                         //return the resulting object
-                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}   
-                        
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}
+
                     // For coqdoc we repeat the same process
                     } else if ((match[2] === "coqdoc") && match[1] == undefined){
 
@@ -353,16 +360,16 @@ export class TextDocMappingV {
                             if (postWhiteMatch[1] === "newLine") {
                                 postNum++;
                             }
-                        } 
+                        }
 
                         // Return the result
-                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}            
+                        return {start: start, end: end, content: match[2], preNumber: preNum, postNumber: postNum}
                     } else  {
-                        
+
                         return {start: start, end: end, content: match[2], preNumber: 0, postNumber: 0}
                     }
-                    
-                } 
+
+                }
             } else {
 
                 // WE have incountered an invalid match
@@ -372,7 +379,7 @@ export class TextDocMappingV {
 
         // We have found no valid HTML tags which means the string on input was invalid.
         throw new Error(" No tag found ");
-        
+
     }
 
 

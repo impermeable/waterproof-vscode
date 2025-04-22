@@ -1,14 +1,14 @@
-import { extractMathDisplayBlocks, extractCoqBlocks, extractBlocksUsingRanges, extractCoqDoc, extractMathDisplayBlocksCoqDoc } from "../block-extraction";
-import { extractInterBlockRanges, sortBlocks } from "../utils";
-import { Block } from "./block";
-import { CoqCodeBlock, CoqMarkdownBlock, MarkdownBlock } from "./blocktypes";
+import { Block, MarkdownBlock } from "../waterproof-editor/document";
+import { CoqCodeBlock, CoqMarkdownBlock } from "../waterproof-editor/document/blocks/blocktypes";
+import { extractInterBlockRanges, sortBlocks } from "../waterproof-editor/document/utils";
+import { extractMathDisplayBlocks, extractCoqBlocks, extractBlocksUsingRanges, extractCoqDoc, extractMathDisplayBlocksCoqDoc } from "./block-extraction";
 
 
 export function createInputAndHintInnerBlocks(input: string): Block[] {
     // Since input areas and hints can both contain:
     // - coq
     // - math_display
-    // - markdown   
+    // - markdown
     // This amounts to the same as steps 0.3 - 0.5 in topLevelBlocks.
     const mathDisplayBlocks = extractMathDisplayBlocks(input);
     const coqBlocks = extractCoqBlocks(input);
@@ -24,7 +24,7 @@ export function createCoqInnerBlocks(input: string): Block[] {
     // - Coq code
     // - Coqdoc comments
 
-    // Extract all the coqdoc comments: 
+    // Extract all the coqdoc comments:
     const coqdocBlocks = extractCoqDoc(input);
 
     // Everything in between is coq code (including regular coq comments).
@@ -46,7 +46,7 @@ export function createCoqDocInnerBlocks(input: string): Block[] {
     // - Coq Markdown
     // - Math display (with single dollar signs)
 
-    // Extract all the math display blocks: 
+    // Extract all the math display blocks:
     const mathDisplayBlocks = extractMathDisplayBlocksCoqDoc(input);
 
     // Everything in between is coq markdown.

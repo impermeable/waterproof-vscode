@@ -6,14 +6,13 @@ import { AllSelection, EditorState, NodeSelection, Plugin, Selection, TextSelect
 import { ReplaceAroundStep, ReplaceStep, Step } from "prosemirror-transform";
 import { EditorView } from "prosemirror-view";
 import { undo, redo, history } from "prosemirror-history";
-import { createProseMirrorDocument } from "./prosedoc-construction/construct-document";
+import { constructDocument } from "./document/construct-document";
 
 import { DocChange, FileFormat, LineNumber, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
 import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
 import { createHintPlugin } from "./hinting";
 import { INPUT_AREA_PLUGIN_KEY, inputAreaPlugin } from "./inputArea";
 import { WaterproofSchema } from "./schema";
-import { TextDocMapping } from "./mappingModel";
 import { REAL_MARKDOWN_PLUGIN_KEY, coqdocPlugin, realMarkdownPlugin } from "./markup-views";
 import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
@@ -33,7 +32,7 @@ import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
 import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
-import { Positioned, WaterproofEditorConfig } from "./utilities/types";
+import { Positioned, WaterproofMapping, WaterproofEditorConfig } from "./types";
 
 
 /** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
@@ -61,11 +60,11 @@ export class WaterproofEditor {
 	private _translator: FileTranslator | undefined;
 
 	// The file document mapping
-	private _mapping: TextDocMapping | undefined;
+	private _mapping: WaterproofMapping | undefined;
 
 	// User operating system.
 	private readonly _userOS;
-	private _filef: FileFormat = FileFormat.Unknown;
+	private _filef: FileFormat = FileFormat.MarkdownV;
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>;
 
@@ -138,9 +137,9 @@ export class WaterproofEditor {
 		const parsedContent = this._translator.toProsemirror(resultingDocument);
 		// this._contentElem.innerHTML = parsedContent;
 
-		const proseDoc = createProseMirrorDocument(resultingDocument, fileFormat);
+		const proseDoc = constructDocument(this._editorConfig.documentConstructor(resultingDocument));
 
-		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
+		this._mapping = new this._editorConfig.mapping(parsedContent, version);
 		this.createProseMirrorEditor(proseDoc);
 
 		/** Ask for line numbers */
@@ -168,7 +167,7 @@ export class WaterproofEditor {
 					if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
-							const change: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
+							const change: DocChange | WrappingDocChange = this._mapping.update(step); // Get text document update
 							this._editorConfig.api.documentChange(change);
 						} catch (error) {
 							console.error((error as Error).message);
@@ -336,6 +335,10 @@ export class WaterproofEditor {
 		const tr = this._view.state.tr.setMeta(COQ_CODE_PLUGIN_KEY, msg);
 		this._view.dispatch(tr);
 	}
+
+	// public setProgress(progress: number) {
+
+	// }
 
 	public handleHistoryChange(type: HistoryChangeType) {
 		const view = this._view;

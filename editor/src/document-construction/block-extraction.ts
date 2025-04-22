@@ -1,6 +1,6 @@
-import { FileFormat } from "../../../../shared";
-import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
-import { CoqDocBlock } from "./blocks/blocktypes";
+import { FileFormat } from "../../../shared";
+import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock, CoqDocBlock } from "../waterproof-editor/document";
+import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
 
 const regexes = {
     // coq: /```coq\n([\s\S]*?)\n```/g,
@@ -13,9 +13,9 @@ const regexes = {
 }
 
 /**
- * Create input blocks from document string. 
- * 
- * Uses regexes to search for 
+ * Create input blocks from document string.
+ *
+ * Uses regexes to search for
  * - `<input-area>` and `</input-area>` tags (mv files)
  * - `(* begin input *)` and `(* end input *)` (v files)
  */
@@ -32,7 +32,7 @@ function extractInputBlocksMV(document: string) {
     const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
-        return new InputAreaBlock(input_area[1], range);
+        return new InputAreaBlock(input_area[1], range, createInputAndHintInnerBlocks);
     });
 
     return inputAreaBlocks;
@@ -44,17 +44,17 @@ function extractInputBlocksV(document: string) {
     const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
-        return new InputAreaBlock("```coq\n" + input_area[1] + "\n```", range);
+        return new InputAreaBlock("```coq\n" + input_area[1] + "\n```", range, createInputAndHintInnerBlocks);
     });
 
     return inputAreaBlocks;
 }
 
 /**
- * Create hint blocks from document string. 
- * 
- * Uses regexes to search for 
- * - `<hint title=[hint title]>` and `</hint>` tags (mv files) 
+ * Create hint blocks from document string.
+ *
+ * Uses regexes to search for
+ * - `<hint title=[hint title]>` and `</hint>` tags (mv files)
  * - `(* begin hint : [hint title] *)` and `(* end hint *)` (v files)
  */
 export function extractHintBlocks(document: string, fileFormat: (FileFormat.MarkdownV | FileFormat.RegularV) = FileFormat.MarkdownV): HintBlock[] {
@@ -71,7 +71,7 @@ function extractHintBlocksMV(document: string) {
     const hintBlocks = Array.from(hints).map((hint) => {
         if (hint.index === undefined) throw new Error("Index of hint is undefined");
         const range = { from: hint.index, to: hint.index + hint[0].length };
-        return new HintBlock(hint[2], hint[1], range);
+        return new HintBlock(hint[2], hint[1], range, createInputAndHintInnerBlocks);
     });
 
     return hintBlocks;
@@ -84,7 +84,7 @@ function extractHintBlocksV(document: string) {
         if (hint.index === undefined) throw new Error("Index of hint is undefined");
         const range = { from: hint.index, to: hint.index + hint[0].length };
         // This is incorrect as we should wrap the content part in a coqblock.
-        return new HintBlock(`\`\`\`coq\n${hint[2]}\n\`\`\``, hint[1], range);
+        return new HintBlock(`\`\`\`coq\n${hint[2]}\n\`\`\``, hint[1], range, createInputAndHintInnerBlocks);
     });
 
     return hintBlocks;
@@ -92,7 +92,7 @@ function extractHintBlocksV(document: string) {
 
 /**
  * Create math display blocks from document string.
- * 
+ *
  * Uses regexes to search for `$$`.
  */
 export function extractMathDisplayBlocks(inputDocument: string) {
@@ -107,8 +107,8 @@ export function extractMathDisplayBlocks(inputDocument: string) {
 
 /**
  * Create coq blocks from document string.
- * 
- * Uses regexes to search for ```coq and ``` markers.	
+ *
+ * Uses regexes to search for ```coq and ``` markers.
  */
 export function extractCoqBlocks(inputDocument: string) {
     const coq_code = Array.from(inputDocument.matchAll(regexes.coq));
@@ -116,7 +116,7 @@ export function extractCoqBlocks(inputDocument: string) {
     const coqBlocks = coq_code.map((coq) => {
         if (coq.index === undefined) throw new Error("Index of coq is undefined");
         const range = { from: coq.index, to: coq.index + coq[0].length };
-        // TODO: Documentation for this: 
+        // TODO: Documentation for this:
         // - coq[0] the match;
         // - coq[1] capture group 1, prePreWhite;
         // - coq[2] ..., prePostWhite;
@@ -130,20 +130,20 @@ export function extractCoqBlocks(inputDocument: string) {
         const postPreWhite = coq[4] == "\n" ? "newLine" : "";
         const postPostWhite = coq[5] == "\n" ? "newLine" : "";
 
-        return new CoqBlock(content, prePreWhite, prePostWhite, postPreWhite, postPostWhite, range);
+        return new CoqBlock(content, prePreWhite, prePostWhite, postPreWhite, postPostWhite, range, createCoqInnerBlocks);
     });
     return coqBlocks;
 }
 
 /**
  * Create blocks based on ranges.
- * 
+ *
  * Extracts the text content of the ranges and creates blocks from them.
  */
 export function extractBlocksUsingRanges<BlockType extends Block>(
-    inputDocument: string, 
-    ranges: {from: number, to: number}[], 
-    BlockConstructor: new (content: string, range: { from: number, to: number }) => BlockType ): BlockType[] 
+    inputDocument: string,
+    ranges: {from: number, to: number}[],
+    BlockConstructor: new (content: string, range: { from: number, to: number }) => BlockType ): BlockType[]
 {
     const blocks = ranges.map((range) => {
         const content = inputDocument.slice(range.from, range.to);
@@ -170,13 +170,13 @@ export function extractCoqDoc(input: string): CoqDocBlock[] {
         const preWhite = comment[1] == "\n" ? "newLine" : "";
         const postWhite = comment[3] == "\n" ? "newLine" : "";
 
-        return new CoqDocBlock(content, preWhite, postWhite, range);
+        return new CoqDocBlock(content, preWhite, postWhite, range, createCoqDocInnerBlocks);
     });
 
 
     // TODO: Is there a better location for this?
     const pruned = coqDocBlocks.filter(block => {
-        return block.range.from !== block.range.to; 
+        return block.range.from !== block.range.to;
     });
 
     return pruned;

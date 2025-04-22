@@ -1,6 +1,6 @@
 import { WaterproofSchema } from "../../schema";
 import { BLOCK_NAME, Block, BlockRange } from "./block";
-import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
+// import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
 import { coqCode, coqDoc, coqMarkdown, coqblock, hint, inputArea, markdown, mathDisplay } from "./schema";
 
 const indentation = (level: number): string => "  ".repeat(level);
@@ -10,8 +10,8 @@ export class InputAreaBlock implements Block {
     public type = BLOCK_NAME.INPUT_AREA;
     public innerBlocks: Block[];
 
-    constructor( public stringContent: string, public range: BlockRange ) {
-        this.innerBlocks = createInputAndHintInnerBlocks(stringContent);
+    constructor( public stringContent: string, public range: BlockRange, innerBlockConstructor: (content: string) => Block[] ) {
+        this.innerBlocks = innerBlockConstructor(stringContent);
     };
 
     toProseMirror() {
@@ -32,8 +32,8 @@ export class HintBlock implements Block {
     public innerBlocks: Block[];
 
     // Note: Hint blocks have a title attribute.
-    constructor( public stringContent: string, public title: string, public range: BlockRange ) {
-        this.innerBlocks = createInputAndHintInnerBlocks(stringContent);
+    constructor( public stringContent: string, public title: string, public range: BlockRange, innerBlockConstructor: (content: string) => Block[] ) {
+        this.innerBlocks = innerBlockConstructor(stringContent);
     };
 
     toProseMirror() {
@@ -68,8 +68,8 @@ export class CoqBlock implements Block {
     public type = BLOCK_NAME.COQ;
     public innerBlocks: Block[];
 
-    constructor( public stringContent: string, public prePreWhite: string, public prePostWhite: string, public postPreWhite: string, public postPostWhite : string, public range: BlockRange ) {
-        this.innerBlocks = createCoqInnerBlocks(stringContent);
+    constructor( public stringContent: string, public prePreWhite: string, public prePostWhite: string, public postPreWhite: string, public postPostWhite : string, public range: BlockRange, innerBlockConstructor: (content: string) => Block[] ) {
+        this.innerBlocks = innerBlockConstructor(stringContent);
     };
 
     toProseMirror() {
@@ -113,8 +113,8 @@ export class CoqDocBlock implements Block {
     public type = BLOCK_NAME.COQ_DOC;
     public innerBlocks: Block[];
 
-    constructor( public stringContent: string, public preWhite: string, public postWhite: string, public range: BlockRange ) {
-        this.innerBlocks = createCoqDocInnerBlocks(stringContent);
+    constructor( public stringContent: string, public preWhite: string, public postWhite: string, public range: BlockRange, innerBlockConstructor: (content: string) => Block[] ) {
+        this.innerBlocks = innerBlockConstructor(stringContent);
     };
 
     toProseMirror() {

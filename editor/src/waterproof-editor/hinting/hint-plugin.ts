@@ -55,7 +55,7 @@ function getHintDecorations(state: EditorState, hintNodeType: NodeType): Decorat
 		// Create a new widget decoration for every hint node.
 		const widgetDeco = Decoration.widget(hint.pos,
 			// Pass a DOM rendering function.
-			(view: EditorView) => createCollapseDOM(view, hint), 
+			(view: EditorView) => createCollapseDOM(view, hint),
 			// Display this DOM *before* the actual hint content.
 			{side: -1});
 		return widgetDeco;
@@ -66,10 +66,10 @@ function getHintDecorations(state: EditorState, hintNodeType: NodeType): Decorat
 }
 
 /**
- * 
+ *
  * @param view The current editor view.
  * @param hint The `hint` object (as returned by `findDescendantsWithType`)
- * @returns 
+ * @returns
  */
 function createCollapseDOM(view: EditorView, hint: {node: PNode, pos: number}) {
 	// Create hint title element.

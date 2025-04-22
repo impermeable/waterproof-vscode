@@ -6,5 +6,5 @@
     "module": "commonjs",
     "resolveJsonModule": true
   },
-  "include": ["**/*.ts", "**/*.js", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts", "../shared/**/*.json"]
+  "include": ["**/*.ts", "**/*.js", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts", "../src/helpers/**/*.ts", "../shared/**/*.json"]
 }

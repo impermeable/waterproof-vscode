@@ -72,12 +72,15 @@ export class Waterproof implements Disposable {
 
     private sidePanelProvider: SidePanelProvider;
 
+    private clientRunning: boolean = false;
+
     /**
      * Constructs the extension lifecycle object.
      *
      * @param context the extension context object
      */
     constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory, private readonly _isWeb = false) {
+        wpl.log("Waterproof initialized");
         checkConflictingExtensions();
         excludeCoqFileTypes();
 
@@ -88,7 +91,27 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
             this.client.updateCompletions(document);
         });
-        this.webviewManager.on(WebviewManagerEvents.focus, (document: TextDocument) => {
+        this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
+            wpl.log("Focus event received");
+
+            // Wait for client to initialize
+            if (!this.clientRunning) {
+                console.warn("Focus event received before client is ready. Waiting...");
+                const waitForClient = async (): Promise<void> => {
+                    return new Promise(resolve => {
+                        const interval = setInterval(() => {
+                            if (this.clientRunning) {
+                                clearInterval(interval);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                };
+                await waitForClient();
+                wpl.log("Client ready. Proceeding with focus event.");
+        	}
+
+            wpl.log("Client state");
 
             // update active document
             // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
@@ -139,16 +162,15 @@ export class Waterproof implements Disposable {
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
         const logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("logbook", logbook);
-        this.goalsComponents.push(logbook);
         const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("debug", debug);
-        this.goalsComponents.push(debug);
 
         this.sidePanelProvider = addSidePanel(context, this.webviewManager);
 
         this.executorComponent = executorPanel;
 
         // register commands
+        wpl.log("Calling initializeClient...");
         this.registerCommand("start", this.initializeClient);
         this.registerCommand("restart", this.restartClient);
         this.registerCommand("toggle", this.toggleClient);
@@ -424,16 +446,18 @@ export class Waterproof implements Disposable {
                 initializationOptions: serverOptions,
                 markdown: { isTrusted: true, supportHtml: true },
             };
-            wpl.log("Calling clientFactory");
+            wpl.log("Initializing client...");
             this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
             return this.client.startWithHandlers(this.webviewManager).then(
                 () => {
                     // show user that LSP is working
                     this.statusBar.update(true);
+                    this.clientRunning = true;
+                    wpl.log("Client initialization complete.");
                 },
                 reason => {
                     const message = reason.toString();
-                    console.error(`Error during client initialization: ${message}`);
+                    wpl.log(`Error during client initialization: ${message}`);
                     this.statusBar.failed(message);
                     throw reason;  // keep chain rejected
                 }
@@ -470,6 +494,7 @@ export class Waterproof implements Disposable {
         if (this.client.isRunning()) {
             for (const g of this.goalsComponents) g.disable();
             await this.client.dispose(2000);
+            this.clientRunning = false;
             this.statusBar.update(false);
         } else {
             return Promise.resolve();

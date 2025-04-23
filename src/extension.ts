@@ -244,14 +244,14 @@ export class Waterproof implements Disposable {
             }
         });
 
-        this.registerCommand("autoInstall", () => {
+        this.registerCommand("autoInstall", async () => {
             commands.executeCommand(`waterproof.defaultPath`);
             commands.executeCommand(`waterproof.setDefaultArgsWin`);
 
             const windowsInstallationScript = `echo Begin Waterproof Installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.2.0%2B8.17/Waterproof-dependencies-installer-v2.2.0+8.17.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
             const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
 
-            this.stopClient();
+            await this.stopClient();
 
             let cmnd: string | undefined;
             switch (process.platform) {
@@ -279,7 +279,7 @@ export class Waterproof implements Disposable {
             if (cmnd === undefined) {
                 window.showInformationMessage("Waterproof has no automatic installation process for this platform, please refer to the walktrough page.");
             } else {
-                this.autoInstall(cmnd)
+                await this.autoInstall(cmnd)
             }
         });
 
@@ -296,10 +296,12 @@ export class Waterproof implements Disposable {
      */
     private async autoInstall(command: string): Promise<boolean> {
         return new Promise((resolve, _reject) => {
+            let fired = false;
             const myTerm = window.createTerminal(`AutoInstall Waterproof`)
             myTerm.show()
             window.onDidChangeTerminalShellIntegration(async ({ terminal, shellIntegration}) => {
-                if (terminal === myTerm) {
+                if (terminal === myTerm && !fired) {
+                    fired = true
                     const execution = shellIntegration.executeCommand(command);
                     window.onDidEndTerminalShellExecution(event => {
                         if (event.execution === execution) {

@@ -297,6 +297,7 @@ export class Waterproof implements Disposable {
     private async autoInstall(command: string): Promise<boolean> {
         return new Promise((resolve, _reject) => {
             const myTerm = window.createTerminal(`AutoInstall Waterproof`)
+            myTerm.show()
             window.onDidChangeTerminalShellIntegration(async ({ terminal, shellIntegration}) => {
                 if (terminal === myTerm) {
                     const execution = shellIntegration.executeCommand(command);

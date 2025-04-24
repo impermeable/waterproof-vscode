@@ -19,6 +19,9 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
 		api: {
+			executeHelp() {
+				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
+			},
 			executeCommand(command: string, time: number) {
 				codeAPI.postMessage({ type: MessageType.command, body: { command, time } });
 			},

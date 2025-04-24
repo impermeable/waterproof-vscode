@@ -526,4 +526,8 @@ export class WaterproofEditor {
 	public executeCommand(command: string) {
 		this._editorConfig.api.executeCommand(command, (new Date()).getTime());
 	}
+
+	public executeHelp() {
+		this._editorConfig.api.executeHelp();
+	}
 }

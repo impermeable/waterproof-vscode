@@ -17,7 +17,7 @@ export function createContextMenuHTML(editor: WaterproofEditor): HTMLDivElement 
     // Create a 'Help' button. On execution will send a command to coq-lsp to query for help,
     // this result is then displayed in a popup within the editor.
     listContainer.appendChild(contextMenuButton("?", "Help", () => {
-        editor.executeCommand("Help.");
+        editor.executeHelp();
     }));
 
     listContainer.appendChild(contextMenuButton("X", "Close", () => {}));

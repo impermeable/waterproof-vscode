@@ -12,6 +12,7 @@ export type WaterproofDocument = Block[];
 
 export type WaterproofCallbacks = {
     executeCommand: (command: string, time: number) => void,
+    executeHelp: () => void,
     editorReady: () => void,
     documentChange: (change: DocChange | WrappingDocChange) => void,
     applyStepError: (errorMessage: string) => void,

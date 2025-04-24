@@ -39,7 +39,8 @@ export function Help() {
     //button press help
     const handleHelp = () => {
         //Send the message indicating the help button was pressed
-        vscode.postMessage({time: date.getTime(), type: MessageType.command, body: "Help."});
+        const msg: Message = { type: MessageType.command, body: {command: "Help.", time: date.getTime()} };
+        vscode.postMessage(msg);
         setIsLoading(true);
     };
     return (

@@ -151,50 +151,37 @@ export class WaterproofEditor {
 	}
 
 	updateDocument(content: string, version: number) {
-		// // Ensure we have an editor view to update.
 		// if (!this._view) {
-		// 	//Editor view not initialized. Cannot update document
 		// 	return;
 		// }
 
-		// // If the new content is the same as the current document, do nothing.
 		// const currentText = this._view.state.doc.textContent;
 		// if (content === currentText) {
 		// 	return;
 		// }
 
-		// // Preprocess the content. checkPrePost may adjust the content and send messages.
-		// let newContent = checkPrePost(content, (msg: Message) => {
-		// 	this.post(msg);
-		// });
+		// const {resultingDocument, documentChange} = checkPrePost(content);
 
-		// // If the preprocessing changed the content, update the version.
-		// if (newContent !== content) {
+		// if (resultingDocument !== content) {
 		// 	version++;
 		// 	this._translator = new FileTranslator(this._filef);
 
-		// 	// Translate the updated content into a ProseMirror document.
-		// 	const parsedContent = this._translator.toProsemirror(newContent);
+		// 	const parsedContent = this._translator.toProsemirror(resultingDocument);
 
-		// 	// Update the document mapping with the new content and version.
 		// 	this._mapping = new TextDocMapping(this._filef, parsedContent, version);
 
-		// 	const proseDoc = createProseMirrorDocument(newContent, this._filef);
+		// 	const proseDoc = createProseMirrorDocument(resultingDocument, this._filef);
 
-		// 	// Create a new editor state with the new document.
 		// 	const newState = EditorState.create({
 		// 		schema: this._schema,
 		// 		doc: proseDoc,
 		// 		plugins: this.createPluginsArray()
 		// 	});
 
-		// 	// Update the editor view's state in place.
 		// 	this._view.updateState(newState);
 
-		// 	// Send an update for line numbers if they are enabled.
 		// 	this.sendLineNumbers();
 		// }
-
 	}
 
 

@@ -2,7 +2,7 @@ import { Completion } from "@codemirror/autocomplete";
 
 import { FileFormat, Message, MessageType } from "../../shared";
 import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
-import { COQ_CODE_PLUGIN_KEY } from "./waterproof-editor/codeview/coqcodeplugin";
+import { CODE_PLUGIN_KEY } from "./waterproof-editor/codeview";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
@@ -95,7 +95,7 @@ window.onload = () => {
 				if (!state) break;
 				const completions: Completion[] = msg.body;
 				// Apply autocomplete to all coq cells
-				COQ_CODE_PLUGIN_KEY
+				CODE_PLUGIN_KEY
 					.getState(state)
 					?.activeNodeViews
 					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));

@@ -12,7 +12,7 @@ import { LineNumber } from "../../../../shared";
 
 ////////////////////////////////////////////////////////////
 
-export interface ICoqCodePluginState {
+export interface ICodePluginState {
 	macros: { [cmd:string] : string };
 	/** A list of currently active `NodeView`s, in insertion order. */
 	activeNodeViews: Set<CodeBlockView>; // I suspect this will break;
@@ -24,7 +24,7 @@ export interface ICoqCodePluginState {
 	lines: LineNumber;
 }
 
-export const COQ_CODE_PLUGIN_KEY = new PluginKey<ICoqCodePluginState>("prosemirror-coq-code");
+export const CODE_PLUGIN_KEY = new PluginKey<ICodePluginState>("waterproof-editor-code-plugin");
 
 /**
  * Returns a function suitable for passing as a field in `EditorProps.nodeViews`.
@@ -36,7 +36,7 @@ export function createCoqCodeView(){
 		* Docs says that for any function proprs, the current plugin instance
 		* will be bound to `this`.  However, the typings don't reflect this.
 		*/
-		const pluginState = COQ_CODE_PLUGIN_KEY.getState(view.state);
+		const pluginState = CODE_PLUGIN_KEY.getState(view.state);
 		if(!pluginState){ throw new Error("no codemirror code plugin!"); }
 		const nodeViews = pluginState.activeNodeViews;
 
@@ -49,8 +49,8 @@ export function createCoqCodeView(){
 }
 
 
-const CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
-	key: COQ_CODE_PLUGIN_KEY,
+const CoqCodePluginSpec:PluginSpec<ICodePluginState> = {
+	key: CODE_PLUGIN_KEY,
 	state: {
 		init(config, instance){
 			return {
@@ -70,7 +70,7 @@ const CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 				for (const step of tr.steps) {
 					if (step instanceof ReplaceStep && step.slice.content.firstChild === null) {
 						for (const view of value.activeNodeViews) {
-							// @ts-expect-error TODO: Fix me
+							// @ts-expect-error FIXME: Handle possible undefined view._getPos()
 							if (view._getPos() === undefined || (view._getPos() >= step.from && view._getPos() < step.to)) value.activeNodeViews.delete(view);
 						} 
 					}
@@ -78,7 +78,7 @@ const CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 			}
 
 			// Update the state 
-			const meta = tr.getMeta(COQ_CODE_PLUGIN_KEY);
+			const meta = tr.getMeta(CODE_PLUGIN_KEY);
 			if (meta) {
 				if (meta.setting === "update")
 					lineState = meta.show;
@@ -110,6 +110,6 @@ const CoqCodePluginSpec:PluginSpec<ICoqCodePluginState> = {
 	}
 };
 
-export const coqCodePlugin = new ProsePlugin(CoqCodePluginSpec);
+export const codePlugin = new ProsePlugin(CoqCodePluginSpec);
 
 

@@ -42,7 +42,7 @@ describe('Basic tests', () => {
     cy.window().then((win) => { win.postMessage({type: MessageType.teacher, body: true}) });
     cy.get(".markdown-view").type("\n## Hello World");
     cy.get(".markdown-view").should("contain.text", "Hello World");
-    cy.nthCoqCode(0).click(); // to reset h1
+    cy.nthCode(0).click(); // to reset h1
     cy.get("H2").should("exist");
 
     // We record edits in the 'edits' global variable

@@ -9,7 +9,7 @@ import { undo, redo, history } from "prosemirror-history";
 import { constructDocument } from "./document/construct-document";
 
 import { DocChange, FileFormat, LineNumber, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
-import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
+import { CODE_PLUGIN_KEY, codePlugin } from "./codeview";
 import { createHintPlugin } from "./hinting";
 import { INPUT_AREA_PLUGIN_KEY, inputAreaPlugin } from "./inputArea";
 import { WaterproofSchema } from "./schema";
@@ -246,7 +246,7 @@ export class WaterproofEditor {
 			mathPlugin,
 			realMarkdownPlugin(this._schema),
 			coqdocPlugin(this._schema),
-			coqCodePlugin,
+			codePlugin,
 			progressBarPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
@@ -277,7 +277,7 @@ export class WaterproofEditor {
 
 		const state = view.state;
 
-		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
+		const nodeViews = CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
 		if (!nodeViews) return;
 		const positionedNodeViews: Array<Positioned<CodeBlockView>> = Array.from(nodeViews).map((codeblock) => {
 			return {
@@ -312,10 +312,10 @@ export class WaterproofEditor {
 	/** Called on every transaction update in which the textdocument was modified */
 	public sendLineNumbers() {
 		if (!this._lineNumbersShown) return;
-		if (!this._view || COQ_CODE_PLUGIN_KEY.getState(this._view.state) === undefined) return;
+		if (!this._view || CODE_PLUGIN_KEY.getState(this._view.state) === undefined) return;
 		const linenumbers = Array<number>();
 		// @ts-expect-error TODO: Fix me
-		for (const codeCell of COQ_CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
+		for (const codeCell of CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
 			// @ts-expect-error TODO: Fix me
 			linenumbers.push(this._mapping?.findPosition(codeCell._getPos() + 1));
 		}
@@ -330,9 +330,9 @@ export class WaterproofEditor {
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */
 	public setLineNumbers(msg: LineNumber) {
 		if (!this._view || !this._mapping || msg.version < this._mapping.version) return;
-		const state = COQ_CODE_PLUGIN_KEY.getState(this._view.state);
+		const state = CODE_PLUGIN_KEY.getState(this._view.state);
 		if (!state) return;
-		const tr = this._view.state.tr.setMeta(COQ_CODE_PLUGIN_KEY, msg);
+		const tr = this._view.state.tr.setMeta(CODE_PLUGIN_KEY, msg);
 		this._view.dispatch(tr);
 	}
 
@@ -409,7 +409,7 @@ export class WaterproofEditor {
 		const view = this._view;
 		if (view === undefined) return;
 		const tr = view.state.tr;
-		tr.setMeta(COQ_CODE_PLUGIN_KEY, {setting: "update", show: this._lineNumbersShown});
+		tr.setMeta(CODE_PLUGIN_KEY, {setting: "update", show: this._lineNumbersShown});
 		view.dispatch(tr);
 		this.sendLineNumbers();
 	}
@@ -462,7 +462,7 @@ export class WaterproofEditor {
 		if (this._view === undefined || map === undefined) return;
 
 		// Get the available coq views
-		const views = COQ_CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
+		const views = CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
 		if (views === undefined) return;
 		// Clear the errors
 		for (const view of views) view.clearCoqErrors();

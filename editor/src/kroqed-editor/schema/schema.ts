@@ -1,7 +1,16 @@
 import { Node as PNode, Schema } from "prosemirror-model";
-import { QedStatus } from "../../../shared";
 
-const cell = "(markdown | hint | coqblock | input | math_display)";
+export const SchemaCell = {
+	InputArea: "input",
+	Markdown: "markdown",
+	MathDisplay: "math_display",
+	Code: "code"
+} as const;
+
+export type SchemaKeys = keyof typeof SchemaCell;
+export type SchemaNames = typeof SchemaCell[SchemaKeys];
+
+const cell = `(markdown | hint | coqblock | input | math_display)`;
 const containercontent = "(markdown | coqblock | math_display)";
 // const groupMarkdown = "markdowncontent";
 
@@ -15,12 +24,16 @@ const containercontent = "(markdown | coqblock | math_display)";
  * math blocks obtained from `prosemirror-math`:
  * https://github.com/benrbray/prosemirror-math/blob/master/src/math-schema.ts
  *
- * see [notes](notes.txt)
+ * see [notes](./notes.md)
  */
-export const TheSchema: Schema = new Schema({
+export const WaterproofSchema: Schema = new Schema({
 	nodes: {
 		doc: {
 			content: `${cell}*`
+		},
+
+		text: {
+			group: "inline"
 		},
 
 		/////// MARKDOWN ////////
@@ -30,13 +43,9 @@ export const TheSchema: Schema = new Schema({
 			content: "text*",
 			parseDOM: [{tag: "markdown", preserveWhitespace: "full"}],
 			atom: true,
-			toDOM(_node) {
-				return ["markdown", 0];
+			toDOM: () => {
+				return ["WaterproofMarkdown", 0];
 			},
-		},
-
-		text: {
-			group: "inline"
 		},
 		//#endregion
 
@@ -48,11 +57,6 @@ export const TheSchema: Schema = new Schema({
 				title: {default: "💡 Hint"},
 				shown: {default: false}
 			},
-			parseDOM: [{tag: "hint", getAttrs(dom) {
-				return {
-					title: (dom as HTMLElement).getAttribute("title") ?? "💡 Hint"
-				}
-			}}],
 			toDOM(node: PNode) {
 				return ["div", {class: "hint", shown: node.attrs.shown}, 0];
 			}
@@ -64,16 +68,10 @@ export const TheSchema: Schema = new Schema({
 		input: {
 			content: `${containercontent}*`,
 			attrs: {
-			status: {default: null}
+				status: {default: null}
 			},
-			parseDOM: [{tag: "input-area", getAttrs(dom) {
-			const statusAttr = (dom as HTMLElement).getAttribute("status");
-			return {
-				status: statusAttr && statusAttr in QedStatus && statusAttr !== "invalid" ? statusAttr : null
-			};
-			}}],
-			toDOM: (_node: PNode) => {
-			return ["input-area", {class: "inputarea"}, 0];
+			toDOM: () => {
+				return ["WaterproofInput", {class: "inputarea"}, 0];
 			}
 		},
 		//#endregion
@@ -90,15 +88,7 @@ export const TheSchema: Schema = new Schema({
 			},
 			toDOM: () => {
 				return ["coqblock", 0];
-			},
-			parseDOM: [{tag: "coqblock", getAttrs(dom) {
-				return {
-					prePreWhite: (dom as HTMLElement).getAttribute("prePreWhite") ?? "newLine",
-					prePostWhite: (dom as HTMLElement).getAttribute("prePostWhite") ?? "newLine",
-					postPreWhite: (dom as HTMLElement).getAttribute("postPreWhite") ?? "newLine",
-					postPostWhite: (dom as HTMLElement).getAttribute("postPostWhite") ?? "newLine"
-				}
-			}}]
+			}
 		},
 
 		coqdoc: {
@@ -109,13 +99,7 @@ export const TheSchema: Schema = new Schema({
 			},
 			toDOM: () => {
 				return ["coqdoc", 0];
-			},
-			parseDOM: [{tag: "coqdoc", getAttrs(dom) {
-				return {
-					preWhite: (dom as HTMLElement).getAttribute("preWhite") ?? "newLine",
-					postWhite: (dom as HTMLElement).getAttribute("postWhite") ?? "newLine"
-				}
-			}}]
+			}
 		},
 
 		coqdown: {
@@ -125,15 +109,13 @@ export const TheSchema: Schema = new Schema({
 			toDOM: () => {
 				return ["coqdown", 0];
 			},
-			parseDOM: [{tag: "coqdown", preserveWhitespace: "full"}]
 		},
 
 		coqcode: {
 			content: "text*",// content is of type text
 			code: true,
 			atom: true, // doesn't have directly editable content (content is edited through codemirror)
-			parseDOM: [{tag: "coqcode", preserveWhitespace: "full"}],
-			toDOM(node) { return ["coqcode", node.attrs, 0] } // <coqcode></coqcode> cells
+			toDOM(node) { return ["WaterproofCode", node.attrs, 0] } // <coqcode></coqcode> cells
 		},
 		//#endregion
 
@@ -145,38 +127,29 @@ export const TheSchema: Schema = new Schema({
 			atom: true,
 			code: true,
 			toDOM(node) { return ["math-display", {...{ class: "math-node" }, ...node.attrs}, 0]; },
-			parseDOM: [{
-				tag: "math-display", preserveWhitespace: "full"
-			}]
 		},
 		//#endregion
 	},
-	marks: {
-		em: {
-		  parseDOM: [{tag: "i"}, {tag: "em"}],
-		  toDOM() { return ["em"] }
-		},
+	// marks: {
+	// 	em: {
+	// 	  toDOM() { return ["em"] }
+	// 	},
 
-		strong: {
-		  parseDOM: [{tag: "b"}, {tag: "strong"}],
-		  toDOM() { return ["strong"] }
-		},
+	// 	strong: {
+	// 	  toDOM() { return ["strong"] }
+	// 	},
 
-		link: {
-		  attrs: {
-			href: {},
-			title: {default: null}
-		  },
-		  inclusive: false,
-		  parseDOM: [{tag: "a[href]", getAttrs(dom) {
-			return {href: (dom as HTMLElement).getAttribute("href"), title: (dom as HTMLElement).getAttribute("title")}
-		  }}],
-		  toDOM(node) { return ["a", node.attrs] }
-		},
+	// 	link: {
+	// 	  attrs: {
+	// 		href: {},
+	// 		title: {default: null}
+	// 	  },
+	// 	  inclusive: false,
+	// 	  toDOM(node) { return ["a", node.attrs] }
+	// 	},
 
-		code: {
-		  parseDOM: [{tag: "code"}],
-		  toDOM() { return ["code"] }
-		}
-	}
+	// 	code: {
+	// 	  toDOM() { return ["code"] }
+	// 	}
+	// }
 });

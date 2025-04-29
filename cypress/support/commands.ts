@@ -1,11 +1,11 @@
 /// <reference types="cypress" />
 
 Cypress.Commands.add("inputAreas", () => {
-    cy.get("input-area")
+    cy.get("waterproofinput")
 });
 
 Cypress.Commands.add("nthInputArea", (n) => {
-    cy.get("input-area").eq(n)
+    cy.get("waterproofinput").eq(n)
 });
 
 Cypress.Commands.add("coqCode", () => {

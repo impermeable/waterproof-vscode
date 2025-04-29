@@ -1,4 +1,4 @@
-import { toMathInline } from "../editor/src/kroqed-editor/translation/toProsemirror/parser"
+import { toMathInline } from "../editor/src/waterproof-editor/translation/toProsemirror/parser"
 
 
 test("Replace $ inside of markdown", () => {

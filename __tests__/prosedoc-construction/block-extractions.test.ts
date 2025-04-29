@@ -1,5 +1,5 @@
-import { extractCoqBlocks, extractCoqDoc, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/kroqed-editor/prosedoc-construction/block-extraction";
-import { isCoqBlock, isCoqDocBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { extractCoqBlocks, extractCoqDoc, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/document-construction/block-extraction";
+import { isCoqBlock, isCoqDocBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock } from "../../editor/src/waterproof-editor/document/blocks/typeguards";
 
 test("Identify input blocks", () => {
     const document = "# Example\n<input-area>\n# Test input area\n</input-area>\n";

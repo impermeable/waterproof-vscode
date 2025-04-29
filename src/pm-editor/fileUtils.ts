@@ -4,7 +4,7 @@ import { FileFormat } from "../../shared";
 
 
 /** Gets the file format from the text doc uri */
-export function getFormatFromExtension(doc: TextDocument): FileFormat {
+export function getFormatFromExtension(doc: TextDocument): FileFormat | undefined {
     // Get the parts from uri
     const uriParts = doc.uri.fsPath.split(".");
     // Get the extension
@@ -15,10 +15,9 @@ export function getFormatFromExtension(doc: TextDocument): FileFormat {
         return FileFormat.MarkdownV;
     } else if (extension === "v") {
         return FileFormat.RegularV;
-    } else {
-        // Unknown filed type this should not happen
-        return FileFormat.Unknown;
     }
+
+    return undefined;
 }
 
 export function isIllegalFileName(fileName: string): boolean {

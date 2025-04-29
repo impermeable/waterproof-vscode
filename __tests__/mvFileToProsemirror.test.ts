@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-escape */
 // Disable due to test data including latex code
-import { translateMvToProsemirror } from "../editor/src/kroqed-editor/translation/toProsemirror/mvFileToProsemirror";
+import { translateMvToProsemirror } from "../editor/src/waterproof-editor/translation/toProsemirror/mvFileToProsemirror";
 import { expect } from "@jest/globals";
 
 test("Expect empty input to return empty output", () => {
@@ -72,7 +72,7 @@ test("entire document", () => {
 })
 
 test("entire document2", () => {
-    const docString = `# This is a header. 
+    const docString = `# This is a header.
 
 This is a paragraph. Paragraphs support inline LaTeX like $5+3=22$. Underneath you'll find a math display block.
 $$
@@ -102,7 +102,7 @@ Proof.
   - simpl. rewrite IHl. simpl. reflexivity.
 Qed.
 \`\`\``
-    const predict = `<markdown># This is a header. 
+    const predict = `<markdown># This is a header.
 
 This is a paragraph. Paragraphs support inline LaTeX like $5+3=22$. Underneath you'll find a math display block.
 </markdown><math-display>

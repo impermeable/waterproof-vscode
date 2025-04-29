@@ -1,4 +1,4 @@
-import { translateCoqDoc } from "../editor/src/kroqed-editor/translation/toProsemirror/parser";
+import { translateCoqDoc } from "../editor/src/waterproof-editor/translation/toProsemirror/parser";
 
 
 /*
@@ -82,12 +82,12 @@ test("Preserves whitespace inside coq code cell.", () => {
 
 
 test("From indented list in Coqdoc comments, make markdown list", () => {
-    
+
     expect(translateCoqDoc("- First item\n- Second item\n  - Indented item\n  - Second indented item\n- Third item"))
     .toBe(`- First item\n- Second item\n    - Indented item\n    - Second indented item\n- Third item`);
 });
 
-/* TEMPLATE 
+/* TEMPLATE
 test("name", () => {
     expect(translateCoqDoc("input")).toBe("expected output");
 });

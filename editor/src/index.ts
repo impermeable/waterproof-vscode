@@ -90,7 +90,7 @@ window.onload = () => {
 				}
 				break; }
 			case MessageType.updateDocument:
-				theEditor.updateDocument(msg.body.value, msg.body.version);
+				editor.updateDocument(msg.body.value, msg.body.version);
 				break;
 			case MessageType.setAutocomplete:
 				// Handle autocompletion

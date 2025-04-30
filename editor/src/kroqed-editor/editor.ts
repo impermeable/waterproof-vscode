@@ -151,37 +151,7 @@ export class WaterproofEditor {
 	}
 
 	updateDocument(content: string, version: number) {
-		// if (!this._view) {
-		// 	return;
-		// }
-
-		// const currentText = this._view.state.doc.textContent;
-		// if (content === currentText) {
-		// 	return;
-		// }
-
-		// const {resultingDocument, documentChange} = checkPrePost(content);
-
-		// if (resultingDocument !== content) {
-		// 	version++;
-		// 	this._translator = new FileTranslator(this._filef);
-
-		// 	const parsedContent = this._translator.toProsemirror(resultingDocument);
-
-		// 	this._mapping = new TextDocMapping(this._filef, parsedContent, version);
-
-		// 	const proseDoc = createProseMirrorDocument(resultingDocument, this._filef);
-
-		// 	const newState = EditorState.create({
-		// 		schema: this._schema,
-		// 		doc: proseDoc,
-		// 		plugins: this.createPluginsArray()
-		// 	});
-
-		// 	this._view.updateState(newState);
-
-		// 	this.sendLineNumbers();
-		// }
+		// TODO: Update the editor's state in place.
 	}
 
 

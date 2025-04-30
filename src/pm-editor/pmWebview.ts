@@ -179,7 +179,7 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this._disposables.push(workspace.onDidSaveTextDocument(e => {
             if (e.uri.toString() === this._document.uri.toString()) {
-                this.updateOnSave();  // Ensure the editor updates after saving
+                this.syncWebview();
             }
         }));
 

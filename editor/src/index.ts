@@ -74,6 +74,9 @@ window.onload = () => {
 					editor.insertSymbol(symbolUnicode, symbolLatex);
 				}
 				break; }
+			case MessageType.updateDocument:
+				editor.updateDocument(msg.body.value, msg.body.version);
+				break;
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
 				{ const state = editor.state;

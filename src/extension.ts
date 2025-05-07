@@ -118,12 +118,15 @@ export class Waterproof implements Disposable {
             // update active document
             // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
             if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
+                console.log("Updating active document");
                 this.client.activeDocument = document;
                 this.client.activeCursorPosition = undefined;
+                this.webviewManager.open("goals");
                 for (const g of this.goalsComponents) g.updateGoals(undefined);
+    
             }
-            this.webviewManager.open("goals")
-            // this.webviewManager.reveal("goals")
+            //this.webviewManager.open("goals");
+            else {this.webviewManager.reveal("goals");}
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
             // update active document and cursor

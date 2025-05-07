@@ -29,20 +29,19 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
             this.updateButtonTransparency(e.name, e.open);
         });
     }
-    public greyedOutButtons(buttonId: string, open: boolean): string[] {
+    public updateGreyedOutButton(buttonId: string, open: boolean) {
         if (this._greyedOutButtons.has(buttonId) && !open) {
             this._greyedOutButtons.delete(buttonId);
         } else if (open){
             this._greyedOutButtons.add(buttonId);
         }
-    
-        return Array.from(this._greyedOutButtons);
     }
+
     public updateButtonTransparency(buttonId: string, open: boolean) {
         // Set the transparency state of the button in the transparency map
         this._transparencyMap.set(buttonId, open);
         //update the list of buttons that are currently greyed out
-        const greyedOut = this.greyedOutButtons(buttonId,open);
+        this.updateGreyedOutButton(buttonId,open);
         // Update the button styles to reflect the transparency state
         this.updateButtonStyles(buttonId, open);
     }
@@ -82,7 +81,8 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     command: 'executeScript',
                     script: message.script,
                 });
-            } else {
+            }
+             else {
                 // Handle other messages by opening the command in the manager
                 this._manager.open(message.command);
             }
@@ -93,8 +93,9 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
         
                 webviewView.webview.postMessage({
                     type: 'restoreTransparency',
-                    greyedOutButtonsList: this.greyedOutButtons("goals",true) //the goals panel is always opened
+                    greyedOutButtonsList: Array.from(this._greyedOutButtons) 
                 });
+                console.log(this._greyedOutButtons)
             }
         });
         
@@ -238,7 +239,8 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                                     if (message.greyedOutButtonsList?.includes(id)) {
                                         // If it is, make transparent
                                         btn.classList.add('transparent');
-                                    } else {
+                                    } 
+                                    else {
                                         // If it is not, remove the transparent class
                                         btn.classList.remove('transparent');
                                     }

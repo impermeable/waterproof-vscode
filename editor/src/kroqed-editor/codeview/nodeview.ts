@@ -11,7 +11,7 @@ import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic, setDiagnosticsEffect, lintGutter } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
@@ -81,7 +81,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			doc: this._node.textContent,
 			extensions: [
 				// Add the linting extension for showing diagnostics (errors, warnings, etc)
-				linter(this.lintingFunction),
+				linter(this.lintingFunction, {
+					autoPanel: true,
+				}),
+				lintGutter(),
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 

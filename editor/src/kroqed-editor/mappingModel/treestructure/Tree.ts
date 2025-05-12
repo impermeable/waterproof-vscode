@@ -1,37 +1,61 @@
-class TreeNode<T> {
-    value: T;
-    children: TreeNode<T>[];
+export class TreeNode {
+    type: string;
+    originalStart: number;
+    originalEnd: number;
+    prosemirrorStart: number;
+    prosemirrorEnd: number;
+    stringContent: string;
+    children: TreeNode[];
 
-    constructor(value: T) {
-        this.value = value;
+    constructor(
+        type: string,
+        originalStart: number,
+        originalEnd: number,
+        prosemirrorStart: number,
+        prosemirrorEnd: number,
+        stringContent: string
+    ) {
+        this.type = type;
+        this.originalStart = originalStart;
+        this.originalEnd = originalEnd;
+        this.prosemirrorStart = prosemirrorStart;
+        this.prosemirrorEnd = prosemirrorEnd;
+        this.stringContent = stringContent;
         this.children = [];
     }
 
-    addChild(child: TreeNode<T>): void {
+    addChild(child: TreeNode): void {
         this.children.push(child);
     }
 
-    removeChild(child: TreeNode<T>): void {
+    removeChild(child: TreeNode): void {
         this.children = this.children.filter(c => c !== child);
     }
 }
 
-export class Tree<T> {
-    root: TreeNode<T> | null;
+export class Tree {
+    root: TreeNode | null;
 
-    constructor(value?: T) {
-        this.root = value !== undefined ? new TreeNode(value) : null;
+    constructor(
+        type: string = "",
+        originalStart: number = 0,
+        originalEnd: number = 0,
+        prosemirrorStart: number = 0,
+        prosemirrorEnd: number = 0,
+        stringContent: string = ""
+    ) {
+        this.root = new TreeNode(type, originalStart, originalEnd, prosemirrorStart, prosemirrorEnd, stringContent);
     }
 
-    traverseDepthFirst(callback: (node: TreeNode<T>) => void, node: TreeNode<T> | null = this.root): void {
+    traverseDepthFirst(callback: (node: TreeNode) => void, node: TreeNode | null = this.root): void {
         if (!node) return;
         callback(node);
         node.children.forEach(child => this.traverseDepthFirst(callback, child));
     }
 
-    traverseBreadthFirst(callback: (node: TreeNode<T>) => void): void {
+    traverseBreadthFirst(callback: (node: TreeNode) => void): void {
         if (!this.root) return;
-        const queue: TreeNode<T>[] = [this.root];
+        const queue: TreeNode[] = [this.root];
         while (queue.length > 0) {
             const node = queue.shift();
             if (node) {

@@ -1,18 +1,13 @@
-import {Tree} from "./Tree"
-import { NodeType } from "prosemirror-model";
+import { Tree, TreeNode } from "./Tree";
+import { Block } from "../../prosedoc-construction/blocks";
 
 /**
- * We will preface this class with saying that this is most probably not 'the' smart approach. In fact,
- * it could possibly be simpler to do all this with the EditorState document node (textContent attribute).
- * However, we had thought this approach would be somewhat viable and nice for large documents, as you are not
- * sending the entire doc back and forth, but it comes at the cost of complexity.
- * 
  * This class is responsible for keeping track of the mapping between the prosemirror state and the vscode Text
  * Document model
  */
 export class TextDocMappingNew {
     /** This stores the String cells of the entire document */
-    private tree: Tree<number>
+    private tree: Tree;
     /** The version of the underlying textDocument */
     private _version: number;
 
@@ -28,23 +23,53 @@ export class TextDocMappingNew {
         "coqdown",
     ]);
 
-    /** 
-     * Constructs a prosemirror view vsode mapping for the inputted prosemirror html elem
-     * 
-     * @param inputBlocks a string contatining the prosemirror content html elem
+    /** This stores the characters that each 'starting' HTML tag represents in the original document */
+    private startTag: Map<string, string> = new Map<string, string>([
+        ["coqblock", "```coq"],
+        ["coqcode", ""],
+        ["coqdoc", "(** "],
+        ["coqdown", ""],
+        ["math-display", "$"],
+        ["input-area", "<input-area>"],
+        ["markdown", ""],
+        ["math_display", "$"],
+        ["input", "<input-area>"],
+        ["text", ""],
+    ]);
+
+    /** This stores the characters that each 'ending' HTML tag represents in the original document */
+    private endTag: Map<string, string> = new Map<string, string>([
+        ["coqblock", "```"],
+        ["coqcode", ""],
+        ["coqdoc", "*)"],
+        ["coqdown", ""],
+        ["math-display", "$"],
+        ["input-area", "</input-area>"],
+        ["markdown", ""],
+        ["hint", "</hint>"],
+        ["math_display", "$"],
+        ["input", "</input-area>"],
+        ["text", ""],
+    ]);
+
+    /**
+     * Constructs a prosemirror view vscode mapping for the inputted prosemirror html element
+     *
+     * @param inputBlocks a string containing the prosemirror content html element
      */
     constructor(inputBlocks: any, versionNum: number) {
         this._version = versionNum;
-        this.tree = new Tree;
+        this.tree = new Tree();
         this.initialize(inputBlocks);
     }
+
     //// The getters of this class
 
     /**
      * Returns the mapping to preserve integrity
      */
     public getMapping() {
-        return this.tree
+        return this.tree;
     }
 
     /**
@@ -56,44 +81,144 @@ export class TextDocMappingNew {
 
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
-        
+        // Implement as needed
     }
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
-        
+        // Implement as needed
     }
 
     //// The methods used to manage the mapping
 
     /**
-     * Initializes the mapping according to the inputed html content elem
-     * 
-     * @param inputString the string of the html elem
+     * Initializes the mapping according to the inputted HTML content element
+     *
+     * @param inputBlocks the structure representing the inputted HTML content
      */
-    private initialize(inputBlocks: any) : void {
-        let inner_constant = inputBlocks.content.content
-        // console.log(inner_constant)
-        console.log(inner_constant[0].content)
-        this.printAllNodes(inner_constant[0].content)
-        // console.log(inner_constant[0].content.content[0].type.name)
-
-        // Remove this fragment layer
-        let first_childs = new Array
-        console.log(inner_constant)
-        inner_constant[0].content.forEach((child: any) => {
-            console.log(child)
-            first_childs.push(child)
-        });
-        inner_constant.content = first_childs
-        console.log(inner_constant)
-        this.printAllNodes(inner_constant[0])
-
+    private initialize(inputBlocks: any): void {
+        this.mapToTree(inputBlocks);
+        console.log(this.tree); // For debugging
     }
 
     private printAllNodes(node: any, depth: number = 0): void {
-        console.log(`${'  '.repeat(depth)}- ${node.type.name}`);
-        node.content.forEach((child: any) => this.printAllNodes(child, depth + 1));
+        console.log(`${'  '.repeat(depth)}- ${node.type}`);
+        console.log(node);
+        node.content.forEach((child: any) => {
+            this.printAllNodes(child, depth + 1);
+        });
     }
-    
+
+    private mapToTree(blocks: Block[]): void {
+        // Create a root node with dummy values
+        const root = new TreeNode(
+            "", // type
+            0, // originalStart
+            0, // originalEnd
+            0, // prosemirrorStart
+            0, // prosemirrorEnd
+            "" // stringContent
+        );
+
+        function buildSubtree(blocks: Block[]): TreeNode[] {
+            return blocks.map(block => {
+                const node = new TreeNode(
+                    block.type,
+                    block.range.from,
+                    block.range.to,
+                    0, // prosemirrorStart (to be calculated later)
+                    0, // prosemirrorEnd (to be calculated later)
+                    block.innerBlocks && block.innerBlocks.length === 0 ? block.stringContent : "" // Only leaf nodes have stringContent
+                );
+
+                if (block.innerBlocks && block.innerBlocks.length > 0) {
+                    const children = buildSubtree(block.innerBlocks);
+                    children.forEach(child => node.addChild(child));
+                }
+
+                return node;
+            });
+        }
+
+        const topLevelNodes = buildSubtree(blocks);
+        topLevelNodes.forEach(child => root.addChild(child));
+
+        // Set the tree root after mapping
+        this.tree.root = root;
+
+        console.log(this.tree);
+
+        // Now compute the ProseMirror offsets after creating the tree structure
+        this.computeProsemirrorOffsets(this.tree.root, this.startTag, this.endTag);
+    }
+
+    /**
+     * Recursively computes the prosemirrorStart and prosemirrorEnd offsets for each node.
+     * 
+     * @param node The current node to compute the offsets for.
+     * @param startTagMap The start tag mapping for each block type.
+     * @param endTagMap The end tag mapping for each block type.
+     * @param currentOffset The current offset from where the computation should begin.
+     * @param level The current depth level in the tree (used for adjusting offsets).
+     * @returns The updated offset after computing the current node.
+     */
+    private computeProsemirrorOffsets(
+        node: TreeNode | null,
+        startTagMap: Map<string, string>,
+        endTagMap: Map<string, string>,
+        currentOffset: number = 0,
+        level: number = 0 // Track the level for increasing offset by 1 each level
+    ): number {
+        if (!node) return -1;
+
+        const startTagStr = startTagMap.get(node.type) ?? "";
+        const endTagStr = endTagMap.get(node.type) ?? "";
+
+        // Start offset includes the current node's start tag
+        node.prosemirrorStart = currentOffset;
+
+        // Add the length of the start tag and increase offset by 1 for each level down
+        let offset = currentOffset - startTagStr.length + level;
+
+        console.log(offset)
+
+        let combinedContent = "";
+
+        // Compute offsets for children and combine their content
+        for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
+            // Add an extra 1 character space between sibling nodes
+            if (i > 0) offset += 1;
+
+            // Recurse and update offset
+            offset = this.computeProsemirrorOffsets(child, startTagMap, endTagMap, offset, level + 1);
+            combinedContent += this.getFullNodeContent(child, startTagMap, endTagMap);
+        }
+
+        // If this is a leaf node, account for its string content
+        if (node.children.length === 0) {
+            node.prosemirrorEnd = offset - endTagStr.length + node.stringContent.length;
+        } else {
+            // For non-leaf nodes, calculate the prosemirrorEnd without stringContent
+            node.prosemirrorEnd = offset - endTagStr.length;
+        }
+
+        return node.prosemirrorEnd;
+    }
+
+    // Helper to get full content for a node (recursive)
+    private getFullNodeContent(
+        node: TreeNode,
+        startTagMap: Map<string, string>,
+        endTagMap: Map<string, string>
+    ): string {
+        if (node.children.length === 0) {
+            const start = startTagMap.get(node.type) ?? "";
+            const end = endTagMap.get(node.type) ?? "";
+            return `${start}${node.stringContent}${end}`;
+        }
+
+        // For non-leaf nodes, return the built content (without stringContent for non-leaf nodes)
+        return "";
+    }
 }

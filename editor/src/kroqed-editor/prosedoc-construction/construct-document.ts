@@ -81,12 +81,14 @@ export function topLevelBlocksV(inputDocument: string): Block[] {
 
 // 1. Construct the prosemirror document from the top level blocks.
 export function constructDocument(blocks: Block[]): ProseNode {
+    console.log("BLOKCS")
+    console.log(blocks)
     const documentContent: ProseNode[] = blocks.map(block => block.toProseMirror());
     return root(documentContent);
 }
 
 // 2. Construct the prosemirror document from the input document.
-export function createProseMirrorDocument(input: string, fileFormat: FileFormat): ProseNode {
+export function createProseMirrorDocument(input: string, fileFormat: FileFormat): [ProseNode, Block[]] {
     let blocks: Block[];
 
     // 2.1 We differentiate between the two supported file formats
@@ -101,8 +103,7 @@ export function createProseMirrorDocument(input: string, fileFormat: FileFormat)
             throw new Error("Unknown file format in prosemirror document constructor");
     }
 
-    // 2.2 Construct the document and return
     let document = constructDocument(blocks)
-    console.log(document)
-    return document;
+    // 2.2 Construct the document and return
+    return [document, blocks];
 }

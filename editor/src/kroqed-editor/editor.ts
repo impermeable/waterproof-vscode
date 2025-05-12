@@ -144,9 +144,11 @@ export class Editor {
 		const parsedContent = this._translator.toProsemirror(newContent);
 		// this._contentElem.innerHTML = parsedContent;
 
-		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
+		const proseDocAndBlocks = createProseMirrorDocument(newContent, fileFormat);
 
-		let test_mapping = new TextDocMappingNew(proseDoc, version)
+		const proseDoc = proseDocAndBlocks[0]
+
+		let test_mapping = new TextDocMappingNew(proseDocAndBlocks[1], version)
 
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
 		this.createProseMirrorEditor(proseDoc);

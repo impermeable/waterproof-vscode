@@ -2,6 +2,7 @@ import { Node as PNode, Schema } from "prosemirror-model";
 
 export const SchemaCell = {
 	InputArea: "input",
+	Hint: "hint",
 	Markdown: "markdown",
 	MathDisplay: "math_display",
 	Code: "code"
@@ -10,8 +11,8 @@ export const SchemaCell = {
 export type SchemaKeys = keyof typeof SchemaCell;
 export type SchemaNames = typeof SchemaCell[SchemaKeys];
 
-const cell = `(markdown | hint | coqblock | input | math_display)`;
-const containercontent = "(markdown | coqblock | math_display)";
+const cell = `(markdown | hint | code | input | math_display)`;
+const containercontent = "(markdown | code | math_display)";
 // const groupMarkdown = "markdowncontent";
 
 /**
@@ -26,7 +27,7 @@ const containercontent = "(markdown | coqblock | math_display)";
  *
  * see [notes](./notes.md)
  */
-export const WaterproofSchema: Schema = new Schema({
+export const WaterproofSchema = new Schema<SchemaNames | "doc" | "text" >({
 	nodes: {
 		doc: {
 			content: `${cell}*`
@@ -76,47 +77,21 @@ export const WaterproofSchema: Schema = new Schema({
 		},
 		//#endregion
 
-		////// Coqblock //////
-		//#region Coq codeblock
-		"coqblock": {
-			content: `(coqdoc | coqcode)+`,
+		////// Code //////
+		//#region Code
+		code: {
+			content: "text*",// content is of type text
 			attrs: {
 				prePreWhite:{default:"newLine"},
 				prePostWhite:{default:"newLine"},
 				postPreWhite:{default:"newLine"},
 				postPostWhite:{default:"newLine"}
 			},
-			toDOM: () => {
-				return ["coqblock", 0];
-			}
-		},
-
-		coqdoc: {
-			content: "(math_display | coqdown)*",
-			attrs: {
-				preWhite:{default:"newLine"},
-				postWhite:{default:"newLine"}
-			},
-			toDOM: () => {
-				return ["coqdoc", 0];
-			}
-		},
-
-		coqdown: {
-			content: "text*",
-			block: true,
-			atom: true,
-			toDOM: () => {
-				return ["coqdown", 0];
-			},
-		},
-
-		coqcode: {
-			content: "text*",// content is of type text
 			code: true,
 			atom: true, // doesn't have directly editable content (content is edited through codemirror)
-			toDOM(node) { return ["WaterproofCode", node.attrs, 0] } // <coqcode></coqcode> cells
+			toDOM(node) { return ["WaterproofCode", node.attrs, 0] } // <WaterproofCode></WaterproofCode> cells
 		},
+		
 		//#endregion
 
 		/////// MATH DISPLAY //////

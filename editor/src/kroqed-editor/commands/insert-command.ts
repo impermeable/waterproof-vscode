@@ -18,16 +18,13 @@ export function getMdInsertCommand(
     filef: FileFormat,
     insertionFunction: InsertionFunction,
     place: InsertionPlace,
-    mvNodeType: NodeType,
-    vNodeType: NodeType
+    nodeType: NodeType
 ): Command {
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), _view?: EditorView): boolean => {
         // Early return when inserting is not allowed
         if (!allowedToInsert(state)) return false;
 
-        // Retrieve the correct node given the fileformat.
-        const nodeType = filef == FileFormat.MarkdownV ? mvNodeType : vNodeType;
-
+        
         // Get the containing node for this selection.
         const container = getContainingNode(state.selection);
 
@@ -128,8 +125,7 @@ export function getCodeInsertCommand(
     filef: FileFormat, 
     insertionFunction: InsertionFunction,
     place: InsertionPlace,
-    coqblockNodeType: NodeType, 
-    coqcodeNodeType: NodeType,
+    codeNodeType: NodeType,
 ): Command {
     return (state: EditorState, dispatch?: ((tr: Transaction) => void), _view?: EditorView): boolean => {
         // Again, early return when inserting is not allowed. 
@@ -142,13 +138,12 @@ export function getCodeInsertCommand(
         if (filef === FileFormat.MarkdownV) {
             if (name === "input" || name === "hint" || name === "doc") {
                 // Create a new coqblock *and* coqcode cell and insert Above or Underneath the current selection.
-                trans = insertionFunction(state, state.tr, coqblockNodeType, coqcodeNodeType);
+                trans = insertionFunction(state, state.tr, codeNodeType);
             } else if (name === "coqblock" || name === "coqdoc") {
                 // Find the position outside of the coqblock and insert a new coqblock and coqcode cell above or underneath.
                 const {start, end} = getNearestPosOutsideCoqblock(state.selection, state);
                 const pos = place == InsertionPlace.Above ? start : end;
-                trans = state.tr.insert(pos, 
-                    coqblockNodeType.create()).insert(pos + 1,coqcodeNodeType.create());
+                trans = state.tr.insert(pos, codeNodeType.create());
             }
 
             // If dispatch is given and transaction is set, dispatch the transaction.

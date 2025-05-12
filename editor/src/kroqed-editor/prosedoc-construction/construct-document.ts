@@ -1,9 +1,9 @@
 import { FileFormat } from "../../../../shared";
 import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractBlocksUsingRanges, extractMathDisplayBlocks } from "./block-extraction";
 import { Block } from "./blocks";
-import { CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock } from "./blocks/blocktypes";
+import { CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock } from "./blocks/blocktypes";
 import { root } from "./blocks/schema";
-import { isCoqBlock } from "./blocks/typeguards";
+import { isCodeBlock } from "./blocks/typeguards";
 import { extractInterBlockRanges, maskInputAndHints, sortBlocks } from "./utils";
 import { Node as ProseNode } from "prosemirror-model";
 
@@ -65,12 +65,12 @@ export function topLevelBlocksV(inputDocument: string): Block[] {
     // Extract the coq blocks based on the ranges.
     const coqBlocks = coqBlockRanges.map(range => {
         const content = inputDocument.slice(range.from, range.to);
-        return new CoqBlock(content, "", "", "", "", range);
+        return new CodeBlock(content, "", "", "", "", range);
     });
 
     const sortedBlocks = sortBlocks([...hintBlocks, ...inputAreaBlocks, ...coqBlocks]);
     const prunedBlocks = sortedBlocks.filter(block => {
-        if (isCoqBlock(block) && (block.stringContent === "\n")) return false;
+        if (isCodeBlock(block) && (block.stringContent === "\n")) return false;
 
         return true;
     });

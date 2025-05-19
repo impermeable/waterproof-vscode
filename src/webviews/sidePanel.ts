@@ -95,7 +95,6 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     type: 'restoreTransparency',
                     greyedOutButtonsList: Array.from(this._greyedOutButtons) 
                 });
-                console.log(this._greyedOutButtons)
             }
         });
         

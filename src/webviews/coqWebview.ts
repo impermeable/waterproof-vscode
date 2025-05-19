@@ -101,7 +101,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 this.name,
                 this.name.charAt(0).toUpperCase() + this.name.slice(1),
                 { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts
+                webviewOpts,
             );
         }
         
@@ -160,6 +160,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         const prev = this._state;
         this._state = next;
         this.emit(WebviewEvents.change, prev);
+
     }
 
     /**

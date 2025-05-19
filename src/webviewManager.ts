@@ -121,7 +121,6 @@ export class WebviewManager extends EventEmitter {
      * @param webview object associated with document
      */
     public addProseMirrorWebview(webview: ProseMirrorWebview) {
-        console.log("Adding ProseMirror webview", webview.document);
         if (this.has(webview.document)) {
             throw new Error(" Webview already registered!  THIS SHOULD NOT HAPPEN! ");
         }
@@ -157,8 +156,7 @@ export class WebviewManager extends EventEmitter {
 
         // Check if the panel is already open
         if (panel?.isOpened) {
-            console.log(`Panel with id "${id}" is already open.`);
-            return; // Do nothing if the panel is already open
+            return;
         }
     
         // Open the panel if it is not already open
@@ -166,9 +164,6 @@ export class WebviewManager extends EventEmitter {
             panel?.readyPanel();
             panel?.activatePanel();}
     }
-        //if (this._toolWebviews.has(id)) new Error("Tool webview does not have this panel: " + id);
-        //this._toolWebviews.get(id)?.readyPanel();
-        //this._toolWebviews.get(id)?.activatePanel();
     
 
     /**
@@ -178,7 +173,6 @@ export class WebviewManager extends EventEmitter {
     public reveal(id: string) {
         if (this._toolWebviews.has(id)) new Error("Tool webview does not have this panel: " + id);
         this._toolWebviews.get(id)?.revealPanel()
-        console.log('revealing panel',id)
     }
 
     /**

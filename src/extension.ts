@@ -120,10 +120,11 @@ export class Waterproof implements Disposable {
             if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
                 this.client.activeDocument = document;
                 this.client.activeCursorPosition = undefined;
+                this.webviewManager.open("goals");
                 for (const g of this.goalsComponents) g.updateGoals(undefined);
+    
             }
-            this.webviewManager.open("goals")
-            // this.webviewManager.reveal("goals")
+
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
             // update active document and cursor

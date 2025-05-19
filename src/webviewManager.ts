@@ -121,6 +121,7 @@ export class WebviewManager extends EventEmitter {
      * @param webview object associated with document
      */
     public addProseMirrorWebview(webview: ProseMirrorWebview) {
+        console.log("Adding ProseMirror webview", webview.document);
         if (this.has(webview.document)) {
             throw new Error(" Webview already registered!  THIS SHOULD NOT HAPPEN! ");
         }

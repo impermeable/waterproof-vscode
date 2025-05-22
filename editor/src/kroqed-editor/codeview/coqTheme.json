@@ -27,9 +27,9 @@
 	},
   	".cm-cursor, .cm-dropCursor": {"borderLeftColor": "auto"},
 
-	".cm-panels": {"backgroundColor": "var(--vscode-list-dropBackground)", "color": "var(--vscode-list-highlightForeground)"},
-	".cm-panel-lint": {"backgroundColor": "var(--vscode-list-dropBackground)", "color": "var(--vscode-list-highlightForeground)"},
-	".cm-panel-lint > ul": {"backgroundColor": "var(--vscode-list-dropBackground)", "color": "var(--vscode-list-highlightForeground)"},
+	".cm-panels": {"backgroundColor": "transparent", "color": "var(--vscode-list-highlightForeground)"},
+	".cm-panel-lint": {"backgroundColor": "transparent", "color": "var(--vscode-list-highlightForeground)"},
+	".cm-panel-lint > ul": {"backgroundColor": "transparent", "color": "var(--vscode-list-highlightForeground)"},
 
 	".cm-activeLine": {"backgroundColor": "#6699ff0b"},
     "&:not(.cm-focused) .cm-activeLine": { "backgroundColor": "transparent"},

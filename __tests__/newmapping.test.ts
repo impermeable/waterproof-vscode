@@ -1,139 +1,161 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // Disable because the @ts-expect-error clashes with the tests
-import { TextDocMappingNew } from "../editor/src/kroqed-editor/mappingModel/treestructure"; 
+import { TextDocMappingNew, TreeNode } from "../editor/src/kroqed-editor/mappingModel/treestructure"; 
 import { ReplaceStep } from "prosemirror-transform";
 import { TheSchema } from "../editor/src/kroqed-editor/kroqed-schema";
 import { translateMvToProsemirror } from "../editor/src/kroqed-editor/translation/toProsemirror";
+import { createProseMirrorDocument } from "../editor/src/kroqed-editor/prosedoc-construction/construct-document";
+import { FileFormat } from "../shared";
 import { expect } from "@jest/globals";
 
-test("testMapping", () => {
-    const textDocMapping = new TextDocMappingNew(`<markdown>Hello</markdown>`, 0)
-    const mapping = textDocMapping.getMapping()
-    if (mapping.has(3-2)) {
-        //@ts-ignore
-        expect(mapping.get(3-2).startProse).toBe(3-2);expect(mapping.get(3-2).endProse).toBe(8-2);expect(mapping.get(3-2).startText).toBe(0);expect(mapping.get(3-2).endText).toBe(5)
-    } else {
-        throw new Error("Index does not exist")
-    }
-})
+function createTestMapping(content: string): TreeNode[] {
+    const proseDocandBlocks = createProseMirrorDocument(content, FileFormat.MarkdownV);
+    const mapping = new TextDocMappingNew(proseDocandBlocks[1], 1)
+    const tree = mapping.getMapping();
+    const nodes: TreeNode[] = [];
+    tree.traverseDepthFirst((node: TreeNode) => {
+        nodes.push(node);
+    });
+    return nodes;
+}
 
 test("testMapping", () => {
-    const textDocMapping = new TextDocMappingNew(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock>`, 0)
-    const mapping = textDocMapping.getMapping()
-    if (mapping.has(4-2)) {
-        //@ts-ignore
-        expect(mapping.get(4-2).startProse).toBe(4-2);expect(mapping.get(4-2).endProse).toBe(16-2);expect(mapping.get(4-2).startText).toBe(8);expect(mapping.get(4-2).endText).toBe(20)
-    } else {
-        throw new Error("Index does not exist")
-    }
-})
-
-test("testMapping 2", () => {
-    const textDocMapping = new TextDocMappingNew(`<markdown>Hello</markdown><coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock>`, 0)
-    const mapping = textDocMapping.getMapping()
-    if (mapping.has(3-2)) {
-        //@ts-ignore
-        expect(mapping.get(3-2).startProse).toBe(3-2);expect(mapping.get(3-2).endProse).toBe(8-2);expect(mapping.get(3-2).startText).toBe(0);expect(mapping.get(3-2).endText).toBe(5)
-    } else {
-        throw new Error("Index does not exist")
-    }
-    if (mapping.has(11-2)) {
-        //@ts-ignore
-        expect(mapping.get(11-2).startProse).toBe(11-2);expect(mapping.get(11-2).endProse).toBe(23-2);expect(mapping.get(11-2).startText).toBe(13);expect(mapping.get(11-2).endText).toBe(25)
-    } else {
-        throw new Error("Index does not exist")
-    }
+    const content = `Hello`;
+    const nodes = createTestMapping(content);
+    expect(nodes.length).toBe(1);
+    const markdownNode = nodes[0];
     
+    expect(markdownNode.type).toBe("markdown");
+    expect(markdownNode.originalStart).toBe(0);
+    expect(markdownNode.originalEnd).toBe(5); // "Hello" (length 5)
+    expect(markdownNode.prosemirrorStart).toBe(0);
+    expect(markdownNode.prosemirrorEnd).toBe(5);
+    expect(markdownNode.stringContent).toBe("Hello");    
 })
 
-test("testMapping 3", () => {
-    const textDocMapping = new TextDocMappingNew(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqcode>This is code</coqcode></coqblock><markdown>Hello</markdown>`,0)
-    const mapping = textDocMapping.getMapping()
-    if (mapping.has(4-2)) {
-        //@ts-ignore
-        expect(mapping.get(4-2).startProse).toBe(4-2);expect(mapping.get(4-2).endProse).toBe(16-2);expect(mapping.get(4-2).startText).toBe(8);expect(mapping.get(4-2).endText).toBe(20)
-    } else {
-        throw new Error("Index does not exist")
-    }
-    if (mapping.has(19-2)) {
-        //@ts-ignore
-        expect(mapping.get(19-2).startProse).toBe(19-2);expect(mapping.get(19-2).endProse).toBe(24-2);expect(mapping.get(19-2).startText).toBe(25);expect(mapping.get(19-2).endText).toBe(30)
-    } else {
-        throw new Error("Index does not exist")
-    }
+test("Coqblock with code", () => {
+    const content = "```coq\nLemma test\n```";
+    const nodes = createTestMapping(content);
     
-})
-
-test("testMapping 4", () => {
-    const textDocMapping = new TextDocMappingNew(`<coqblock prePreWhite="newLine" postPreWhite="newLine" prePostWhite="newLine" postPostWhite="newLine"><coqdoc preWhite="newLine" postWhite="newLine"><coqdown>This is code</coqdown></coqdoc></coqcode></coqblock>`,0)
-    const mapping = textDocMapping.getMapping()
-    if (mapping.has(5-2)) {
-        //@ts-ignore
-        expect(mapping.get(5-2).startProse).toBe(5-2);expect(mapping.get(5-2).endProse).toBe(17-2);expect(mapping.get(5-2).startText).toBe(13);expect(mapping.get(5-2).endText).toBe(25)
-    } else {
-        throw new Error("Index does not exist")
-    }
+    expect(nodes.length).toBe(2);
     
-})
+    // Parent coqblock
+    const coqblockNode = nodes[0];
+    expect(coqblockNode.type).toBe("coqblock");
+    expect(coqblockNode.originalStart).toBe(0);
+    expect(coqblockNode.originalEnd).toBe(19); // ```coq\nLemma test\n``` (19 chars)
+    expect(coqblockNode.prosemirrorStart).toBe(0 - 6); // Subtract ```coq (6 chars)
+    expect(coqblockNode.prosemirrorEnd).toBe(19 - 3); // Subtract ``` (3 chars)
+    
+    // Child coqcode
+    const coqcodeNode = nodes[1];
+    expect(coqcodeNode.type).toBe("coqcode");
+    expect(coqcodeNode.originalStart).toBe(6); // After ```coq\n
+    expect(coqcodeNode.originalEnd).toBe(16); // Before \n```
+    expect(coqcodeNode.prosemirrorStart).toBe(0); // Inherits parent's adjusted start
+    expect(coqcodeNode.prosemirrorEnd).toBe(10); // "Lemma test" (10 chars)
+    expect(coqcodeNode.stringContent).toBe("Lemma test");
+});
 
-test("docString", () => {
-    const docString = `Hello\n\`\`\`coq\nNo edit pls.\n\`\`\`\n<input-area>HELLO</input-area>\n<hint title="optional">## Header</hint>\n\n\`\`\`coq\nNo edit pls.\n\`\`\``
-    const translated = translateMvToProsemirror(docString)
-    const textDocMapping = new TextDocMappingNew(translated,0)
-    const mapping = textDocMapping.getMapping()
-    if (mapping.has(3-2)) {
-        //@ts-ignore
-        expect(mapping.get(3-2).startProse).toBe(3-2);expect(mapping.get(3-2).endProse).toBe(8-2);expect(mapping.get(3-2).startText).toBe(0);expect(mapping.get(3-2).endText).toBe(5)
-    } else {
-        throw new Error("Index does not exist")
-    }
-    if (mapping.has(11-2)) {
-        //@ts-ignore
-        expect(mapping.get(11-2).startProse).toBe(11-2);expect(mapping.get(11-2).endProse).toBe(23-2);expect(mapping.get(11-2).startText).toBe(13);expect(mapping.get(11-2).endText).toBe(25)
-    } else {
-        throw new Error("Index does not exist")
-    }
-    if (mapping.has(27-2)) {
-        //@ts-ignore
-        expect(mapping.get(27-2).startProse).toBe(27-2);expect(mapping.get(27-2).endProse).toBe(32-2);expect(mapping.get(27-2).startText).toBe(42);expect(mapping.get(27-2).endText).toBe(47)
-    } else {
-        throw new Error("Index does not exist")
-    }
-    if (mapping.has(35-2)) {
-        //@ts-ignore
-        expect(mapping.get(35-2).startProse).toBe(35-2);expect(mapping.get(35-2).endProse).toBe(36-2);expect(mapping.get(35-2).startText).toBe(60);expect(mapping.get(35-2).endText).toBe(61)
-    } else {
-        throw new Error("Index does not exist")
-    }
-    if (mapping.has(39-2)) {
-        //@ts-ignore
-        expect(mapping.get(39-2).startProse).toBe(39-2);expect(mapping.get(39-2).endProse).toBe(48-2);expect(mapping.get(39-2).startText).toBe(84);expect(mapping.get(39-2).endText).toBe(93)
-    } else {
-        throw new Error("Index does not exist")
-    }
-    if (mapping.has(51-2)) {
-        //@ts-ignore
-        expect(mapping.get(51-2).startProse).toBe(51-2);expect(mapping.get(51-2).endProse).toBe(52-2);expect(mapping.get(51-2).startText).toBe(100);expect(mapping.get(51-2).endText).toBe(101)
-    } else {
-        throw new Error("Index does not exist")
-    }
-    if (mapping.has(55-2)) {
-        //@ts-ignore
-        expect(mapping.get(55-2).startProse).toBe(55-2);expect(mapping.get(55-2).endProse).toBe(67-2);expect(mapping.get(55-2).startText).toBe(109);expect(mapping.get(55-2).endText).toBe(121)
-    } else {
-        throw new Error("Index does not exist")
-    }
-})
+test("Input-area with nested coqblock", () => {
+    const content = "<input-area>\n```coq\nTest\n```\n</input-area>";
+    const nodes = createTestMapping(content);
+    
+    expect(nodes.length).toBe(3);
+    
+    // Input-area node
+    const inputAreaNode = nodes[0];
+    expect(inputAreaNode.type).toBe("input-area");
+    expect(inputAreaNode.originalStart).toBe(0);
+    expect(inputAreaNode.originalEnd).toBe(35); // Full input-area tags + content
+    expect(inputAreaNode.prosemirrorStart).toBe(0 - 12); // Subtract <input-area> (12 chars)
+    expect(inputAreaNode.prosemirrorEnd).toBe(35 - 13); // Subtract </input-area> (13 chars)
+    
+    // Nested coqblock
+    const coqblockNode = nodes[1];
+    expect(coqblockNode.originalStart).toBe(13); // After <input-area>\n
+    expect(coqblockNode.originalEnd).toBe(28); // ```coq\nTest\n```
+    
+    // Nested coqcode
+    const coqcodeNode = nodes[2];
+    expect(coqcodeNode.originalStart).toBe(19); // After ```coq\n
+    expect(coqcodeNode.originalEnd).toBe(23); // "Test"
+});
 
-test("test", () => {
-    // TODO: Check if this test does anything
-    const textDocMapping = new TextDocMappingNew(`<markdown>Hello</markdown>`,0)
-    textDocMapping.getMapping()
-    const text = TheSchema.text("Text");
-    const coqCode = TheSchema.nodes['coqcode'].create({}, text);
-    const moreIntNode = TheSchema.nodes['coqblock'].create({}, coqCode);
-    // const slice = node.slice(0);
-    const slice = moreIntNode.slice(0)
-    new ReplaceStep(1, 1, slice)
+test("Hint block with coq code", () => {
+    const content = `<hint title="Import libraries">\n\`\`\`coq\nRequire Import Rbase.\n\`\`\`\n</hint>`;
+    const nodes = createTestMapping(content);
+    
+    expect(nodes.length).toBe(3);
+    
+    // Hint node
+    const hintNode = nodes[0];
+    expect(hintNode.type).toBe("hint");
+    expect(hintNode.originalStart).toBe(0);
+    expect(hintNode.originalEnd).toBe(65); // Full hint tags + content
+    
+    // Nested coqblock
+    const coqblockNode = nodes[1];
+    expect(coqblockNode.originalStart).toBe(25); // After <hint> tag
+    expect(coqblockNode.originalEnd).toBe(53); // ```coq\nRequire Import Rbase.\n```
+    
+    // Nested coqcode
+    const coqcodeNode = nodes[2];
+    expect(coqcodeNode.stringContent).toBe("Require Import Rbase.");
+});
 
-})
+test("Mixed content section", () => {
+    const content = `
+## 1. We conclude that
+
+### Example:
+\`\`\`coq
+Lemma example_reflexivity : 0 = 0.
+Proof.
+We conclude that (0 = 0).
+Qed.
+\`\`\`
+
+<input-area>
+\`\`\`coq
+(* Your solution here *)
+\`\`\`
+</input-area>
+`;
+    const nodes = createTestMapping(content);
+    
+    // Expected nodes: markdown (header), coqblock, input-area (with coqblock)
+    expect(nodes.length).toBe(5);
+    
+    // Verify markdown header
+    const headerNode = nodes[0];
+    expect(headerNode.type).toBe("markdown");
+    expect(headerNode.stringContent).toContain("We conclude that");
+    
+    // Example coqblock
+    const exampleCoqblock = nodes[1];
+    expect(exampleCoqblock.type).toBe("coqblock");
+    
+    // Input-area
+    const inputAreaNode = nodes[2];
+    expect(inputAreaNode.type).toBe("input-area");
+    
+    // Nested coqblock inside input-area
+    const nestedCoqblock = nodes[3];
+    expect(nestedCoqblock.type).toBe("coqblock");
+});
+
+test("Empty coqblock", () => {
+    const content = "```coq\n```";
+    const nodes = createTestMapping(content);
+    
+    expect(nodes.length).toBe(2);
+    
+    // Parent coqblock
+    const coqblockNode = nodes[0];
+    expect(coqblockNode.originalEnd - coqblockNode.originalStart).toBe(6); // ```coq``` (6 chars)
+    
+    // Child coqcode (empty)
+    const coqcodeNode = nodes[1];
+    expect(coqcodeNode.stringContent).toBe("");
+});

@@ -1,7 +1,7 @@
-import { extractMathDisplayBlocks, extractCoqBlocks, extractBlocksUsingRanges, extractCoqDoc, extractMathDisplayBlocksCoqDoc } from "../block-extraction";
+import { extractMathDisplayBlocks, extractCoqBlocks, extractBlocksUsingRanges } from "../block-extraction";
 import { extractInterBlockRanges, sortBlocks } from "../utils";
 import { Block } from "./block";
-import { CoqCodeBlock, CoqMarkdownBlock, MarkdownBlock } from "./blocktypes";
+import { MarkdownBlock } from "./blocktypes";
 
 
 export function createInputAndHintInnerBlocks(input: string): Block[] {
@@ -16,43 +16,4 @@ export function createInputAndHintInnerBlocks(input: string): Block[] {
     const markdownBlocks = extractBlocksUsingRanges<MarkdownBlock>(input, markdownRanges, MarkdownBlock);
     const sorted = sortBlocks([...mathDisplayBlocks, ...coqBlocks, ...markdownBlocks]);
     return sorted;
-}
-
-
-export function createCoqInnerBlocks(input: string): Block[] {
-    // A Coq block can contain:
-    // - Coq code
-    // - Coqdoc comments
-
-    // Extract all the coqdoc comments: 
-    const coqdocBlocks = extractCoqDoc(input);
-
-    // Everything in between is coq code (including regular coq comments).
-    const ranges = extractInterBlockRanges(coqdocBlocks, input);
-
-    if (ranges.length === 0) {
-        // FIXME: This is a fix for the case that the coqblock is empty.
-        //        Ideally, this should be handled better and empty coq blocks should not appear.
-        return [new CoqCodeBlock("", { from: 0, to: 0 })];
-    }
-    const coqCodeBlocks = extractBlocksUsingRanges<CoqCodeBlock>(input, ranges, CoqCodeBlock);
-
-    // Return the sorted blocks.
-    return sortBlocks([...coqdocBlocks, ...coqCodeBlocks]);
-}
-
-export function createCoqDocInnerBlocks(input: string): Block[] {
-    // A Coqdoc comment can contain:
-    // - Coq Markdown
-    // - Math display (with single dollar signs)
-
-    // Extract all the math display blocks: 
-    const mathDisplayBlocks = extractMathDisplayBlocksCoqDoc(input);
-
-    // Everything in between is coq markdown.
-    const ranges = extractInterBlockRanges(mathDisplayBlocks, input);
-    const coqMarkdownBlocks = extractBlocksUsingRanges<CoqMarkdownBlock>(input, ranges, CoqMarkdownBlock);
-
-    // Return the sorted blocks.
-    return sortBlocks([...mathDisplayBlocks, ...coqMarkdownBlocks]);
 }

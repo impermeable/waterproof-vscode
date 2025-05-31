@@ -101,6 +101,7 @@ export function insertUnder(state: EditorState, tr: Transaction, ...nodeType: No
         }
         let counter = to;
         nodeType.forEach(type => {
+            console.log("Type in create", type);
             trans = trans.insert(counter, type.create());
             counter++;
         });

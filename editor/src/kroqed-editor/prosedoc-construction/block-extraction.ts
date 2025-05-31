@@ -1,6 +1,5 @@
 import { FileFormat } from "../../../../shared";
-import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
-import { CoqDocBlock } from "./blocks/blocktypes";
+import { Block, CodeBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
 
 const regexes = {
     // coq: /```coq\n([\s\S]*?)\n```/g,
@@ -130,7 +129,7 @@ export function extractCoqBlocks(inputDocument: string) {
         const postPreWhite = coq[4] == "\n" ? "newLine" : "";
         const postPostWhite = coq[5] == "\n" ? "newLine" : "";
 
-        return new CoqBlock(content, prePreWhite, prePostWhite, postPreWhite, postPostWhite, range);
+        return new CodeBlock(content, prePreWhite, prePostWhite, postPreWhite, postPostWhite, range);
     });
     return coqBlocks;
 }
@@ -152,34 +151,6 @@ export function extractBlocksUsingRanges<BlockType extends Block>(
         return block.range.from !== block.range.to;
     });
     return blocks;
-}
-
-
-// Regex used for extracting the coqdoc comments from the coqdoc block.
-// Info: https://coq.inria.fr/doc/refman/using/tools/coqdoc.html
-// FIXME: This regex needs some attention. I'm especially unsure of the space before the closing `*)`.
-// const coqdocRegex = /\(\*\*(?: |\n)([\s\S]*?)\*\)/g;
-const coqdocRegex = /(\r\n|\n)?^\(\*\* ([^]*?)\*\)$(\r\n|\n)?/gm
-export function extractCoqDoc(input: string): CoqDocBlock[] {
-    const comments = Array.from(input.matchAll(coqdocRegex));
-    const coqDocBlocks = Array.from(comments).map((comment) => {
-        if (comment.index === undefined) throw new Error("Index of math is undefined");
-        const range = { from: comment.index, to: comment.index + comment[0].length};
-
-        const content = comment[2];
-        const preWhite = comment[1] == "\n" ? "newLine" : "";
-        const postWhite = comment[3] == "\n" ? "newLine" : "";
-
-        return new CoqDocBlock(content, preWhite, postWhite, range);
-    });
-
-
-    // TODO: Is there a better location for this?
-    const pruned = coqDocBlocks.filter(block => {
-        return block.range.from !== block.range.to; 
-    });
-
-    return pruned;
 }
 
 // Regex for extracting the math display blocks from the coqdoc comments.

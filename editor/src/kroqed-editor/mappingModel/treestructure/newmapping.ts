@@ -120,25 +120,26 @@ export class TextDocMappingNew {
             "" // stringContent
         );
 
-        function buildSubtree(blocks: Block[]): TreeNode[] {
-            return blocks.map(block => {
-                const node = new TreeNode(
-                    block.type,
-                    block.range.from,
-                    block.range.to,
-                    0, // prosemirrorStart (to be calculated later)
-                    0, // prosemirrorEnd (to be calculated later)
-                    block.innerBlocks && block.innerBlocks.length === 0 ? block.stringContent : "" // Only leaf nodes have stringContent
-                );
+    function buildSubtree(blocks: Block[]): TreeNode[] {
+        return blocks.map(block => {
+            const node = new TreeNode(
+                block.type,
+                block.range.from,
+                block.range.to,
+                0, // prosemirrorStart (to be calculated later)
+                0, // prosemirrorEnd (to be calculated later)
+                block.stringContent // always keep the stringContent
+            );
 
-                if (block.innerBlocks && block.innerBlocks.length > 0) {
-                    const children = buildSubtree(block.innerBlocks);
-                    children.forEach(child => node.addChild(child));
-                }
+            if (block.innerBlocks && block.innerBlocks.length > 0) {
+                const children = buildSubtree(block.innerBlocks);
+                children.forEach(child => node.addChild(child));
+            }
 
-                return node;
-            });
-        }
+            return node;
+        });
+    }
+
 
         const topLevelNodes = buildSubtree(blocks);
         topLevelNodes.forEach(child => root.addChild(child));
@@ -167,43 +168,48 @@ export class TextDocMappingNew {
         startTagMap: Map<string, string>,
         endTagMap: Map<string, string>,
         currentOffset: number = 0,
-        level: number = 0 // Track the level for increasing offset by 1 each level
+        level: number = 0
     ): number {
-        if (!node) return -1;
+        if (!node) return currentOffset;
 
         const startTagStr = startTagMap.get(node.type) ?? "";
         const endTagStr = endTagMap.get(node.type) ?? "";
 
-        // Start offset includes the current node's start tag
-        node.prosemirrorStart = currentOffset;
+        let offset = currentOffset;
 
-        // Add the length of the start tag and increase offset by 1 for each level down
-        let offset = currentOffset - startTagStr.length + level;
+        // Add start tag and +1 for going one level deeper
+        offset += startTagStr.length + 1;
+
+        // Record the ProseMirror start after entering this node
+        node.prosemirrorStart = offset;
+
+        if (node.children.length === 0) {
+            // Leaf: add stringContent + end tag + +1 for exiting level
+            console.log("string_content")
+            console.log(node)
+            offset += node.stringContent.length + endTagStr.length + 1;
+        } else {
+            // Non-leaf: handle children and end tag
+            for (let i = 0; i < node.children.length; i++) {
+                if (i > 0) {
+                    offset += 1; // +1 between siblings
+                }
+                offset = this.computeProsemirrorOffsets(
+                    node.children[i],
+                    startTagMap,
+                    endTagMap,
+                    offset,
+                    level + 1
+                );
+            }
+            // After all children: add end tag + +1 for exiting this level
+            offset += endTagStr.length;
+        }
 
         console.log(offset)
+        node.prosemirrorEnd = offset;
 
-        let combinedContent = "";
-
-        // Compute offsets for children and combine their content
-        for (let i = 0; i < node.children.length; i++) {
-            const child = node.children[i];
-            // Add an extra 1 character space between sibling nodes
-            if (i > 0) offset += 1;
-
-            // Recurse and update offset
-            offset = this.computeProsemirrorOffsets(child, startTagMap, endTagMap, offset, level + 1);
-            combinedContent += this.getFullNodeContent(child, startTagMap, endTagMap);
-        }
-
-        // If this is a leaf node, account for its string content
-        if (node.children.length === 0) {
-            node.prosemirrorEnd = offset - endTagStr.length + node.stringContent.length;
-        } else {
-            // For non-leaf nodes, calculate the prosemirrorEnd without stringContent
-            node.prosemirrorEnd = offset - endTagStr.length;
-        }
-
-        return node.prosemirrorEnd;
+        return offset;
     }
 
     // Helper to get full content for a node (recursive)

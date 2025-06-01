@@ -139,18 +139,17 @@ export class WaterproofEditor {
 		const parsedContent = this._translator.toProsemirror(resultingDocument);
 		// this._contentElem.innerHTML = parsedContent;
 
-<<<<<<< HEAD
-		const proseDocAndBlocks = createProseMirrorDocument(newContent, fileFormat);
-
-		const proseDoc = proseDocAndBlocks[0]
+		const proseDocAndBlocks = createProseMirrorDocument(resultingDocument, fileFormat);
 
 		let test_mapping = new TextDocMappingNew(proseDocAndBlocks[1], version)
-=======
 		const proseDoc = createProseMirrorDocument(resultingDocument, fileFormat);
->>>>>>> origin/remove-codeblocks
 
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
+		console.log(this._mapping)
+		
 		this.createProseMirrorEditor(proseDoc);
+
+
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();

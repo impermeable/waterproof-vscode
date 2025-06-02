@@ -26,8 +26,6 @@ export class TextDocMappingNew {
     /** This stores the characters that each 'starting' HTML tag represents in the original document */
     private startTag: Map<string, string> = new Map<string, string>([
         ["coqblock", "```coq"],
-        ["coqcode", ""],
-        ["coqdoc", "(** "],
         ["coqdown", ""],
         ["math-display", "$"],
         ["input-area", "<input-area>"],
@@ -40,8 +38,6 @@ export class TextDocMappingNew {
     /** This stores the characters that each 'ending' HTML tag represents in the original document */
     private endTag: Map<string, string> = new Map<string, string>([
         ["coqblock", "```"],
-        ["coqcode", ""],
-        ["coqdoc", "*)"],
         ["coqdown", ""],
         ["math-display", "$"],
         ["input-area", "</input-area>"],
@@ -124,8 +120,8 @@ export class TextDocMappingNew {
         return blocks.map(block => {
             const node = new TreeNode(
                 block.type,
-                block.range.from,
-                block.range.to,
+                block.innerRange.from,
+                block.innerRange.to,
                 0, // prosemirrorStart (to be calculated later)
                 0, // prosemirrorEnd (to be calculated later)
                 block.stringContent // always keep the stringContent
@@ -178,7 +174,9 @@ export class TextDocMappingNew {
         let offset = currentOffset;
 
         // Add start tag and +1 for going one level deeper
-        offset += startTagStr.length + 1;
+        if (node !== this.tree.root) {
+            offset += startTagStr.length + 1;
+        }
 
         // Record the ProseMirror start after entering this node
         node.prosemirrorStart = offset;
@@ -187,7 +185,7 @@ export class TextDocMappingNew {
             // Leaf: add stringContent + end tag + +1 for exiting level
             console.log("string_content")
             console.log(node)
-            offset += node.stringContent.length + endTagStr.length + 1;
+            offset += node.stringContent.length + endTagStr.length;
         } else {
             // Non-leaf: handle children and end tag
             for (let i = 0; i < node.children.length; i++) {
@@ -202,8 +200,8 @@ export class TextDocMappingNew {
                     level + 1
                 );
             }
-            // After all children: add end tag + +1 for exiting this level
-            offset += endTagStr.length;
+            // After all children: add end tag
+            offset += endTagStr.length + 1;
         }
 
         console.log(offset)

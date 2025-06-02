@@ -1,7 +1,7 @@
 import { FileFormat } from "../../../../shared";
 import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractBlocksUsingRanges, extractMathDisplayBlocks } from "./block-extraction";
 import { Block } from "./blocks";
-import { CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock } from "./blocks/blocktypes";
+import { HintBlock, InputAreaBlock, MarkdownBlock } from "./blocks/blocktypes";
 import { root } from "./blocks/schema";
 import { isCodeBlock } from "./blocks/typeguards";
 import { extractInterBlockRanges, maskInputAndHints, sortBlocks } from "./utils";
@@ -59,16 +59,16 @@ export function topLevelBlocksV(inputDocument: string): Block[] {
 
     const hintBlocks = extractHintBlocks(inputDocument, FileFormat.RegularV);
     const inputAreaBlocks = extractInputBlocks(inputDocument, FileFormat.RegularV);
-    const blocks = [...hintBlocks, ...inputAreaBlocks];
-    const coqBlockRanges = extractInterBlockRanges(blocks, inputDocument);
+    // const blocks = [...hintBlocks, ...inputAreaBlocks];
+    // const coqBlockRanges = extractInterBlockRanges(blocks, inputDocument);
     
     // Extract the coq blocks based on the ranges.
-    const coqBlocks = coqBlockRanges.map(range => {
-        const content = inputDocument.slice(range.from, range.to);
-        return new CodeBlock(content, "", "", "", "", range);
-    });
+    // const coqBlocks = coqBlockRanges.map(range => {
+    //     const content = inputDocument.slice(range.from, range.to);
+    //     return new CodeBlock(content, "", "", "", "", range);
+    // });
 
-    const sortedBlocks = sortBlocks([...hintBlocks, ...inputAreaBlocks, ...coqBlocks]);
+    const sortedBlocks = sortBlocks([...hintBlocks, ...inputAreaBlocks]); // , ...coqBlocks]);
     const prunedBlocks = sortedBlocks.filter(block => {
         if (isCodeBlock(block) && (block.stringContent === "\n")) return false;
 

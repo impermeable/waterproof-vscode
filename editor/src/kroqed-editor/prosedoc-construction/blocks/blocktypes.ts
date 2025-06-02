@@ -10,8 +10,8 @@ export class InputAreaBlock implements Block {
     public type = BLOCK_NAME.INPUT_AREA;
     public innerBlocks: Block[];
 
-    constructor( public stringContent: string, public range: BlockRange ) {
-        this.innerBlocks = createInputAndHintInnerBlocks(stringContent);
+    constructor( public stringContent: string, public range: BlockRange, public innerRange: BlockRange) {
+        this.innerBlocks = createInputAndHintInnerBlocks(stringContent, innerRange);
     };
 
     toProseMirror() {
@@ -32,8 +32,8 @@ export class HintBlock implements Block {
     public innerBlocks: Block[];
 
     // Note: Hint blocks have a title attribute.
-    constructor( public stringContent: string, public title: string, public range: BlockRange ) {
-        this.innerBlocks = createInputAndHintInnerBlocks(stringContent);
+    constructor( public stringContent: string, public title: string, public range: BlockRange, public innerRange: BlockRange ) {
+        this.innerBlocks = createInputAndHintInnerBlocks(stringContent, innerRange);
     };
 
     toProseMirror() {
@@ -52,7 +52,7 @@ export class HintBlock implements Block {
 
 export class MathDisplayBlock implements Block {
     public type = BLOCK_NAME.MATH_DISPLAY;
-    constructor( public stringContent: string, public range: BlockRange ) {};
+    constructor( public stringContent: string, public range: BlockRange, public innerRange: BlockRange ) {};
 
     toProseMirror() {
         return mathDisplay(this.stringContent);
@@ -68,7 +68,7 @@ export class MarkdownBlock implements Block {
     public type = BLOCK_NAME.MARKDOWN;
     public isNewLineOnly = false;
 
-    constructor( public stringContent: string, public range: BlockRange ) {
+    constructor( public stringContent: string, public range: BlockRange, public innerRange: BlockRange ) {
         if (stringContent === "\n") this.isNewLineOnly = true;
     };
 
@@ -85,7 +85,7 @@ export class MarkdownBlock implements Block {
 export class CodeBlock implements Block {
     public type = BLOCK_NAME.CODE;
 
-    constructor( public stringContent: string, public prePreWhite: string, public prePostWhite: string, public postPreWhite: string, public postPostWhite : string, public range: BlockRange ) {}
+    constructor( public stringContent: string, public prePreWhite: string, public prePostWhite: string, public postPreWhite: string, public postPostWhite : string, public range: BlockRange, public innerRange: BlockRange) {}
 
     toProseMirror() {
         if (this.stringContent === "") {

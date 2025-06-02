@@ -18,6 +18,7 @@ export interface Block {
     type: string;
     stringContent: string;
     range: BlockRange;
+    innerRange: BlockRange;
 
     innerBlocks?: Block[];
 

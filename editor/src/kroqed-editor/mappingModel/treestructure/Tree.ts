@@ -64,4 +64,30 @@ export class Tree {
             }
         }
     }
+
+    findNodeByOriginalPosition(pos: number, node: TreeNode | null = this.root): TreeNode | null {
+        if (!node) return null;
+        if (pos >= node.originalStart && pos < node.originalEnd) {
+            for (const child of node.children) {
+                const result = this.findNodeByOriginalPosition(pos, child);
+                if (result) return result;
+            }
+            return node;
+        }
+        return null;
+    }
+
+    findNodeByProsemirrorPosition(pos: number, node: TreeNode | null = this.root): TreeNode | null {
+        if (!node) return null;
+        if (pos >= node.prosemirrorStart && pos < node.prosemirrorEnd) {
+            for (const child of node.children) {
+                const result = this.findNodeByProsemirrorPosition(pos, child);
+                if (result) return result;
+            }
+            return node;
+        }
+        return null;
+    }
+
+
 }

@@ -70,27 +70,28 @@ test("Input-area with nested coqblock", () => {
 
 });
 
-// test("Hint block with coq code", () => {
-//     const content = `<hint title="Import libraries">\n\`\`\`coq\nRequire Import Rbase.\n\`\`\`\n</hint>`;
-//     const nodes = createTestMapping(content);
+test("Hint block with coqblock and markdown inside", () => {
+    const content = `<hint title="Import libraries">\n\`\`\`coq\nRequire Import Rbase.\n\`\`\`\n</hint>`;
+    const nodes = createTestMapping(content);
     
-//     expect(nodes.length).toBe(3);
+    expect(nodes.length).toBe(3);
     
-//     // Hint node
-//     const hintNode = nodes[1];
-//     expect(hintNode.type).toBe("hint");
-//     expect(hintNode.originalStart).toBe(0);
-//     expect(hintNode.originalEnd).toBe(65);
+    // Hint node
+    const hintNode = nodes[1];
+    expect(hintNode.type).toBe("hint");
+    expect(hintNode.originalStart).toBe(31);
+    expect(hintNode.originalEnd).toBe(65);
+    expect(hintNode.prosemirrorStart).toBe(1);
+    expect(hintNode.prosemirrorEnd).toBe(31);
+    // Nested coqblock
+    const coqblockNode = nodes[2];
+    expect(coqblockNode.originalStart).toBe(25); 
+    expect(coqblockNode.originalEnd).toBe(53);
     
-//     // Nested coqblock
-//     const coqblockNode = nodes[1];
-//     expect(coqblockNode.originalStart).toBe(25); 
-//     expect(coqblockNode.originalEnd).toBe(53);
-    
-//     // Nested coqcode
-//     const coqcodeNode = nodes[2];
-//     expect(coqcodeNode.stringContent).toBe("Require Import Rbase.");
-// });
+    // Nested coqcode
+    const coqcodeNode = nodes[3];
+    expect(coqcodeNode.stringContent).toBe("Require Import Rbase.");
+});
 
 test("Mixed content section", () => {
     const content = `### Example:

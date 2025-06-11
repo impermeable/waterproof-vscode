@@ -1,5 +1,12 @@
 import { Tree, TreeNode } from "./Tree";
 import { Block } from "../../prosedoc-construction/blocks";
+import { DocChange, WrappingDocChange } from "../../../../../shared";
+import { Step, ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
+import { TextUpdate } from "./textUpdate";
+import { NodeUpdate } from "./nodeUpdate";
+import { ParsedStep } from "./types";
+
+
 
 /**
  * This class is responsible for keeping track of the mapping between the prosemirror state and the vscode Text
@@ -23,10 +30,10 @@ export class TextDocMappingNew {
         "coqdown",
     ]);
 
+
     /** This stores the characters that each 'starting' HTML tag represents in the original document */
     private startTag: Map<string, string> = new Map<string, string>([
         ["coqblock", "```coq"],
-        ["coqdown", ""],
         ["math-display", "$"],
         ["input-area", "<input-area>"],
         ["markdown", ""],
@@ -38,7 +45,6 @@ export class TextDocMappingNew {
     /** This stores the characters that each 'ending' HTML tag represents in the original document */
     private endTag: Map<string, string> = new Map<string, string>([
         ["coqblock", "```"],
-        ["coqdown", ""],
         ["math-display", "$"],
         ["input-area", "</input-area>"],
         ["markdown", ""],
@@ -77,12 +83,54 @@ export class TextDocMappingNew {
 
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
-        // Implement as needed
+        let correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(index);
+        if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
+        return (index - correctNode.prosemirrorStart) + correctNode.originalStart;
     }
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
-        // Implement as needed
+        let correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
+        if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
+        return (index - correctNode.originalStart) + correctNode.prosemirrorStart;
+    }
+
+    private inStringCell(step: ReplaceStep | ReplaceAroundStep): boolean {
+        let correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(step.from);
+        return correctNode !== null && step.to <= correctNode.prosemirrorEnd;
+    }
+
+    public stepUpdate(step: Step) : DocChange | WrappingDocChange {
+        if (!(step instanceof ReplaceStep || step instanceof ReplaceAroundStep)) 
+            throw new Error("Step update (in textDocMapping) should not be called with a non document changing step");
+
+        /** Check whether the edit is a text edit and occurs within a stringcell */ 
+        const isText: boolean = (step.slice.content.firstChild === null) ? this.inStringCell(step) : step.slice.content.firstChild.type.name === "text";
+
+        let result : ParsedStep;
+
+        /** Parse the step into a text document change */
+        if (step instanceof ReplaceStep && isText) result = TextUpdate.textUpdate(step, this.tree);
+        else result = NodeUpdate.nodeUpdate(step, this.tree);
+
+        this.tree = result.newTree
+        
+        if ('finalText' in result.result) {
+            if(this.checkDocChange(result.result)) this._version++;
+        } else {
+            if(this.checkDocChange(result.result.firstEdit) || this.checkDocChange(result.result.secondEdit)) this._version++;
+        }      
+
+        return result.result;
+    }
+
+    /**
+     * This checks if the doc change actually changed the document, since vscode
+     * does not register empty changes 
+     */
+    private checkDocChange(change: DocChange) : boolean {
+        if (change.endInFile === change.startInFile && change.finalText.length == 0) return false;
+        return true;
     }
 
     //// The methods used to manage the mapping
@@ -97,14 +145,6 @@ export class TextDocMappingNew {
         console.log(this.tree); // For debugging
     }
 
-    private printAllNodes(node: any, depth: number = 0): void {
-        console.log(`${'  '.repeat(depth)}- ${node.type}`);
-        console.log(node);
-        node.content.forEach((child: any) => {
-            this.printAllNodes(child, depth + 1);
-        });
-    }
-
     private mapToTree(blocks: Block[]): void {
         // Create a root node with dummy values
         const root = new TreeNode(
@@ -116,25 +156,25 @@ export class TextDocMappingNew {
             "" // stringContent
         );
 
-    function buildSubtree(blocks: Block[]): TreeNode[] {
-        return blocks.map(block => {
-            const node = new TreeNode(
-                block.type,
-                block.innerRange.from,
-                block.innerRange.to,
-                0, // prosemirrorStart (to be calculated later)
-                0, // prosemirrorEnd (to be calculated later)
-                block.stringContent // always keep the stringContent
-            );
+        function buildSubtree(blocks: Block[]): TreeNode[] {
+            return blocks.map(block => {
+                const node = new TreeNode(
+                    block.type,
+                    block.innerRange.from,
+                    block.innerRange.to,
+                    0, // prosemirrorStart (to be calculated later)
+                    0, // prosemirrorEnd (to be calculated later)
+                    block.stringContent // always keep the stringContent
+                );
 
-            if (block.innerBlocks && block.innerBlocks.length > 0) {
-                const children = buildSubtree(block.innerBlocks);
-                children.forEach(child => node.addChild(child));
-            }
+                if (block.innerBlocks && block.innerBlocks.length > 0) {
+                    const children = buildSubtree(block.innerBlocks);
+                    children.forEach(child => node.addChild(child));
+                }
 
-            return node;
-        });
-    }
+                return node;
+            });
+        }
 
 
         const topLevelNodes = buildSubtree(blocks);
@@ -210,19 +250,4 @@ export class TextDocMappingNew {
         return offset;
     }
 
-    // Helper to get full content for a node (recursive)
-    private getFullNodeContent(
-        node: TreeNode,
-        startTagMap: Map<string, string>,
-        endTagMap: Map<string, string>
-    ): string {
-        if (node.children.length === 0) {
-            const start = startTagMap.get(node.type) ?? "";
-            const end = endTagMap.get(node.type) ?? "";
-            return `${start}${node.stringContent}${end}`;
-        }
-
-        // For non-leaf nodes, return the built content (without stringContent for non-leaf nodes)
-        return "";
-    }
 }

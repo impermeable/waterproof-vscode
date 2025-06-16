@@ -148,7 +148,7 @@ export class WaterproofEditor {
 		this._editorConfig.api.editorReady();
 	}
 
-	updateDocument(content: string, version: number) {
+	refreshDocument(content: string, version: number) {
 		if (!this._view) {
 			return;
 		}
@@ -159,6 +159,9 @@ export class WaterproofEditor {
 		}
 
 		if (this._mapping && this._mapping.version === version) return;
+
+		//TODO: save cursor position and restore it after the refresh
+		const cursorPos = this._view.state.selection;
 
 		this._view.dispatch(this._view.state.tr.setMeta(MENU_PLUGIN_KEY, "remove"));
 		document.querySelector(".menubar")?.remove();
@@ -183,6 +186,8 @@ export class WaterproofEditor {
 
 		this._mapping = new TextDocMapping(this._filef, parsedContent, version);
 		this.createProseMirrorEditor(proseDoc);
+
+		this.updateCursor(cursorPos);
 
 		this.sendLineNumbers();
 		this._editorConfig.api.editorReady();

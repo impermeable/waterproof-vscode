@@ -179,7 +179,7 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this._disposables.push(workspace.onDidSaveTextDocument(e => {
             if (e.uri.toString() === this._document.uri.toString()) {
-                this.updateOnSave();
+                this.refreshOnSave();
             }
         }));
 
@@ -272,9 +272,9 @@ export class ProseMirrorWebview extends EventEmitter {
         for (const m of this._cachedMessages.values()) this.postMessage(m);
     }
 
-    private updateOnSave() {
+    private refreshOnSave() {
         this.postMessage({
-            type: MessageType.updateDocument,
+            type: MessageType.refreshDocument,
             body: {
                 value: this._document.getText(),
                 version: this._document.version,

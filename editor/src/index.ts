@@ -74,8 +74,8 @@ window.onload = () => {
 					editor.insertSymbol(symbolUnicode, symbolLatex);
 				}
 				break; }
-			case MessageType.updateDocument:
-				editor.updateDocument(msg.body.value, msg.body.version);
+			case MessageType.refreshDocument:
+				editor.refreshDocument(msg.body.value, msg.body.version);
 				break;
 			case MessageType.setAutocomplete:
 				// Handle autocompletion

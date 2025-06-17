@@ -458,8 +458,7 @@ export class WaterproofEditor {
 	public parseCoqDiagnostics(msg: DiagnosticMessage) {
 		if (this._mapping === undefined || msg.version < this._mapping.version) return;
 
-		const diagnostics = msg.positionedDiagnostics.filter((value) =>
-			!value.message.endsWith("Attempt to save an incomplete proof"));
+		const diagnostics = msg.positionedDiagnostics;
 		const map = this._mapping;
 		if (this._view === undefined || map === undefined) return;
 

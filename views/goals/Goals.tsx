@@ -29,6 +29,9 @@ function Goal({ goal }: GoalP) {
   return (
     <div className="coq-goal-env" ref={ref}>
       <div style={{ marginLeft: "1ex" }} ref={tyRef}>
+        {goal.hyps.map((hyp, _) => 
+          <div><CoqPp content={hyp.names[0]} inline={true}/> : <CoqPp content={hyp.ty} inline={true} /></div>
+        )}
         <CoqPp content={goal.ty} inline={false} />
       </div>
     </div>

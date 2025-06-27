@@ -26,7 +26,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
         this._manager.on(WebviewManagerEvents.updateButton, (e) => {
             // Update the transparency of the button based on the event
             // This is done when a panel is open
-            this.updateButtonTransparency(e.name, e.open);
+            //this.updateButtonTransparency(e.name, e.open);
         });
     }
     public updateGreyedOutButton(buttonId: string, open: boolean) {
@@ -93,7 +93,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
         
                 webviewView.webview.postMessage({
                     type: 'restoreTransparency',
-                    greyedOutButtonsList: Array.from(this._greyedOutButtons) 
+                    greyedOutButtonsList: Array.from(this._greyedOutButtons)
                 });
             }
         });

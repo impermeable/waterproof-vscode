@@ -154,16 +154,26 @@ export class WebviewManager extends EventEmitter {
         }
     
         const panel = this._toolWebviews.get(id);
-
+        console.log("called open " + id);
         // Check if the panel is already open
         if (panel?.isOpened) {
+            console.log("Panel is already open: " + id);
             return;
         }
     
         // Open the panel if it is not already open
-        else{
+        else if(panel?.isHidden) {
+            console.log("Panel is hidden, revealing: " + id);    
             panel?.readyPanel();
-            panel?.activatePanel();}
+            panel?.revealPanel();
+        }
+        
+        // Open the panel if it is not hidden and not already open
+        else{
+            console.log("Panel is not open, creating: " + id);
+            panel?.readyPanel();
+            panel?.activatePanel();
+        }
     }
     
 

@@ -149,10 +149,23 @@ export class WebviewManager extends EventEmitter {
      * @param id the id of the tool webview
      */
     public open(id: string) {
-        if (this._toolWebviews.has(id)) new Error("Tool webview does not have this panel: " + id);
-        this._toolWebviews.get(id)?.readyPanel();
-        this._toolWebviews.get(id)?.activatePanel();
+        if (!this._toolWebviews.has(id)) {
+            throw new Error("Tool webview does not have this panel: " + id);
+        }
+    
+        const panel = this._toolWebviews.get(id);
+
+        // Check if the panel is already open
+        if (panel?.isOpened) {
+            return;
+        }
+    
+        // Open the panel if it is not already open
+        else{
+            panel?.readyPanel();
+            panel?.activatePanel();}
     }
+    
 
     /**
      * Reveals a panel to the user
@@ -160,7 +173,6 @@ export class WebviewManager extends EventEmitter {
      */
     public reveal(id: string) {
         if (this._toolWebviews.has(id)) new Error("Tool webview does not have this panel: " + id);
-        console.log(this._toolWebviews)
         this._toolWebviews.get(id)?.revealPanel()
     }
 

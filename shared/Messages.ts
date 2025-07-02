@@ -44,6 +44,7 @@ export type Message =
     | MessageBase<MessageType.setAutocomplete, Completion[]>
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
     | MessageBase<MessageType.setShowLineNumbers, boolean>
+    | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.syntax, boolean>
     | MessageBase<MessageType.teacher, boolean>;
 
@@ -71,6 +72,7 @@ export const enum MessageType {
     setAutocomplete,
     setData,
     setShowLineNumbers,
+    setShowMenuItems,
     syntax,
     teacher,
 }

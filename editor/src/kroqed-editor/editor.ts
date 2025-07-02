@@ -114,7 +114,6 @@ export class WaterproofEditor {
 		// Initialize the file translator given the fileformat.
 		if(this._view) {
 			if (this._mapping && this._mapping.version == version) return;
-			this._view.dispatch(this._view.state.tr.setMeta(MENU_PLUGIN_KEY, "remove"));
 			// Hack to forcefully remove the 'old' menubar
 			document.querySelector(".menubar")?.remove();
 			document.querySelector(".progress-bar")?.remove();
@@ -415,6 +414,14 @@ export class WaterproofEditor {
 		this.sendLineNumbers();
 	}
 
+	public setShowMenuItems(show: boolean) {
+		const view = this._view;
+		if (view === undefined) return;
+		const tr = view.state.tr;
+		tr.setMeta(MENU_PLUGIN_KEY, show);
+		view.dispatch(tr);
+	}
+
 	private createAndDispatchInsertionTransaction(
 		trans: Transaction, textToInsert: string, from: number, to: number) {
 
@@ -431,7 +438,7 @@ export class WaterproofEditor {
 		if (!this._view) return;
 		const state = this._view.state;
 		const trans = state.tr;
-		trans.setMeta(INPUT_AREA_PLUGIN_KEY,!isTeacher);
+		trans.setMeta(INPUT_AREA_PLUGIN_KEY, {teacher: !isTeacher});
 		this._view.dispatch(trans);
 	}
 

@@ -326,6 +326,11 @@
             "type": "boolean",
             "default": false,
             "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+          },
+          "waterproof.showMenuItemsInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
           }
         }
       },

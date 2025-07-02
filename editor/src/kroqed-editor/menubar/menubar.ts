@@ -11,6 +11,7 @@ import { FileFormat } from "../../../../shared";
 type MenuEntry = {
     dom: HTMLElement;
     teacherModeOnly: boolean;
+    showByDefault: boolean;
     cmd: Command;
 };
 
@@ -22,7 +23,7 @@ type MenuEntry = {
  * @param teacherModeOnly [`false` by default] Whether this button should only be available in teacher mode.
  * @returns A new `MenuButton` object.
  */
-function createMenuItem(displayedText: string, tooltipText: string, cmd: Command, teacherModeOnly: boolean = false): MenuEntry {
+function createMenuItem(displayedText: string, tooltipText: string, cmd: Command, teacherModeOnly: boolean = false, showByDefault: boolean = false): MenuEntry {
     // Create the DOM element.
     const menuItem = document.createElement("div");
     // Set the displayed text and the tooltip.
@@ -31,7 +32,7 @@ function createMenuItem(displayedText: string, tooltipText: string, cmd: Command
     // Add the class for styling this menubar item
     menuItem.classList.add("menubar-item");
     // Return the new item.
-    return {cmd, dom: menuItem, teacherModeOnly};
+    return {cmd, dom: menuItem, teacherModeOnly, showByDefault};
 }
 
 /**
@@ -84,6 +85,9 @@ class MenuView implements PluginView {
     update(view: EditorView) {
         // Whether we are currently in teacher mode.
         const inTeacherMode = MENU_PLUGIN_KEY.getState(view.state)?.teacher;
+        const showItems = MENU_PLUGIN_KEY.getState(view.state)?.showMenuItems;
+
+        console.log("SHOW ITEMS", showItems);
 
         for(const item of this.items) {
             const active = item.cmd(this.view.state, undefined, this.view);
@@ -98,7 +102,7 @@ class MenuView implements PluginView {
 
             // We hide the item (set display to none) if it should only be available in teacher mode
             // and the user is not in teacher mode.
-            if (item.teacherModeOnly && !inTeacherMode) {
+            if ((item.teacherModeOnly && !inTeacherMode) || (!item.showByDefault && showItems)) {
                 item.dom.style.display = "none";
             }
         }
@@ -179,6 +183,7 @@ function createDefaultMenu(schema: Schema, outerView: EditorView, filef: FileFor
  */
 interface IMenuPluginState {
     teacher: boolean;
+    showMenuItems: boolean;
 }
 
 /**
@@ -215,17 +220,19 @@ export function menuPlugin(schema: Schema, filef: FileFormat, os: OS) {
             init(_config, _instance): IMenuPluginState {
                 // Initially teacher mode is set to true.
                 return {
-                    teacher: true
+                    teacher: true,
+                    showMenuItems: false,
                 }
             },
             apply(tr, value, _oldState, _newState) {
                 // Upon recieving a transaction with meta information...
-                let teacherState = !tr.getMeta(INPUT_AREA_PLUGIN_KEY);
+                const teacherState = !tr.getMeta(INPUT_AREA_PLUGIN_KEY);
+                const menuState = tr.getMeta(MENU_PLUGIN_KEY);
                 // we check if the teacherState variable is set and if so,
                 //   we update the plugin state to reflect this
-                if (teacherState === undefined) teacherState = value.teacher;
                 return {
-                    teacher: teacherState,
+                    teacher: teacherState === undefined ? value.teacher : teacherState,
+                    showMenuItems: menuState === undefined ? value.showMenuItems : menuState,
                 };
             },
         }

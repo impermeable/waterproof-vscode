@@ -93,6 +93,8 @@ window.onload = () => {
 				{ const show = msg.body;
 				editor.setShowLineNumbers(show);
 				break; }
+			case MessageType.setShowMenuItems:
+				{ const show = msg.body; editor.setShowMenuItems(show); break; }
 			case MessageType.editorHistoryChange:
 				editor.handleHistoryChange(msg.body);
 				break;

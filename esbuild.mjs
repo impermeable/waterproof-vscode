@@ -74,7 +74,7 @@ var browser = esbuild
     ...sourcemap_client,
     format: "cjs",
     platform: "browser",
-    external: ["vscode"],
+    external: ["vscode", "child_process"],
     outfile: "out/src/mainBrowser.js",
     minify,
     watch: watch("./src/mainBrowser.ts"),

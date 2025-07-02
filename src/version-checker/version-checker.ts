@@ -161,32 +161,18 @@ export class VersionChecker {
     /** Wrapper around shellIntegration  */
     private async exec(command: string): Promise<string> {
         wpl.log(`Running command: ${command}`)
-        return new Promise((resolve, _reject) => {
-            const myTerm = window.createTerminal(`Waterproof commands -- ${command}`)
-            let fired = false;
-            
-            window.onDidChangeTerminalShellIntegration(async ({ terminal, shellIntegration}) => {
-                if (terminal === myTerm && !fired) {
-                    const execution = shellIntegration.executeCommand(command);
-                    const outputStream = execution.read();
-                    fired = true;
-                    wpl.debug(`Type of outputStream: ${typeof outputStream}`)
-                    wpl.debug(`Output stream: ${outputStream}`)
-                    window.onDidEndTerminalShellExecution(async event => {
-                        if (event.execution === execution) {
-                            let output = "";
-                            for await (const data of outputStream) {
-                                output += data
-                            }
-                            wpl.debug(`Output of ran command ${output.substring(8)}`)
-                            myTerm.hide();
-                            myTerm.dispose();
-                            // Remove terminal-artifacts from the output by taking the first 8 characters
-                            resolve(output.substring(8));
-                        }
-                    })
+        return new Promise((resolve, reject) => {
+            // We use require here to avoid issues with the import statement in the browser context.
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { exec } = require("child_process");
+            exec(command, (err: { message: string; }, stdout: string, _stderr: unknown) => {
+                if (err) {
+                    reject({ reason: err.message });
+                } else {
+                    resolve(stdout);
                 }
-            })
+            });
+            
         });
     }
 

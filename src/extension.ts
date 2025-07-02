@@ -294,24 +294,19 @@ export class Waterproof implements Disposable {
      * Attempts to install all required libraries
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
      */
-
     private async autoInstall(command: string): Promise<boolean> {
         return new Promise((resolve, _reject) => {
-            let fired = false;
-            const myTerm = window.createTerminal(`AutoInstall Waterproof`)
-            myTerm.show()
-            window.onDidChangeTerminalShellIntegration(async ({ terminal, shellIntegration}) => {
-                if (terminal === myTerm && !fired) {
-                    fired = true
-                    const execution = shellIntegration.executeCommand(command);
-                    window.onDidEndTerminalShellExecution(event => {
-                        if (event.execution === execution) {
-                            this.initializeClient();
-                            resolve(true);
-                        }
-                    })
+            // Doing the require here to avoid issues with the import in the browser version
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { exec } = require("child_process");
+            exec(command, (err : unknown, _stdout: unknown, _stderr: unknown) => {
+                if (err) {
+                    // Simple fixed scripts are run, the user is able to stop these but they are not considered errors
+                    // as the user has freedom to choose the steps and can rerun the command.
                 }
-            })
+                this.initializeClient();
+                resolve(true)
+            });
         });
     }
 
@@ -462,18 +457,18 @@ export class Waterproof implements Disposable {
             markdown: { isTrusted: true, supportHtml: true },
         };
 
-        WaterproofLogger.log("Initializing client...");
-        this.client = this.clientFactory(clientOptions, WaterproofConfigHelper.configuration);
+        wpl.log("Initializing client...");
+        this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
         return this.client.startWithHandlers(this.webviewManager).then(
             () => {
                 // show user that LSP is working
                 this.statusBar.update(true);
                 this.clientRunning = true;
-                WaterproofLogger.log("Client initialization complete.");
+                wpl.log("Client initialization complete.");
             },
             reason => {
                 const message = reason.toString();
-                WaterproofLogger.log(`Error during client initialization: ${message}`);
+                wpl.log(`Error during client initialization: ${message}`);
                 this.statusBar.failed(message);
                 throw reason;  // keep chain rejected
             }

@@ -1,2 +1,2 @@
 // Export the Editor class
-export { Editor } from "./editor";
+export { WaterproofEditor as Editor } from "./editor";

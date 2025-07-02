@@ -270,7 +270,8 @@ export class WebviewManager extends EventEmitter {
                 this.postMessage(id, { type: MessageType.insert, body: msg.body });
                 break; }
             case MessageType.command:
-                this.emit(WebviewManagerEvents.command, this._toolWebviews.get(id), msg.body);
+                // FIXME: The `WebviewManagerEvents` are **not** typed.
+                this.emit(WebviewManagerEvents.command, this._toolWebviews.get(id), msg.body.command);
                 break;
             default:
                 console.error("The message type " + msg.type + " is not currently supported by webview manager");

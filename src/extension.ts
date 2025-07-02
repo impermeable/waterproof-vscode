@@ -294,6 +294,7 @@ export class Waterproof implements Disposable {
      * Attempts to install all required libraries
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
      */
+
     private async autoInstall(command: string): Promise<boolean> {
         return new Promise((resolve, _reject) => {
             let fired = false;
@@ -424,8 +425,9 @@ export class Waterproof implements Disposable {
         // Whether the user has decided to skip the launch checks
         const launchChecksDisabled = WaterproofConfigHelper.skipLaunchChecks;
 
-        if (launchChecksDisabled) {
-            wpl.log("'skipLaunchChecks' option has been set by the user. Attempting to launch client...");
+        if (launchChecksDisabled || this._isWeb) {
+            const reason = launchChecksDisabled ? "Launch checks disabled by user." : "Web extension, skipping launch checks.";
+            wpl.log(`${reason} Attempting to launch client...`);
         } else {
             // Run the version checker.
             const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;

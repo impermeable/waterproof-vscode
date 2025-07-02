@@ -1,7 +1,7 @@
 {
 	"&": {
-	  "color": "var(--vscode-input-foreground)",
-	  "backgroundColor": "var(--vscode-listFilterWidget-background)"
+	  "color": "var(--wp-cm-foreground)",
+	  "backgroundColor": "var(--wp-cm-background)"
 	},
 
 	".cm-diagnosticButton": {
@@ -21,23 +21,21 @@
 
 	".cm-content": {
 	  "caretColor": "auto",
-	  "fontFamily": "var(--vscode-editor-font-family)",
-	  "fontSize": "var(--vscode-editor-font-size)",
-	  "fontWeight": "var(--vscode-editor-font-weight)"
+	  "fontFamily": "var(--wp-editor-font-family)",
+	  "fontSize": "var(--wp-editor-font-size)",
+	  "fontWeight": "var(--wp-editor-font-weight)"
 	},
   	".cm-cursor, .cm-dropCursor": {"borderLeftColor": "auto"},
 
-	".cm-panels": {"backgroundColor": "var(--vscode-list-dropBackground)", "color": "var(--vscode-list-highlightForeground)"},
-	".cm-panels.cm-panels-top": {"borderBottom": "2px solid black"},
-	".cm-panels.cm-panels-bottom": {"borderTop": "2px solid black"},
-  
-	".cm-searchMatch": {
-	  "backgroundColor": "#72a1ff59",
-	  "outline": "1px solid #457dff"
+	".cm-panels": {"backgroundColor": "transparent", "color": "var(--vscode-list-highlightForeground)"},
+	".cm-panel-lint": {"backgroundColor": "transparent", "color": "var(--vscode-list-highlightForeground)"},
+	".cm-panel-lint > ul": {
+		"backgroundColor": "transparent", 
+		"color": "var(--wp-cm-lint-panel-foreground)",
+		"display": "flex", 
+		"flexFlow": "column"
 	},
-	".cm-searchMatch.cm-searchMatch-selected": {
-	  "backgroundColor": "#6199ff2f"
-	},
+
 	".cm-activeLine": {"backgroundColor": "#6699ff0b"},
     "&:not(.cm-focused) .cm-activeLine": { "backgroundColor": "transparent"},
 	".cm-selectionMatch": {"backgroundColor": "#aafe661a"},

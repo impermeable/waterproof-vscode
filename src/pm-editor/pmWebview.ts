@@ -280,6 +280,9 @@ export class ProseMirrorWebview extends EventEmitter {
                 version: this._document.version,
             }
         });
+        this.updateLineNumberStatusInEditor();
+        // send any cached messages
+        for (const m of this._cachedMessages.values()) this.postMessage(m);
     }
 
     private updateLineNumberStatusInEditor() {

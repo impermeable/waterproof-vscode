@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { PropsWithChildren, useLayoutEffect, useRef } from "react";
 import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
-import { Goal, GoalConfig, PpString } from "../../lib/types";
+import { convertToString, Goal, GoalConfig, Hyp, HypVisibility, PpString } from "../../lib/types";
 import { Box } from "./Box";
 import { CoqPp } from "./CoqPp";
 
@@ -11,11 +11,13 @@ import {
 } from "vscode-languageserver-types";
 import "../styles/goals.css";
 
+
+
 //type that contains Goal<PpString> and an ID for that goal
-type GoalP = { goal: Goal<PpString>; idx: number; };
+type GoalP = { goal: Goal<PpString>; idx: number; visibility : HypVisibility};
 
 //component to display a single goal as a Pp string
-function Goal({ goal }: GoalP) {
+function Goal({ goal, visibility }: GoalP) {
   // https://beta.reactjs.org/learn/manipulating-the-dom-with-refs
   const ref: React.LegacyRef<HTMLDivElement> | null = useRef(null);
   const tyRef: React.LegacyRef<HTMLDivElement> | null = useRef(null);
@@ -26,10 +28,26 @@ function Goal({ goal }: GoalP) {
     }
   });
 
+  const hyps : () => Array<Hyp<PpString>> = () => {
+    const hyps : Array<Hyp<PpString>> = [];
+    if (visibility === HypVisibility.All) {
+      hyps.push(...goal.hyps);
+    } else if (visibility === HypVisibility.Limited) {
+      hyps.push(
+        ...goal.hyps
+          .map (hyp => 
+            // Filter out all names starting with an underscore
+            ({ ...hyp, names: hyp.names.filter(name => convertToString(name).charAt(0) !== "_") }))
+          .filter(hyp => hyp.names.length > 0)
+      ); 
+    }
+    return hyps;
+  }
+
   return (
     <div className="coq-goal-env" ref={ref}>
       <div style={{ marginLeft: "1ex" }} ref={tyRef}>
-        {goal.hyps.map((hyp, _) => 
+        {hyps().map((hyp, _) => 
           <div><CoqPp content={hyp.names[0]} inline={true}/> : <CoqPp content={hyp.ty} inline={true} /></div>
         )}
         <CoqPp content={goal.ty} inline={false} />
@@ -47,6 +65,7 @@ type GoalsListP = PropsWithChildren<{
   bullet_msg?: PpString;
   pos: Position
   textDoc: VersionedTextDocumentIdentifier
+  visibility: HypVisibility
 }>;
 
 //function that displays a list of goals if it exists
@@ -56,7 +75,8 @@ function GoalsList({
   show_on_empty,
   bullet_msg,
   pos,
-  textDoc
+  textDoc,
+  visibility
 }: GoalsListP) {
   const count = goals.length;
 
@@ -77,7 +97,7 @@ function GoalsList({
   } else if (count == 1) {
     return (
       <Box summary={`${header}`} pos={pos} textDox={textDoc}>
-          <Goal key={0} goal={goals[0]} idx={0} />
+          <Goal key={0} goal={goals[0]} idx={0} visibility={visibility}/>
       </Box>
     );
   //Numerous goals, only the first goal is displayed, the other goals are hidden.
@@ -85,7 +105,7 @@ function GoalsList({
     return (
       <div>
         <Box summary={`${header}`} pos={pos} textDox={textDoc}>
-          <Goal key={0} goal={goals[0]} idx={0} />
+          <Goal key={0} goal={goals[0]} idx={0} visibility={visibility}  />
         </Box>
         <Box summary={`Afterwards, we need to complete other subproofs`} pos={pos} textDox={textDoc}>
         </Box>
@@ -132,11 +152,12 @@ type StackSummaryP = PropsWithChildren<{
   stack: [Goal<PpString>[], Goal<PpString>[]][];
   pos: Position
   textDoc: VersionedTextDocumentIdentifier
+  visibility: HypVisibility
 }>;
 
 //goals can have multiple layers which are stacked.
 //the following function handles the display of stacked goals
-function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
+function StackGoals({ idx, stack, pos, textDoc, visibility }: StackSummaryP) {
   const count = stack.length;
   if (count <= idx) return null;
 
@@ -153,6 +174,7 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
           show_on_empty={false}
           pos={pos}
           textDoc={textDoc}
+          visibility={visibility}
         />
       </div>
     );
@@ -166,17 +188,18 @@ function StackGoals({ idx, stack, pos, textDoc }: StackSummaryP) {
           show_on_empty={false}
           pos={pos}
           textDoc={textDoc}
+          visibility={visibility}
         />
       </div>
     )
     }
   }
 //type that has goals, position and textdocument and takes its children
-type GoalsParams = PropsWithChildren<{ goals?: GoalConfig<PpString>, pos: Position, textDoc: VersionedTextDocumentIdentifier }>;
+type GoalsParams = PropsWithChildren<{ goals?: GoalConfig<PpString>, pos: Position, textDoc: VersionedTextDocumentIdentifier, visibility: HypVisibility }>;
 
 //the component that is used by other components
 //uses both the stackgoals for the goals at different levels and the GoalsList for the goals that consist of a list
-export function Goals({ goals, pos, textDoc }: GoalsParams) {
+export function Goals({ goals, pos, textDoc, visibility }: GoalsParams) {
   //if there are no goals, the user is shown "No goals at this point."
   if (!goals) {
     return <Box summary="We need to show" pos={pos} textDox={textDoc}>
@@ -197,10 +220,11 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
           bullet_msg={goals.bullet}
           pos={pos}
           textDoc={textDoc}
+          visibility={visibility}
         />
         {/* stacking goals that are on different levels */}
         <div style={{ marginLeft: "0.5ex" }}>
-          <StackGoals idx={0} stack={goals.stack} pos={pos} textDoc={textDoc} />
+          <StackGoals idx={0} stack={goals.stack} pos={pos} textDoc={textDoc} visibility={visibility} />
         </div>
         <div style={{ marginLeft: "0.5ex" }}>
           {/* a list for the goals that are on the shelf */}
@@ -210,6 +234,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
             show_on_empty={false} // these goals are not shown if they do not exist
             pos={pos}
             textDoc={textDoc}
+            visibility={visibility}
           />
           {/* a list for the goals that are given up */}
           <GoalsList
@@ -218,6 +243,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
             show_on_empty={false} // these goals are not shown if they do not exist
             pos={pos}
             textDoc={textDoc}
+            visibility={visibility}
           />
         </div>
       </div>
@@ -234,6 +260,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
           bullet_msg={goals.bullet}
           pos={pos}
           textDoc={textDoc}
+          visibility={visibility}
         />
 
         <div style={{ marginLeft: "0.5ex" }}>
@@ -244,6 +271,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
             show_on_empty={false} // these goals are not shown if they do not exist
             pos={pos}
             textDoc={textDoc}
+            visibility={visibility}
           />
           {/* a list for the goals that are given up */}
           <GoalsList
@@ -252,6 +280,7 @@ export function Goals({ goals, pos, textDoc }: GoalsParams) {
             show_on_empty={false} // these goals are not shown if they do not exist
             pos={pos}
             textDoc={textDoc}
+            visibility={visibility}
           />
         </div>
       </div>

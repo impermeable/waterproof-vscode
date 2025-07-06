@@ -1,9 +1,10 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 
-import { GoalAnswer, PpString } from "../../lib/types";
+import { GoalAnswer, HypVisibility, PpString } from "../../lib/types";
 import { ErrorBrowser } from "./ErrorBrowser";
 import { Goals } from "./Goals";
 import { Messages } from "./Messages";
+
 
 import "../styles/info.css";
 import { Message, MessageType } from "../../shared";
@@ -17,16 +18,20 @@ const VSCodeDivider = lazy(async () => {
 
 
 export function InfoPanel() {
+  // visibility of the hypotheses in the goals panel
+  
   //saves the goal
   const [goals, setGoals] = useState<GoalAnswer<PpString>>();
   //boolean to check if the goals are still loading
   const [isLoading, setIsLoading] = useState(false);
+  //visibility of the hypotheses in the goals panel as State
+  const [visibility, setVisibility] = useState<HypVisibility>(HypVisibility.None);
 
   //handles the message
   //event : CoqMessageEvent as defined above
   function infoViewDispatch(msg: Message) { // TODO: make this change in logbook as well
     if (msg.type === MessageType.renderGoals) {
-      const goals = msg.body;
+      const goals = msg.body.goals;
 
       // FIXME: The `renderGoals` message type is currently overloaded and used for very different
       // functions. This can easily be seen when using global search on `MessageType.renderGoals`.
@@ -34,6 +39,7 @@ export function InfoPanel() {
       //@ts-expect-error FIXME: `goals` should be properly typed instead of relying on `unknown`.
       setGoals(goals); //setting the information
       setIsLoading(false);
+      setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None
     }
   }
 
@@ -56,7 +62,7 @@ export function InfoPanel() {
   return (
     <div className="info-panel-container">
       <div className="info-panel">
-          <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} />
+          <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} visibility={visibility}/>
           <Messages answer={goals} />
       </div>
       {!goals.error ? null : (

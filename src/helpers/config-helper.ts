@@ -75,6 +75,11 @@ export class WaterproofConfigHelper {
         return config().get<number>("pp_type") as number;
     }
 
+
+    /** `waterproof.hyp_visibility` */
+    static get hyp_visibility() {
+        return config().get<"all" | "limited" | "none">;
+    }
     /** `waterproof.trace.server` */
     static get trace_server() {
         return config().get<"off" | "messages" | "verbose">("trace.server") as "off" | "messages" | "verbose";

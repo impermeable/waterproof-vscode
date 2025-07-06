@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 
-import { GoalAnswer, PpString } from "../../lib/types";
+import { GoalAnswer, HypVisibility, PpString } from "../../lib/types";
 import { ErrorBrowser } from "../goals/ErrorBrowser";
 import { Goals } from "../goals/Goals";
 import { Hypothesis } from "./Hypothesis";
@@ -22,9 +22,9 @@ export function Debug() {
   //handles the message
   //event : CoqMessageEvent as defined above
   function infoViewDispatch(msg: Message) {
-    if (msg.type === MessageType.renderGoals) {
+    if (msg.type === MessageType.renderGoalsLegacy) {
       // most important case that actually get the information
-      setGoals(msg.body);
+      setGoals(msg.body as GoalAnswer<PpString>);
     }
   }
 
@@ -45,8 +45,9 @@ export function Debug() {
   return (
     <div className="info-panel-container">
       <div className="info-panel">
+        
         <Hypothesis  goals={goals.goals} pos={goals.position} textDoc={goals.textDocument}/>
-        <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} />
+        <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} visibility={HypVisibility.None}/>
       </div>
 
       {!goals.error ? null : (

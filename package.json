@@ -393,6 +393,16 @@
               "Use jsCoq's Pp rich layout printer",
               "Coq Layout Engine (experimental)"
             ]
+          },
+          "waterproof.hyp_visibilty" : {
+            "type": "string",
+            "default": "none",
+            "enum": [
+              "all",
+              "limited",
+              "none"
+            ],
+            "description": "Visibility of hypotheses in the goals panel.\n- `all`: show all hypotheses\n- `limited`: show only hypotheses not starting with _\n- `none`: do not show any hypotheses\nFor didiactic purposes, we recommend `none` for mathematicians learning proofs and `limited` or `all` for students using the Rocq language."
           }
         }
       },

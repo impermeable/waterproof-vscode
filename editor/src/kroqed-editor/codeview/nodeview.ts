@@ -76,10 +76,11 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			return div;
 		}
 
+		// Makes sure that we only enable the linting gutter for codecells inside of input areas.
 		const inInputArea = this.partOfInputArea();
 		const optional = inInputArea ? [lintGutter()] : [];
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const shadowThis = this;
+
+
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
@@ -131,7 +132,16 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					}
 
 					if (locked) {
-						if (shadowThis.partOfInputArea()) return;
+						// in student mode.
+						// TODO: This code is essentially a duplicate of the inInputArea function, but using 
+						//       inInputArea here does not work out of the box. Maybe the `this` binding is wrong?
+						const pos = getPos();
+						if (pos === undefined) return;
+						// Resolve the position in the prosemirror document and get the node one level underneath the root.
+						// TODO: Assumption that `<input-area>`s only ever appear one level beneath the root node.
+						// TODO: Hardcoded node names.
+						const name = outerView.state.doc.resolve(pos).node(1).type.name;
+						if (name !== "input") return; // This node is not part of an input area.
 					}
 
 					view.update([tr]);

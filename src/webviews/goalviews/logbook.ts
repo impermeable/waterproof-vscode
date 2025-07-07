@@ -17,7 +17,7 @@ export class Logbook extends GoalsBase {
         this.on(WebviewEvents.change, () => {
             if (this.state === WebviewState.visible) {
                 // when the panel is visible or focused the messages are sent
-                this.postMessage({ type: MessageType.renderGoalsLegacy, body: this.messages });
+                this.postMessage({ type: MessageType.renderGoalsList, body: {goalsList: this.messages }});
             }
         });
     }
@@ -27,7 +27,7 @@ export class Logbook extends GoalsBase {
         if (!goals) return;
         this.messages.push(goals);
         this.activatePanel();
-        this.postMessage({ type: MessageType.renderGoalsLegacy, body: this.messages });
+        this.postMessage({ type: MessageType.renderGoalsList, body: {goalsList: this.messages }});
     }
 
 }

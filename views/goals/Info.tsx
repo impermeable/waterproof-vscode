@@ -33,10 +33,6 @@ export function InfoPanel() {
     if (msg.type === MessageType.renderGoals) {
       const goals = msg.body.goals;
 
-      // FIXME: The `renderGoals` message type is currently overloaded and used for very different
-      // functions. This can easily be seen when using global search on `MessageType.renderGoals`.
-      // This should be changed.
-      //@ts-expect-error FIXME: `goals` should be properly typed instead of relying on `unknown`.
       setGoals(goals); //setting the information
       setIsLoading(false);
       setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None

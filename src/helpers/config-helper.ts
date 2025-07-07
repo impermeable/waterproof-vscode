@@ -1,4 +1,5 @@
 import { workspace } from "vscode";
+import { HypVisibility } from "../../lib/types";
 
 export class WaterproofConfigHelper {
 
@@ -77,8 +78,17 @@ export class WaterproofConfigHelper {
 
 
     /** `waterproof.hyp_visibility` */
-    static get hyp_visibility() {
-        return config().get<"all" | "limited" | "none">;
+    static get hyp_visibility() : HypVisibility {
+        const hypVisibility = config().get<string>("hyp_visibility");
+        switch(hypVisibility) {
+            case "all":
+                return HypVisibility.All;
+            case "limited":
+                return HypVisibility.Limited;
+            case "none":
+            default:
+                return HypVisibility.None;
+        }
     }
     /** `waterproof.trace.server` */
     static get trace_server() {

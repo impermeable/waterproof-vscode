@@ -39,8 +39,8 @@ export type Message =
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, QedStatus[]>
     | MessageBase<MessageType.ready>
-    | MessageBase<MessageType.renderGoals, { goals : GoalAnswer<PpString>[], visibility?: HypVisibility }>
-    | MessageBase<MessageType.renderGoalsLegacy, unknown>
+    | MessageBase<MessageType.renderGoals, { goals : GoalAnswer<PpString>, visibility?: HypVisibility }>
+    | MessageBase<MessageType.renderGoalsList, { goalsList : GoalAnswer<PpString>[]}>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
@@ -68,7 +68,7 @@ export const enum MessageType {
     qedStatus,
     ready,
     renderGoals,
-    renderGoalsLegacy,
+    renderGoalsList,
     response,
     setAutocomplete,
     setData,

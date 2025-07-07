@@ -16,9 +16,8 @@ export function Logbook() {
 
   //message handler
   function infoViewDispatch(msg: Message) {
-    if (msg.type === MessageType.renderGoalsLegacy) {
-      //@ts-expect-error FIXME: renderGoals body is currently unknown.
-      setGoalsArray(msg.body); //setting the information
+    if (msg.type === MessageType.renderGoalsList) {
+      setGoalsArray(msg.body.goalsList); //setting the information
       setIsLoading(false); //putting loading to false
     }
   }

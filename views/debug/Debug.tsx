@@ -22,9 +22,9 @@ export function Debug() {
   //handles the message
   //event : CoqMessageEvent as defined above
   function infoViewDispatch(msg: Message) {
-    if (msg.type === MessageType.renderGoalsLegacy) {
+    if (msg.type === MessageType.renderGoals) {
       // most important case that actually get the information
-      setGoals(msg.body as GoalAnswer<PpString>);
+      setGoals(msg.body.goals as GoalAnswer<PpString>);
     }
   }
 
@@ -47,7 +47,7 @@ export function Debug() {
       <div className="info-panel">
         
         <Hypothesis  goals={goals.goals} pos={goals.position} textDoc={goals.textDocument}/>
-        <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} visibility={HypVisibility.None}/>
+        <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} visibility={HypVisibility.All}/>
       </div>
 
       {!goals.error ? null : (

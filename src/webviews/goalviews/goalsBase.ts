@@ -1,11 +1,10 @@
 import { Uri } from "vscode";
-import { GoalAnswer, HypVisibility, PpString } from "../../../lib/types";
+import { GoalAnswer, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { IGoalsComponent } from "../../components";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { CoqWebview } from "../coqWebview";
 import { WaterproofConfigHelper } from "../../helpers";
-
 //class for panels that need Goals objects from coq-lsp
 export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
 

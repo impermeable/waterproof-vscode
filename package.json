@@ -394,7 +394,7 @@
               "Coq Layout Engine (experimental)"
             ]
           },
-          "waterproof.hyp_visibilty" : {
+          "waterproof.hyp_visibility" : {
             "type": "string",
             "default": "none",
             "enum": [

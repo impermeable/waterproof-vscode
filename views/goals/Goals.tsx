@@ -4,6 +4,7 @@ import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 import { convertToString, Goal, GoalConfig, Hyp, HypVisibility, PpString } from "../../lib/types";
 import { Box } from "./Box";
 import { CoqPp } from "./CoqPp";
+import { HypEl } from "../debug/Hypothesis"
 
 import {
   Position,
@@ -48,7 +49,8 @@ function Goal({ goal, visibility }: GoalP) {
     <div className="coq-goal-env" ref={ref}>
       <div style={{ marginLeft: "1ex" }} ref={tyRef}>
         {hyps().map((hyp, _) => 
-          <div><CoqPp content={hyp.names[0]} inline={true}/> : <CoqPp content={hyp.ty} inline={true} /></div>
+          <HypEl hyp={hyp} key={hyp.names[0].toString()} />
+          // <div><CoqPp content={hyp.names[0]} inline={true}/> : <CoqPp content={hyp.ty} inline={true} /></div>
         )}
         <CoqPp content={goal.ty} inline={false} />
       </div>

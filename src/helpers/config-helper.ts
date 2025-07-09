@@ -1,5 +1,6 @@
 import { workspace } from "vscode";
 import { HypVisibility } from "../../lib/types";
+import { WaterproofLogger as wpl } from "./logger";
 
 export class WaterproofConfigHelper {
 
@@ -80,6 +81,7 @@ export class WaterproofConfigHelper {
     /** `waterproof.hyp_visibility` */
     static get hyp_visibility() : HypVisibility {
         const hypVisibility = config().get<string>("hyp_visibility");
+        wpl.log(`Hypothesis visibility set to: ${hypVisibility}`); 
         switch(hypVisibility) {
             case "all":
                 return HypVisibility.All;

@@ -4,6 +4,7 @@ import { MessageType } from "../../../shared";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { WebviewEvents, WebviewState } from "../coqWebview";
 import { GoalsBase } from "./goalsBase";
+import { WaterproofLogger } from "../../helpers";
 
 //the logbook panel extends the GoalsBase class
 export class Logbook extends GoalsBase {
@@ -24,6 +25,7 @@ export class Logbook extends GoalsBase {
 
     //override updateGoals to save the previous message and activating the panel before posting the message
     override updateGoals(goals: GoalAnswer<PpString> | undefined) {
+        WaterproofLogger.log(`Logbook: updating goals with ${goals}.`);
         if (!goals) return;
         this.messages.push(goals);
         this.activatePanel();

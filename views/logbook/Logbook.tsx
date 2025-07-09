@@ -1,4 +1,3 @@
-import objectHash from "object-hash";
 import React, { useEffect, useState } from 'react';
 
 import { GoalAnswer, PpString } from "../../lib/types";
@@ -34,13 +33,13 @@ export function Logbook() {
 
   if (!goalsArray) return null;
 
+  console.log("Logbook: goalsArray length is ", goalsArray.length);
   //when messages are loaded, we map over them and display them with the Messages component
   return (
     <div className="info-panel-container">
       <div className="info-panel">
-      {goalsArray.map((value, _) => {
-          const key = objectHash(value);
-          return <Messages key={key} answer={value} />;
+      {goalsArray.map((value, i) => {
+          return <Messages key={i} answer={value} />;
         })}
       </div>
     </div>

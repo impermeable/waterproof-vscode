@@ -164,8 +164,10 @@ export class Waterproof implements Disposable {
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
         const logbook = new Logbook(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("logbook", logbook);
+        this.goalsComponents.push(logbook);
         const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
         this.webviewManager.addToolWebview("debug", debug);
+        this.goalsComponents.push(debug);
 
         this.sidePanelProvider = addSidePanel(context, this.webviewManager);
 
@@ -512,7 +514,10 @@ export class Waterproof implements Disposable {
         const params = this.client.createGoalsRequestParameters(document, position);
         this.client.requestGoals(params).then(
             response => {
-                for (const g of this.goalsComponents) g.updateGoals(response)
+                for (const g of this.goalsComponents) {
+                    WaterproofLogger.log(`Updating goals for component: ${g}`);
+                    g.updateGoals(response)
+                }
             },
             reason => {
                 for (const g of this.goalsComponents) g.failedGoals(reason);

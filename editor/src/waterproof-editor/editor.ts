@@ -152,26 +152,7 @@ export class WaterproofEditor {
 		if (!this._view) {
 			return;
 		}
-
-		const currentText = this._view.state.doc.textContent;
-		if (content === currentText) {
-			return;
-		}
-
 		if (this._mapping && this._mapping.version === version) return;
-
-		//TODO: save cursor position and restore it after the refresh
-		const cursorPos = this._view.state.selection;
-
-		this._view.dispatch(this._view.state.tr.setMeta(MENU_PLUGIN_KEY, "remove"));
-		document.querySelector(".menubar")?.remove();
-		document.querySelector(".progress-bar")?.remove();
-		document.querySelector(".spinner-container")?.remove();
-		this._view.dom.remove();
-
-		if (this._filef === FileFormat.MarkdownV) {
-			document.body.classList.add("mv");
-		}
 
 		this._translator = new FileTranslator(this._filef);
 
@@ -185,12 +166,14 @@ export class WaterproofEditor {
 		const proseDoc = createProseMirrorDocument(resultingDocument, this._filef);
 
 		this._mapping = new TextDocMapping(this._filef, parsedContent, version);
-		this.createProseMirrorEditor(proseDoc);
-
-		this.updateCursor(cursorPos);
+		const newState = EditorState.create({
+			doc: proseDoc,
+			plugins: this._view.state.plugins,
+			schema: this._schema
+		});
+		this._view.updateState(newState);
 
 		this.sendLineNumbers();
-		this._editorConfig.api.editorReady();
 	}
 
 

@@ -107,7 +107,6 @@ function viewBuild(file) {
 }
 
 var infoView = viewBuild("./views/goals/index.tsx");
-var logView = viewBuild("./views/logbook/index.tsx")
 var executeView = viewBuild("./views/execute/index.tsx");
 var debugView = viewBuild("./views/debug/index.tsx");
 var helpView = viewBuild("./views/help/index.tsx");

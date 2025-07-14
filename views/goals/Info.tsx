@@ -29,7 +29,7 @@ export function InfoPanel() {
 
   //handles the message
   //event : CoqMessageEvent as defined above
-  function infoViewDispatch(msg: Message) { // TODO: make this change in logbook as well
+  function infoViewDispatch(msg: Message) { 
     if (msg.type === MessageType.renderGoals) {
       const goals = msg.body.goals;
 

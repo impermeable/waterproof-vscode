@@ -331,7 +331,8 @@ export class Waterproof implements Disposable {
     }
 
     private async waterproofTutorialCommand(): Promise<void> {
-        const defaultUri = Utils.joinPath(workspace.workspaceFolders![0].uri, "waterproof_tutorial.mv");
+        const hasWorkspaceOpen = workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length != 0;
+        const defaultUri = hasWorkspaceOpen ? Utils.joinPath(workspace.workspaceFolders![0].uri, "waterproof_tutorial.mv") : Uri.parse("./waterproof_tutorial.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in saving the Waterproof tutorial file");
@@ -359,7 +360,8 @@ export class Waterproof implements Disposable {
      * or by using the File -> New File... option.
      */
     private async newFileCommand(): Promise<void> {
-        const defaultUri = Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv");
+        const hasWorkspaceOpen = workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length != 0;
+        const defaultUri = hasWorkspaceOpen ? Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv") : Uri.parse("./new_waterproof_document.mv");
         window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document", defaultUri}).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in creating a new waterproof document");

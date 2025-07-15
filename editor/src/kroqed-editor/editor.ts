@@ -269,6 +269,19 @@ export class WaterproofEditor {
 		];
 	}
 
+	public updateNodeViewThemes(theme: "dark" | "light") {
+		const view = this._view!;
+		const state = view.state;
+
+		// Get all nodeViews
+		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
+
+		for (const nodeView of nodeViews ?? []) {
+			// Update the theme of the nodeView
+			nodeView.updateThemeFromVSCode(theme);
+		}
+	}
+
 	public handleSnippet(template: string) {
 		const view = this._view!;
 		// Get the first selection.

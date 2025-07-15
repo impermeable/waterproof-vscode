@@ -196,6 +196,10 @@ export class ProseMirrorWebview extends EventEmitter {
             }
         }));
 
+        this._disposables.push(window.onDidChangeActiveColorTheme(() => {
+            this.themeUpdate();
+        }));
+
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
             this.handleMessage(msg);
         }));
@@ -247,6 +251,15 @@ export class ProseMirrorWebview extends EventEmitter {
         </body>
         </html>
         `;
+    }
+
+    private themeUpdate() {
+        // Get kind of active ColorTheme (dark or light)
+        const themeType = window.activeColorTheme.kind === 2 ? 'dark' : 'light';
+        this.postMessage({
+            type: MessageType.themeUpdate,
+            body: themeType
+        }, true);
     }
 
     private syncWebview() {

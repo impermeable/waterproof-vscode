@@ -15,9 +15,14 @@ const customTags = {
 }
 
 // Highlighting specific elements of the Coq language
-export const highlight = HighlightStyle.define([
-    { tag: customTags.gallina, color: "#6637dd" },
-    { tag: customTags.vernacular, color: "#7872d0" }
+export const highlight_dark = HighlightStyle.define([
+    { tag: customTags.gallina, color: "#cc00ffff" },
+    { tag: customTags.vernacular, color: "#00FF00" }
+])
+
+export const highlight_light = HighlightStyle.define([
+    { tag: customTags.gallina, color: "#FF0000" },
+    { tag: customTags.vernacular, color: "#0000FF" }
 ])
 
 // Defining the Coq language syntax, highlighting and indentation
@@ -51,6 +56,7 @@ export function coq() {
     return new LanguageSupport(coqLanguage)
 }
 
-export function coqSyntaxHighlighting() {
+export function coqSyntaxHighlighting(theme: string) {
+    const highlight = theme === "dark" ? highlight_dark : highlight_light;
     return syntaxHighlighting(highlight);
 }

@@ -28,7 +28,9 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
+	private _themeCompartment: Compartment;
 	private _diags : Diagnostic[];
+	private _themeColor: string;
 
 	private debouncer: Debouncer;
 
@@ -43,8 +45,13 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._outerView = view;
 		this._getPos = getPos;
 		this._lineNumbersExtension = [];
+		
+		// Set initial theme color based on VSCode theme
+		this._themeColor =  "light"; // Default to light theme
+
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
+		this._themeCompartment = new Compartment;
 		this._diags = [];
 
 		// Shadow this._outerView for use in the next function.
@@ -90,6 +97,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				...optional, 
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
+				this._themeCompartment.of(coqSyntaxHighlighting(this._themeColor)),
 
 				autocompletion({
 					override: [
@@ -110,7 +118,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				syntaxHighlighting(defaultHighlightStyle),
 				coq(),
                 highlightActiveLine(),
-				coqSyntaxHighlighting(),
+				// coqSyntaxHighlighting(),
 				CodeMirror.updateListener.of(update => this.forwardUpdate(update)),
 				placeholder(placeholderContent())
 			],
@@ -186,6 +194,18 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			)
 		});
 	}
+
+	/**
+	 * Update the theme of the editor.
+	 */
+	public updateThemeFromVSCode(theme: "dark" | "light"): void {
+		this._codemirror?.dispatch({
+			effects: this._themeCompartment.reconfigure(
+				coqSyntaxHighlighting(theme)
+			)
+		});
+	}
+
 
 	/**
 	 * Update the line numbers extension

@@ -45,7 +45,8 @@ export type Message =
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.syntax, boolean>
-    | MessageBase<MessageType.teacher, boolean>;
+    | MessageBase<MessageType.teacher, boolean>
+    | MessageBase<MessageType.themeUpdate, "dark" | "light">;
 
 /**
  * Message type enum. Every message that is send from the
@@ -73,6 +74,7 @@ export const enum MessageType {
     setShowLineNumbers,
     syntax,
     teacher,
+    themeUpdate,
 }
 
 export const enum HistoryChangeType {

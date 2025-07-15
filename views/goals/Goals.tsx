@@ -12,13 +12,11 @@ import {
 } from "vscode-languageserver-types";
 import "../styles/goals.css";
 
-
-
 //type that contains Goal<PpString> and an ID for that goal
-type GoalP = { goal: Goal<PpString>; idx: number; visibility : HypVisibility};
+type GoalP = { goal: Goal<PpString>; idx: number;};
 
 //component to display a single goal as a Pp string
-function Goal({ goal, visibility }: GoalP) {
+function Goal({ goal}: GoalP) {
   // https://beta.reactjs.org/learn/manipulating-the-dom-with-refs
   const ref: React.LegacyRef<HTMLDivElement> | null = useRef(null);
   const tyRef: React.LegacyRef<HTMLDivElement> | null = useRef(null);
@@ -29,29 +27,9 @@ function Goal({ goal, visibility }: GoalP) {
     }
   });
 
-  const hyps : () => Array<Hyp<PpString>> = () => {
-    const hyps : Array<Hyp<PpString>> = [];
-    if (visibility === HypVisibility.All) {
-      hyps.push(...goal.hyps);
-    } else if (visibility === HypVisibility.Limited) {
-      hyps.push(
-        ...goal.hyps
-          .map (hyp => 
-            // Filter out all names starting with an underscore
-            ({ ...hyp, names: hyp.names.filter(name => convertToString(name).charAt(0) !== "_") }))
-          .filter(hyp => hyp.names.length > 0)
-      ); 
-    }
-    return hyps;
-  }
-
   return (
     <div className="coq-goal-env" ref={ref}>
       <div style={{ marginLeft: "1ex" }} ref={tyRef}>
-        {hyps().map((hyp, _) => 
-          <HypEl hyp={hyp} key={hyp.names[0].toString()} />
-          // <div><CoqPp content={hyp.names[0]} inline={true}/> : <CoqPp content={hyp.ty} inline={true} /></div>
-        )}
         <CoqPp content={goal.ty} inline={false} />
       </div>
     </div>
@@ -82,6 +60,32 @@ function GoalsList({
 }: GoalsListP) {
   const count = goals.length;
 
+  const hyps : (goal : Goal<PpString>) => Array<Hyp<PpString>> = (goal : Goal<PpString>) => {
+      const hyps : Array<Hyp<PpString>> = [];
+      if (visibility === HypVisibility.All) {
+        hyps.push(...goal.hyps);
+      } else if (visibility === HypVisibility.Limited) {
+        hyps.push(
+          ...goal.hyps
+            .map (hyp => 
+              // Filter out all names starting with an underscore
+              ({ ...hyp, names: hyp.names.filter(name => convertToString(name).charAt(0) !== "_") }))
+            .filter(hyp => hyp.names.length > 0)
+        ); 
+      }
+      return hyps;
+  }
+  const hypBlock = (goal : Goal<PpString>) => {
+    const elems = hyps(goal).map((hyp, _) => 
+          <HypEl hyp={hyp} key={hyp.names[0].toString()} />)
+    if (elems.length > 0) {
+      return <Box summary={`Context: `} pos={pos} textDox={textDoc}>
+          { elems }
+      </Box>
+    }
+    return elems;
+  }
+
   //if there are no goals then this is displayed
   if (count == 0) {
     if (show_on_empty) {
@@ -98,17 +102,22 @@ function GoalsList({
   //One goal, the goals is displayed
   } else if (count == 1) {
     return (
-      <Box summary={`${header}`} pos={pos} textDox={textDoc}>
-          <Goal key={0} goal={goals[0]} idx={0} visibility={visibility}/>
-      </Box>
+      <div>
+        <Box summary={`${header}`} pos={pos} textDox={textDoc}>
+          <Goal key={0} goal={goals[0]} idx={0}/>
+        </Box>
+        {hypBlock(goals[0])}
+      </div>
+
     );
   //Numerous goals, only the first goal is displayed, the other goals are hidden.
   } else {
     return (
       <div>
         <Box summary={`${header}`} pos={pos} textDox={textDoc}>
-          <Goal key={0} goal={goals[0]} idx={0} visibility={visibility}  />
+          <Goal key={0} goal={goals[0]} idx={0}/>
         </Box>
+        {hypBlock(goals[0])}
         <Box summary={`Afterwards, we need to complete other subproofs`} pos={pos} textDox={textDoc}>
         </Box>
       </div>

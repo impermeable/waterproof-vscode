@@ -17,7 +17,6 @@ export type MessagesInfo = PropsWithChildren<
 //component that takes in the MessagesInfo and displays the list of messages
 export function Messages({answer} : MessagesInfo) {
   const count = answer.messages.length;
-  console.log("Messages: count is ", count);
   //check if there are any messages that need to be shown
   if (count != 0) {
   //the Box component is used to display the messages along with the location

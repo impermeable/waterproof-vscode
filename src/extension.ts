@@ -516,15 +516,27 @@ export class Waterproof implements Disposable {
      * This function gets called on TextEditorSelectionChange events and it requests the goals
      * if needed
      */
-    private async updateGoals(document: TextDocument, position: Position): Promise<void> {
-        if (!this.client.isRunning()) return;
+    private async updateGoals(document: TextDocument, position: Position): Promise<void> {  
+        wpl.debug(`Updating goals for document: ${document.uri.toString()} at position: ${position.line}:${position.character}`);
+        if (!this.client.isRunning()) {
+            wpl.debug("Client is not running, cannot update goals.");
+            return;
+        }
         const params = this.client.createGoalsRequestParameters(document, position);
+        wpl.debug(`Requesting goals for components: ${this.goalsComponents}`);
         this.client.requestGoals(params).then(
             response => {
-                for (const g of this.goalsComponents) g.updateGoals(response)
+                wpl.debug(`Received goals response: ${JSON.stringify(response)}`);
+                for (const g of this.goalsComponents) {
+                    wpl.debug(`Updating goals component: ${g.constructor.name}`);
+                    g.updateGoals(response)
+                }
             },
             reason => {
-                for (const g of this.goalsComponents) g.failedGoals(reason);
+                for (const g of this.goalsComponents) {
+                    wpl.debug(`Failed to update goals component: ${g.constructor.name}`);
+                    g.failedGoals(reason);
+                }
             }
         );
     }

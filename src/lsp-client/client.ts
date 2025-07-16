@@ -234,6 +234,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         }
 
         async requestGoals(params?: GoalRequest | Position): Promise<GoalAnswer<PpString>> {
+            wpl.debug(`Requesting goals with params: ${JSON.stringify(params)}`);
             if (!params || "line" in params) {  // if `params` is not a `GoalRequest` ...
                 params ??= this.activeCursorPosition;
                 if (!this.activeDocument || !params) {
@@ -241,6 +242,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
                 params = this.createGoalsRequestParameters(this.activeDocument, params);
             }
+            wpl.debug(`Sending request for goals`);
             return this.sendRequest(goalRequestType, params);
         }
 

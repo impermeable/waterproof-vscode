@@ -407,7 +407,7 @@
               "Show only hypotheses not starting with _ in the goals panel",
               "Do not show any hypotheses in the goals panel"
             ],
-            "description": "Visibility of hypotheses in the goals panel.\nFor didiactic purposes, we recommend `none` for mathematicians learning proofs and `limited` or `all` for students using the Rocq language."
+            "description": "Visibility of hypotheses in the goals panel.\nFor didiactic purposes, we recommend \"none\" for mathematicians learning proofs and \"limited\" or \"all\" for students using the Rocq language."
           }
         }
       },

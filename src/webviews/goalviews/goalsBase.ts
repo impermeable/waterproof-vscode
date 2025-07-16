@@ -18,7 +18,7 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
     //sends message for renderGoals
     updateGoals(goals: GoalAnswer<PpString> | undefined) {
         if (goals) {
-            const visibility = WaterproofConfigHelper.hyp_visibility;
+            const visibility = WaterproofConfigHelper.visibilityOfHypotheses;
             this.postMessage({ type: MessageType.renderGoals, body: {goals, visibility } });
         }
     }

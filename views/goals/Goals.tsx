@@ -79,7 +79,7 @@ function GoalsList({
     const elems = hyps(goal).map((hyp, _) => 
           <HypEl hyp={hyp} key={hyp.names[0].toString()} />)
     if (elems.length > 0) {
-      return <Box summary={`Context: `} pos={pos} textDox={textDoc}>
+      return <Box summary={`We know: `} pos={pos} textDox={textDoc}>
           { elems }
       </Box>
     }

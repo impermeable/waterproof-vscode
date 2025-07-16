@@ -78,9 +78,9 @@ export class WaterproofConfigHelper {
     }
 
 
-    /** `waterproof.hyp_visibility` */
-    static get hyp_visibility() : HypVisibility {
-        const hypVisibility = config().get<string>("hyp_visibility");
+    /** `waterproof.visibilityOfHypotheses` */
+    static get visibilityOfHypotheses() : HypVisibility {
+        const hypVisibility = config().get<string>("visibilityOfHypotheses");
         wpl.log(`Hypothesis visibility set to: ${hypVisibility}`); 
         switch(hypVisibility) {
             case "all":

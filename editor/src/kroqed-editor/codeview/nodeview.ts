@@ -117,14 +117,12 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				} else {
 					// Figure out whether we are in teacher or student mode.
 					// This is a ProseMirror object, hence we need the prosemirror view (outerview) state.
-					const locked = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.locked;
-					if (locked === undefined) {
-						// if we could not get the locked state then we do not
-						// allow this transaction to update the view.
-						return;
-					}
+					const teacher = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.teacher;
+					// if we could not get the locked state then we do not
+					// allow this transaction to update the view.
+					if (teacher === undefined) return;
 
-					if (locked) {
+					if (!teacher) {
 						// in student mode.
 						const pos = getPos();
 						if (pos === undefined) return;

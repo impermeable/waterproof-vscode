@@ -198,7 +198,7 @@ export class ProseMirrorWebview extends EventEmitter {
 
             if (e.affectsConfiguration("waterproof.showMenuItemsInEditor")) {
                 this._showMenuItemsInEditor = WaterproofConfigHelper.showMenuItems;
-                WaterproofLogger.log(`Will now show menu items? ${WaterproofConfigHelper.showMenuItems}`);
+                WaterproofLogger.log(`Menu items will now be ${WaterproofConfigHelper.showMenuItems ? "shown" : "hidden"} in student mode`);
                 this.updateMenuItemsInEditor();
             }
         }));
@@ -408,7 +408,9 @@ export class ProseMirrorWebview extends EventEmitter {
                 break;
             case MessageType.ready:
                 this.syncWebview();
+                // When ready send the state of the teacher mode and show menu items settings to editor
                 this.updateTeacherMode();
+                this.updateMenuItemsInEditor();
                 break;
             case MessageType.lineNumbers:
                 this._linenumber = msg.body;

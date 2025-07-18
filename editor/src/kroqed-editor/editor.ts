@@ -372,14 +372,14 @@ export class WaterproofEditor {
 
 		// Early return if the plugin state is undefined.
 		if (inputAreaPluginState === undefined) return false;
-		const { locked, globalLock } = inputAreaPluginState;
+		const { teacher, globalLock } = inputAreaPluginState;
 		// Early return if we are in the global locked mode
 		// 	(nothing should be editable anymore)
 		if (globalLock) return false;
 
 		// If we are in teacher mode (ie. not locked) than
 		// 	 we are always able to insert.
-		if (!locked) {
+		if (teacher) {
 			this.createAndDispatchInsertionTransaction(trans, symbolUnicode, from, to);
 			return true;
 		}
@@ -432,13 +432,13 @@ export class WaterproofEditor {
 	/**
 	 * Called whenever a message describing the configuration of user is sent
 	 *
-	 * @param isTeacher represents the mode selected by user
+	 * @param isTeacher Whether teacher mode is enabled
 	 */
 	public updateLockingState(isTeacher: boolean) : void {
 		if (!this._view) return;
 		const state = this._view.state;
 		const trans = state.tr;
-		trans.setMeta(INPUT_AREA_PLUGIN_KEY, {teacher: !isTeacher});
+		trans.setMeta(INPUT_AREA_PLUGIN_KEY, {teacher: isTeacher});
 		this._view.dispatch(trans);
 	}
 

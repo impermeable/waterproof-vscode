@@ -534,6 +534,7 @@
     "@types/markdown-it": "12.2.3",
     "@vscode/webview-ui-toolkit": "1.4.0",
     "eventemitter2": "6.4.9",
+    "events": "3.3.0",
     "jquery": "3.7.1",
     "katex": "0.16.11",
     "markdown-it": "13.0.2",
@@ -554,7 +555,8 @@
     "react-tooltip": "5.28.0",
     "throttle-debounce": "5.0.2",
     "vscode-languageclient": "8.1.0",
-    "vscode-languageserver-types": "3.17.5"
+    "vscode-languageserver-types": "3.17.5",
+    "vscode-uri": "3.1.0"
   },
   "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"

@@ -4,6 +4,8 @@ import { Message, MessageType } from "../../shared/Messages";
 
 const edits = [];
 
+const diagMessage = "     = 6\n     : nat";
+
 const messages: Array<Message> = [
     {
         "type": MessageType.diagnostics,
@@ -37,7 +39,7 @@ const messages: Array<Message> = [
         "body": {
             "positionedDiagnostics": [
                 {
-                    "message": "     = 6\n     : nat",
+                    "message": diagMessage,
                     "severity": 2,
                     "startOffset": 20,
                     "endOffset": 34
@@ -100,8 +102,14 @@ describe('TestingTest', () => {
   });
 
   it("Displays Info Message", () => {
-    cy.get('.cm-lintRange').click().trigger('mouseover');
-    cy.get('.cm-diagnostic').as("diag").should('be.visible').should('contain.text', '= 6');
+    cy.get('.cm-lintRange.cm-lintRange-info').click().trigger('mouseover');
+    cy.get('.cm-diagnostic').as("diag").should('be.visible').should('contain.text', diagMessage);
+  });
 
+  it("Displays the error box underneath", () => {
+    cy.get('.cm-lintRange.cm-lintRange-info').click().trigger('mouseover');
+    // Make sure we do have an input area
+    cy.get("waterproofinput").should("exist");
+    cy.get("waterproofinput").get('.cm-diagnostic').as("diag").should('be.visible').should('contain.text', diagMessage);
   });
 })

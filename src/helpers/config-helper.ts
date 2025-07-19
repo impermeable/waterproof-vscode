@@ -24,6 +24,11 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("showLineNumbersInEditor") as boolean;
     }
 
+    /** `waterproof.skipLaunchChecks` */
+    static get skipLaunchChecks() {
+        return config().get<boolean>("skipLaunchChecks") as boolean;
+    }
+
     /** `waterproof.showLineNumbersInEditor` */
     static set showLineNumbersInEditor(value: boolean) {
         // Update the Waterproof showLineNumbersInEditor configuration

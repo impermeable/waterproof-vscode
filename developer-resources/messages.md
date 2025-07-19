@@ -165,7 +165,7 @@ This message does not have a body.
 
 ### `renderGoals`
 #### Description
-Message send by the extension when the set of goals changes. Panels (goal, logbook, info) listen to this message to update the set of goals that they show.
+Message send by the extension when the set of goals changes. Panels (goal, info) listen to this message to update the set of goals that they show.
 
 #### Body
 ```ts

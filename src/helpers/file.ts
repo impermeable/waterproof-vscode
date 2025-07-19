@@ -15,6 +15,9 @@ export class WaterproofFileUtil {
     }
 
     public static join(...paths: string[]): string {
+        // We filter out empty path strings, maybe we could instead make this function
+        // assume that arguments are non-empty and let the caller handle these?
+        paths = paths.filter(v => v != "");
         const sep = process.platform === "win32" ? "\\" : "/";
         return paths.join(sep);
     }

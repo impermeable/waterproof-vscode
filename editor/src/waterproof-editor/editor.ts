@@ -8,7 +8,7 @@ import { EditorView } from "prosemirror-view";
 import { undo, redo, history } from "prosemirror-history";
 import { constructDocument } from "./document/construct-document";
 
-import { DocChange, FileFormat, LineNumber, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
+import { DocChange, FileFormat, LineNumber, InputAreaStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
 import { CODE_PLUGIN_KEY, codePlugin } from "./codeview";
 import { createHintPlugin } from "./hinting";
 import { INPUT_AREA_PLUGIN_KEY, inputAreaPlugin } from "./inputArea";
@@ -442,7 +442,7 @@ export class WaterproofEditor {
 		this._view.dispatch(tr);
 	}
 
-	public updateQedStatus(status: QedStatus[]) : void {
+	public updateQedStatus(status: InputAreaStatus[]) : void {
 		if (!this._view) return;
 		const state = this._view.state;
 		const tr = state.tr;

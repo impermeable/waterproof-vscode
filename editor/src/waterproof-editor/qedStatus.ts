@@ -2,25 +2,25 @@
 import { EditorState, Plugin, PluginKey, PluginSpec } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 import { findDescendantsWithType } from './utilities';
-import { QedStatus } from '../../../shared';
+import { InputAreaStatus } from '../../../shared';
 import { WaterproofEditor } from './editor';
 
 // Define interface for UpdateStatusPluginState
 export interface IUpdateStatusPluginState {
-  status: QedStatus[];
+  status: InputAreaStatus[];
 }
 
 // Key to identify the plugin within ProseMirror's plugin system
 export const UPDATE_STATUS_PLUGIN_KEY = new PluginKey<IUpdateStatusPluginState>('prosemirror-status-update');
 
 // Helper function to convert status updates to appropriate CSS classes
-const statusToDecoration = (status: QedStatus) => {
+const statusToDecoration = (status: InputAreaStatus) => {
   switch (status) {
-    case QedStatus.Proven:
+    case InputAreaStatus.Proven:
       return 'proven';
-    case QedStatus.Incomplete:
+    case InputAreaStatus.Incomplete:
       return 'incomplete';
-    default:
+    case InputAreaStatus.Invalid:
       return '';
   }
 };

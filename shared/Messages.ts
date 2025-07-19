@@ -2,7 +2,7 @@ import { DiagnosticSeverity } from "vscode";
 import { FileFormat } from "./FileFormat";
 import { LineNumber } from "./LineNumber";
 import { DocChange, WrappingDocChange } from "./DocChange";
-import { QedStatus } from "./QedStatus";
+import { InputAreaStatus } from "./InputAreaStatus";
 import { Completion } from "@codemirror/autocomplete";
 import { GoalAnswer, PpString } from "../lib/types";
 
@@ -37,7 +37,7 @@ export type Message =
     | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: "symbol" | "tactics", time: number }>
     | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>
-    | MessageBase<MessageType.qedStatus, QedStatus[]>
+    | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
     | MessageBase<MessageType.renderGoals, unknown>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>

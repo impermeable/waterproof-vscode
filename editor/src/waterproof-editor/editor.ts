@@ -149,10 +149,15 @@ export class WaterproofEditor {
 	}
 
 	refreshDocument(content: string, version: number) {
-		if (!this._view) {
-			return;
-		}
+		if (!this._view) return;
 		if (this._mapping && this._mapping.version === version) return;
+		//if (this._mapping && this._mapping.version == version) return;
+		//this._view.dispatch(this._view.state.tr.setMeta(MENU_PLUGIN_KEY, "remove"));
+		// Hack to forcefully remove the 'old' menubar
+		// document.querySelector(".menubar")?.remove();
+		//document.querySelector(".progress-bar")?.remove();
+		//document.querySelector(".spinner-container")?.remove();
+		// this._view.dom.remove();
 
 		this._translator = new FileTranslator(this._filef);
 

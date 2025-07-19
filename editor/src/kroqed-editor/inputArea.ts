@@ -7,7 +7,7 @@ import { EditorState, Plugin, PluginKey, PluginSpec, Transaction } from
  * `globalLock: boolean` indicating that we are in a global lockdown state (caused by an unrecoverable error).
  */
 export interface IInputAreaPluginState {
-	locked: boolean;
+	teacher: boolean;
     globalLock: boolean;
 }
 
@@ -22,7 +22,7 @@ const InputAreaPluginSpec : PluginSpec<IInputAreaPluginState> = {
 		init(_config, _instance){
             // Initially set the locked state to true and globalLock to false.
 			return {
-                locked: true,
+                teacher: false,
                 globalLock: false,
 			};
 		},
@@ -30,41 +30,47 @@ const InputAreaPluginSpec : PluginSpec<IInputAreaPluginState> = {
             EditorState, _newState: EditorState
         ){
 			// produce updated state field for this plugin
-            let newLockedState = tr.getMeta(INPUT_AREA_PLUGIN_KEY);
-            let newGlobalLock = value.globalLock;
-            if (newLockedState === undefined) newLockedState = value.locked;
-            if (newLockedState == "ErrorMode") {
-                // We are in a global locked state if we receive this meta.
-                newLockedState = value.locked;
-                newGlobalLock = true;
+            
+            const meta = tr.getMeta(INPUT_AREA_PLUGIN_KEY);
+            if (meta === undefined) {
+                return value;
+            } else {
+                let newGlobalLock = value.globalLock;
+                let newTeacher = value.teacher;
+                if (meta == "ErrorMode") {
+                    // We are in a global locked state if we receive this meta.
+                    newTeacher = value.teacher;
+                    newGlobalLock = true;
 
-                // If we are in lockdown then we remove the editor and show an error message.
-                const node = document.querySelector("#editor");
-                if (!node) throw new Error("Node cannot be undefined here");
-                node.innerHTML = "";
-                const container = document.createElement("div");
-                container.classList.add("frozen-thingie");
-                container.innerHTML = `<div class="frozen-emoji">💀</div><div class="frozen-message">DOCUMENT FROZEN!<br>Reopen file...</div>`;
-                node.appendChild(container);
+                    // If we are in lockdown then we remove the editor and show an error message.
+                    const node = document.querySelector("#editor");
+                    if (!node) throw new Error("Node cannot be undefined here");
+                    node.innerHTML = "";
+                    const container = document.createElement("div");
+                    container.classList.add("frozen-thingie");
+                    container.innerHTML = `<div class="frozen-emoji">💀</div><div class="frozen-message">DOCUMENT FROZEN!<br>Reopen file...</div>`;
+                    node.appendChild(container);
+                } else {
+                    newTeacher = meta.teacher ?? false;
+                }
+                return {
+                    teacher: newTeacher,
+                    globalLock: newGlobalLock,
+                };
             }
-			return {
-                locked: newLockedState,
-                globalLock: newGlobalLock,
-			};
 		}
 	},
 	props: {
         editable: (state) => {
             // Get locked and globalLock states from the plugin.
-            const locked = INPUT_AREA_PLUGIN_KEY.getState(state)?.locked;
-            const globalLock = INPUT_AREA_PLUGIN_KEY.getState(state)?.globalLock;
-            if (locked === undefined || globalLock === undefined) new Error("Input Area plugin is broken, it has no state ");
+            const teacher = INPUT_AREA_PLUGIN_KEY.getState(state)?.teacher ?? false;
+            const globalLock = INPUT_AREA_PLUGIN_KEY.getState(state)?.globalLock ?? false;
             
             // In the `globalLock` state nothing is editable anymore.
             if (globalLock) return false;
             
             // In teacher mode, everything is editable by default.
-            if (!locked) return true;
+            if (teacher) return true;
 
             // Get the from selection component.
             const { $from } = state.selection;

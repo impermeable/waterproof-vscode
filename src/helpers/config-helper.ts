@@ -29,6 +29,11 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("skipLaunchChecks") as boolean;
     }
 
+    /** `waterproof.showMenuItemsInEditor` */
+    static get showMenuItems() {
+        return config().get<boolean>("showMenuItemsInEditor") as boolean;
+    }
+
     /** `waterproof.showLineNumbersInEditor` */
     static set showLineNumbersInEditor(value: boolean) {
         // Update the Waterproof showLineNumbersInEditor configuration

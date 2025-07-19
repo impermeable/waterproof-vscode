@@ -39,6 +39,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private _provider: CoqEditorProvider;
 
     private _showLineNrsInEditor: boolean = WaterproofConfigHelper.showLineNumbersInEditor;
+    private _showMenuItemsInEditor: boolean = WaterproofConfigHelper.showMenuItems;
 
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
@@ -190,6 +191,12 @@ export class ProseMirrorWebview extends EventEmitter {
                 this._showLineNrsInEditor = WaterproofConfigHelper.showLineNumbersInEditor;
                 this.updateLineNumberStatusInEditor();
             }
+
+            if (e.affectsConfiguration("waterproof.showMenuItemsInEditor")) {
+                this._showMenuItemsInEditor = WaterproofConfigHelper.showMenuItems;
+                WaterproofLogger.log(`Menu items will now be ${WaterproofConfigHelper.showMenuItems ? "shown" : "hidden"} in student mode`);
+                this.updateMenuItemsInEditor();
+            }
         }));
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
@@ -269,6 +276,13 @@ export class ProseMirrorWebview extends EventEmitter {
             body: this._showLineNrsInEditor
         }, true);
 
+    }
+
+    private updateMenuItemsInEditor() {
+        this.postMessage({
+            type: MessageType.setShowMenuItems,
+            body: this._showMenuItemsInEditor
+        }, true);
     }
 
     /** Convert line number offsets to line indices and send message to Editor webview */
@@ -390,7 +404,9 @@ export class ProseMirrorWebview extends EventEmitter {
                 break;
             case MessageType.ready:
                 this.syncWebview();
+                // When ready send the state of the teacher mode and show menu items settings to editor
                 this.updateTeacherMode();
+                this.updateMenuItemsInEditor();
                 break;
             case MessageType.lineNumbers:
                 this._linenumber = msg.body;

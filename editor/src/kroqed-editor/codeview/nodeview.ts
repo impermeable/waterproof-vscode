@@ -123,14 +123,21 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				} else {
 					// Figure out whether we are in teacher or student mode.
 					// This is a ProseMirror object, hence we need the prosemirror view (outerview) state.
-					const locked = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.locked;
-					if (locked === undefined) {
-						// if we could not get the locked state then we do not
-						// allow this transaction to update the view.
-						return;
-					}
+					const teacher = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.teacher;
+					// if we could not get the locked state then we do not
+					// allow this transaction to update the view.
+					if (teacher === undefined) return;
 
-					if (locked && !inInputArea) return;
+					if (!teacher) {
+						// in student mode.
+						const pos = getPos();
+						if (pos === undefined) return;
+						// Resolve the position in the prosemirror document and get the node one level underneath the root.
+						// TODO: Assumption that `<input-area>`s only ever appear one level beneath the root node.
+						// TODO: Hardcoded node names.
+						const name = outerView.state.doc.resolve(pos).node(1).type.name;
+						if (name !== "input") return; // This node is not part of an input area.
+					}
 
 					view.update([tr]);
 				}

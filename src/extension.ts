@@ -419,54 +419,63 @@ export class Waterproof implements Disposable {
      */
     async initializeClient(): Promise<void> {
         WaterproofLogger.log("Start of initializeClient");
-        // Run the version checker.
-        const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
-        const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
-        const versionChecker = new VersionChecker(WaterproofConfigHelper.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-        //
-        const foundServer = await versionChecker.prelaunchChecks();
+        
+        // Whether the user has decided to skip the launch checks
+        const launchChecksDisabled = WaterproofConfigHelper.skipLaunchChecks;
 
-        if (foundServer) {
-
-            versionChecker.run();
-
-            if (this.client?.isRunning()) {
-                return Promise.reject(new Error("Cannot initialize client; one is already running."))
-            }
-
-            const serverOptions = CoqLspServerConfig.create(
-                // TODO: Support +coqversion versions.
-                this.context.extension.packageJSON.requiredCoqLspVersion.slice(2),
-                WaterproofConfigHelper.configuration
-            );
-
-            const clientOptions: LanguageClientOptions = {
-                documentSelector: [{ language: "coqmarkdown" }, { language: "coq" }],  // both .mv and .v files
-                outputChannelName: "Waterproof LSP Events (Initial)",
-                revealOutputChannelOn: RevealOutputChannelOn.Info,
-                initializationOptions: serverOptions,
-                markdown: { isTrusted: true, supportHtml: true },
-            };
-
-            WaterproofLogger.log("Initializing client...");
-            this.client = this.clientFactory(clientOptions, WaterproofConfigHelper.configuration);
-            return this.client.startWithHandlers(this.webviewManager).then(
-                () => {
-                    // show user that LSP is working
-                    this.statusBar.update(true);
-                    this.clientRunning = true;
-                    WaterproofLogger.log("Client initialization complete.");
-                },
-                reason => {
-                    const message = reason.toString();
-                    WaterproofLogger.log(`Error during client initialization: ${message}`);
-                    this.statusBar.failed(message);
-                    throw reason;  // keep chain rejected
-                }
-            );
+        if (launchChecksDisabled) {
+            WaterproofLogger.log("'skipLaunchChecks' option has been set by the user. Attempting to launch client...");
         } else {
-            this.statusBar.failed("LSP not found");
+            // Run the version checker.
+            const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
+            const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
+            const versionChecker = new VersionChecker(WaterproofConfigHelper.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
+            
+            // Check whether we can find coq-lsp
+            const foundServer = await versionChecker.prelaunchChecks();
+            if (foundServer) {
+                // Only run the version checker after we know that there is a valid coq-lsp server
+                versionChecker.run();
+            } else {
+                this.statusBar.failed("LSP not found");
+            }
         }
+
+        if (this.client?.isRunning()) {
+            return Promise.reject(new Error("Cannot initialize client; one is already running."))
+        }
+
+        const serverOptions = CoqLspServerConfig.create(
+            // TODO: Support +coqversion versions.
+            this.context.extension.packageJSON.requiredCoqLspVersion.slice(2),
+            WaterproofConfigHelper.configuration
+        );
+
+        const clientOptions: LanguageClientOptions = {
+            documentSelector: [{ language: "coqmarkdown" }, { language: "coq" }],  // both .mv and .v files
+            outputChannelName: "Waterproof LSP Events (Initial)",
+            revealOutputChannelOn: RevealOutputChannelOn.Info,
+            initializationOptions: serverOptions,
+            markdown: { isTrusted: true, supportHtml: true },
+        };
+
+        WaterproofLogger.log("Initializing client...");
+        this.client = this.clientFactory(clientOptions, WaterproofConfigHelper.configuration);
+        return this.client.startWithHandlers(this.webviewManager).then(
+            () => {
+                // show user that LSP is working
+                this.statusBar.update(true);
+                this.clientRunning = true;
+                WaterproofLogger.log("Client initialization complete.");
+            },
+            reason => {
+                const message = reason.toString();
+                WaterproofLogger.log(`Error during client initialization: ${message}`);
+                this.statusBar.failed(message);
+                throw reason;  // keep chain rejected
+            }
+        );
+        
     }
 
     /**

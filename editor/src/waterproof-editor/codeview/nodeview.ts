@@ -11,7 +11,7 @@ import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic, setDiagnosticsEffect, lintGutter } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
@@ -21,7 +21,6 @@ import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
  * Corresponds with the example as can be found here:
  * https://prosemirror.net/examples/codemirror/
  */
-
 export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	dom: HTMLElement;
 
@@ -77,11 +76,18 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			return div;
 		}
 
+		// Makes sure that we only enable the linting gutter for codecells inside of input areas.
+		const inInputArea = this.partOfInputArea();
+		const optional = inInputArea ? [lintGutter()] : [];
+
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
 				// Add the linting extension for showing diagnostics (errors, warnings, etc)
-				linter(this.lintingFunction),
+				linter(this.lintingFunction, {
+					autoPanel: inInputArea, // Only enable auto panel when this view is inside of an input area
+				}),
+				...optional, 
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 
@@ -124,16 +130,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 						return;
 					}
 
-					if (locked) {
-						// in student mode.
-						const pos = getPos();
-						if (pos === undefined) return;
-						// Resolve the position in the prosemirror document and get the node one level underneath the root.
-						// TODO: Assumption that `<input-area>`s only ever appear one level beneath the root node.
-						// TODO: Hardcoded node names.
-						const name = outerView.state.doc.resolve(pos).node(1).type.name;
-						if (name !== "input") return; // This node is not part of an input area.
-					}
+					if (locked && !inInputArea) return;
 
 					view.update([tr]);
 				}
@@ -153,6 +150,17 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 		this.updating = false;
 		this.handleNewComplete([]);
+	}
+
+	private partOfInputArea(): boolean {
+		const pos = this._getPos();
+		if (pos === undefined) return false;
+		// Resolve the position in the prosemirror document and get the node one level underneath the root.
+		// TODO: Assumption that `<input-area>`s only ever appear one level beneath the root node.
+		// TODO: Hardcoded node names.
+		const name = this._outerView.state.doc.resolve(pos).node(1).type.name;
+		if (name !== "input") return false;
+		return true; 
 	}
 
 	public handleSnippet(template: string, posFrom: number, posTo: number) {

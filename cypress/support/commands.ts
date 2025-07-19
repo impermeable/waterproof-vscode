@@ -8,11 +8,11 @@ Cypress.Commands.add("nthInputArea", (n) => {
     cy.get("waterproofinput").eq(n)
 });
 
-Cypress.Commands.add("coqCode", () => {
+Cypress.Commands.add("code", () => {
     cy.get('coqblock > .cm-editor > .cm-scroller > .cm-content')
 });
 
-Cypress.Commands.add("nthCoqCode", (n) => {
+Cypress.Commands.add("nthCode", (n) => {
     cy.get('coqblock > .cm-editor > .cm-scroller > .cm-content').eq(n)
 });
 
@@ -25,8 +25,8 @@ declare namespace Cypress {
       /** Command to find the nth Waterproof input-area */
       nthInputArea : (n : number) => Chainable<Element>
       /** Command to find all Waterproof coq code blocks (CodeMirror instances). */ 
-      coqCode : () => Chainable<Element>
+      code : () => Chainable<Element>
       /** Command to find the nth Waterproof coq code block (CodeMirror instance). */
-      nthCoqCode : (n: number) => Chainable<Element>
+      nthCode : (n: number) => Chainable<Element>
     }
   }

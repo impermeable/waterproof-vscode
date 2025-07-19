@@ -10,7 +10,7 @@ import {
 } from "vscode-languageclient";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
-import { MessageType, OffsetDiagnostic, QedStatus, SimpleProgressParams } from "../../shared";
+import { MessageType, OffsetDiagnostic, InputAreaStatus, SimpleProgressParams } from "../../shared";
 import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
@@ -184,7 +184,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
 
             // for each input area, check the proof status
-            let statuses: QedStatus[];
+            let statuses: InputAreaStatus[];
             try {
                 statuses = await Promise.all(inputAreas.map(a =>
                     determineProofStatus(this, document, a)

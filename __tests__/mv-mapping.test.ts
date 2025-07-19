@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // Disable because the @ts-expect-error clashes with the tests
-import { TextDocMappingMV as TextDocMapping } from "../editor/src/kroqed-editor/mappingModel/mvFile";
+import { TextDocMappingMV as TextDocMapping } from "../editor/src/mapping/mvFile";
 import { ReplaceStep } from "prosemirror-transform";
-import { WaterproofSchema } from "../editor/src/kroqed-editor/schema";
-import { translateMvToProsemirror } from "../editor/src/kroqed-editor/translation/toProsemirror";
+import { WaterproofSchema } from "../editor/src/waterproof-editor/schema";
+import { translateMvToProsemirror } from "../editor/src/waterproof-editor/translation/toProsemirror";
 import { expect } from "@jest/globals";
 
 test("Normal coqdown", () => {

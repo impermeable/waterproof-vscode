@@ -12,5 +12,5 @@ export {
     SimpleProgressParams
 } from "./Messages";
 // Export QedStatus type
-export { QedStatus } from "./QedStatus";
+export { InputAreaStatus } from "./InputAreaStatus";
 export { LineNumber} from "./LineNumber";

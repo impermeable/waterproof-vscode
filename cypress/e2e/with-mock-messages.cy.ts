@@ -1,5 +1,5 @@
 /// <reference types="cypress" />
-import { QedStatus } from "../../shared";
+import { InputAreaStatus } from "../../shared";
 import { Message, MessageType } from "../../shared/Messages";
 
 const edits = [];
@@ -31,7 +31,7 @@ const messages: Array<Message> = [
     {
         "type": MessageType.qedStatus,
         "body": [
-          QedStatus.InvalidInputArea
+          InputAreaStatus.Invalid
         ]
     },
     {

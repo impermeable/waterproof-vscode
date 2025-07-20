@@ -17,9 +17,9 @@ Sentence {
     TacticEnd[@name='dotSpace'] { '.' }
     // If overlap between tactics is an issue, probably better to create a token per phrase
     // This would mean tactics have to be hardcoded per possible configuration however...
-    TacticMiddleByOrSince{"it suffices to show that" | "we" space+ "conclude" space+ "that" | "it holds that" }
+    TacticMiddleByOrSince{"it" space+ "suffices" space+ "to" space+ "show" space+ "that" | "we" space+ "conclude" space+ "that" | "it" space+ "holds" space+ "that" }
     TacticMiddleExpand{" in "}
-    TacticMiddleObtain{"according to"}
+    TacticMiddleObtain{"according" space+ "to"}
     TacticMiddleDefine{" := "}
     TacticMiddleBecauseFirst{" both "}
     TacticMiddleBecauseSecond{" and "}
@@ -34,30 +34,30 @@ Sentence {
     WaterproofTactic { 
         // Zero Input Tactics
         "Help" TacticEnd | 
-        "We argue by contradiction" TacticEnd| 
+        "We" space+ "argue" space+ "by" space+ "contradiction" TacticEnd| 
         "Contradiction" TacticEnd| 
-        "We show both statements"  TacticEnd| 
-        "We show both directions" TacticEnd|
-        "We now show the induction step" TacticEnd|
+        "We" space+ "show" space+ "both" space+ "statements"  TacticEnd| 
+        "We" space+ "show" space+ "both" space+ "directions" TacticEnd|
+        "We" space+ "now" space+ "show" space+ "the" space+ "induction" space+ "step" TacticEnd|
         // Single Input Tactics
         "Take " TacticInput TacticEnd |
         "We" space+ "need" space+ "to" space+ "show" space+ "that" TacticInput TacticEnd | 
         "We" space+ "conclude" space+ "that" TacticInput TacticEnd | 
         "Case " TacticInput TacticEnd |
         "Assume" space+ "that" TacticInput TacticEnd |
-        "Obtain such a " TacticInput TacticEnd | 
+        "Obtain" space+ "such" space+ "a " TacticInput TacticEnd | 
         "(& " TacticInput " )." | 
-        "It suffices to show that " TacticInput TacticEnd | 
-        "It holds that " TacticInput TacticEnd | 
-        "It holds that " TacticInput TacticEnd | 
-        "We claim that " TacticInput TacticEnd | 
-        "We use induction on " TacticInput TacticEnd | 
+        "It" space+ "suffices" space+ "to" space+ "show" space+ "that " TacticInput TacticEnd | 
+        "It" space+ "holds" space+ "that " TacticInput TacticEnd | 
+        "It" space+ "holds" space+ "that " TacticInput TacticEnd | 
+        "We" space+ "claim" space+ "that " TacticInput TacticEnd | 
+        "We" space+ "use" space+ "induction" space+ "on " TacticInput TacticEnd | 
         "Indeed, " TacticInput TacticEnd |
         "Use " TacticInput TacticEnd |
-        "Choose " TacticInput TacticEnd | 
-        "We first show the base case " TacticInput TacticEnd | 
+        "Choose " TacticInput TacticMiddleDefine TacticInput TacticEnd |
+        "We" space+ "first" space+ "show" space+ "the" space+ "base" space+ "case " TacticInput TacticEnd | 
         // Multi Input Tactics
-        "Expand the definition of " TacticInput TacticMiddleExpand TacticInput TacticEnd | 
+        "Expand" space+ "the" space+ "definition" space+ "of " TacticInput TacticMiddleExpand TacticInput TacticEnd | 
         "Obtain " TacticInput TacticMiddleObtain TacticInput TacticEnd | 
         "By " TacticInput TacticMiddleByOrSince TacticInput TacticEnd | 
         "Define " TacticInput TacticMiddleDefine TacticInput TacticEnd | 
@@ -87,7 +87,7 @@ Sentence {
 // Skip Statement
 @skip {} {
     Statement {
-        "Require Import " StatementInput StatementEnd space |
+        "Require" space+ "Import " StatementInput StatementEnd space |
         "Waterproof " StatementInput StatementEnd space |
         "Set Default " StatementInput StatementEnd space |
         "Open Scope " StatementInput StatementEnd space |

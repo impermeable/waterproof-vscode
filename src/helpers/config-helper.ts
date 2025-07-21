@@ -1,4 +1,6 @@
 import { workspace } from "vscode";
+import { HypVisibility } from "../../lib/types";
+import { WaterproofLogger as wpl } from "./logger";
 
 export class WaterproofConfigHelper {
 
@@ -25,6 +27,11 @@ export class WaterproofConfigHelper {
     /** `waterproof.skipLaunchChecks` */
     static get skipLaunchChecks() {
         return config().get<boolean>("skipLaunchChecks") as boolean;
+    }
+
+    /** `waterproof.showMenuItemsInEditor` */
+    static get showMenuItems() {
+        return config().get<boolean>("showMenuItemsInEditor") as boolean;
     }
 
     /** `waterproof.showLineNumbersInEditor` */
@@ -80,6 +87,21 @@ export class WaterproofConfigHelper {
         return config().get<number>("pp_type") as number;
     }
 
+
+    /** `waterproof.visibilityOfHypotheses` */
+    static get visibilityOfHypotheses() : HypVisibility {
+        const hypVisibility = config().get<string>("visibilityOfHypotheses");
+        wpl.log(`Hypothesis visibility set to: ${hypVisibility}`); 
+        switch(hypVisibility) {
+            case "all":
+                return HypVisibility.All;
+            case "limited":
+                return HypVisibility.Limited;
+            case "none":
+            default:
+                return HypVisibility.None;
+        }
+    }
     /** `waterproof.trace.server` */
     static get trace_server() {
         return config().get<"off" | "messages" | "verbose">("trace.server") as "off" | "messages" | "verbose";

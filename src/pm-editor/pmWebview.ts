@@ -1,4 +1,4 @@
-import { EventEmitter } from "stream";
+import { EventEmitter } from "events";
 import { Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
 import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNumber } from "../../shared";
@@ -8,12 +8,10 @@ import { SequentialEditor } from "./edit";
 import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
-import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
+import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { HistoryChangeType } from "../../shared/Messages";
-
-import * as path from 'path';
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -41,6 +39,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private _provider: CoqEditorProvider;
 
     private _showLineNrsInEditor: boolean = WaterproofConfigHelper.showLineNumbersInEditor;
+    private _showMenuItemsInEditor: boolean = WaterproofConfigHelper.showMenuItems;
 
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
@@ -83,10 +82,8 @@ export class ProseMirrorWebview extends EventEmitter {
             this.undoHandler.bind(this),
             this.redoHandler.bind(this));
 
-
-
-        const fileName = path.basename(doc.uri.fsPath)
-
+        const fileName = WaterproofFileUtil.getBasename(doc.uri)
+        
         if (isIllegalFileName(fileName)) {
             const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "-", "(", ")". Please rename the file.`
             window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
@@ -194,6 +191,12 @@ export class ProseMirrorWebview extends EventEmitter {
                 this._showLineNrsInEditor = WaterproofConfigHelper.showLineNumbersInEditor;
                 this.updateLineNumberStatusInEditor();
             }
+
+            if (e.affectsConfiguration("waterproof.showMenuItemsInEditor")) {
+                this._showMenuItemsInEditor = WaterproofConfigHelper.showMenuItems;
+                WaterproofLogger.log(`Menu items will now be ${WaterproofConfigHelper.showMenuItems ? "shown" : "hidden"} in student mode`);
+                this.updateMenuItemsInEditor();
+            }
         }));
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
@@ -273,6 +276,13 @@ export class ProseMirrorWebview extends EventEmitter {
             body: this._showLineNrsInEditor
         }, true);
 
+    }
+
+    private updateMenuItemsInEditor() {
+        this.postMessage({
+            type: MessageType.setShowMenuItems,
+            body: this._showMenuItemsInEditor
+        }, true);
     }
 
     /** Convert line number offsets to line indices and send message to Editor webview */
@@ -394,7 +404,9 @@ export class ProseMirrorWebview extends EventEmitter {
                 break;
             case MessageType.ready:
                 this.syncWebview();
+                // When ready send the state of the teacher mode and show menu items settings to editor
                 this.updateTeacherMode();
+                this.updateMenuItemsInEditor();
                 break;
             case MessageType.lineNumbers:
                 this._linenumber = msg.body;

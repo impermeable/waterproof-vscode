@@ -74,7 +74,7 @@ var browser = esbuild
     ...sourcemap_client,
     format: "cjs",
     platform: "browser",
-    external: ["vscode"],
+    external: ["vscode", "child_process"],
     outfile: "out/src/mainBrowser.js",
     minify,
     watch: watch("./src/mainBrowser.ts"),
@@ -107,7 +107,6 @@ function viewBuild(file) {
 }
 
 var infoView = viewBuild("./views/goals/index.tsx");
-var logView = viewBuild("./views/logbook/index.tsx")
 var executeView = viewBuild("./views/execute/index.tsx");
 var debugView = viewBuild("./views/debug/index.tsx");
 var helpView = viewBuild("./views/help/index.tsx");

@@ -16,7 +16,7 @@ import "../styles/goals.css";
 type CoqId = PpString;
 
 //displays the hypothesis as a pp string
-function Hyp({ hyp: { names, def, ty } }: { hyp: Hyp<PpString> }) {
+export function HypEl({ hyp: { names, def, ty } }: { hyp: Hyp<PpString> }) {
   //className to give the right css to the hypothesis, definition or not
   const className = "coq-hypothesis" + (def ? " coq-has-def" : "");
   //a label for the hypothesis
@@ -51,7 +51,7 @@ function Hyps({ hyps }: HypsP) {
     <>
       {hyps.map((v) => {
         const key = objectHash(v);
-        return <Hyp key={key} hyp={v} />;
+        return <HypEl key={key} hyp={v} />;
       })}
     </>
   );

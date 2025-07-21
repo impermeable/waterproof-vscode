@@ -52,7 +52,7 @@ body {
     font-weight: var(--font-weight);
     font-size: var(--font-size);
 
-    display: flex;
+    display: none;
     flex-direction: row;
     justify-content: center;
     align-items: center;

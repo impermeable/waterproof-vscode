@@ -26,7 +26,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
         this._manager.on(WebviewManagerEvents.updateButton, (e) => {
             // Update the transparency of the button based on the event
             // This is done when a panel is open
-            //this.updateButtonTransparency(e.name, e.open);
+            this.updateButtonTransparency(e.name, e.open);
         });
     }
     public updateGreyedOutButton(buttonId: string, open: boolean) {
@@ -38,12 +38,20 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
     }
 
     public updateButtonTransparency(buttonId: string, open: boolean) {
-        // Set the transparency state of the button in the transparency map
-        this._transparencyMap.set(buttonId, open);
-        //update the list of buttons that are currently greyed out
-        this.updateGreyedOutButton(buttonId,open);
-        // Update the button styles to reflect the transparency state
-        this.updateButtonStyles(buttonId, open);
+        console.log(`Updating button transparency for ${buttonId} to ${open}`);
+        // Instead of setting permanent transparency, flash the button briefly
+        this.flashButton(buttonId);
+    }
+
+    private flashButton(buttonId: string) {
+        // If the view is not available, return without flashing
+        if (!this._view) return;
+        console.log(`Flashing button: ${buttonId}`);
+        // Post a message to the webview to flash the button
+        this._view.webview.postMessage({
+            type: 'flash',
+            buttonId: buttonId,
+        });
     }
 
     private updateButtonStyles(buttonId: string, open: boolean) {
@@ -132,6 +140,16 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     opacity: 0.6;
                     cursor: default;
                 }
+
+                .flash {
+                    animation: flashGrey 0.7s ease-in-out;
+                }
+
+                @keyframes flashGrey {
+                    0% { opacity: 1; }
+                    50% { opacity: 0.4; }
+                    100% { opacity: 1; }
+                }
             </style>
             </head>
             <body>
@@ -210,7 +228,20 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                         const message = event.data;
 
                         switch (message.type) {
-                            // If the message is for changing the transparency
+                            // If the message is for flashing the button
+                            case 'flash': {
+                                const button = document.getElementById(message.buttonId);
+                                if (button) {
+                                    // Add flash class to trigger animation
+                                    button.classList.add('flash');
+                                    // Remove the class after animation completes
+                                    setTimeout(() => {
+                                        button.classList.remove('flash');
+                                    }, 300); // Match the animation duration
+                                }
+                                break;
+                            }
+                            // If the message is for changing the transparency (legacy case)
                             case 'trans': {
                                 const button = document.getElementById(message.buttonId);
                                 if (button) {

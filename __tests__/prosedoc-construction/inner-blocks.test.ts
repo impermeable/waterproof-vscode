@@ -1,10 +1,10 @@
-import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/inner-blocks";
-import { isCoqCodeBlock, isCoqDocBlock, isCoqMarkdownBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "../../editor/src/document-construction/inner-blocks";
+import { isCoqCodeBlock, isCoqDocBlock, isCoqMarkdownBlock, isMathDisplayBlock } from "../../editor/src/waterproof-editor/document/blocks/typeguards";
 import { expect } from "@jest/globals";
 
 test("Inner input area (and hint) blocks", () => {
     const inputAreaContent = "$$1028 + 23 = ?$$\n```coq\nCompute 1028 + 23.\n```";
-    
+
     const blocks = createInputAndHintInnerBlocks(inputAreaContent);
 
     expect(blocks.length).toBe(2);
@@ -28,7 +28,7 @@ test("Inner coq blocks", () => {
     // One block for the coq content and one block for the comment.
     expect(blocks.length).toBe(2);
     expect(isCoqCodeBlock(blocks[0])).toBe(true);
-    
+
     expect(blocks[0].stringContent).toBe("Compute 1 + 1.");
     expect(blocks[0].range.from).toBe(0);
     expect(blocks[0].range.to).toBe(14);
@@ -37,7 +37,7 @@ test("Inner coq blocks", () => {
     expect(blocks[1].stringContent).toBe("* Header ");
     expect(blocks[1].range.from).toBe(14);
     expect(blocks[1].range.to).toBe(coqContent.length);
-    
+
     expect(blocks[1].innerBlocks?.length).toBe(1);
     expect(isCoqMarkdownBlock(blocks[1].innerBlocks![0])).toBe(true);
 });

@@ -21,7 +21,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private readonly _document: TextDocument;
 
     /** The file format of the doc associated with this ProseMirror instance */
-    private readonly _format: FileFormat;
+    private readonly _format: FileFormat = FileFormat.MarkdownV;
 
     /** The editor that appends changes to the document associated with this panel */
     private readonly _workspaceEditor = new SequentialEditor();
@@ -90,7 +90,6 @@ export class ProseMirrorWebview extends EventEmitter {
             WaterproofLogger.log("Error: Illegal file name encountered.");
         }
 
-        this._format = getFormatFromExtension(doc);
 
         this._panel = webview;
         this._workspaceEditor.onFinish(() => {
@@ -106,6 +105,14 @@ export class ProseMirrorWebview extends EventEmitter {
         this._teacherMode = WaterproofConfigHelper.teacherMode;
         this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
         this._lastCorrectDocString = doc.getText();
+
+        const format = getFormatFromExtension(doc);
+        if (format === undefined) {
+            // FIXME: We should never encounter this, as the extension is only activated for .v and .mv files?
+            WaterproofLogger.log("Aborting creation of Waterproof editor. Encountered a file with extension different from .mv or .v!");
+            return;
+        }
+        this._format = format;
     }
 
     private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {

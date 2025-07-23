@@ -1,9 +1,11 @@
 import { Completion } from "@codemirror/autocomplete";
 
-import { Message, MessageType } from "../../shared";
-import { Editor } from "./kroqed-editor";
-import { COQ_CODE_PLUGIN_KEY } from "./kroqed-editor/codeview/coqcodeplugin";
-import { WaterproofEditorConfig } from "./kroqed-editor/utilities/types";
+import { FileFormat, Message, MessageType } from "../../shared";
+import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
+import { CODE_PLUGIN_KEY } from "./waterproof-editor/codeview";
+// TODO: Move this to a types location.
+import { TextDocMappingMV, TextDocMappingV } from "./mapping";
+import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -11,6 +13,40 @@ import { WaterproofEditorConfig } from "./kroqed-editor/utilities/types";
  */
 interface VSCodeAPI {
 	postMessage: (message: Message) => void;
+}
+
+function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
+	// Create the WaterproofEditorConfig object
+	const cfg: WaterproofEditorConfig = {
+		api: {
+			executeHelp() {
+				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
+			},
+			executeCommand(command: string, time: number) {
+				codeAPI.postMessage({ type: MessageType.command, body: { command, time } });
+			},
+			editorReady() {
+				codeAPI.postMessage({ type: MessageType.editorReady });
+			},
+			documentChange(change) {
+				codeAPI.postMessage({ type: MessageType.docChange, body: change });
+			},
+			applyStepError(errorMessage) {
+				codeAPI.postMessage({ type: MessageType.applyStepError, body: errorMessage });
+			},
+			cursorChange(cursorPosition) {
+				codeAPI.postMessage({ type: MessageType.cursorChange, body: cursorPosition });
+			},
+			lineNumbers(linenumbers, version) {
+				codeAPI.postMessage({ type: MessageType.lineNumbers, body: { linenumbers, version } });
+			},
+		},
+		documentConstructor: format === FileFormat.MarkdownV ? blocksFromMV : blocksFromV,
+		// TODO: For now assuming we are constructing an mv file editor.
+		mapping: format === FileFormat.MarkdownV ? TextDocMappingMV : TextDocMappingV
+	}
+
+	return cfg;
 }
 
 window.onload = () => {
@@ -27,31 +63,10 @@ window.onload = () => {
 		// TODO: maybe sent some sort of test message?
 	}
 
-	// Create the WaterproofEditorConfig object
-	const cfg: WaterproofEditorConfig = {
-		api: {
-			executeCommand(command: string, time: number) {
-				codeAPI.postMessage({ type: MessageType.command, body: {command, time} });
-			},
-			editorReady() {
-				codeAPI.postMessage({ type: MessageType.editorReady });
-			},
-			documentChange(change) {
-				codeAPI.postMessage({ type: MessageType.docChange, body: change });
-			},
-			applyStepError(errorMessage) {
-				codeAPI.postMessage({ type: MessageType.applyStepError, body: errorMessage });
-			},
-			cursorChange(cursorPosition) {
-				codeAPI.postMessage({ type: MessageType.cursorChange, body: cursorPosition });
-			},
-			lineNumbers(linenumbers, version) {
-				codeAPI.postMessage({ type: MessageType.lineNumbers, body: {linenumbers, version} });
-			},
-		}
-	}
+
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
-	const editor = new Editor(editorElement, cfg);
+	const cfg = createConfiguration(FileFormat.MarkdownV, codeAPI);
+	const editor = new WaterproofEditor(editorElement, cfg);
 
 	// Register event listener for communication between extension and editor
 	window.addEventListener("message", (event: MessageEvent<Message>) => {
@@ -80,7 +95,7 @@ window.onload = () => {
 				if (!state) break;
 				const completions: Completion[] = msg.body;
 				// Apply autocomplete to all coq cells
-				COQ_CODE_PLUGIN_KEY
+				CODE_PLUGIN_KEY
 					.getState(state)
 					?.activeNodeViews
 					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));

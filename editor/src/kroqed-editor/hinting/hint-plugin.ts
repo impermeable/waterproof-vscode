@@ -1,7 +1,7 @@
 import { NodeType, Node as PNode, Schema } from "prosemirror-model";
 import { EditorState, EditorStateConfig, Plugin, Transaction } from "prosemirror-state";
 import { Decoration, DecorationSet, EditorView } from "prosemirror-view";
-import { findDescendantsWithType } from "../kroqed-utils";
+import { findDescendantsWithType } from "../utilities";
 
 /**
  * Function that returns the hint plugin.
@@ -19,9 +19,9 @@ export const createHintPlugin = (schema: Schema): Plugin => {
 				// On the init we recompute all the hint decorations.
                 return getHintDecorations(instance, hintNodeType);
             },
-            apply(tr: Transaction, 
-                value: DecorationSet, 
-                oldState: EditorState, 
+            apply(tr: Transaction,
+                value: DecorationSet,
+                oldState: EditorState,
                 newState: EditorState) {
 				// If the document did not change (on selection changes for example)
 				// we dont have to recompute the hint decorations.
@@ -78,7 +78,7 @@ function createCollapseDOM(view: EditorView, hint: {node: PNode, pos: number}) {
 	// Set the content to the title attribute of the hint node.
 	hintElement.textContent = hint.node.attrs.title;
 	// Add event listener for mouse clicks.
-	hintElement.addEventListener("click", (ev: MouseEvent) => {
+	hintElement.addEventListener("click", (_ev: MouseEvent) => {
 		// Get the state of the hint attribute ( assuming it is always there :) ).
 		const state = view.state.doc.nodeAt(hint.pos)?.attrs.shown as boolean;
 		// Create a new transaction that toggles the 'shown' node attribute on the node at position `hint.pos`.

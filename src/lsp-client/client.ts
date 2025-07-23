@@ -1,5 +1,5 @@
 import { Completion } from "@codemirror/autocomplete";
-import { DiagnosticSeverity, Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
+import { Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
@@ -17,12 +17,14 @@ import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
-import { WaterproofConfigHelper } from "../helpers";
+import { WaterproofConfigHelper, WaterproofLogger as wpl } from "../helpers";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
 }
 
+// Seems to be needed for the mixin class below
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
 
 /**
@@ -53,10 +55,12 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
          * Initializes the client.
          * @param args the arguments for the base `LanguageClient`
          */
-        constructor(...args: any[]) {
+        // Needed for the mixin class
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        constructor(...args: any[]) { 
             super(...args);
             this.sentenceManager = new SentenceManager();
-
+            wpl.debug("CoqLspClient constructor");
             // forward progress notifications to editor
             this.fileProgressComponents.push({
                 dispose() { /* noop */ },
@@ -230,6 +234,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         }
 
         async requestGoals(params?: GoalRequest | Position): Promise<GoalAnswer<PpString>> {
+            wpl.debug(`Requesting goals with params: ${JSON.stringify(params)}`);
             if (!params || "line" in params) {  // if `params` is not a `GoalRequest` ...
                 params ??= this.activeCursorPosition;
                 if (!this.activeDocument || !params) {
@@ -237,6 +242,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
                 params = this.createGoalsRequestParameters(this.activeDocument, params);
             }
+            wpl.debug(`Sending request for goals`);
             return this.sendRequest(goalRequestType, params);
         }
 

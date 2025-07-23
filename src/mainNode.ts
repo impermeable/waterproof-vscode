@@ -12,7 +12,7 @@ import { CoqLspClientFactory } from "./lsp-client/clientTypes";
  * @param wsConfig the workspace configuration of Waterproof
  * @returns an LSP client with the added functionality of `CoqFeatures`
  */
-const clientFactory: CoqLspClientFactory = (clientOptions: LanguageClientOptions, wsConfig: WorkspaceConfiguration) => {
+const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOptions: LanguageClientOptions, wsConfig: WorkspaceConfiguration) => {
     const serverOptions: ServerOptions = {
         command: wsConfig.path,
         args: wsConfig.args,
@@ -27,7 +27,7 @@ const clientFactory: CoqLspClientFactory = (clientOptions: LanguageClientOptions
 
 
 export function activate(context: ExtensionContext): void {
-    let extension: Waterproof = new Waterproof(context, clientFactory);
+    const extension: Waterproof = new Waterproof(context, clientFactory);
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();

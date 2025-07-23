@@ -1,7 +1,7 @@
 import { Completion } from "@codemirror/autocomplete";
 import { EditorState } from "@codemirror/state";
 
-const render = (completion: Completion, state: EditorState): globalThis.Node | null => {
+const render = (completion: Completion, _state: EditorState): globalThis.Node | null => {
     // We only render an icon in the case that this is a symbol
     if (completion.type !== "symbol") return null;
     

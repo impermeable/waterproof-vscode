@@ -1,4 +1,4 @@
-import { EventEmitter } from "stream";
+import { EventEmitter } from "events";
 import {
     Uri,
     ViewColumn,
@@ -6,7 +6,7 @@ import {
     window
 } from "vscode";
 import { Disposable } from "vscode-languageclient";
-import { Message, MessageType } from "../../shared";
+import { Message } from "../../shared";
 
 /**
  * Defines the states of the webview
@@ -74,7 +74,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     protected create() {
         if (this.state != WebviewState.ready) return; // Error handling
 
-        let webviewOpts = { enableScripts: true, enableFindWidget: false };
+        const webviewOpts = { enableScripts: true, enableFindWidget: false };
         if (this.name == "help") {
             this._panel = window.createWebviewPanel(
                 this.name,

@@ -15,7 +15,8 @@ export function Symbols() {
         return [symbolPanelCategory as number, label, apply];
     });
 
-    const [tooltip, setTooltip] = useState('');
+    // FIXME: Does this state do anything?
+    const [_tooltip, setTooltip] = useState('');
 
     // Insert symbol when pressed
     const handleInsert = (event, id, title) => {
@@ -38,7 +39,7 @@ export function Symbols() {
     // the id is used for the tooltip and the title is used as the character    
     const generateButtons = (category: number) => {
         const symbols = buttonArray.filter(([cat]) => cat === category);
-        return symbols.map(([cat, id, title]: [number, string, string]) => (
+        return symbols.map(([, id, title]: [number, string, string]) => (
             <VSCodeButton
                 className="tooltip"
                 appearance="icon"
@@ -60,6 +61,7 @@ export function Symbols() {
     const mathButtons = generateButtons(2);
     const arrowButtons = generateButtons(3);
     const numberButtons = generateButtons(4);
+    const supSubButtons = generateButtons(5);
 
     return (
         <div className="info-panel-container">
@@ -100,6 +102,14 @@ export function Symbols() {
             </div>
             <div>
                 {numberButtons}
+            </div>
+            <VSCodeDivider />
+            {/* And the superscript and subscript buttons */}
+            <div id="view-6">
+                <p>Superscript and Subscript</p>
+            </div>
+            <div>
+                {supSubButtons}
             </div>
         </div>
     );

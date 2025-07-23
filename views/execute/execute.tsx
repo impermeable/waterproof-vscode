@@ -1,7 +1,7 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
 import React, { useEffect, useRef, useState } from "react";
 import { GoalAnswer, PpString } from "../../lib/types";
-import { MessageType } from '../../shared';
+import { Message, MessageType } from '../../shared';
 import { Messages } from "../goals/Messages";
 import "../styles/execute";
 
@@ -21,25 +21,27 @@ export function Execute() {
     // callback that handles the message
     // so we can access it within the component
     useEffect(() => {
-        const handleMessage = (event) => {
-            switch (event.data.type) {
+        const handleMessage = (msg: Message) => {
+            switch (msg.type) {
                 //insert message
                 case MessageType.insert:
-                    insertText(event.data.body.symbolUnicode);
+                    insertText(msg.body.symbolUnicode);
                     break;
                 //info after execute message
-                case MessageType.command:
-                    setInfo(event.data.body);
+                case MessageType.setData:
+                    setInfo(msg.body);
                     setIsLoading(false);
                     break;
             }
         };
 
+        const callback = (ev: MessageEvent<Message>) => {handleMessage(ev.data);};
+
         // We listen for messages from the window
-        window.addEventListener('message', handleMessage);
+        window.addEventListener('message', callback);
 
         return () => {
-            window.removeEventListener('message', handleMessage);
+            window.removeEventListener('message', callback);
         };
     }, [cursor, value]);
 

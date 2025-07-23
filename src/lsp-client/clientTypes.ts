@@ -1,4 +1,4 @@
-import { Position, TextDocument, Uri, WorkspaceConfiguration, Range, DiagnosticRelatedInformation, DiagnosticSeverity, DiagnosticTag } from "vscode";
+import { Position, ExtensionContext, TextDocument, Uri, WorkspaceConfiguration, Range, DiagnosticRelatedInformation, DiagnosticSeverity, DiagnosticTag } from "vscode";
 import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscode-languageclient";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
@@ -83,6 +83,7 @@ export type CoqLspClient = BaseLanguageClient & ICoqLspClient;
  * Type of file language client factory
  */
 export type CoqLspClientFactory = (
+    context: ExtensionContext,
     clientOptions: LanguageClientOptions,
     wsConfig: WorkspaceConfiguration
 ) => CoqLspClient;
@@ -130,10 +131,12 @@ export interface CoqLspServerConfig {
     send_diags_extra_data: boolean;
 }
 
-
+// TODO: Rewrite namespace to modern syntax
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CoqLspServerConfig {
     export function create(
         client_version: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         wsConfig: any
     ): CoqLspServerConfig {
         return {
@@ -153,9 +156,12 @@ export namespace CoqLspServerConfig {
     }
 }
 
+// TODO: Rewrite namespace to modern syntax
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CoqLspClientConfig {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function create(wsConfig: any): CoqLspClientConfig {
-        let obj: CoqLspClientConfig = { show_goals_on: wsConfig.show_goals_on };
+        const obj: CoqLspClientConfig = { show_goals_on: wsConfig.show_goals_on };
         return obj;
     }
 }

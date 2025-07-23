@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { getNonce } from '../util';
 import { WebviewManager, WebviewManagerEvents } from '../webviewManager';
-
+import { WaterproofLogger as wpl} from '../helpers';
 // this function add the side panel to the vs code side panel
 export function addSidePanel(context: vscode.ExtensionContext, manager: WebviewManager) {
     const provider = new SidePanelProvider(context.extensionUri, manager);
@@ -24,6 +24,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
         this._manager.on(WebviewManagerEvents.updateButton, (e) => {
             // Update the transparency of the button based on the event
             // This is done when a panel is open
+            wpl.log(`SidePanelProvider: Updating button transparency for ${e.name} to ${e.open}`); 
             this.updateButtonTransparency(e.name, e.open);
         });
     }
@@ -49,7 +50,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
 
     public resolveWebviewView(
         webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
+        _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken,
     ) {
         this._view = webviewView;
@@ -78,7 +79,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
     }
 
     // Now we create the actual web page
-    private _getHtmlForWebview(webview: vscode.Webview) {
+    private _getHtmlForWebview(_webview: vscode.Webview) {
         const nonce = getNonce();
 
         // html code for the webview
@@ -120,7 +121,6 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     <button class="symbol-button" id="symbols">Symbols</button>
                     <button class="symbol-button" id="tactics">Tactics</button>
                     <button class="symbol-button" id="execute">Execute</button>
-                    <button class="symbol-button" id="logbook">Logbook</button>
                     <button class="symbol-button" id="debug">Debug</button>
                 </div>
 
@@ -128,7 +128,6 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     const vscode = acquireVsCodeApi();
 
                     const goalsButton = document.getElementById('goals');
-                    const logbookButton = document.getElementById('logbook');
                     const debugButton = document.getElementById('debug');
                     const executeButton = document.getElementById('execute');
                     const helpButton = document.getElementById('help');
@@ -140,11 +139,6 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     goalsButton.addEventListener('click', () => {
                         // Handle Goals button click event by sending a message to vscode
                         vscode.postMessage({ command: 'goals' });
-                    });
-
-                    logbookButton.addEventListener('click', () => {
-                        // Handle logbook button click event by sending a message to vscode
-                        vscode.postMessage({ command: 'logbook' });
                     });
 
                     debugButton.addEventListener('click', () => {

@@ -1,15 +1,14 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
-import { exec, spawn } from "child_process";
-import path = require("path");
 import { Version, VersionRequirement } from "./version";
 import { COMPARE_MODE } from "./types";
+import { WaterproofFileUtil, WaterproofLogger as wpl } from "../helpers";
 
 export type VersionError = {
     reason: string;
 }
 
 /** Check if `input` is a version error. */
-function isVersionError(input: any | VersionError): input is VersionError {
+function isVersionError(input: unknown) : input is VersionError {
     return (input as VersionError).reason !== undefined;
 }
 
@@ -43,6 +42,7 @@ export class VersionChecker {
      */
     public async prelaunchChecks(): Promise<boolean> {
         const version = await this.checkLSPBinary();
+        wpl.log(`Version of coq-lsp: ${version}`);
         if (!isVersionError(version)) {
             if (version.needsUpdate(this._reqVersionCoqLSP)) {
                 this.informUpdateAvailable("coq-lsp", this._reqVersionCoqLSP, version);
@@ -95,21 +95,22 @@ export class VersionChecker {
      * @returns 
      */
     public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {
-        return new Promise((resolve, reject) => {
-            if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
-            const coqcBinary = path.join(path.parse(this._wpPath).dir, "coqc");
-            const command = `${coqcBinary} --version`;
-            const regex = /version (?<version>\d+\.\d+\.\d+)/g;
+        if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
 
-            exec(command, (err, stdout, stderr) => {
-                if (err) resolve({ reason: err.message });
-                const groups = regex.exec(stdout)?.groups;
-                if (groups === undefined) reject("Regex matching on version string went wrong");
-                // FIXME: ts-ignore
-                //@ts-ignore
-                resolve(Version.fromString(groups["version"]));
-            });
-        });
+        const coqcBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "coqc");
+        const command = `${coqcBinary} --version`;
+        const regex = /version (?<version>\d+\.\d+\.\d+)/g;
+    
+        try {
+            const stdout = await this.exec(command);
+            const groups = regex.exec(stdout)?.groups;
+            if (!groups) throw new Error("Failed to parse version string.");
+            return Version.fromString(groups["version"]);
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
+        }
     }
 
     /**
@@ -117,23 +118,25 @@ export class VersionChecker {
      * @returns 
      */
     public async checkWaterproofLib(): Promise<{ wpVersion: Version, requiredCoqVersion: Version } | VersionError> {
-        return new Promise((resolve, reject) => {
-            if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
-            const ext = process.platform === "win32" ? ".exe" : "";
-            const coqtopPath = path.join(path.parse(this._wpPath).dir, `coqtop${ext}`);
-
-            const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
-            const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
-            exec(command, (err, stdout, stderr) => {
-                if (err) return resolve({ reason: err.message });
-
-                const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
-                const versionCoqWaterproof = Version.fromString(wpVersion);
-                const versionRequiredCoq = Version.fromString(reqCoqVersion);
-
-                resolve({ wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq });
-            });
-        });
+        if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
+        const ext = process.platform === "win32" ? ".exe" : "";
+        
+        const coqtopPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `coqtop${ext}`);
+        wpl.debug(`coqtopPath: ${coqtopPath}`)
+        const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
+        const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
+    
+        try {
+            const stdout = await this.exec(command);
+            const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
+            const versionCoqWaterproof = Version.fromString(wpVersion);
+            const versionRequiredCoq = Version.fromString(reqCoqVersion);
+            return { wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq };
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
+        }
     }
 
     /**
@@ -141,16 +144,48 @@ export class VersionChecker {
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.
      */
     private async checkLSPBinary(): Promise<Version | VersionError> {
-        return new Promise((resolve, reject) => {
-            if (this._wpPath === undefined) return resolve({ reason: "Waterproof.path is undefined" });
-            const command = `${this._wpPath} --version`;
+        if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
+        const command = `${this._wpPath} --version`;
+    
+        try {
+            const stdout = await this.exec(command);
+            const version = Version.fromString(stdout.trim());
+            return version;
+        } catch (err: unknown) {
+            return err instanceof Error 
+                ? { reason: err.message }
+                : { reason: "Unknown error" };
+        }
+    }
 
-            exec(command, (err, stdout, stderr) => {
-                if (err) return resolve({ reason: err.message });
-                const version = Version.fromString(stdout.trim());
-                resolve(version);
+    /** Wrapper around shellIntegration  */
+    private async exec(command: string): Promise<string> {
+        wpl.log(`Running command: ${command}`)
+        return new Promise((resolve, reject) => {
+            // We use require here to avoid issues with the import statement in the browser context.
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { exec } = require("child_process");
+            exec(command, (err: { message: string; }, stdout: string, _stderr: unknown) => {
+                if (err) {
+                    reject({ reason: err.message });
+                } else {
+                    resolve(stdout);
+                }
             });
+            
         });
+    }
+
+    /**
+     * Currently an autoinstaller only exists for Windows. If other platforms have a developed auto-installer, update this function
+     */
+    private platformHasAutoInstaller(){
+        const platform = getPlatformHelper();
+        if (platform == "windows") {
+            return true
+        } else {
+            return false
+        }
     }
 
     /**
@@ -158,7 +193,11 @@ export class VersionChecker {
      */
     private informWaterproofLibNotFound() {
         const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.`;
-        window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        if (this.platformHasAutoInstaller()){
+            window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        } else {
+            window.showInformationMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        }
     }
 
     /**
@@ -171,7 +210,11 @@ export class VersionChecker {
         const platform = getPlatformHelper();
         if (platform === "macos" || platform == "windows") {
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to download a new installer.`;
-            window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            if (this.platformHasAutoInstaller()){
+                window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            } else {
+                window.showErrorMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            }
         } else {
             // We have no installer for other platforms, so we supply the user with the readme.
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to open instructions on how to update.`;
@@ -189,6 +232,7 @@ export class VersionChecker {
      */
     private handleDownloadInstaller(value: typeof AUTO_INSTALL | typeof DOWNLOAD_INSTALLER | undefined) {
         if (value === DOWNLOAD_INSTALLER){
+            console.log("DOWNLOAD INSTALLER")
             env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
@@ -200,7 +244,11 @@ export class VersionChecker {
      */
     private informWaterproofPathInvalid() {
         const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nTry running the automatic installer, or for more information on how to make the waterproof extension work see the installation instructions.";
-        window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+        if (this.platformHasAutoInstaller()){
+            window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+        } else {
+            window.showInformationMessage(message, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+        }
     }
 
     /**
@@ -208,11 +256,11 @@ export class VersionChecker {
      * @param value -
      */
     private handleInvalidPath(value: typeof AUTO_INSTALL | typeof OPEN_INSTRUCTIONS | undefined) {
-        if (value == OPEN_INSTRUCTIONS) {
+        console.log("Invalid Path Handler")
+        if (value === OPEN_INSTRUCTIONS) {
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
-
         } 
     }
 }

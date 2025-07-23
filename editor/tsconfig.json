@@ -1,8 +1,10 @@
 {
   "extends": "../tsconfig-base.json",
   "compilerOptions": {
+    "esModuleInterop": true,
     "target": "ESNext",
-    "module": "commonjs"
+    "module": "commonjs",
+    "resolveJsonModule": true
   },
-  "include": ["../shared"]
+  "include": ["**/*.ts", "**/*.js", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts", "../src/helpers/**/*.ts", "../shared/**/*.json"]
 }

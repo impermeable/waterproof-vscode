@@ -1,6 +1,6 @@
 import { FileFormat } from "../../../../shared";
 import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
-import { CoqDocBlock, CoqMarkdownBlock, MarkdownBlock } from "./blocks/blocktypes";
+import { CoqDocBlock } from "./blocks/blocktypes";
 
 const regexes = {
     // coq: /```coq\n([\s\S]*?)\n```/g,

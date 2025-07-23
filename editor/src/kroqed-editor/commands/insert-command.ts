@@ -21,7 +21,7 @@ export function getMdInsertCommand(
     mvNodeType: NodeType,
     vNodeType: NodeType
 ): Command {
-    return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
+    return (state: EditorState, dispatch?: ((tr: Transaction) => void), _view?: EditorView): boolean => {
         // Early return when inserting is not allowed
         if (!allowedToInsert(state)) return false;
 
@@ -79,7 +79,7 @@ export function getLatexInsertCommand(
     place: InsertionPlace,
     latexNodeType: NodeType,
 ): Command {
-    return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
+    return (state: EditorState, dispatch?: ((tr: Transaction) => void), _view?: EditorView): boolean => {
         // Early return when inserting is not allowed.
         if (!allowedToInsert(state)) return false;
         // Containing node.
@@ -124,14 +124,14 @@ export function getLatexInsertCommand(
  * @param coqcodeNodeType The node type of a coqcode node.
  * @returns The insertion command.
  */
-export function getCoqInsertCommand(
+export function getCodeInsertCommand(
     filef: FileFormat, 
     insertionFunction: InsertionFunction,
     place: InsertionPlace,
     coqblockNodeType: NodeType, 
     coqcodeNodeType: NodeType,
 ): Command {
-    return (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
+    return (state: EditorState, dispatch?: ((tr: Transaction) => void), _view?: EditorView): boolean => {
         // Again, early return when inserting is not allowed. 
         if (!allowedToInsert(state)) return false;
         // Retrieve the name of the containing node of the selection.

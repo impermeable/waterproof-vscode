@@ -18,6 +18,9 @@ import "./input-area.css";
 // for the markdown
 import "./markdown.css";
 
+// for popover notifications
+import "./notifications.css";
+
 // for the coqdoc outline
 import "./coqdoc.css";
 
@@ -35,3 +38,6 @@ import "./context-menu.css";
 
 // For the symbol autocompletions:
 import "./autocomplete.css";
+
+// Imports all variable bindings:
+import "./waterproof.css";

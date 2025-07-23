@@ -1,5 +1,5 @@
 import { Range, WorkspaceEdit, workspace } from "vscode";
-import { GoalAnswer, Message, PpString, convertToString } from "../../lib/types";
+import { GoalAnswer, PpString, convertToString } from "../../lib/types";
 import { CoqLspClient } from "./clientTypes";
 
 /**
@@ -11,20 +11,6 @@ async function edit(f: (e: WorkspaceEdit) => void): Promise<void> {
     const e = new WorkspaceEdit();
     f(e);
     await workspace.applyEdit(e);  // TODO: what does boolean result mean?
-}
-
-/**
- * Converts a goals response to a list of pretty-printed results.
- */
-function getResults(response: GoalAnswer<PpString>): PpString[] {
-    let messages = response.messages;
-
-    // unbox `Message` if necessary s.t. `messages` is of type `PpString[]`
-    if (messages.length && typeof messages[0] === "object" && "text" in messages[0]) {
-        messages = (messages as Message<PpString>[]).map(m => m.text);
-    }
-
-    return messages as PpString[];
 }
 
 export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<PpString>> {

@@ -1,5 +1,5 @@
 import { ReplaceAroundStep, ReplaceStep } from "prosemirror-transform";
-import { DocChange, WrappingDocChange } from "../../../../shared";
+import { DocChange, WrappingDocChange } from "../../../../../shared";
 import { HtmlTagInfo, OperationType, ParsedStep, StringCell } from "./types";
 import { getEndHtmlTagText, getStartHtmlTagText, getTextOffset, parseFragment } from "./helper-functions";
 
@@ -62,15 +62,15 @@ export class NodeUpdate {
         //// Determine the in text document change vscode side
 
         /** The resulting change of this step operation */
-        let result : DocChange = {
+        const result : DocChange = {
             startInFile: 0,
             endInFile: 0,
             finalText: ""
         }
 
         /** Get the starting and end tag of the block deletion */
-        let startTag: HtmlTagInfo | undefined = startHtmlMap.get(step.from);
-        let endTag: HtmlTagInfo | undefined = endHtmlMap.get(step.to);
+        const startTag: HtmlTagInfo | undefined = startHtmlMap.get(step.from);
+        const endTag: HtmlTagInfo | undefined = endHtmlMap.get(step.to);
         if (startTag === undefined || endTag === undefined ) throw new Error("The deleted block was not in the mapping");
 
         /** Determine the resulting DocChange indices */
@@ -80,18 +80,18 @@ export class NodeUpdate {
         //// Update the mapping to reflect the new prosemirror state
 
         // New maps
-        let newHtmlMap = new Map<number,HtmlTagInfo>();
-        let newHtmlMapS = new Map<number,HtmlTagInfo>();
-        let newMap = new Map<number,StringCell>();
+        const newHtmlMap = new Map<number,HtmlTagInfo>();
+        const newHtmlMapS = new Map<number,HtmlTagInfo>();
+        const newMap = new Map<number,StringCell>();
 
         // The offsets that were deleted from the doc needed to update the mappings
-        let proseOffset = getTextOffset(OperationType.delete,step);
+        const proseOffset = getTextOffset(OperationType.delete,step);
         // This has an additional costs, which are taken account in the suceeding loop
         let textOffset = proseOffset;
 
 
-        for (let [key, value] of endHtmlMap) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for (const [key, value] of endHtmlMap) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key > step.from) {
                 if (key <= step.to) { // This block has been removed
                     // Adjust textOffset based on what has been deleted
@@ -105,8 +105,8 @@ export class NodeUpdate {
         }
 
 
-        for (let [key, value] of startHtmlMap) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for (const [key, value] of startHtmlMap) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key >= step.from) {
                 if (key < step.to) continue; // This block has been removed
                 newkey += proseOffset; newvalue.offsetText += textOffset;
@@ -116,8 +116,8 @@ export class NodeUpdate {
         }
 
         
-        for(let [key,value] of stringBlocks) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for(const [key,value] of stringBlocks) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key >= step.from) {
                 if (key < step.to) continue; // This block has been removed
                 newvalue.startProse += proseOffset;
@@ -134,7 +134,7 @@ export class NodeUpdate {
 
     /** Converts a replace step that is a pure node update to a DocChange */
     private static replaceStepInsert(step: ReplaceStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
-        let result : DocChange = {
+        const result : DocChange = {
             startInFile: 0,
             endInFile: 0,
             finalText: ""
@@ -160,7 +160,7 @@ export class NodeUpdate {
             // Check whether we know of the insertion location 
             if (!(startHtmlMap.has(step.from) || endHtmlMap.has(step.from))) throw new Error(" The insertion spot was not recognized, either mapping is off or a bug in code");
 
-            let location = startHtmlMap.has(step.from) ? startHtmlMap.get(step.from) : endHtmlMap.get(step.from);
+            const location = startHtmlMap.has(step.from) ? startHtmlMap.get(step.from) : endHtmlMap.get(step.from);
 
             if (location === undefined) throw new Error(" This cannot happen... ");
 
@@ -174,8 +174,8 @@ export class NodeUpdate {
             //// Update the existing mapping
 
 
-            for(let [key,value] of stringBlocks) {
-                let newkey = key; let newvalue = structuredClone(value);
+            for(const [key,value] of stringBlocks) {
+                let newkey = key; const newvalue = structuredClone(value);
                 if (key >= step.from) {
                     newvalue.startProse += final.proseOffset;
                     newkey += final.proseOffset;
@@ -186,16 +186,16 @@ export class NodeUpdate {
                 newMap.set(newkey,newvalue);
             }
 
-            for (let [key, value] of endHtmlMap) {
-                let newkey = key; let newvalue = structuredClone(value);
+            for (const [key, value] of endHtmlMap) {
+                let newkey = key; const newvalue = structuredClone(value);
                 if (key > step.from) {
                     newkey += final.proseOffset; newvalue.offsetText += result.finalText.length;
                     newvalue.offsetProse += final.proseOffset;
                 }
                 newHtmlMap.set(newkey,newvalue);
             }
-            for (let [key, value] of startHtmlMap) {
-                let newkey = key; let newvalue = structuredClone(value);
+            for (const [key, value] of startHtmlMap) {
+                let newkey = key; const newvalue = structuredClone(value);
                 if (key >= step.from) {
                     newkey += final.proseOffset; newvalue.offsetText += result.finalText.length;
                     newvalue.offsetProse += final.proseOffset;
@@ -241,19 +241,19 @@ export class NodeUpdate {
 
     /** Setups the wrapping doc change for the suceeding functions */
     private static setupWrapper() : WrappingDocChange {
-        let edit1: DocChange = {
+        const edit1: DocChange = {
             startInFile: 0,
             endInFile: 0,
             finalText: ""
         }; 
-        let edit2: DocChange = {
+        const edit2: DocChange = {
             startInFile: 0,
             endInFile: 0,
             finalText: ""
         };
 
         /** The resulting document change to document model */
-        let result: WrappingDocChange = {
+        const result: WrappingDocChange = {
             firstEdit: edit1,
             secondEdit: edit2
         }; 
@@ -261,65 +261,65 @@ export class NodeUpdate {
     }
 
     private static replaceAroundStepDelete(step: ReplaceAroundStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
-        let result : WrappingDocChange = NodeUpdate.setupWrapper();
+        const result : WrappingDocChange = NodeUpdate.setupWrapper();
 
         // Update maps
-        let newHtmlMap = new Map<number,HtmlTagInfo>();
-        let newHtmlMapS = new Map<number,HtmlTagInfo>();
-        let newMap = new Map<number,StringCell>();
+        const newHtmlMap = new Map<number,HtmlTagInfo>();
+        const newHtmlMapS = new Map<number,HtmlTagInfo>();
+        const newMap = new Map<number,StringCell>();
 
-        // @ts-ignore
+        // @ts-expect-error TODO: Fix this
         result.firstEdit.startInFile = startHtmlMap.get(step.from)?.offsetText;
-        //@ts-ignore
+        // @ts-expect-error TODO: Fix this
         result.firstEdit.endInFile = endHtmlMap.get(step.gapFrom)?.offsetText;
         
-        // @ts-ignore
+        // @ts-expect-error TODO: Fix this
         result.secondEdit.startInFile = startHtmlMap.get(step.gapTo)?.offsetText;
-        //@ts-ignore
+        // @ts-expect-error TODO: Fix this
         result.secondEdit.endInFile = endHtmlMap.get(step.to)?.offsetText;
 
-        for (let [key, value] of endHtmlMap) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for (const [key, value] of endHtmlMap) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key == step.gapFrom || key == step.to) continue;
             if (key >= step.gapFrom && key >= step.to) { 
-                //@ts-ignore
+                // @ts-expect-error TODO: Fix this
                 newkey -= 2; newvalue.offsetText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost);
                 newvalue.offsetProse -= 2;
             } else if(key >= step.gapFrom) {
-                //@ts-ignore
+                // @ts-expect-error TODO: Fix this
                 newkey -= 1; newvalue.offsetText -= endHtmlMap.get(step.gapFrom)?.textCost;
                 newvalue.offsetProse -= 1;
             }
             newHtmlMap.set(newkey,newvalue);
         }
-        for (let [key, value] of startHtmlMap) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for (const [key, value] of startHtmlMap) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key == step.from || key == step.gapTo) continue;
             if (key >= step.from && key >= step.gapTo) {
-                //@ts-ignore
+                // @ts-expect-error TODO: Fix this
                 newkey -= 2; newvalue.offsetText -= (startHtmlMap.get(step.from)?.textCost + startHtmlMap.get(step.gapTo)?.textCost);
                 newvalue.offsetProse -= 2;
             } else if(key >= step.from) {
-                //@ts-ignore
+                // @ts-expect-error TODO: Fix this
                 newkey -= 1; newvalue.offsetText -= startHtmlMap.get(step.from)?.textCost;
                 newvalue.offsetProse -= 1;
             }
             newHtmlMapS.set(newkey,newvalue);
         }
 
-        for(let [key,value] of stringBlocks) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for(const [key,value] of stringBlocks) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key >= step.gapFrom && key >= step.to) {
                 newvalue.startProse -= 2; newkey -= 2;  newvalue.endProse -= 2;
-                //@ts-ignore
+                // @ts-expect-error TODO: Fix this
                 newvalue.startText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost); 
-                //@ts-ignore
+                // @ts-expect-error TODO: Fix this
                 newvalue.endText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost);
             } else if (key >= step.gapFrom) {
                 newvalue.startProse -= 1; newkey -= 1;  newvalue.endProse -= 1;
-                //@ts-ignore
+                // @ts-expect-error TODO: Fix this
                 newvalue.startText -= endHtmlMap.get(step.gapFrom)?.textCost; 
-                //@ts-ignore
+                // @ts-expect-error TODO: Fix this
                 newvalue.endText -= endHtmlMap.get(step.gapFrom)?.textCost;
             }
             newMap.set(newkey,newvalue);
@@ -330,12 +330,12 @@ export class NodeUpdate {
 
 
     private static replaceAroundStepInsert(step: ReplaceAroundStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
-        let result : WrappingDocChange = NodeUpdate.setupWrapper();
+        const result : WrappingDocChange = NodeUpdate.setupWrapper();
 
         // Update maps
         let newHtmlMap = new Map<number,HtmlTagInfo>();
         let newHtmlMapS = new Map<number,HtmlTagInfo>();
-        let newMap = new Map<number,StringCell>();
+        const newMap = new Map<number,StringCell>();
 
         result.firstEdit.startInFile = startHtmlMap.get(step.from)!.offsetText;
         result.firstEdit.endInFile = result.firstEdit.startInFile;
@@ -353,8 +353,8 @@ export class NodeUpdate {
 
         //// Update mappings
 
-        for (let [key, value] of endHtmlMap) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for (const [key, value] of endHtmlMap) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key - 1 >= step.from && key - 1 >= step.to) { 
                 newkey += 2; newvalue.offsetText += result.firstEdit.finalText.length + result.secondEdit.finalText.length;
                 newvalue.offsetProse += 2;
@@ -364,8 +364,8 @@ export class NodeUpdate {
             }
             newHtmlMap.set(newkey,newvalue);
         }
-        for (let [key, value] of startHtmlMap) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for (const [key, value] of startHtmlMap) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key >= step.from && key >= step.to) {
                 newkey += 2; newvalue.offsetText += result.firstEdit.finalText.length + result.secondEdit.finalText.length;
                 newvalue.offsetProse += 2;
@@ -376,8 +376,8 @@ export class NodeUpdate {
             newHtmlMapS.set(newkey,newvalue);
         }
 
-        for(let [key,value] of stringBlocks) {
-            let newkey = key; let newvalue = structuredClone(value);
+        for(const [key,value] of stringBlocks) {
+            let newkey = key; const newvalue = structuredClone(value);
             if (key >= step.from && key >= step.to) {
                 newvalue.startProse += 2; newkey += 2;  newvalue.endProse += 2;
                 newvalue.startText += result.firstEdit.finalText.length + result.secondEdit.finalText.length;

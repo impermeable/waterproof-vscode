@@ -2,7 +2,7 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.17",
+  "version": "0.9.18",
   "requiredCoqLspVersion": "==0.2.2",
   "requiredCoqWaterproofVersion": "==2.2.0",
   "contributors": [
@@ -133,6 +133,11 @@
       {
         "command": "waterproof.setDefaultArgsWin",
         "title": "Waterproof: Set default arguments for Windows"
+      },
+      {
+        "command": "waterproof.toggleInEditorLineNumbers",
+        "title": "Toggle line numbers displayed in editor",
+        "category": "Waterproof"
       }
     ],
     "menus": {
@@ -311,6 +316,21 @@
             "type": "boolean",
             "default": false,
             "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
+          },
+          "waterproof.showLineNumbersInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show line numbers in the Waterproof editor"
+          },
+          "waterproof.skipLaunchChecks": {
+            "type": "boolean",
+            "default": false,
+            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+          },
+          "waterproof.showMenuItemsInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
           }
         }
       },
@@ -383,6 +403,21 @@
               "Use jsCoq's Pp rich layout printer",
               "Coq Layout Engine (experimental)"
             ]
+          },
+          "waterproof.visibilityOfHypotheses" : {
+            "type": "string",
+            "default": "none",
+            "enum": [
+              "all",
+              "limited",
+              "none"
+            ],
+            "enumDescriptions": [
+              "Show all hypotheses in the goals panel",
+              "Show only hypotheses not starting with _ in the goals panel",
+              "Do not show any hypotheses in the goals panel"
+            ],
+            "description": "Visibility of hypotheses in the goals panel.\nFor didiactic purposes, we recommend \"none\" for mathematicians learning proofs and \"limited\" or \"all\" for students using the Rocq language."
           }
         }
       },
@@ -462,6 +497,7 @@
     ]
   },
   "devDependencies": {
+    "@eslint/js": "^9.18.0",
     "@lezer/generator": "^1.2.3",
     "@types/glob": "^7.1.1",
     "@types/jest": "^29.5.1",
@@ -476,7 +512,9 @@
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.0",
     "@vscode/vsce": "^2.21.0",
+    "cypress": "^13.17.0",
     "esbuild": "^0.16.17",
+    "eslint": "^9.18.0",
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
     "jest": "^29.5.0",
@@ -485,6 +523,7 @@
     "prettier": "^2.8.1",
     "ts-jest": "^29.1.0",
     "typescript": "^5.1.3",
+    "typescript-eslint": "^8.20.0",
     "vscode-extension-tester": "^5.6.0"
   },
   "dependencies": {
@@ -500,6 +539,7 @@
     "@types/markdown-it": "12.2.3",
     "@vscode/webview-ui-toolkit": "1.4.0",
     "eventemitter2": "6.4.9",
+    "events": "3.3.0",
     "jquery": "3.7.1",
     "katex": "0.16.11",
     "markdown-it": "13.0.2",
@@ -520,9 +560,10 @@
     "react-tooltip": "5.28.0",
     "throttle-debounce": "5.0.2",
     "vscode-languageclient": "8.1.0",
-    "vscode-languageserver-types": "3.17.5"
+    "vscode-languageserver-types": "3.17.5",
+    "vscode-uri": "3.1.0"
   },
-  "dependenciesComments" : {
+  "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"
   },
   "main": "./out/src/mainNode.js",
@@ -530,16 +571,16 @@
   "scripts": {
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
     "esbuild": "node esbuild.mjs",
-    "esbuild-test": "node esbuild-test.mjs",
     "typecheck": "tsc -b",
     "compile": "npm run esbuild",
-    "compile-test": "npm run clean; tsc -p test/tsconfig.json && npm run esbuild-test && npm run test-package",
     "watch": "npm run lezer-generator && npm run esbuild -- --watch",
-    "test": "npm run compile-test && node ./test_out/test/runTest.js",
     "test-package": "node_modules/.bin/vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
     "package": "npm run clean && npm run test-package",
     "unit-tests": "npx jest",
-    "lezer-generator": "npx lezer-generator ./editor/src/kroqed-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/kroqed-editor/codeview/lang-pack/syntax.js"
+    "lezer-generator": "npx lezer-generator ./editor/src/kroqed-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/kroqed-editor/codeview/lang-pack/syntax.ts",
+    "cypress-tests": "npx cypress run",
+    "lint": "npx eslint .",
+    "lint-fix": "npx eslint . --fix"
   }
 }

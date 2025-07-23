@@ -9,7 +9,7 @@ import { NodeType, Node as PNode } from "prosemirror-model";
  */
 export function findDescendantsWithType(node: PNode, descend: boolean, type: NodeType): {node: PNode, pos: number}[] {
    // create results array, initially empty.
-   let result: {node: PNode, pos: number}[] = [];
+   const result: {node: PNode, pos: number}[] = [];
    // descend into the child nodes of `node` and append results.
    node.descendants((child, pos) => {
 	   if (child.type === type) result.push({node: child, pos});

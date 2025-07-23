@@ -1,12 +1,13 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 
-import { GoalAnswer, PpString } from "../../lib/types";
-import { CoqMessageEvent } from "../lib/CoqMessage";
+import { GoalAnswer, HypVisibility, PpString } from "../../lib/types";
 import { ErrorBrowser } from "./ErrorBrowser";
 import { Goals } from "./Goals";
 import { Messages } from "./Messages";
 
+
 import "../styles/info.css";
+import { Message, MessageType } from "../../shared";
 
 // Dynamic import because the project uses CommonJS and the module is an ECMAScript module
 // Top level await is supported with other `module` options in tsconfig.json
@@ -17,26 +18,32 @@ const VSCodeDivider = lazy(async () => {
 
 
 export function InfoPanel() {
+  // visibility of the hypotheses in the goals panel
+  
   //saves the goal
-  let [goals, setGoals] = useState<GoalAnswer<PpString>>();
+  const [goals, setGoals] = useState<GoalAnswer<PpString>>();
   //boolean to check if the goals are still loading
   const [isLoading, setIsLoading] = useState(false);
+  //visibility of the hypotheses in the goals panel as State
+  const [visibility, setVisibility] = useState<HypVisibility>(HypVisibility.None);
 
   //handles the message
   //event : CoqMessageEvent as defined above
-  function infoViewDispatch(event: CoqMessageEvent) { // TODO: make this change in logbook as well
-    if (event.data.type === "renderGoals") {
-      setGoals(event.data.body); //setting the information
-      setIsLoading(false); //putting loading to false
-    } else if (event.data.type === "waitingForInfo") {
-      setIsLoading(true); //waiting for info therefore loading is true
+  function infoViewDispatch(msg: Message) { 
+    if (msg.type === MessageType.renderGoals) {
+      const goals = msg.body.goals;
+
+      setGoals(goals); //setting the information
+      setIsLoading(false);
+      setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None
     }
   }
 
   // Set the callback
   useEffect(() => {
-    window.addEventListener("message", infoViewDispatch);
-    return () => window.removeEventListener("message", infoViewDispatch);
+    const callback = (ev: MessageEvent<Message>) => {infoViewDispatch(ev.data);};
+    window.addEventListener("message", callback);
+    return () => window.removeEventListener("message", callback);
   }, []);
 
   //show that the messages are loading
@@ -51,7 +58,7 @@ export function InfoPanel() {
   return (
     <div className="info-panel-container">
       <div className="info-panel">
-          <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} />
+          <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} visibility={visibility}/>
           <Messages answer={goals} />
       </div>
       {!goals.error ? null : (

@@ -1,9 +1,9 @@
-import { Node, NodeRange, Schema } from "prosemirror-model";
-import { Command, EditorState, NodeSelection, TextSelection, Transaction } from "prosemirror-state";
+import { NodeRange, Schema } from "prosemirror-model";
+import { Command, EditorState, NodeSelection, Transaction } from "prosemirror-state";
 import { FileFormat } from "../../../../shared";
 import { insertAbove, insertUnder } from "./command-helpers";
 import { InsertionPlace } from "./types";
-import { getCoqInsertCommand, getLatexInsertCommand, getMdInsertCommand } from "./insert-command";
+import { getCodeInsertCommand, getLatexInsertCommand, getMdInsertCommand } from "./insert-command";
 import { EditorView } from "prosemirror-view";
 import { liftTarget } from "prosemirror-transform";
 
@@ -16,7 +16,7 @@ function getInsertionFunction(place: InsertionPlace) {
     return place == InsertionPlace.Above ? insertAbove : insertUnder;
 }
 
-//// COQ ////
+//// Code ////
 
 /*
     A coq cell is always the content of a coqblock (direct child)
@@ -26,18 +26,18 @@ function getInsertionFunction(place: InsertionPlace) {
 */
 
 /**
- * Creates a command that creates a new coq cell above/underneath the currently selected node.
+ * Creates a command that creates a new code cell above/underneath the currently selected node.
  * @param schema The schema to use
  * @param filef The format of the currently opened file.
  * @param insertionPlace The place to insert the new node into: Underneath or Above the current node.
  * @returns The `Command`.
  */
-export function cmdInsertCoq(schema: Schema, filef: FileFormat, insertionPlace: InsertionPlace): Command {
+export function cmdInsertCode(schema: Schema, filef: FileFormat, insertionPlace: InsertionPlace): Command {
     // Get node types for coqblock container and coqcode cell from the schema.
     const coqblockNodeType = schema.nodes["coqblock"];
     const coqcodeNodeType = schema.nodes["coqcode"];
     // Return a command with the correct insertion place and function.
-    return getCoqInsertCommand(filef, getInsertionFunction(insertionPlace), insertionPlace, coqblockNodeType, coqcodeNodeType);
+    return getCodeInsertCommand(filef, getInsertionFunction(insertionPlace), insertionPlace, coqblockNodeType, coqcodeNodeType);
 }
 
 //// MARKDOWN //// 
@@ -64,7 +64,7 @@ export function cmdInsertCoq(schema: Schema, filef: FileFormat, insertionPlace: 
 export function cmdInsertMarkdown(schema: Schema, filef: FileFormat, insertionPlace: InsertionPlace): Command {
     // Retrieve the node types for both markdown and coqdoc markdown (coqdown) from the schema.
     const mdNodeType = schema.nodes["markdown"];
-    const coqMdNodeType = schema.node["coqdown"];
+    const coqMdNodeType = schema.nodes["coqdown"];
     // Return a command with the correct insertion command and place.
     return getMdInsertCommand(filef, getInsertionFunction(insertionPlace), 
         insertionPlace, mdNodeType, coqMdNodeType);
@@ -91,7 +91,7 @@ export function cmdInsertLatex(schema: Schema, filef: FileFormat, insertionPlace
     return getLatexInsertCommand(filef, getInsertionFunction(insertionPlace), insertionPlace, latexNodeType);
 }
 
-export const liftWrapper: Command = (state: EditorState, dispatch?: ((tr: Transaction) => void), view?: EditorView): boolean => {
+export const liftWrapper: Command = (state: EditorState, dispatch?: ((tr: Transaction) => void), _view?: EditorView): boolean => {
     const sel = state.selection;
 
     if (sel instanceof NodeSelection) {

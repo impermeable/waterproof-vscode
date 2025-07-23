@@ -1,5 +1,5 @@
 import { Disposable, Position } from "vscode";
-import { GoalAnswer, GoalRequest, PpString } from "../lib/types";
+import { GoalAnswer, PpString } from "../lib/types";
 import { CoqFileProgressParams } from "./lsp-client/requestTypes";
 
 /**
@@ -50,13 +50,6 @@ export interface IFileProgressComponent extends Disposable {
 export interface IGoalsComponent extends Disposable {
 
     /**
-     * Update the goals component that a goals request has been sent
-     *
-     * @param cursor the goals request object sent by lsp client
-     */
-    goalRequestSent(cursor: GoalRequest): void;
-
-    /**
      * Update the goals component with the latest goals answer
      * from the coq-lsp server
      *
@@ -70,7 +63,7 @@ export interface IGoalsComponent extends Disposable {
      * @param e the error that resulted in failure to receive
      *          goal answer
      */
-    failedGoals(e: any): void;
+    failedGoals(e: unknown): void;
 
     /**
      * Disable the GoalsComponent

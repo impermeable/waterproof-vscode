@@ -8,11 +8,11 @@ import { EditorView } from "prosemirror-view";
 import { undo, redo, history } from "prosemirror-history";
 import { createProseMirrorDocument } from "./prosedoc-construction/construct-document";
 
-import { DocChange, FileFormat, LineNumber, Message, MessageType, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
+import { DocChange, FileFormat, LineNumber, QedStatus, SimpleProgressParams, WrappingDocChange } from "../../../shared";
 import { COQ_CODE_PLUGIN_KEY, coqCodePlugin } from "./codeview/coqcodeplugin";
 import { createHintPlugin } from "./hinting";
 import { INPUT_AREA_PLUGIN_KEY, inputAreaPlugin } from "./inputArea";
-import { TheSchema } from "./kroqed-schema";
+import { WaterproofSchema } from "./schema";
 import { TextDocMapping } from "./mappingModel";
 import { REAL_MARKDOWN_PLUGIN_KEY, coqdocPlugin, realMarkdownPlugin } from "./markup-views";
 import { menuPlugin } from "./menubar";
@@ -28,19 +28,13 @@ import "prosemirror-view/style/prosemirror.css";
 import "./styles";
 import { UPDATE_STATUS_PLUGIN_KEY, updateStatusPlugin } from "./qedStatus";
 import { CodeBlockView } from "./codeview/nodeview";
-import { InsertionPlace, cmdInsertCoq, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
+import { InsertionPlace, cmdInsertCode, cmdInsertLatex, cmdInsertMarkdown } from "./commands";
 import { DiagnosticMessage, HistoryChangeType } from "../../../shared/Messages";
-import { DiagnosticSeverity, ThemeIcon } from "vscode";
+import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
+import { Positioned, WaterproofEditorConfig } from "./utilities/types";
 
-/**
- * Very basic representation of the acquirable VSCodeApi.
- * At least supports `postMessage(message: Message)`.
- */
-interface VSCodeAPI {
-	postMessage: (message: Message) => void;
-}
 
 /** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
 type DiagnosticObjectProse = {message: string, start: number, end: number, $start: ResolvedPos, $end: ResolvedPos, severity: DiagnosticSeverity};
@@ -50,9 +44,9 @@ type DiagnosticObjectProse = {message: string, start: number, end: number, $star
  *
  * Stores the state of the editor.
  */
-export class Editor {
-	// The vscode api
-	private _api: VSCodeAPI;
+export class WaterproofEditor {
+
+	private _editorConfig: WaterproofEditorConfig;
 
 	// The schema used in this prosemirror editor.
 	private _schema: Schema;
@@ -71,14 +65,17 @@ export class Editor {
 
 	// User operating system.
 	private readonly _userOS;
-	private _filef: any;
+	private _filef: FileFormat = FileFormat.Unknown;
 
 	private currentProseDiagnostics: Array<DiagnosticObjectProse>;
 
-	constructor (vscodeapi: VSCodeAPI, editorElement: HTMLElement) {
-		this._api = vscodeapi;
-		this._schema = TheSchema;
+	private _lineNumbersShown: boolean = false;
+
+	constructor (editorElement: HTMLElement, config: WaterproofEditorConfig) {
+		this._schema = WaterproofSchema;
 		this._editorElem = editorElement;
+		this.currentProseDiagnostics = [];
+		this._editorConfig = config;
 
 		const userAgent = window.navigator.userAgent;
 		this._userOS = OS.Unknown;
@@ -93,7 +90,7 @@ export class Editor {
 		document.body.appendChild(theContextMenu);
 
 		// Setup the custom context menu
-		document.addEventListener("click", (ev) => {
+		document.addEventListener("click", (_ev) => {
 			// Handle a 'left mouse click'
 			// console.log("LMB");
 			theContextMenu.style.display = "none";
@@ -117,7 +114,6 @@ export class Editor {
 		// Initialize the file translator given the fileformat.
 		if(this._view) {
 			if (this._mapping && this._mapping.version == version) return;
-			this._view.dispatch(this._view.state.tr.setMeta(MENU_PLUGIN_KEY, "remove"));
 			// Hack to forcefully remove the 'old' menubar
 			document.querySelector(".menubar")?.remove();
 			document.querySelector(".progress-bar")?.remove();
@@ -132,15 +128,16 @@ export class Editor {
 		this._filef = fileFormat;
 		this._translator = new FileTranslator(fileFormat);
 
-		let newContent = checkPrePost(content, (msg: Message) => {
-			this.post(msg);
-		});
-		if (newContent !== content) version = version + 1;
+		const {resultingDocument, documentChange} = checkPrePost(content);
+		if (documentChange !== undefined) {
+			this._editorConfig.api.documentChange(documentChange);
+		}
+		if (resultingDocument !== content) version = version + 1;
 
-		let parsedContent = this._translator.toProsemirror(newContent);
+		const parsedContent = this._translator.toProsemirror(resultingDocument);
 		// this._contentElem.innerHTML = parsedContent;
 
-		const proseDoc = createProseMirrorDocument(newContent, fileFormat);
+		const proseDoc = createProseMirrorDocument(resultingDocument, fileFormat);
 
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
 		this.createProseMirrorEditor(proseDoc);
@@ -149,7 +146,7 @@ export class Editor {
 		this.sendLineNumbers();
 
 		// notify extension that editor has loaded
-		this.post({ type: MessageType.editorReady });
+		this._editorConfig.api.editorReady();
 	}
 
 	get state(): EditorState | undefined {
@@ -159,7 +156,7 @@ export class Editor {
 	createProseMirrorEditor(proseDoc: ProseNode) {
 		// Shadow this variable _userOS.
 		const userOS = this._userOS;
-		let view = new EditorView(this._editorElem, {
+		const view = new EditorView(this._editorElem, {
 			state: this.createState(proseDoc),
 			clipboardTextSerializer: (slice) => { return mathSerializer.serializeSlice(slice) },
 			dispatchTransaction: ((tr) => {
@@ -170,14 +167,14 @@ export class Editor {
 					if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
-							let obj: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
-							this.post({type: MessageType.docChange, body: obj});
+							const change: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
+							this._editorConfig.api.documentChange(change);
 						} catch (error) {
-							console.error(error.message);
+							console.error((error as Error).message);
 
 
 							// Send message to VSCode that an error has occured
-							this.post({type: MessageType.applyStepError, body: error.message})
+							this._editorConfig.api.applyStepError((error as Error).message);
 
 							// Set global locking mode
 							const tr = view.state.tr;
@@ -254,15 +251,15 @@ export class Editor {
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				"Mod-h": () => {
-					this.post({type: MessageType.command, body: "Help.", time: (new Date()).getTime()});
+					this.executeCommand("Help.");
 					return true;
 				},
 				"Backspace": deleteSelection,
 				"Delete": deleteSelection,
 				"Mod-m": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Underneath),
 				"Mod-M": cmdInsertMarkdown(this._schema, this._filef, InsertionPlace.Above),
-				"Mod-q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Underneath),
-				"Mod-Q": cmdInsertCoq(this._schema, this._filef, InsertionPlace.Above),
+				"Mod-q": cmdInsertCode(this._schema, this._filef, InsertionPlace.Underneath),
+				"Mod-Q": cmdInsertCode(this._schema, this._filef, InsertionPlace.Above),
 				"Mod-l": cmdInsertLatex(this._schema, this._filef, InsertionPlace.Underneath),
 				"Mod-L": cmdInsertLatex(this._schema, this._filef, InsertionPlace.Above),
 				// We bind Ctrl/Cmd+. to selecting the parent node of the currently selected node.
@@ -271,11 +268,10 @@ export class Editor {
 		];
 	}
 
-	handleSnippet(template: string) {
-		const view = this._view!!;
+	public handleSnippet(template: string) {
+		const view = this._view!;
 		// Get the first selection.
 		const from = view.state.selection.from;
-		const to = view.state.selection.to;
 
 		// We need to figure out to which codemirror cell this insertion belongs.
 
@@ -283,20 +279,20 @@ export class Editor {
 
 		const nodeViews = COQ_CODE_PLUGIN_KEY.getState(state)?.activeNodeViews;
 		if (!nodeViews) return;
-		const nodeViewsWithPositions = Array.from(nodeViews).map((codeblock) => {
+		const positionedNodeViews: Array<Positioned<CodeBlockView>> = Array.from(nodeViews).map((codeblock) => {
 			return {
-				codeblock,
+				obj: codeblock,
 				pos: codeblock._getPos()
 			}
 		});
 
 		let theView: CodeBlockView | undefined = undefined;
 		let pos = view.state.doc.content.size;
-		for(const obj of nodeViewsWithPositions) {
-			if (obj.pos === undefined) continue;
-			if(from - obj.pos < pos && obj.pos < from) {
-				pos = from - obj.pos;
-				theView = obj.codeblock;
+		for (const nodeView of positionedNodeViews) {
+			if (nodeView.pos === undefined) continue;
+			if (from - nodeView.pos < pos && nodeView.pos < from) {
+				pos = from - nodeView.pos;
+				theView = nodeView.obj;
 			}
 		}
 		if (!theView) return;
@@ -306,39 +302,45 @@ export class Editor {
 	}
 
 	/** Called on every selection update. */
-	updateCursor(pos: Selection) : void {
+	public updateCursor(pos: Selection) : void {
 		// If this is not a cursor update return
 		if (!(pos instanceof TextSelection)) return;
 		if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
-		this.post({type: MessageType.cursorChange, body: this._mapping.findPosition(pos.$head.pos)});
+		this._editorConfig.api.cursorChange(this._mapping.findPosition(pos.$head.pos));
 	}
 
 	/** Called on every transaction update in which the textdocument was modified */
-	sendLineNumbers() {
+	public sendLineNumbers() {
+		if (!this._lineNumbersShown) return;
 		if (!this._view || COQ_CODE_PLUGIN_KEY.getState(this._view.state) === undefined) return;
 		const linenumbers = Array<number>();
-		//@ts-ignore
-		for (let codeCell of COQ_CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
-			//@ts-ignore
+		// @ts-expect-error TODO: Fix me
+		for (const codeCell of COQ_CODE_PLUGIN_KEY.getState(this._view.state).activeNodeViews) {
+			// @ts-expect-error TODO: Fix me
 			linenumbers.push(this._mapping?.findPosition(codeCell._getPos() + 1));
 		}
-		this.post({type: MessageType.lineNumbers, body: {linenumbers, version: this._mapping?.version}});
+		if (this._mapping === undefined) {
+			// Fail when the mapping is undefined
+			console.error("Encountered undefined mapping in sendLineNumbers function");
+			return;
+		}
+		this._editorConfig.api.lineNumbers(linenumbers, this._mapping.version);
 	}
 
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */
-	setLineNumbers(msg: LineNumber) {
+	public setLineNumbers(msg: LineNumber) {
 		if (!this._view || !this._mapping || msg.version < this._mapping.version) return;
-		let state = COQ_CODE_PLUGIN_KEY.getState(this._view.state);
+		const state = COQ_CODE_PLUGIN_KEY.getState(this._view.state);
 		if (!state) return;
 		const tr = this._view.state.tr.setMeta(COQ_CODE_PLUGIN_KEY, msg);
 		this._view.dispatch(tr);
 	}
 
-	handleHistoryChange(type: HistoryChangeType) {
+	public handleHistoryChange(type: HistoryChangeType) {
 		const view = this._view;
 		if (!view) return;
 		const func = type === HistoryChangeType.Undo ? undo : redo;
-		const ret = func(view.state, view.dispatch, view);
+		func(view.state, view.dispatch, view);
 	}
 
 	/**
@@ -348,16 +350,16 @@ export class Editor {
 	 * @param symbolLaTeX The LaTeX command(s) to produce the character.
 	 * @returns Whether the operation was a success.
 	 */
-	insertSymbol(symbolUnicode: string, symbolLaTeX: string): boolean {
+	public insertSymbol(symbolUnicode: string, _symbolLaTeX: string): boolean {
 		// If there is no view at the moment this is a no-op.
 		if (!this._view) return false;
 		let state = this._view.state;
 		let from = state.selection.from;
 		let to = state.selection.to;
 		if (REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor) {
-			//@ts-ignore
+			// @ts-expect-error TODO: Fix me
 			from = REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor?.from;
-			//@ts-ignore
+			// @ts-expect-error TODO: Fix me
 			to = REAL_MARKDOWN_PLUGIN_KEY.getState(state)?.cursor?.to;
 		}
 		state = this._view.state;
@@ -370,14 +372,14 @@ export class Editor {
 
 		// Early return if the plugin state is undefined.
 		if (inputAreaPluginState === undefined) return false;
-		const { locked, globalLock } = inputAreaPluginState;
+		const { teacher, globalLock } = inputAreaPluginState;
 		// Early return if we are in the global locked mode
 		// 	(nothing should be editable anymore)
 		if (globalLock) return false;
 
 		// If we are in teacher mode (ie. not locked) than
 		// 	 we are always able to insert.
-		if (!locked) {
+		if (teacher) {
 			this.createAndDispatchInsertionTransaction(trans, symbolUnicode, from, to);
 			return true;
 		}
@@ -399,6 +401,27 @@ export class Editor {
 		return true;
 	}
 
+	/**
+	 * Toggles line numbers for all codeblocks.
+	 */
+	public setShowLineNumbers(show: boolean) {
+		this._lineNumbersShown = show;
+		const view = this._view;
+		if (view === undefined) return;
+		const tr = view.state.tr;
+		tr.setMeta(COQ_CODE_PLUGIN_KEY, {setting: "update", show: this._lineNumbersShown});
+		view.dispatch(tr);
+		this.sendLineNumbers();
+	}
+
+	public setShowMenuItems(show: boolean) {
+		const view = this._view;
+		if (view === undefined) return;
+		const tr = view.state.tr;
+		tr.setMeta(MENU_PLUGIN_KEY, show);
+		view.dispatch(tr);
+	}
+
 	private createAndDispatchInsertionTransaction(
 		trans: Transaction, textToInsert: string, from: number, to: number) {
 
@@ -409,17 +432,17 @@ export class Editor {
 	/**
 	 * Called whenever a message describing the configuration of user is sent
 	 *
-	 * @param isTeacher represents the mode selected by user
+	 * @param isTeacher Whether teacher mode is enabled
 	 */
-	updateLockingState(isTeacher: boolean) : void {
+	public updateLockingState(isTeacher: boolean) : void {
 		if (!this._view) return;
 		const state = this._view.state;
 		const trans = state.tr;
-		trans.setMeta(INPUT_AREA_PLUGIN_KEY,!isTeacher);
+		trans.setMeta(INPUT_AREA_PLUGIN_KEY, {teacher: isTeacher});
 		this._view.dispatch(trans);
 	}
 
-	updateProgressBar(progressParams: SimpleProgressParams): void {
+	public updateProgressBar(progressParams: SimpleProgressParams): void {
 		if (!this._view) return;
 		const state = this._view.state;
 		const tr = state.tr;
@@ -427,7 +450,7 @@ export class Editor {
 		this._view.dispatch(tr);
 	}
 
-	updateQedStatus(status: QedStatus[]) : void {
+	public updateQedStatus(status: QedStatus[]) : void {
 		if (!this._view) return;
 		const state = this._view.state;
 		const tr = state.tr;
@@ -435,10 +458,14 @@ export class Editor {
 		this._view.dispatch(tr);
 	}
 
-	parseCoqDiagnostics(msg: DiagnosticMessage) {
+	public initTacticCompletion(useTacticsCoq: boolean) {
+		initializeTacticCompletion(useTacticsCoq);
+	}
+
+	public parseCoqDiagnostics(msg: DiagnosticMessage) {
 		if (this._mapping === undefined || msg.version < this._mapping.version) return;
 
-		let diagnostics = msg.positionedDiagnostics;
+		const diagnostics = msg.positionedDiagnostics;
 		const map = this._mapping;
 		if (this._view === undefined || map === undefined) return;
 
@@ -446,12 +473,12 @@ export class Editor {
 		const views = COQ_CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
 		if (views === undefined) return;
 		// Clear the errors
-		for (let view of views) view.clearCoqErrors();
+		for (const view of views) view.clearCoqErrors();
 
 		// Convert to inverse mapped positions.
 		const doc = this._view.state.doc;
 		this.currentProseDiagnostics = new Array<DiagnosticObjectProse>();
-		for (let diag of diagnostics) {
+		for (const diag of diagnostics) {
 			const start = map.findInvPosition(diag.startOffset);
 			const end = map.findInvPosition(diag.endOffset);
 			if (start >= end) continue;
@@ -503,43 +530,8 @@ export class Editor {
 		});
 	}
 
-
-	/** Handle a message from vscode */
-	handleMessage(msg: Message) {
-		switch(msg.type) {
-			case MessageType.qedStatus:
-				const statuses = msg.body as QedStatus[];  // one status for each input area, in order
-				this.updateQedStatus(statuses);
-				break;
-			case MessageType.lineNumbers:
-				this.setLineNumbers(msg.body);
-				break;
-			case MessageType.teacher:
-				this.updateLockingState(msg.body);
-				break;
-			case MessageType.progress:
-				const progressParams = msg.body as SimpleProgressParams;
-				this.updateProgressBar(progressParams);
-				break;
-			case MessageType.diagnostics:
-				const diagnostics = msg.body;
-				this.parseCoqDiagnostics(diagnostics);
-				break;
-            case MessageType.syntax:
-                initializeTacticCompletion(msg.body as boolean);
-                break;
-			default:
-				// If we reach this 'default' case, then we have encountered an unknown message type.
-				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
-				break;
-		}
-	}
-
-	/**
-	 * Wrapper around `this._api.postMessage(msg: Message)`
-	 * @param message The message to post to the extension host
-	 */
-	post(message: Message): void {
-		this._api.postMessage(message);
+	// Editor API
+	public executeCommand(command: string) {
+		this._editorConfig.api.executeCommand(command, (new Date()).getTime());
 	}
 }

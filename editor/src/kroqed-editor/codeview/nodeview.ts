@@ -11,16 +11,16 @@ import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
 import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
-import { linter, LintSource, Diagnostic, setDiagnosticsEffect } from "@codemirror/lint";
+import { linter, LintSource, Diagnostic, setDiagnosticsEffect, lintGutter } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
+
 
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
  * Corresponds with the example as can be found here:
  * https://prosemirror.net/examples/codemirror/
  */
-
 export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	dom: HTMLElement;
 
@@ -28,7 +28,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	private _lineNumbersExtension: Extension;
 	private _dynamicCompletions: Completion[] = [];
 	private _readOnlyCompartment: Compartment;
-	private _diags;
+	private _diags : Diagnostic[];
 
 	private debouncer: Debouncer;
 
@@ -76,11 +76,18 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 			return div;
 		}
 
+		// Makes sure that we only enable the linting gutter for codecells inside of input areas.
+		const inInputArea = this.partOfInputArea();
+		const optional = inInputArea ? [lintGutter()] : [];
+
 		this._codemirror = new CodeMirror({
 			doc: this._node.textContent,
 			extensions: [
 				// Add the linting extension for showing diagnostics (errors, warnings, etc)
-				linter(this.lintingFunction),
+				linter(this.lintingFunction, {
+					autoPanel: inInputArea, // Only enable auto panel when this view is inside of an input area
+				}),
+				...optional, 
 				this._readOnlyCompartment.of(EditorState.readOnly.of(!this._outerView.editable)),
 				this._lineNumberCompartment.of(this._lineNumbersExtension),
 
@@ -94,14 +101,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 					icons: false,
 					addToOptions: [renderIcon],
 					defaultKeymap: false,
-
-
-
 				}),
 				cmKeymap.of([
 				...completionKeymap,
 						...this.embeddedCodeMirrorKeymap()
-
 				]),
 				customTheme,
 				syntaxHighlighting(defaultHighlightStyle),
@@ -120,14 +123,12 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				} else {
 					// Figure out whether we are in teacher or student mode.
 					// This is a ProseMirror object, hence we need the prosemirror view (outerview) state.
-					const locked = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.locked;
-					if (locked === undefined) {
-						// if we could not get the locked state then we do not
-						// allow this transaction to update the view.
-						return;
-					}
+					const teacher = INPUT_AREA_PLUGIN_KEY.getState(outerView.state)?.teacher;
+					// if we could not get the locked state then we do not
+					// allow this transaction to update the view.
+					if (teacher === undefined) return;
 
-					if (locked) {
+					if (!teacher) {
 						// in student mode.
 						const pos = getPos();
 						if (pos === undefined) return;
@@ -150,7 +151,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 
 		// Fix the coqblock not being selectable when editing the markdown blocks.
 		this.dom.addEventListener("click", () => {
-			this._codemirror.focus();
+			this._codemirror?.focus();
 			this.setEditPermission();
 		});
 
@@ -158,15 +159,26 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this.handleNewComplete([]);
 	}
 
+	private partOfInputArea(): boolean {
+		const pos = this._getPos();
+		if (pos === undefined) return false;
+		// Resolve the position in the prosemirror document and get the node one level underneath the root.
+		// TODO: Assumption that `<input-area>`s only ever appear one level beneath the root node.
+		// TODO: Hardcoded node names.
+		const name = this._outerView.state.doc.resolve(pos).node(1).type.name;
+		if (name !== "input") return false;
+		return true; 
+	}
+
 	public handleSnippet(template: string, posFrom: number, posTo: number) {
-		this._codemirror.focus();
+		this._codemirror?.focus();
 		snippet(template)({
-			state: this._codemirror.state,
-			dispatch: this._codemirror.dispatch
+			state: this._codemirror!.state,
+			dispatch: this._codemirror!.dispatch
 		}, null, posFrom, posTo);
 	}
 
-	private lintingFunction: LintSource = (view: CodeMirror): readonly Diagnostic[] => {
+	private lintingFunction: LintSource = (_view: CodeMirror): readonly Diagnostic[] => {
 		return this._diags;
 	}
 
@@ -175,7 +187,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	setEditPermission(): void {
 		// update
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: this._readOnlyCompartment.reconfigure(
 				EditorState.readOnly.of(!this._outerView.editable)
 			)
@@ -189,7 +201,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = lineNumbers({
 			formatNumber: (lineNo: number) => (lineNo + firstLineNo - 1).toString()
 		});
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: this._lineNumberCompartment.reconfigure(
 				toggleState ? this._lineNumbersExtension : []
 			)
@@ -208,8 +220,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 * Contains completions for defined theorems/lemmas/etc.
 	 */
 	dynamicCompletionSource: CompletionSource = (context: CompletionContext): Promise<CompletionResult | null> => {
-		return new Promise((resolve, reject) => {
-			let before = context.matchBefore(/\w/);
+		return new Promise((resolve, _reject) => {
+			const before = context.matchBefore(/\w/);
 			// If completion wasn't explicitly started and there
 			// is no word before the cursor, don't open completions.
 			if (!context.explicit && !before) resolve(null);
@@ -221,7 +233,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		});
 	};
 
-	/**
+/**
 	 * Add a new coq error to this view
 	 * @param from The from position of the error.
 	 * @param to The to postion of the error (should be larger than `from`).
@@ -230,47 +242,156 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
 		const severityString = severityToString(severity);
-
-		// For now populate the actions using the standard Copy message.
-		const actions = [
-			{
-				name: "Copy 📋",
-				apply(view: CodeMirror, from: number, to: number) {
-					navigator.clipboard.writeText(message);
-				}
-			},
-			{
-				name: "Insert ↓",
-				apply(view, from, to) {
-					const textAtErrorLine = view.state.doc.lineAt(from).text;
-					const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
-					const toInsert = "\n".concat(idents, message);
-					view.dispatch({
-						changes: {
-							from: to, to,
-							insert: toInsert
-						},
-						selection: {anchor: to + toInsert.length}
-					});
-				},
+		const errorsCount = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity === "error").length;
+		//all diags have the copy action
+		const actions = [{
+			name: "Copy 📋",
+			apply: (view: CodeMirror, from: number, _to: number) => {
+				// give focus to this current codeblock instante to ensure it updates
+				this._codemirror?.focus();
+				navigator.clipboard.writeText(message);
+				this.showCopyNotification(from);
 			}
-		];
+		}];
+
+		if (severityString !== "error") {
+			if (errorsCount > 0) {
+				actions.push({
+					name: "Replace",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const trimmedMessage = message.trim();
+						const toInsert = trimmedMessage;
+						view.dispatch({
+							changes: {
+								from:from,
+								to:to,
+								insert: toInsert
+							},
+							selection: { anchor: from + toInsert.length }
+						});
+						this.forceUpdateLinting();
+					}
+				});
+			} else {
+				actions.push({
+					name: "Insert ↓",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const textAtErrorLine = view.state.doc.lineAt(from).text;
+						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
+						const trimmedMessage = message.trim();
+						const toInsert = "\n".concat(idents, trimmedMessage);
+						view.dispatch({
+							changes: {
+								from: to, to,
+								insert: toInsert
+							},
+							selection: {anchor: to + toInsert.length}
+						});
+					}
+				});
+			}
+		}
 
 		this._diags.push({
-			from, to,
-			message,
+			from:from,
+			to:to,
+			message: message,
 			severity: severityString,
-			actions
+			actions,
 		});
+		//only when the first error is added, the other diagnostics are updated accordingly
+		if (severityString === "error" && errorsCount===0) {
+			this.updateDiagnostics(from, to, message);
+		}
+
+	}
+
+	private updateDiagnostics(from:number, to:number, _message :string) {
+		const diagUnchanged = this._diags.filter(diag => diag.from !== from || diag.to !== to);
+		const diagnosticsToUpdate = this._diags.filter(diag => diag.from === from && diag.to === to);
+		this.clearCoqErrors();
+		this._diags = diagUnchanged;
+		for (const diag of diagnosticsToUpdate) {
+			const actions = [{
+				name: "Copy 📋",
+				apply: (view: CodeMirror, from: number, _to: number) => {
+					// give focus to this current codeblock instante to ensure it updates
+					this._codemirror?.focus();
+					navigator.clipboard.writeText(diag.message);
+					this.showCopyNotification(from);
+				}
+			}];
+			
+			if (diag.severity !== "error"){
+				actions.push({
+					name: "Replace",
+					apply:(view: CodeMirror, from: number, to: number) => {
+						// give focus to this current codeblock instante to ensure it updates
+						this._codemirror?.focus();
+						const trimmedMessage = diag.message.trim();
+						const toInsert = trimmedMessage;
+						view.dispatch({
+							changes: {
+								from:from,
+								to:to,
+								insert: toInsert
+							},
+							selection: { anchor: from + toInsert.length }
+						});
+						this.forceUpdateLinting();
+					}
+				});
+			}
+
+			this._diags.push({
+				from: diag.from,
+				to: diag.to,
+				message: diag.message,
+				severity: diag.severity,
+				actions
+			});
+		}
+		// Trigger the linter update to refresh diagnostics display
 		this.debouncer.call();
 	}
+
+	private showCopyNotification(from:number) {
+		//coordinates of the the line with the diagnostic
+		const coords = this._codemirror?.coordsAtPos(from);
+	
+		if (!coords) {
+			console.warn("Could not determine coordinates for diagnostic line.");
+			return;
+		}
+	
+		// Create the notification element
+		const notification = document.createElement("div");
+		notification.textContent = `Copied!`;
+		notification.style.top = `${coords.bottom + 5}px`; // Position 5px below the line
+		notification.style.left = `${coords.left}px`; // Align with the left edge of the line
+		notification.classList.add("copy-notification");
+		document.body.appendChild(notification);
+	
+		// Fade out after 1 second
+		setTimeout(() => {
+			notification.style.opacity = "0";
+			// Remove the notification from the DOM after the transition
+			setTimeout(() => notification.remove(), 500);
+		}, 1000);
+	}
+	
+	
 
 	/**
 	 * Helper function that forces the linter function to run.
 	 * Should be called after an error has been added or after the errors have been cleared.
 	 */
 	private forceUpdateLinting() {
-		this._codemirror.dispatch({
+		this._codemirror?.dispatch({
 			effects: setDiagnosticsEffect.of(this._diags)
 		});
 	}

@@ -146,4 +146,4 @@ To get started with Waterproof, we recommend going through the tutorial. The tut
 Waterproof makes use of 'tactics', information on the available tactics, together with explanations and examples can be accessed via the extension or through the repository:
 
 * From the Waterproof extension: Navigate to the Waterproof sidebar (accessible via the droplet icon on the left) and click on the `Tactics` button. The panel that now opens shows all available tactics.
-* From the repository: The repository contains both a [Markdown](/docs/tactics-sheet.md) and [pdf](/docs//tactics-sheet.pdf) variant of the tactics sheet.
+* From the repository: The repository contains a [Markdown](/docs/tactics-sheet.md) version of the tactics sheet.

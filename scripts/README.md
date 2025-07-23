@@ -14,7 +14,7 @@ Running the following command in the [`../docs`](../docs) folder converts the Ma
 pandoc tactics-sheet.md -o tactics-sheet.html
 ```
 
-Running the following command in the [`../docs`](../docs) folder converts the Markdown file into a pdf file (see [../docs/tactics-sheet.pdf](../docs/tactics-sheet.pdf))
+Running the following command in the [`../docs`](../docs) folder converts the Markdown file into a pdf file
 ```bash
 pandoc tactics-sheet.md -o tactics-sheet.pdf --pdf-engine=lualatex -V 'monofont:DejaVu Sans Mono' -V 'mainfont:DejaVu Sans'
 ```

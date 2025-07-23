@@ -31,13 +31,12 @@ export const highlight_dark = HighlightStyle.define([
 
 // Highlighting specific elements of the Coq language
 export const highlight_light = HighlightStyle.define([
-  { tag: customTags.waterproofTactic, color: "#4078f2" },     // Navy blue — formal & strong
-  { tag: customTags.tacticInput, color: "#a626a4" },          // Muted purple — clear contrast, still elegant
-  { tag: customTags.lemmaStatement, color: "#2b3990" },       // Steel blue for structure
-  { tag: customTags.lemma, color: "#e45649" },                // Indigo for in-lemma use
-  { tag: customTags.comment, color: "#787c99" },              // Subtle neutral commentary
-  { tag: customTags.proofQed, color: "#e45649" },             // Warm gold — marks ending
-]);
+  { tag: customTags.waterproofTactic, color: "#4078f2" },    
+  { tag: customTags.tacticInput, color: "#333333" },         
+  { tag: customTags.lemmaStatement, color: "#2b3990" },      
+  { tag: customTags.lemma, color: "#e45649" },               
+  { tag: customTags.comment, color: "#787c99" },           
+  { tag: customTags.proofQed, color: "#e45649" },             
 
 // Defining the Coq language syntax, highlighting and indentation
 export const coqLanguage = LRLanguage.define({

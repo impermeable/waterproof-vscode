@@ -24,6 +24,7 @@ Sentence {
     TacticMiddleBecauseFirst{" both "}
     TacticMiddleBecauseSecond{" and "}
     TacticMiddleEither{" or "}
+    TacticLabelAs{" as "}
     @else TacticInput
 }
 
@@ -44,7 +45,7 @@ Sentence {
         "We" space+ "need" space+ "to" space+ "show" space+ "that" TacticInput TacticEnd | 
         "We" space+ "conclude" space+ "that" TacticInput TacticEnd | 
         "Case " TacticInput TacticEnd |
-        "Assume" space+ "that" TacticInput TacticEnd |
+        "Assume" space+ "that " TacticInput {TacticLabelAs TacticInput}? TacticEnd |
         "Obtain" space+ "such" space+ "a " TacticInput TacticEnd | 
         "(& " TacticInput " )." | 
         "It" space+ "suffices" space+ "to" space+ "show" space+ "that " TacticInput TacticEnd | 

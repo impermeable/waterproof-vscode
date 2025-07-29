@@ -63,7 +63,8 @@ export const coqLanguage = LRLanguage.define({
                 TacticMiddleDefine: customTags.waterproofTactic,
                 TacticMiddleBecauseFirst: customTags.waterproofTactic,
                 TacticMiddleBecauseSecond: customTags.waterproofTactic,
-                TacticMiddleEither: customTags.waterproofTactic
+                TacticMiddleEither: customTags.waterproofTactic,
+                TacticLabelAs: customTags.waterproofTactic,
             })
         ]
     })

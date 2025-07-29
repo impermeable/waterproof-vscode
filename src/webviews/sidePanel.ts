@@ -11,10 +11,12 @@ export function addSidePanel(context: vscode.ExtensionContext, manager: WebviewM
 }
 
 export class SidePanelProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'options.webview';
+    public static readonly viewType = 'sidePanel';
 
     private _view?: vscode.WebviewView;
     private _transparencyMap: Map<string, boolean> = new Map();
+    private readonly _greyedOutButtons: Set<string> = new Set();
+
 
     constructor(
         private readonly _extensionUri: vscode.Uri,
@@ -28,10 +30,19 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
             this.updateButtonTransparency(e.name, e.open);
         });
     }
+    public updateGreyedOutButton(buttonId: string, open: boolean) {
+        if (this._greyedOutButtons.has(buttonId) && !open) {
+            this._greyedOutButtons.delete(buttonId);
+        } else if (open){
+            this._greyedOutButtons.add(buttonId);
+        }
+    }
 
     public updateButtonTransparency(buttonId: string, open: boolean) {
         // Set the transparency state of the button in the transparency map
         this._transparencyMap.set(buttonId, open);
+        //update the list of buttons that are currently greyed out
+        this.updateGreyedOutButton(buttonId,open);
         // Update the button styles to reflect the transparency state
         this.updateButtonStyles(buttonId, open);
     }
@@ -54,7 +65,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
         _token: vscode.CancellationToken,
     ) {
         this._view = webviewView;
-
+       
         // Set options for the webview
         webviewView.webview.options = {
             enableScripts: true,
@@ -71,11 +82,23 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     command: 'executeScript',
                     script: message.script,
                 });
-            } else {
+            }
+             else {
                 // Handle other messages by opening the command in the manager
                 this._manager.open(message.command);
             }
         });
+        // Handle the visibility of the webview when user reopens side panel
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible) {
+        
+                webviewView.webview.postMessage({
+                    type: 'restoreTransparency',
+                    greyedOutButtonsList: Array.from(this._greyedOutButtons) 
+                });
+            }
+        });
+        
     }
 
     // Now we create the actual web page
@@ -179,9 +202,10 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     //check for messages
                     window.addEventListener('message', event => {
                         const message = event.data;
+
                         switch (message.type) {
                             // If the message is for changing the transparency
-                            case 'trans':
+                            case 'trans': {
                                 const button = document.getElementById(message.buttonId);
                                 if (button) {
                                     const transparent = message.open;
@@ -193,6 +217,29 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                                         button.classList.remove('transparent');
                                     }
                                 }
+                                break;
+                            }
+                            //If the message is for restoring transparency after side panel is reopened
+                            case 'restoreTransparency': {
+                                const buttonIds = [
+                                    'goals', 'logbook', 'debug', 'execute',
+                                    'help', 'search', 'expandDefinition', 'symbols', 'tactics'
+                                ];
+                                buttonIds.forEach(id => {
+                                    const btn = document.getElementById(id);
+                                    if (!btn) return;
+                                    // Check if the button ID is in the greyedOutButtonsList
+                                    if (message.greyedOutButtonsList?.includes(id)) {
+                                        // If it is, make transparent
+                                        btn.classList.add('transparent');
+                                    } 
+                                    else {
+                                        // If it is not, remove the transparent class
+                                        btn.classList.remove('transparent');
+                                    }
+                                });
+                                break;
+                            }
                         }
                     });
                 </script>

@@ -21,12 +21,12 @@ let customTags = {
 
 // Highlighting specific elements of the Coq language
 export const highlight_dark = HighlightStyle.define([
-    { tag: customTags.waterproofTactic, color: "#5EC300" },
-    { tag: customTags.tacticInput, color: "#FF0000" },
-    { tag: customTags.lemmaStatement, color: "#DB6B16" },
-    { tag: customTags.lemma, color: "#FF00F7" },
-    { tag: customTags.comment, color: "#0000FF" },
-    { tag: customTags.proofQed, color: "#FFE100" },
+    { tag: customTags.waterproofTactic, color: "#6b9affff" },
+    { tag: customTags.tacticInput, color: "#CCCCCC" },
+    { tag: customTags.lemmaStatement, color: "#344bddff" },
+    { tag: customTags.lemma, color: "#e45649" },
+    { tag: customTags.comment, color: "#9ea0b1ff" },
+    { tag: customTags.proofQed, color: "#e45649" },
 ])
 
 // Highlighting specific elements of the Coq language
@@ -36,7 +36,8 @@ export const highlight_light = HighlightStyle.define([
   { tag: customTags.lemmaStatement, color: "#2b3990" },      
   { tag: customTags.lemma, color: "#e45649" },               
   { tag: customTags.comment, color: "#787c99" },           
-  { tag: customTags.proofQed, color: "#e45649" },             
+  { tag: customTags.proofQed, color: "#e45649" }
+]);
 
 // Defining the Coq language syntax, highlighting and indentation
 export const coqLanguage = LRLanguage.define({

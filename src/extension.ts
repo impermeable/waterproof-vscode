@@ -155,7 +155,7 @@ export class Waterproof implements Disposable {
         const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
-        this.webviewManager.open("goals")
+        this.webviewManager.open("goals");
         this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
         this.webviewManager.addToolWebview("search", new Search(this.context.extensionUri));
         this.webviewManager.addToolWebview("help", new Help(this.context.extensionUri));

@@ -22,31 +22,16 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
         private readonly _extensionUri: vscode.Uri,
         private readonly _manager: WebviewManager,
     ) {
-        // Subscribe to the updateButton event to handle button transparency updates
-        this._manager.on(WebviewManagerEvents.updateButton, (e) => {
-            // Update the transparency of the button based on the event
-            // This is done when a panel is open
-            this.updateButtonTransparency(e.name, e.open);
+        this._manager.on(WebviewManagerEvents.buttonClick, (e) => {
+            // Button flashes when clicked
+            this.flashButton(e.name);
         });
     }
-    public updateGreyedOutButton(buttonId: string, open: boolean) {
-        if (this._greyedOutButtons.has(buttonId) && !open) {
-            this._greyedOutButtons.delete(buttonId);
-        } else if (open){
-            this._greyedOutButtons.add(buttonId);
-        }
-    }
 
-    public updateButtonTransparency(buttonId: string, open: boolean) {
-        console.log(`Updating button transparency for ${buttonId} to ${open}`);
-        // Instead of setting permanent transparency, flash the button briefly
-        this.flashButton(buttonId);
-    }
 
     private flashButton(buttonId: string) {
         // If the view is not available, return without flashing
         if (!this._view) return;
-        console.log(`Flashing button: ${buttonId}`);
         // Post a message to the webview to flash the button
         this._view.webview.postMessage({
             type: 'flash',
@@ -54,17 +39,6 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    private updateButtonStyles(buttonId: string, open: boolean) {
-        // If the view is not available, return without updating the styles
-        if (!this._view) return;
-
-        // Post a message to the webview to update the button transparency
-        this._view.webview.postMessage({
-            type: 'trans',
-            buttonId: buttonId,
-            open: open,
-        });
-    }
 
     public resolveWebviewView(
         webviewView: vscode.WebviewView,
@@ -94,18 +68,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                 // Handle other messages by opening the command in the manager
                 this._manager.open(message.command);
             }
-        });
-        // Handle the visibility of the webview when user reopens side panel
-        webviewView.onDidChangeVisibility(() => {
-            if (webviewView.visible) {
-        
-                webviewView.webview.postMessage({
-                    type: 'restoreTransparency',
-                    greyedOutButtonsList: Array.from(this._greyedOutButtons)
-                });
-            }
-        });
-        
+        });        
     }
 
     // Now we create the actual web page
@@ -136,13 +99,8 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     background-color: var(--vscode-button-hoverBackground);
                 }
 
-                .transparent {
-                    opacity: 0.6;
-                    cursor: default;
-                }
-
                 .flash {
-                    animation: flashGrey 0.7s ease-in-out;
+                    animation: flashGrey 0.5s ease-in-out;
                 }
 
                 @keyframes flashGrey {
@@ -227,55 +185,13 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     window.addEventListener('message', event => {
                         const message = event.data;
 
-                        switch (message.type) {
-                            // If the message is for flashing the button
-                            case 'flash': {
-                                const button = document.getElementById(message.buttonId);
-                                if (button) {
-                                    // Add flash class to trigger animation
-                                    button.classList.add('flash');
-                                    // Remove the class after animation completes
-                                    setTimeout(() => {
-                                        button.classList.remove('flash');
-                                    }, 300); // Match the animation duration
-                                }
-                                break;
-                            }
-                            // If the message is for changing the transparency (legacy case)
-                            case 'trans': {
-                                const button = document.getElementById(message.buttonId);
-                                if (button) {
-                                    const transparent = message.open;
-                                    if (transparent) {
-                                        // Add the 'transparent' class to the button if it should be transparent
-                                        button.classList.add('transparent');
-                                    } else {
-                                        // Remove the 'transparent' class from the button if it should not be transparent
-                                        button.classList.remove('transparent');
-                                    }
-                                }
-                                break;
-                            }
-                            //If the message is for restoring transparency after side panel is reopened
-                            case 'restoreTransparency': {
-                                const buttonIds = [
-                                    'goals', 'logbook', 'debug', 'execute',
-                                    'help', 'search', 'expandDefinition', 'symbols', 'tactics'
-                                ];
-                                buttonIds.forEach(id => {
-                                    const btn = document.getElementById(id);
-                                    if (!btn) return;
-                                    // Check if the button ID is in the greyedOutButtonsList
-                                    if (message.greyedOutButtonsList?.includes(id)) {
-                                        // If it is, make transparent
-                                        btn.classList.add('transparent');
-                                    } 
-                                    else {
-                                        // If it is not, remove the transparent class
-                                        btn.classList.remove('transparent');
-                                    }
-                                });
-                                break;
+                        if (message.type === 'flash') {
+                            const button = document.getElementById(message.buttonId);
+                            if (button) {
+                                button.classList.add('flash');
+                                setTimeout(() => {
+                                    button.classList.remove('flash');
+                                }, 500); 
                             }
                         }
                     });

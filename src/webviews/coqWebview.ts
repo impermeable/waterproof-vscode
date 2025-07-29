@@ -66,7 +66,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         return (this._state == WebviewState.open);
     }    
 
-    protected get state() {
+    public get state() {
         return this._state;
     }
 
@@ -172,6 +172,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     public activatePanel() {
         if (this.state == WebviewState.ready) {
             this.create();
+            this.changeState(WebviewState.open);
         }
     }
 
@@ -180,7 +181,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      */
     public revealPanel() {
         if (!this._panel?.visible) {
-            this._panel?.reveal(ViewColumn.Two)
+            this._panel?.reveal(ViewColumn.Two);
         }
     }
 

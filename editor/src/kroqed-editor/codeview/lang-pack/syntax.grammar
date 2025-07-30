@@ -34,7 +34,8 @@ Sentence {
 @skip {} {
     WaterproofTactic { 
         // Zero Input Tactics
-        "Help" TacticEnd | 
+        TacticBullet* "Help" TacticEnd |
+        // TacticBullet* only placed at just one tactic seems to works for bullets at the start of any tactic...  
         "We" space+ "argue" space+ "by" space+ "contradiction" TacticEnd| 
         "Contradiction" TacticEnd| 
         "We" space+ "show" space+ "both" space+ "statements"  TacticEnd| 
@@ -53,8 +54,7 @@ Sentence {
         "It" space+ "holds" space+ "that " TacticInput TacticEnd | 
         "We" space+ "claim" space+ "that " TacticInput TacticEnd | 
         "We" space+ "use" space+ "induction" space+ "on " TacticInput TacticEnd | 
-        TacticBullet* "Indeed, " TacticInput TacticEnd |
-        // TacticBullet* only placed at just one tactic seems to works for bullets at the start of any tactic... 
+        "Indeed, " TacticInput TacticEnd |
         "Use " TacticInput TacticEnd |
         "Choose " TacticInput TacticMiddleDefine TacticInput TacticEnd |
         "We" space+ "first" space+ "show" space+ "the" space+ "base" space+ "case " TacticInput TacticEnd | 

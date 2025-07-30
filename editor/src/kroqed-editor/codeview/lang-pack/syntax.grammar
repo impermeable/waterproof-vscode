@@ -53,7 +53,8 @@ Sentence {
         "It" space+ "holds" space+ "that " TacticInput TacticEnd | 
         "We" space+ "claim" space+ "that " TacticInput TacticEnd | 
         "We" space+ "use" space+ "induction" space+ "on " TacticInput TacticEnd | 
-        "Indeed, " TacticInput TacticEnd |
+        TacticBullet* "Indeed, " TacticInput TacticEnd |
+        // TacticBullet* only placed at just one tactic seems to works for bullets at the start of any tactic... 
         "Use " TacticInput TacticEnd |
         "Choose " TacticInput TacticMiddleDefine TacticInput TacticEnd |
         "We" space+ "first" space+ "show" space+ "the" space+ "base" space+ "case " TacticInput TacticEnd | 
@@ -106,6 +107,8 @@ Sentence {
     space { " " | "\t" | "\n" | "\r" }
 
     ProofandQed {"Proof" | "Qed"} 
+
+    TacticBullet{ "+" | "*" | "-" }
 
     //TacticInput { ![.]+ } // Exclude overlapping characters explicitly
 }

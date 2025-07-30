@@ -14,6 +14,7 @@ import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic, setDiagnosticsEffect, lintGutter } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
+import { getCurrentTheme } from "../../themeStore";
 
 
 /**
@@ -47,7 +48,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumbersExtension = [];
 		
 		// Set initial theme color based on VSCode theme
-		this._themeColor =  "light"; // Default to light theme
+		this._themeColor =  getCurrentTheme(); // Default to light theme
 
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;

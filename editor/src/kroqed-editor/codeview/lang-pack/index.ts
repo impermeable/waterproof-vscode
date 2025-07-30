@@ -23,7 +23,7 @@ let customTags = {
 export const highlight_dark = HighlightStyle.define([
     { tag: customTags.waterproofTactic, color: "#6b9affff" },
     { tag: customTags.tacticInput, color: "#CCCCCC" },
-    { tag: customTags.lemmaStatement, color: "#344bddff" },
+    { tag: customTags.lemmaStatement, color: "#7777ff" },
     { tag: customTags.lemma, color: "#e45649" },
     { tag: customTags.comment, color: "#9ea0b1ff" },
     { tag: customTags.proofQed, color: "#e45649" },

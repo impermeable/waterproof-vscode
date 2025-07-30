@@ -199,6 +199,7 @@ export class ProseMirrorWebview extends EventEmitter {
         this._disposables.push(window.onDidChangeActiveColorTheme(() => {
             this.themeUpdate();
         }));
+        this.themeUpdate(); // Update the theme when the webview is created
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
             this.handleMessage(msg);

@@ -1,6 +1,7 @@
 import { Completion } from "@codemirror/autocomplete";
 
 import { Message, MessageType } from "../../shared";
+import { setCurrentTheme } from "./themeStore";
 import { Editor } from "./kroqed-editor";
 import { COQ_CODE_PLUGIN_KEY } from "./kroqed-editor/codeview/coqcodeplugin";
 import { WaterproofEditorConfig } from "./kroqed-editor/utilities/types";
@@ -114,6 +115,7 @@ window.onload = () => {
 				editor.initTacticCompletion(msg.body);
 				break;
 			case MessageType.themeUpdate:
+				setCurrentTheme(msg.body);
 				editor.updateNodeViewThemes(msg.body);
 				break;
 			default:

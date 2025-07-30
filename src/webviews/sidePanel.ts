@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { getNonce } from '../util';
 import { WebviewManager, WebviewManagerEvents } from '../webviewManager';
-import { WaterproofLogger as wpl} from '../helpers';
 // this function add the side panel to the vs code side panel
 export function addSidePanel(context: vscode.ExtensionContext, manager: WebviewManager) {
     const provider = new SidePanelProvider(context.extensionUri, manager);

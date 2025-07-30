@@ -1,6 +1,5 @@
-import { EventEmitter } from "stream";
 import { TextDocument, Uri, window } from "vscode";
-
+import { EventEmitter } from "events";
 import { Message, MessageType } from "../shared";
 import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
@@ -293,7 +292,8 @@ export class WebviewManager extends EventEmitter {
                 this.postMessage(id, { type: MessageType.insert, body: msg.body });
                 break; }
             case MessageType.command:
-                this.emit(WebviewManagerEvents.command, this._toolWebviews.get(id), msg.body);
+                // FIXME: The `WebviewManagerEvents` are **not** typed.
+                this.emit(WebviewManagerEvents.command, this._toolWebviews.get(id), msg.body.command);
                 break;
             default:
                 console.error("The message type " + msg.type + " is not currently supported by webview manager");

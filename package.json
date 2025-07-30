@@ -321,6 +321,16 @@
             "type": "boolean",
             "default": false,
             "description": "Show line numbers in the Waterproof editor"
+          },
+          "waterproof.skipLaunchChecks": {
+            "type": "boolean",
+            "default": false,
+            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+          },
+          "waterproof.showMenuItemsInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
           }
         }
       },
@@ -393,6 +403,21 @@
               "Use jsCoq's Pp rich layout printer",
               "Coq Layout Engine (experimental)"
             ]
+          },
+          "waterproof.visibilityOfHypotheses" : {
+            "type": "string",
+            "default": "none",
+            "enum": [
+              "all",
+              "limited",
+              "none"
+            ],
+            "enumDescriptions": [
+              "Show all hypotheses in the goals panel",
+              "Show only hypotheses not starting with _ in the goals panel",
+              "Do not show any hypotheses in the goals panel"
+            ],
+            "description": "Visibility of hypotheses in the goals panel.\nFor didiactic purposes, we recommend \"none\" for mathematicians learning proofs and \"limited\" or \"all\" for students using the Rocq language."
           }
         }
       },
@@ -514,6 +539,7 @@
     "@types/markdown-it": "12.2.3",
     "@vscode/webview-ui-toolkit": "1.4.0",
     "eventemitter2": "6.4.9",
+    "events": "3.3.0",
     "jquery": "3.7.1",
     "katex": "0.16.11",
     "markdown-it": "13.0.2",
@@ -534,7 +560,8 @@
     "react-tooltip": "5.28.0",
     "throttle-debounce": "5.0.2",
     "vscode-languageclient": "8.1.0",
-    "vscode-languageserver-types": "3.17.5"
+    "vscode-languageserver-types": "3.17.5",
+    "vscode-uri": "3.1.0"
   },
   "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"
@@ -551,7 +578,7 @@
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
     "package": "npm run clean && npm run test-package",
     "unit-tests": "npx jest",
-    "lezer-generator": "npx lezer-generator ./editor/src/kroqed-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/kroqed-editor/codeview/lang-pack/syntax.ts",
+    "lezer-generator": "echo FIX",
     "cypress-tests": "npx cypress run",
     "lint": "npx eslint .",
     "lint-fix": "npx eslint . --fix"

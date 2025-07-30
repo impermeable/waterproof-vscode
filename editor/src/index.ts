@@ -1,8 +1,11 @@
 import { Completion } from "@codemirror/autocomplete";
 
-import { Message, MessageType } from "../../shared";
-import { Editor } from "./kroqed-editor";
-import { COQ_CODE_PLUGIN_KEY } from "./kroqed-editor/codeview/coqcodeplugin";
+import { FileFormat, Message, MessageType } from "../../shared";
+import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
+import { CODE_PLUGIN_KEY } from "./waterproof-editor/codeview";
+// TODO: Move this to a types location.
+import { TextDocMappingMV, TextDocMappingV } from "./mapping";
+import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -10,6 +13,40 @@ import { COQ_CODE_PLUGIN_KEY } from "./kroqed-editor/codeview/coqcodeplugin";
  */
 interface VSCodeAPI {
 	postMessage: (message: Message) => void;
+}
+
+function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
+	// Create the WaterproofEditorConfig object
+	const cfg: WaterproofEditorConfig = {
+		api: {
+			executeHelp() {
+				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
+			},
+			executeCommand(command: string, time: number) {
+				codeAPI.postMessage({ type: MessageType.command, body: { command, time } });
+			},
+			editorReady() {
+				codeAPI.postMessage({ type: MessageType.editorReady });
+			},
+			documentChange(change) {
+				codeAPI.postMessage({ type: MessageType.docChange, body: change });
+			},
+			applyStepError(errorMessage) {
+				codeAPI.postMessage({ type: MessageType.applyStepError, body: errorMessage });
+			},
+			cursorChange(cursorPosition) {
+				codeAPI.postMessage({ type: MessageType.cursorChange, body: cursorPosition });
+			},
+			lineNumbers(linenumbers, version) {
+				codeAPI.postMessage({ type: MessageType.lineNumbers, body: { linenumbers, version } });
+			},
+		},
+		documentConstructor: format === FileFormat.MarkdownV ? blocksFromMV : blocksFromV,
+		// TODO: For now assuming we are constructing an mv file editor.
+		mapping: format === FileFormat.MarkdownV ? TextDocMappingMV : TextDocMappingV
+	}
+
+	return cfg;
 }
 
 window.onload = () => {
@@ -20,21 +57,24 @@ window.onload = () => {
 		throw Error("Editor element cannot be null (no element with id 'editor' found)");
 	}
 
-	const vscode = acquireVsCodeApi() as VSCodeAPI;
-	if (vscode == null) {
+	const codeAPI = acquireVsCodeApi() as VSCodeAPI;
+	if (codeAPI == null) {
 		throw Error("Could not acquire the vscode api.");
 		// TODO: maybe sent some sort of test message?
 	}
 
-	// Create the editor, passing it the vscode api and the editor and content HTML elements.
-	const theEditor = new Editor(vscode, editorElement);
 
+	// Create the editor, passing it the vscode api and the editor and content HTML elements.
+	const cfg = createConfiguration(FileFormat.MarkdownV, codeAPI);
+	const editor = new WaterproofEditor(editorElement, cfg);
+
+	// Register event listener for communication between extension and editor
 	window.addEventListener("message", (event: MessageEvent<Message>) => {
 		const msg = event.data;
 
 		switch(msg.type) {
 			case MessageType.init:
-				theEditor.init(msg.body.value, msg.body.format, msg.body.version);
+				editor.init(msg.body.value, msg.body.format, msg.body.version);
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
@@ -44,31 +84,59 @@ window.onload = () => {
 					// `symbolUnicode` stores the tactic template.
 					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
 					const template = symbolUnicode;
-					theEditor.handleSnippet(template);
+					editor.handleSnippet(template);
 				} else {
-					theEditor.insertSymbol(symbolUnicode, symbolLatex);
+					editor.insertSymbol(symbolUnicode, symbolLatex);
 				}
 				break; }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
-				{ const state = theEditor.state;
+				{ const state = editor.state;
 				if (!state) break;
 				const completions: Completion[] = msg.body;
 				// Apply autocomplete to all coq cells
-				COQ_CODE_PLUGIN_KEY
+				CODE_PLUGIN_KEY
 					.getState(state)
 					?.activeNodeViews
 					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
 				break; }
+			case MessageType.qedStatus:
+				{ const statuses = msg.body;  // one status for each input area, in order
+				editor.updateQedStatus(statuses);
+				break; }
+			case MessageType.setShowLineNumbers:
+				{ const show = msg.body;
+				editor.setShowLineNumbers(show);
+				break; }
+			case MessageType.setShowMenuItems:
+				{ const show = msg.body; editor.setShowMenuItems(show); break; }
 			case MessageType.editorHistoryChange:
-				theEditor.handleHistoryChange(msg.body);
+				editor.handleHistoryChange(msg.body);
+				break;
+			case MessageType.lineNumbers:
+				editor.setLineNumbers(msg.body);
+				break;
+			case MessageType.teacher:
+				editor.updateLockingState(msg.body);
+				break;
+			case MessageType.progress:
+				{ const progressParams = msg.body;
+				editor.updateProgressBar(progressParams);
+				break; }
+			case MessageType.diagnostics:
+				{ const diagnostics = msg.body;
+				editor.parseCoqDiagnostics(diagnostics);
+				break; }
+			case MessageType.syntax:
+				editor.initTacticCompletion(msg.body);
 				break;
 			default:
-				theEditor.handleMessage(msg);
+				// If we reach this 'default' case, then we have encountered an unknown message type.
+				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
 				break;
 		}
 	});
 
 	// Start the editor
-	theEditor.post({type: MessageType.ready});
+	codeAPI.postMessage({type: MessageType.ready});
 };

@@ -1,6 +1,6 @@
-import { Block } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks";
-import { text } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/schema";
-import { extractInterBlockRanges, iteratePairs, maskInputAndHints, sortBlocks } from "../../editor/src/kroqed-editor/prosedoc-construction/utils";
+import { Block } from "../../editor/src/waterproof-editor/document/blocks";
+import { text } from "../../editor/src/waterproof-editor/document/blocks/schema";
+import { extractInterBlockRanges, iteratePairs, maskInputAndHints, sortBlocks } from "../../editor/src/waterproof-editor/document/utils";
 
 const toProseMirror = () => text("null");
 const debugPrint = () => null;
@@ -9,7 +9,7 @@ test("Sort blocks #1", () => {
     const stringContent = "";
 
     const testBlocks = [
-        {type: "second", range: {from: 1, to: 2}, stringContent, toProseMirror, debugPrint}, 
+        {type: "second", range: {from: 1, to: 2}, stringContent, toProseMirror, debugPrint},
         {type: "first", range: {from: 0, to: 1}, stringContent, toProseMirror, debugPrint}
     ];
 
@@ -23,7 +23,7 @@ test("Sort blocks #2", () => {
     const stringContent = "";
 
     const testBlocks = [
-        {type: "second", range: {from: 1, to: 2}, stringContent, toProseMirror, debugPrint}, 
+        {type: "second", range: {from: 1, to: 2}, stringContent, toProseMirror, debugPrint},
         {type: "first", range: {from: 0, to: 1}, stringContent, toProseMirror, debugPrint},
         {type: "third", range: {from: 2, to: 3}, stringContent, toProseMirror, debugPrint}
     ];
@@ -40,7 +40,7 @@ test("Sort blocks #2", () => {
 //     const stringContent = "";
 //     const toProseMirror = () => null;
 //     const testBlocks = [
-//         {type: "second", range: {from: 0, to: 1}, stringContent, toProseMirror}, 
+//         {type: "second", range: {from: 0, to: 1}, stringContent, toProseMirror},
 //         {type: "first", range: {from: 0, to: 1}, stringContent, toProseMirror}
 //     ];
 

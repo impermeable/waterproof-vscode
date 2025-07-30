@@ -19,7 +19,6 @@ import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
 import { FileTranslator } from "./translation";
 import { createContextMenuHTML } from "./context-menu";
-import { initializeTacticCompletion } from "./autocomplete/tactics";
 
 // CSS imports
 import "katex/dist/katex.min.css";
@@ -245,7 +244,7 @@ export class WaterproofEditor {
 			mathPlugin,
 			realMarkdownPlugin(this._schema),
 			coqdocPlugin(this._schema),
-			codePlugin,
+			codePlugin(this._editorConfig.completions),
 			progressBarPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
@@ -455,10 +454,6 @@ export class WaterproofEditor {
 		const tr = state.tr;
 		tr.setMeta(UPDATE_STATUS_PLUGIN_KEY, status);
 		this._view.dispatch(tr);
-	}
-
-	public initTacticCompletion(useTacticsCoq: boolean) {
-		initializeTacticCompletion(useTacticsCoq);
 	}
 
 	public parseCoqDiagnostics(msg: DiagnosticMessage) {

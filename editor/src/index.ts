@@ -6,6 +6,8 @@ import { CODE_PLUGIN_KEY } from "./waterproof-editor/codeview";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
+// TODO: We should be able to change the completions (on demand even?)
+import tactics from "../../shared/completions/tactics.json";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -18,6 +20,7 @@ interface VSCodeAPI {
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
+		completions: tactics,
 		api: {
 			executeHelp() {
 				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
@@ -127,9 +130,6 @@ window.onload = () => {
 				{ const diagnostics = msg.body;
 				editor.parseCoqDiagnostics(diagnostics);
 				break; }
-			case MessageType.syntax:
-				editor.initTacticCompletion(msg.body);
-				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

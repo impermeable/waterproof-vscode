@@ -318,10 +318,11 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Toggle the syntax mode*/
     private updateSyntaxMode() {
-        this.postMessage({
-            type: MessageType.syntax,
-            body: WaterproofConfigHelper.standardCoqSyntax
-        }, true);
+        WaterproofLogger.log("\n\n=== \nTODO: Attempting to update the used syntax. This has been disabled for the moment.\n===\n\n");
+        // this.postMessage({
+        //     type: MessageType.syntax,
+        //     body: WaterproofConfigHelper.standardCoqSyntax
+        // }, true);
     }
 
     /** Apply new doc changes to the underlying file */

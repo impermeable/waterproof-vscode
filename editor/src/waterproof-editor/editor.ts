@@ -32,6 +32,7 @@ import { DiagnosticSeverity } from "vscode";
 import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
 import { Positioned, WaterproofMapping, WaterproofEditorConfig } from "./types";
+import { Completion } from "@codemirror/autocomplete";
 
 
 /** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
@@ -323,6 +324,16 @@ export class WaterproofEditor {
 			return;
 		}
 		this._editorConfig.api.lineNumbers(linenumbers, this._mapping.version);
+	}
+
+	public handleCompletions(completions: Array<Completion>) {
+		const state = this._view?.state;
+		if (!state) return;
+		// Apply autocomplete to all coq cells
+		CODE_PLUGIN_KEY
+			.getState(state)
+			?.activeNodeViews
+			?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
 	}
 
 	/** Called whenever a line number message is received from vscode to update line numbers of codemirror cells */

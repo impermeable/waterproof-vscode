@@ -1,8 +1,5 @@
-import { Completion } from "@codemirror/autocomplete";
-
 import { FileFormat, Message, MessageType } from "../../shared";
 import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
-import { CODE_PLUGIN_KEY } from "./waterproof-editor/codeview";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
@@ -94,15 +91,8 @@ window.onload = () => {
 				break; }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
-				{ const state = editor.state;
-				if (!state) break;
-				const completions: Completion[] = msg.body;
-				// Apply autocomplete to all coq cells
-				CODE_PLUGIN_KEY
-					.getState(state)
-					?.activeNodeViews
-					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
-				break; }
+				editor.handleCompletions(msg.body);
+				break;
 			case MessageType.qedStatus:
 				{ const statuses = msg.body;  // one status for each input area, in order
 				editor.updateQedStatus(statuses);

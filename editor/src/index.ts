@@ -3,7 +3,7 @@ import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
-// TODO: We should be able to change the completions (on demand even?)
+// TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../shared/completions/tactics.json";
 
 /**

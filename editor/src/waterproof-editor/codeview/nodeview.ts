@@ -48,8 +48,6 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._readOnlyCompartment = new Compartment;
 		this._diags = [];
 
-		// TODO: Inlined the tactic completion source.
-		// 		 We may want to be able to switch the completions on demand
 		const tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
 			return new Promise((resolve, _reject) => {
 				const before = context.matchBefore(/([^\s.\n\t\-+*])[^\s\n\t\-+*]*/gm);

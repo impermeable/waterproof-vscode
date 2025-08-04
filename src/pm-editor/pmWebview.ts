@@ -186,10 +186,6 @@ export class ProseMirrorWebview extends EventEmitter {
                 this.updateTeacherMode();
             }
 
-            if (e.affectsConfiguration("waterproof.standardCoqSyntax")) {
-                this.updateSyntaxMode();
-            }
-
             if (e.affectsConfiguration("waterproof.enforceCorrectNonInputArea")) {
                 this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
             }
@@ -314,15 +310,6 @@ export class ProseMirrorWebview extends EventEmitter {
             type: MessageType.teacher,
             body: mode
         }, true);
-    }
-
-    /** Toggle the syntax mode*/
-    private updateSyntaxMode() {
-        WaterproofLogger.log("\n\n=== \nTODO: Attempting to update the used syntax. This has been disabled for the moment.\n===\n\n");
-        // this.postMessage({
-        //     type: MessageType.syntax,
-        //     body: WaterproofConfigHelper.standardCoqSyntax
-        // }, true);
     }
 
     /** Apply new doc changes to the underlying file */

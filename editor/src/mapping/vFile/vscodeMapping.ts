@@ -1,10 +1,10 @@
 import { Step, ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
-import { DocChange, WrappingDocChange } from "../../../../shared";
+import { DocChange, WrappingDocChange } from "waterproof-editor/api";
 import { getEndHtmlTagText, getStartHtmlTagText} from "./helper-functions";
 import { StringCell, HtmlTagInfo, ParsedStep} from "./types";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
-import { WaterproofMapping } from "../../waterproof-editor";
+import { WaterproofMapping } from "waterproof-editor/api";
 
 
 /**

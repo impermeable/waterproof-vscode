@@ -1,9 +1,10 @@
 {
   "extends": "../tsconfig-base.json",
   "compilerOptions": {
-    "module": "CommonJS",
+    "module": "nodenext",
     "target": "ESNext",
     "resolveJsonModule": true,
+    "moduleResolution": "nodenext"
   },
   "include": ["**/*.ts", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts"]
 }

@@ -1,5 +1,5 @@
-import { FileFormat } from "../../../shared";
-import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock, CoqDocBlock } from "../waterproof-editor/document";
+import { FileFormat } from "../../../shared/FileFormat";
+import { CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock, CoqDocBlock } from "waterproof-editor/document";
 import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
 
 const regexes = {
@@ -134,26 +134,6 @@ export function extractCoqBlocks(inputDocument: string) {
     });
     return coqBlocks;
 }
-
-/**
- * Create blocks based on ranges.
- *
- * Extracts the text content of the ranges and creates blocks from them.
- */
-export function extractBlocksUsingRanges<BlockType extends Block>(
-    inputDocument: string,
-    ranges: {from: number, to: number}[],
-    BlockConstructor: new (content: string, range: { from: number, to: number }) => BlockType ): BlockType[]
-{
-    const blocks = ranges.map((range) => {
-        const content = inputDocument.slice(range.from, range.to);
-        return new BlockConstructor(content, range);
-    }).filter(block => {
-        return block.range.from !== block.range.to;
-    });
-    return blocks;
-}
-
 
 // Regex used for extracting the coqdoc comments from the coqdoc block.
 // Info: https://coq.inria.fr/doc/refman/using/tools/coqdoc.html

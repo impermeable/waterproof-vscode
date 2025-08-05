@@ -1,7 +1,6 @@
 import { EventEmitter } from "events";
 import { Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
-import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNumber } from "../../shared";
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
 import { SequentialEditor } from "./edit";
@@ -11,7 +10,8 @@ const SAVE_AS = "Save As";
 import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
-import { HistoryChangeType } from "../../shared/Messages";
+import { FileFormat, Message, MessageType } from "../../shared";
+import { DocChange, HistoryChange, LineNumber, WrappingDocChange } from "waterproof-editor/api";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -66,11 +66,11 @@ export class ProseMirrorWebview extends EventEmitter {
     // These can either be triggered by the user via a keybinding or by the undo/redo command
     //     under `edit > edit` and `edit > undo` in the menubar.
     private undoHandler() {
-        this.sendHistoryChangeToEditor(HistoryChangeType.Undo);
+        this.sendHistoryChangeToEditor(HistoryChange.Undo);
 
     };
     private redoHandler() {
-        this.sendHistoryChangeToEditor(HistoryChangeType.Redo);
+        this.sendHistoryChangeToEditor(HistoryChange.Redo);
     };
 
     private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
@@ -265,7 +265,6 @@ export class ProseMirrorWebview extends EventEmitter {
             type: MessageType.init,
             body: {
                 value: this._document.getText(),
-                format: this._format,
                 version: this._document.version,
             }
         });
@@ -396,7 +395,7 @@ export class ProseMirrorWebview extends EventEmitter {
         }
     }
 
-    private sendHistoryChangeToEditor(type: HistoryChangeType) {
+    private sendHistoryChangeToEditor(type: HistoryChange) {
         this.postMessage({
             type: MessageType.editorHistoryChange,
             body: type

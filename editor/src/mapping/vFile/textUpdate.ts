@@ -1,7 +1,7 @@
-import { ReplaceStep } from "prosemirror-transform";
-import { DocChange } from "../../../../shared";
 import { HtmlTagInfo, OperationType, ParsedStep, StringCell } from "./types";
 import { getTextOffset } from "./helper-functions";
+import { ReplaceStep } from "waterproof-editor/api";
+import { DocChange } from "waterproof-editor/api";
 
 
 

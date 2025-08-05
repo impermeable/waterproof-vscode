@@ -1,11 +1,11 @@
-import { Completion } from "@codemirror/autocomplete";
+import { WaterproofEditor } from "waterproof-editor";
+import { WaterproofEditorConfig } from "waterproof-editor/api";
 
-import { FileFormat, Message, MessageType } from "../../shared";
-import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
-import { CODE_PLUGIN_KEY } from "./waterproof-editor/codeview";
-// TODO: Move this to a types location.
-import { TextDocMappingMV, TextDocMappingV } from "./mapping";
-import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
+import { blocksFromMV } from "./document-construction/construct-document";
+// import { FileFormat } from "../../shared/FileFormat";
+import { Message, MessageType } from "../../shared";
+import { checkPrePost } from "./file-utils";
+import { TextDocMappingMV } from "./mapping";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -15,7 +15,7 @@ interface VSCodeAPI {
 	postMessage: (message: Message) => void;
 }
 
-function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
+function createConfiguration(codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
 		api: {
@@ -41,9 +41,10 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				codeAPI.postMessage({ type: MessageType.lineNumbers, body: { linenumbers, version } });
 			},
 		},
-		documentConstructor: format === FileFormat.MarkdownV ? blocksFromMV : blocksFromV,
+		documentConstructor: blocksFromMV,
+		documentPreprocessor: checkPrePost,
 		// TODO: For now assuming we are constructing an mv file editor.
-		mapping: format === FileFormat.MarkdownV ? TextDocMappingMV : TextDocMappingV
+		mapping: TextDocMappingMV
 	}
 
 	return cfg;
@@ -65,7 +66,7 @@ window.onload = () => {
 
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
-	const cfg = createConfiguration(FileFormat.MarkdownV, codeAPI);
+	const cfg = createConfiguration(codeAPI);
 	const editor = new WaterproofEditor(editorElement, cfg);
 
 	// Register event listener for communication between extension and editor
@@ -74,32 +75,26 @@ window.onload = () => {
 
 		switch(msg.type) {
 			case MessageType.init:
-				editor.init(msg.body.value, msg.body.format, msg.body.version);
+				console.log("In init", msg.body.value);
+				editor.init(msg.body.value, msg.body.version);
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
 				{
-				const { symbolUnicode, symbolLatex } = msg.body;
+				const { symbolUnicode } = msg.body;
 				if (msg.body.type === "tactics") {
 					// `symbolUnicode` stores the tactic template.
 					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
 					const template = symbolUnicode;
 					editor.handleSnippet(template);
 				} else {
-					editor.insertSymbol(symbolUnicode, symbolLatex);
+					editor.insertSymbol(symbolUnicode);
 				}
 				break; }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
-				{ const state = editor.state;
-				if (!state) break;
-				const completions: Completion[] = msg.body;
-				// Apply autocomplete to all coq cells
-				CODE_PLUGIN_KEY
-					.getState(state)
-					?.activeNodeViews
-					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
-				break; }
+				editor.handleCompletions(msg.body);
+				break;
 			case MessageType.qedStatus:
 				{ const statuses = msg.body;  // one status for each input area, in order
 				editor.updateQedStatus(statuses);

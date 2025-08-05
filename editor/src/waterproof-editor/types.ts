@@ -28,7 +28,15 @@ export abstract class WaterproofMapping {
     abstract update: (step: Step) => DocChange | WrappingDocChange;
 }
 
+export type WaterproofCompletion = {
+    label: string,
+    type: string,
+    detail: string,
+    template: string
+}
+
 export type WaterproofEditorConfig = {
+    completions: Array<WaterproofCompletion>,
     api: WaterproofCallbacks,
     documentConstructor: (document: string) => WaterproofDocument,
     mapping: new (inputString: string, versionNum: number) => WaterproofMapping

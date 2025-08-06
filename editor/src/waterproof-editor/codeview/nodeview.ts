@@ -9,7 +9,7 @@ import {
 import { Node, Schema } from "prosemirror-model"
 import { EditorView } from "prosemirror-view"
 import { customTheme } from "./color-scheme"
-import { symbolCompletionSource, coqCompletionSource, tacticCompletionSource, renderIcon } from "../autocomplete";
+import { symbolCompletionSource, coqCompletionSource, renderIcon } from "../autocomplete";
 import { EmbeddedCodeMirrorEditor } from "../embedded-codemirror";
 import { linter, LintSource, Diagnostic, setDiagnosticsEffect, lintGutter } from "@codemirror/lint";
 import { Debouncer } from "./debouncer";
@@ -37,7 +37,8 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		node: Node,
 		view: EditorView,
 		getPos: (() => number | undefined),
-		schema: Schema
+		schema: Schema,
+		completions: Array<Completion>
 	) {
 		super(node, view, getPos, schema);
 		this._node = node;
@@ -47,6 +48,25 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		this._lineNumberCompartment = new Compartment;
 		this._readOnlyCompartment = new Compartment;
 		this._diags = [];
+
+		const tacticCompletionSource: CompletionSource = function(context: CompletionContext): Promise<CompletionResult | null> {
+			return new Promise((resolve, _reject) => {
+				const before = context.matchBefore(/([^\s.\n\t\-+*])[^\s\n\t\-+*]*/gm);
+				const period = /\./gm 
+				const line = context.state.doc.lineAt(context.pos);
+				const firstletter = line.text.match(/[a-zA-Z]/);
+				const lineBeforeCursor = line.text.slice(0, context.pos - line.from);
+				
+				if ((!context.explicit && !before) || period.test(lineBeforeCursor)) resolve(null);
+				resolve({
+				// start completion instance from first letter of line
+				from: firstletter ? line.from + firstletter.index!: context.pos,
+				// non-null assertion operator "!" used to remove 'possibly null' error
+				options: completions,
+				validFor: /^[\t]*[^.]*/gm
+				})
+			});
+  		}
 
 		// Shadow this._outerView for use in the next function.
 		const outerView = this._outerView;

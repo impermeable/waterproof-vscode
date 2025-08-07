@@ -35,7 +35,7 @@ export class TreeNode {
 
 export class Tree {
     root: TreeNode | null;
-
+    
     constructor(
         type: string = "",
         originalStart: number = 0,
@@ -88,6 +88,5 @@ export class Tree {
         }
         return null;
     }
-
 
 }

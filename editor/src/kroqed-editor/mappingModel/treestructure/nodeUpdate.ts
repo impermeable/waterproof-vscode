@@ -1,16 +1,17 @@
 // Disabled because the ts-ignores later can't be made into ts-expect-error
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { ReplaceAroundStep, ReplaceStep } from "prosemirror-transform";
+import { Tree, TreeNode } from "./Tree";
 import { DocChange, WrappingDocChange } from "../../../../../shared";
-import { HtmlTagInfo, OperationType, ParsedStep, StringCell } from "./types";
-import { getEndHtmlTagText, getStartHtmlTagText, getTextOffset, parseFragment } from "./helper-functions";
+import { OperationType, ParsedStep } from "./types";
+import { getEndHtmlTagText, getStartHtmlTagText, getTextOffset, parseFragment } from "../mvFile/helper-functions";
 
 
 // TO BE IMPLEMENTED!
 export class NodeUpdate {
 
     /** Used to parse a step that causes nodes to be updated instead of just text */
-    static nodeUpdate(step: ReplaceStep | ReplaceAroundStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
+    static nodeUpdate(step: ReplaceStep | ReplaceAroundStep, tree: Tree) : ParsedStep {
         let result : ParsedStep;
 
         /** Get the doc change and do some error checking */
@@ -27,12 +28,12 @@ export class NodeUpdate {
 
             if (type === OperationType.delete) {
                 // Is the node deletion in a valid location
-                if(!startHtmlMap.has(step.from) || !endHtmlMap.has(step.to) ) throw new Error(" Mapping does not contain this position, is node inserted in middle of another node?");
-                result = NodeUpdate.replaceStepDelete(step,stringBlocks,endHtmlMap,startHtmlMap);
+                // if(!startHtmlMap.has(step.from) || !endHtmlMap.has(step.to) ) throw new Error(" Mapping does not contain this position, is node inserted in middle of another node?");
+                result = NodeUpdate.replaceStepDelete(step,tree);
             } else {
-                result = NodeUpdate.replaceStepInsert(step,stringBlocks,endHtmlMap,startHtmlMap);
+                
+                result = NodeUpdate.replaceStepInsert(step,tree);
             }
-
         } else {
             // Replace around step in valid form
             if (step.gapFrom - step.from > 1 || step.to - step.gapTo > 1) throw new Error(" We only support ReplaceAroundSteps with a single gap");
@@ -40,27 +41,25 @@ export class NodeUpdate {
             // Deletion ReplaceAroundstep
             if (step.slice.content.firstChild == null) {
                 // Error check Deletion step
-                if (!startHtmlMap.has(step.from) || !endHtmlMap.has(step.gapFrom)) throw new Error(" ReplaceAroundStep deletion is in unconventional form");
-                if (!startHtmlMap.has(step.gapTo) || !endHtmlMap.has(step.to)) throw new Error(" ReplaceAroundStep deletion is in unconventional form");
+                // if (!startHtmlMap.has(step.from) || !endHtmlMap.has(step.gapFrom)) throw new Error(" ReplaceAroundStep deletion is in unconventional form");
+                // if (!startHtmlMap.has(step.gapTo) || !endHtmlMap.has(step.to)) throw new Error(" ReplaceAroundStep deletion is in unconventional form");
 
-                result = NodeUpdate.replaceAroundStepDelete(step,stringBlocks,endHtmlMap,startHtmlMap);
+                result = NodeUpdate.replaceAroundStepDelete(step,tree);
             } else if (step.slice.content.childCount == 1 && step.slice.openStart == 0 && step.slice.openEnd == 0) {
                 // Error check ReplaceAroundStep insertion
                 if (step.gapFrom - step.from > 0 || step.to - step.gapTo > 0 || step.insert != 1) throw new Error(" We only support ReplaceAroundStep that inserts chunk in single node");
-                if (!(startHtmlMap.has(step.from) || endHtmlMap.has(step.to))) throw new Error(" Not a proper wrapping ");
+                //if (!(startHtmlMap.has(step.from) || endHtmlMap.has(step.to))) throw new Error(" Not a proper wrapping ");
                 if(!(step.slice.content.firstChild.type.name == 'hint' || step.slice.content.firstChild.type.name == 'input')) throw new Error(" We only support wrapping in hints or inputs ");
 
-                result = NodeUpdate.replaceAroundStepInsert(step,stringBlocks,endHtmlMap,startHtmlMap);
+                result = NodeUpdate.replaceAroundStepInsert(step,tree);
             } else {
                 throw new Error(" We do not support this type of ReplaceAroundStep");
             }
-            
         }
-
         return result;        
     }
 
-    private static replaceStepDelete(step: ReplaceStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
+    private static replaceStepDelete(step: ReplaceStep, tree: Tree) : ParsedStep {
         //// Determine the in text document change vscode side
 
         /** The resulting change of this step operation */
@@ -70,87 +69,52 @@ export class NodeUpdate {
             finalText: ""
         }
 
-        /** Get the starting and end tag of the block deletion */
-        const startTag: HtmlTagInfo | undefined = startHtmlMap.get(step.from);
-        const endTag: HtmlTagInfo | undefined = endHtmlMap.get(step.to);
-        if (startTag === undefined || endTag === undefined ) throw new Error("The deleted block was not in the mapping");
-
         /** Determine the resulting DocChange indices */
-        result.startInFile = startTag.offsetText;
-        result.endInFile = endTag.offsetText;
+        const deletedNode = tree.findNodeByProsemirrorPosition(step.from);
+        if (!deletedNode) throw new Error("We could not find the correct node");
+        result.startInFile = deletedNode.originalStart;
+        result.endInFile = deletedNode.originalEnd;      
 
         //// Update the mapping to reflect the new prosemirror state
 
-        // New maps
-        const newHtmlMap = new Map<number,HtmlTagInfo>();
-        const newHtmlMapS = new Map<number,HtmlTagInfo>();
-        const newMap = new Map<number,StringCell>();
-
         // The offsets that were deleted from the doc needed to update the mappings
-        const proseOffset = getTextOffset(OperationType.delete,step);
-        // This has an additional costs, which are taken account in the suceeding loop
-        let textOffset = proseOffset;
-
-
-        for (const [key, value] of endHtmlMap) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key > step.from) {
-                if (key <= step.to) { // This block has been removed
-                    // Adjust textOffset based on what has been deleted
-                    textOffset += 1 - value.textCost;
-                    continue;
-                } 
-                newkey += proseOffset; newvalue.offsetText += textOffset;
-                newvalue.offsetProse += proseOffset;
+        const proseStart = deletedNode?.prosemirrorStart ?? 0;
+        const proseEnd = deletedNode?.prosemirrorEnd ?? 0;
+        const proseOffset = proseStart - proseEnd;
+        const textStart = deletedNode?.originalStart ?? 0;
+        const textEnd = deletedNode?.originalEnd ?? 0;
+        const textOffset = textStart- textEnd;
+        // Update positions in the tree
+        tree.traverseDepthFirst((node: TreeNode) => {
+            if (node.prosemirrorStart >= proseStart && node.prosemirrorEnd <= proseEnd) {
+                // Remove the node from the tree
+                node.removeChild(deletedNode);
             }
-            newHtmlMap.set(newkey,newvalue);
-        }
-
-
-        for (const [key, value] of startHtmlMap) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key >= step.from) {
-                if (key < step.to) continue; // This block has been removed
-                newkey += proseOffset; newvalue.offsetText += textOffset;
-                newvalue.offsetProse += proseOffset;
+            if (node.prosemirrorStart > proseStart) {
+                node.prosemirrorStart += proseOffset;
+                node.prosemirrorEnd += proseOffset;
             }
-            newHtmlMapS.set(newkey,newvalue);
-        }
-
-        
-        for(const [key,value] of stringBlocks) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key >= step.from) {
-                if (key < step.to) continue; // This block has been removed
-                newvalue.startProse += proseOffset;
-                newkey += proseOffset;
-                newvalue.startText += textOffset;
-                newvalue.endProse += proseOffset;
-                newvalue.endText += textOffset;
+            if (node.originalStart > textStart) {
+                node.originalStart += textOffset;
+                node.originalEnd += textOffset;
             }
-            newMap.set(newkey,newvalue);
-        }
-
-        return {result, newHtmlMapS, newHtmlMap, newMap};
+        });
+        let newTree = new Tree;
+        newTree = tree;
+        return {result, newTree};
     }
 
     /** Converts a replace step that is a pure node update to a DocChange */
-    private static replaceStepInsert(step: ReplaceStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
+    private static replaceStepInsert(step: ReplaceStep, tree: Tree) : ParsedStep {
         const result : DocChange = {
             startInFile: 0,
             endInFile: 0,
             finalText: ""
         }
-
-        let newMap = new Map<number,StringCell>();
-        let newHtmlMap = new Map<number,HtmlTagInfo>();
-        let newHtmlMapS = new Map<number,HtmlTagInfo>();
         let final;
         let inBetweenText: string = "";
-        let textIndex: number = 0;
 
-        // Check if we are in an empty document
-        if (endHtmlMap.size == 0) {
+        if (tree.root?.children.length == 0) {
             final = parseFragment(step.slice.content);
             if (step.slice.content.firstChild!.content.firstChild !== null) inBetweenText = step.slice.content.firstChild!.content.firstChild.textContent;
 
@@ -159,86 +123,61 @@ export class NodeUpdate {
             result.endInFile = 0;
             result.finalText = final.starttext + inBetweenText + final.endtext;
         } else {
-            // Check whether we know of the insertion location 
-            if (!(startHtmlMap.has(step.from) || endHtmlMap.has(step.from))) throw new Error(" The insertion spot was not recognized, either mapping is off or a bug in code");
-
-            const location = startHtmlMap.has(step.from) ? startHtmlMap.get(step.from) : endHtmlMap.get(step.from);
-
-            if (location === undefined) throw new Error(" This cannot happen... ");
-
-             /** Compute the resulting DocChange */
-            result.startInFile = location?.offsetText;
-            result.endInFile = location?.offsetText;
+            const node = tree.findNodeByProsemirrorPosition(step.from);
+            if (!node) throw new Error("We could not find the correct node");
             final = parseFragment(step.slice.content);
+
+            /** Compute the resulting DocChange */
+            result.startInFile = node.originalStart + final.starttext.length;
+            result.endInFile = result.startInFile;
             result.finalText = final.starttext + final.endtext;
 
-
-            //// Update the existing mapping
-
-
-            for(const [key,value] of stringBlocks) {
-                let newkey = key; const newvalue = structuredClone(value);
-                if (key >= step.from) {
-                    newvalue.startProse += final.proseOffset;
-                    newkey += final.proseOffset;
-                    newvalue.startText += result.finalText.length;
-                    newvalue.endProse += final.proseOffset;
-                    newvalue.endText += result.finalText.length;
+            const proseStart = node.prosemirrorStart + final.proseOffset;
+            const proseEnd = node.prosemirrorEnd + final.proseOffset;
+            const proseOffset = proseStart - proseEnd;
+            const textStart = node.originalStart + final.starttext.length;
+            const textEnd = node.originalEnd + final.endtext.length;
+            const textOffset = textStart - textEnd;
+            ///Update existing mapping
+            tree.traverseDepthFirst((node: TreeNode) => {
+                if (node.prosemirrorStart > proseStart) {
+                    node.prosemirrorStart += proseOffset;
+                    node.prosemirrorEnd += proseOffset;
                 }
-                newMap.set(newkey,newvalue);
-            }
-
-            for (const [key, value] of endHtmlMap) {
-                let newkey = key; const newvalue = structuredClone(value);
-                if (key > step.from) {
-                    newkey += final.proseOffset; newvalue.offsetText += result.finalText.length;
-                    newvalue.offsetProse += final.proseOffset;
+                if (node.originalStart > textStart) {
+                    node.originalStart += textOffset;
+                    node.originalEnd += textOffset;
                 }
-                newHtmlMap.set(newkey,newvalue);
-            }
-            for (const [key, value] of startHtmlMap) {
-                let newkey = key; const newvalue = structuredClone(value);
-                if (key >= step.from) {
-                    newkey += final.proseOffset; newvalue.offsetText += result.finalText.length;
-                    newvalue.offsetProse += final.proseOffset;
-                }
-                newHtmlMapS.set(newkey,newvalue);
-            }
-
-            /** Set the location of where the edit is being made in vscode doc */
-            textIndex = location.offsetText;
-        }
-
-        // Add the new cell to stringBlocks map, if a text area was inserted
-        if (final.stringCell) {
-            const newIndex = step.from + final.proseOffset / 2;
-            // Add the new string cell
-            newMap.set(newIndex, {
-                startProse: newIndex,
-                endProse: newIndex + result.finalText.length,
-                startText: textIndex + final.starttext.length,
-                endText: textIndex + final.starttext.length + inBetweenText.length,
             });
-        }
-        
-        let proseIndex = step.from;
-        // Add new tags
-        for (let i = 0; i < final.tags.length; i++) {
-            if (i == final.tags.length/2) {
-                proseIndex += inBetweenText.length;
-                textIndex += inBetweenText.length;
-            }
-            newHtmlMapS.set(proseIndex,{ offsetProse: proseIndex, offsetText: textIndex, textCost: final.tags[i].length});
-            textIndex += final.tags[i].length;
-            proseIndex += 1;
-            newHtmlMap.set(proseIndex,{ offsetProse: proseIndex, offsetText: textIndex, textCost: final.tags[i].length});
-        }
-        // Sort the maps, so they are increasing in keys
-        newMap = new Map([...newMap.entries()].sort((a,b) => a[0] - b[0]));
-        newHtmlMap = new Map([...newHtmlMap.entries()].sort((a,b) => a[0] - b[0]));
-        newHtmlMapS = new Map([...newHtmlMapS.entries()].sort((a,b) => a[0] - b[0]));
+            
+            let fragmentNode = step.slice.content.firstChild;
+            let childNodes: TreeNode[] = [];
+            childNodes.push(node)
+            let index = 1;
+            while (fragmentNode) {
+                // Create a new TreeNode for the child
+                let childNode = new TreeNode(
+                    fragmentNode.type.name,
+                    node.originalStart + final.starttext.length,
+                    fragmentNode.textContent.length,
+                    node.prosemirrorStart + final.proseOffset,
+                    node.prosemirrorEnd + final.proseOffset,
+                    fragmentNode.textContent || ""
+                );
+                childNodes.push(childNode);
 
-        return {result, newHtmlMapS, newHtmlMap, newMap};
+                childNodes[index - 1].addChild(childNode);
+
+                index++;
+
+                fragmentNode = fragmentNode.content.firstChild;
+            }
+
+        }
+        let newTree = new Tree;
+        newTree = tree;
+        return {result, newTree};
+
     }
 
     /** Setups the wrapping doc change for the suceeding functions */
@@ -262,146 +201,165 @@ export class NodeUpdate {
         return result;
     }
 
-    private static replaceAroundStepDelete(step: ReplaceAroundStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
-        const result : WrappingDocChange = NodeUpdate.setupWrapper();
+    private static replaceAroundStepDelete(step: ReplaceAroundStep, tree: Tree): ParsedStep {
+        const result: WrappingDocChange = {
+            firstEdit:  { startInFile: 0, endInFile: 0, finalText: "" },
+            secondEdit: { startInFile: 0, endInFile: 0, finalText: "" },
+        };
 
-        // Update maps
-        const newHtmlMap = new Map<number,HtmlTagInfo>();
-        const newHtmlMapS = new Map<number,HtmlTagInfo>();
-        const newMap = new Map<number,StringCell>();
+        const wrapper = tree.findNodeByProsemirrorPosition(step.from);
+        if (!wrapper) throw new Error("Wrapper node not found at step.from");
+        if (wrapper.prosemirrorStart !== step.from || wrapper.prosemirrorEnd !== step.to) {
+            throw new Error("ReplaceAroundStep delete must unwrap a whole node");
+        }
 
-        // @ts-ignore TODO: Fix this
-        result.firstEdit.startInFile = startHtmlMap.get(step.from)?.offsetText;
-        // @ts-ignore TODO: Fix this
-        result.firstEdit.endInFile = endHtmlMap.get(step.gapFrom)?.offsetText;
+        const startTag = getStartHtmlTagText(wrapper.type);
+        const endTag   = getEndHtmlTagText(wrapper.type);
+
+        result.firstEdit.startInFile = wrapper.originalStart - startTag.length;
+        result.firstEdit.endInFile   = wrapper.originalStart;
+        result.firstEdit.finalText   = "";
+
+        result.secondEdit.startInFile = wrapper.originalEnd;
+        result.secondEdit.endInFile   = wrapper.originalEnd + endTag.length;
+        result.secondEdit.finalText   = "";
+
+        let parent: TreeNode | null = null;
+        let insertIndex = -1;
+
+        tree.traverseDepthFirst((node: TreeNode) => {
+            if (parent) return;                 
+            const idx = node.children.indexOf(wrapper);
+            if (idx !== -1) {
+                parent = node;
+                insertIndex = idx;
+            }
+        });
+
+        if (!parent) throw new Error("Cannot unwrap the root node");
+
+        const liftedChildren = [...wrapper.children];
+        (parent as TreeNode).children.splice(insertIndex, 1, ...liftedChildren);
+
+        const cut1 = wrapper.originalStart;
+        const cut2 = wrapper.originalEnd;
+        const startLen = getStartHtmlTagText(wrapper.type).length;
+        const endLen   = getEndHtmlTagText(wrapper.type).length;
+
+        tree.traverseDepthFirst(node => {
+            if (node.originalStart >= cut2) {
+                node.originalStart -= (startLen + endLen);
+                node.originalEnd   -= (startLen + endLen);
+            } else if (node.originalStart >= cut1) {
+                node.originalStart -= startLen;
+                node.originalEnd   -= startLen;
+            }
+        });
+
+        const cutPM1 = step.gapFrom;
+        const cutPM2 = step.to;
+
+        tree.traverseDepthFirst(node => {
+            if (node.prosemirrorStart >= cutPM2) {
+                node.prosemirrorStart -= 2;
+                node.prosemirrorEnd   -= 2;
+            } else if (node.prosemirrorStart >= cutPM1) {
+                node.prosemirrorStart -= 1;
+                node.prosemirrorEnd   -= 1;
+            }
+        });
+
+        return { result, newTree: tree };
+    }
+
+
+
+    private static replaceAroundStepInsert(step: ReplaceAroundStep, tree: Tree): ParsedStep {
+        const result: WrappingDocChange = {
+            firstEdit:  { startInFile: 0, endInFile: 0, finalText: "" },
+            secondEdit: { startInFile: 0, endInFile: 0, finalText: "" },
+        };
+
+        const wrapType = step.slice.content.firstChild?.type.name;
+        if (!(wrapType === "hint" || wrapType === "input")) {
+            throw new Error("We only support wrapping in hints or inputs");
+        }
+
+        let parent: TreeNode | null = null;
+        let startIdx = -1;
+        let endIdx = -1;
+
+        tree.traverseDepthFirst((n: TreeNode) => {
+            if (parent) return; 
+            if (!n.children.length) return;
+            for (let i = 0; i < n.children.length; i++) {
+                if (n.children[i].prosemirrorStart === step.from && n.children[i].prosemirrorEnd   === step.to) {
+                    parent = n;
+                    break;
+                }
+            }
+        });
+
+        if (!parent || startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+            throw new Error("ReplaceAroundStep insert must wrap a contiguous sibling range");
+        }
+        const firstChild = parent.children[startIdx];
+        const lastChild  = parent.children[endIdx];
+
+        const startTag = wrapType === "hint" ? '<hint title="💡 Hint">' : getStartHtmlTagText(wrapType);
+        const endTag   = wrapType === "hint" ? '</hint>'               : getEndHtmlTagText(wrapType);
+
+        const anchorStartOriginal = firstChild.originalStart;
+        const anchorEndOriginal   = lastChild.originalEnd;    
+
+        result.firstEdit.startInFile = anchorStartOriginal;
+        result.firstEdit.endInFile   = anchorStartOriginal;
+        result.firstEdit.finalText   = startTag;
+
+        result.secondEdit.startInFile = anchorEndOriginal; 
+        result.secondEdit.endInFile   = anchorEndOriginal;
+        result.secondEdit.finalText   = endTag;
+
+        const startLen = startTag.length;
+        const endLen   = endTag.length;
+
         
-        // @ts-ignore TODO: Fix this
-        result.secondEdit.startInFile = startHtmlMap.get(step.gapTo)?.offsetText;
-        // @ts-ignore TODO: Fix this
-        result.secondEdit.endInFile = endHtmlMap.get(step.to)?.offsetText;
-
-        for (const [key, value] of endHtmlMap) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key == step.gapFrom || key == step.to) continue;
-            if (key >= step.gapFrom && key >= step.to) { 
-                // @ts-ignore TODO: Fix this
-                newkey -= 2; newvalue.offsetText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost);
-                newvalue.offsetProse -= 2;
-            } else if(key >= step.gapFrom) {
-                // @ts-ignore TODO: Fix this
-                newkey -= 1; newvalue.offsetText -= endHtmlMap.get(step.gapFrom)?.textCost;
-                newvalue.offsetProse -= 1;
+        tree.traverseDepthFirst(node => {
+            if (node.originalStart >= anchorEndOriginal) {
+            node.originalStart += (startLen + endLen);
+            node.originalEnd   += (startLen + endLen);
+            } else if (node.originalStart >= anchorStartOriginal) {
+            node.originalStart += startLen;
+            node.originalEnd   += startLen;
             }
-            newHtmlMap.set(newkey,newvalue);
-        }
-        for (const [key, value] of startHtmlMap) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key == step.from || key == step.gapTo) continue;
-            if (key >= step.from && key >= step.gapTo) {
-                // @ts-ignore TODO: Fix this
-                newkey -= 2; newvalue.offsetText -= (startHtmlMap.get(step.from)?.textCost + startHtmlMap.get(step.gapTo)?.textCost);
-                newvalue.offsetProse -= 2;
-            } else if(key >= step.from) {
-                // @ts-ignore TODO: Fix this
-                newkey -= 1; newvalue.offsetText -= startHtmlMap.get(step.from)?.textCost;
-                newvalue.offsetProse -= 1;
-            }
-            newHtmlMapS.set(newkey,newvalue);
-        }
+        });
 
-        for(const [key,value] of stringBlocks) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key >= step.gapFrom && key >= step.to) {
-                newvalue.startProse -= 2; newkey -= 2;  newvalue.endProse -= 2;
-                // @ts-ignore TODO: Fix this
-                newvalue.startText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost); 
-                // @ts-ignore TODO: Fix this
-                newvalue.endText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost);
-            } else if (key >= step.gapFrom) {
-                newvalue.startProse -= 1; newkey -= 1;  newvalue.endProse -= 1;
-                // @ts-ignore TODO: Fix this
-                newvalue.startText -= endHtmlMap.get(step.gapFrom)?.textCost; 
-                // @ts-ignore TODO: Fix this
-                newvalue.endText -= endHtmlMap.get(step.gapFrom)?.textCost;
+        
+        tree.traverseDepthFirst(node => {
+            if (node.prosemirrorStart >= step.to) {
+            node.prosemirrorStart += 2;
+            node.prosemirrorEnd   += 2;
+            } else if (node.prosemirrorStart >= step.from) {
+            node.prosemirrorStart += 1;
+            node.prosemirrorEnd   += 1;
             }
-            newMap.set(newkey,newvalue);
-        }
+        });
 
-        return {result, newHtmlMapS, newHtmlMap, newMap};
+        const wrappedChildren = parent.children.slice(startIdx, endIdx + 1);
+        const wrapper = new TreeNode(
+            wrapType,
+            wrappedChildren[0].originalStart,                    
+            wrappedChildren[wrappedChildren.length - 1].originalEnd,
+            step.from,                                           
+            wrappedChildren[wrappedChildren.length - 1].prosemirrorEnd + 1,
+            ""                                                   
+        );
+        wrappedChildren.forEach(c => wrapper.addChild(c));
+
+        parent.children.splice(startIdx, wrappedChildren.length, wrapper);
+
+        return { result, newTree: tree };
     }
 
-
-    private static replaceAroundStepInsert(step: ReplaceAroundStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {
-        const result : WrappingDocChange = NodeUpdate.setupWrapper();
-
-        // Update maps
-        let newHtmlMap = new Map<number,HtmlTagInfo>();
-        let newHtmlMapS = new Map<number,HtmlTagInfo>();
-        const newMap = new Map<number,StringCell>();
-
-        result.firstEdit.startInFile = startHtmlMap.get(step.from)!.offsetText;
-        result.firstEdit.endInFile = result.firstEdit.startInFile;
-
-        result.secondEdit.startInFile = endHtmlMap.get(step.to)!.offsetText;
-        result.secondEdit.endInFile = result.secondEdit.startInFile;
-    
-        if (step.slice.content.firstChild!.type.name == 'hint') {
-            result.firstEdit.finalText = '<hint title="💡 Hint">';
-            result.secondEdit.finalText = '</hint>'
-        } else {
-            result.firstEdit.finalText =  getStartHtmlTagText(step.slice.content.firstChild!.type.name);
-            result.secondEdit.finalText =  getEndHtmlTagText(step.slice.content.firstChild!.type.name);
-        }
-
-        //// Update mappings
-
-        for (const [key, value] of endHtmlMap) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key - 1 >= step.from && key - 1 >= step.to) { 
-                newkey += 2; newvalue.offsetText += result.firstEdit.finalText.length + result.secondEdit.finalText.length;
-                newvalue.offsetProse += 2;
-            } else if(key - 1 >= step.from) {
-                newkey += 1; newvalue.offsetText += result.firstEdit.finalText.length;
-                newvalue.offsetProse += 1;
-            }
-            newHtmlMap.set(newkey,newvalue);
-        }
-        for (const [key, value] of startHtmlMap) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key >= step.from && key >= step.to) {
-                newkey += 2; newvalue.offsetText += result.firstEdit.finalText.length + result.secondEdit.finalText.length;
-                newvalue.offsetProse += 2;
-            } else if(key >= step.from) {
-                newkey += 1; newvalue.offsetText += result.firstEdit.finalText.length;
-                newvalue.offsetProse += 1;
-            }
-            newHtmlMapS.set(newkey,newvalue);
-        }
-
-        for(const [key,value] of stringBlocks) {
-            let newkey = key; const newvalue = structuredClone(value);
-            if (key >= step.from && key >= step.to) {
-                newvalue.startProse += 2; newkey += 2;  newvalue.endProse += 2;
-                newvalue.startText += result.firstEdit.finalText.length + result.secondEdit.finalText.length;
-                newvalue.endText += result.firstEdit.finalText.length + result.secondEdit.finalText.length;
-            } else if (key >= step.from) {
-                newvalue.startProse += 1; newkey += 1;  newvalue.endProse += 1;
-                newvalue.startText += result.firstEdit.finalText.length;
-                newvalue.endText += result.firstEdit.finalText.length;
-            }
-            newMap.set(newkey,newvalue);
-        }
-
-        // Add the new html tags
-        newHtmlMapS.set(step.from,{offsetProse: step.from, offsetText: result.firstEdit.startInFile, textCost: result.firstEdit.finalText.length});
-        newHtmlMapS.set(step.to + 1,{offsetProse: step.to, offsetText: result.secondEdit.startInFile + result.firstEdit.finalText.length, textCost: result.secondEdit.finalText.length});
-        newHtmlMap.set(step.from + 1,{offsetProse: step.from + 2, offsetText: result.firstEdit.startInFile + result.firstEdit.finalText.length, textCost: result.firstEdit.finalText.length});
-        newHtmlMap.set(step.to + 2,{offsetProse: step.to + 2, offsetText: result.secondEdit.startInFile + result.firstEdit.finalText.length + result.secondEdit.finalText.length, textCost: result.secondEdit.finalText.length});
-
-        newHtmlMap = new Map([...newHtmlMap.entries()].sort((a,b) => a[0] - b[0]));
-        newHtmlMapS = new Map([...newHtmlMapS.entries()].sort((a,b) => a[0] - b[0]));
-
-        return {result, newHtmlMapS, newHtmlMap, newMap};
-    }
 } 
  

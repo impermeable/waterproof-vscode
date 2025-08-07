@@ -176,7 +176,6 @@ export class TextDocMappingNew {
             });
         }
 
-
         const topLevelNodes = buildSubtree(blocks);
         topLevelNodes.forEach(child => root.addChild(child));
 

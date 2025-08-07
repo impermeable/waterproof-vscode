@@ -21,7 +21,7 @@ export function getStartHtmlTagText(tagId: string | undefined) : string {
     return result;
 }
 
-/** Used to parse a prosemirror fragment into a form that can be used to update the mapping */
+/** Used to parse a prosezmirror fragment into a form that can be used to update the mapping */
 export function parseFragment(frag: Fragment | undefined) : {proseOffset: number, starttext: string, endtext: string, tags: Array<string>, stringCell: boolean} {
     // Error checking
     if (frag === undefined) throw new Error("Received an undfined fragment during parsing of fragment for vscode mapping");

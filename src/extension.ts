@@ -531,6 +531,7 @@ export class Waterproof implements Disposable {
                 }
             },
             reason => {
+                wpl.debug(`Failed for reason: ${reason}`);
                 for (const g of this.goalsComponents) {
                     wpl.debug(`Failed to update goals component: ${g.constructor.name}`);
                     g.failedGoals(reason);

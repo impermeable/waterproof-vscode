@@ -16,7 +16,8 @@ const clientFactory: CoqLspClientFactory = (context: ExtensionContext, clientOpt
     const serverMain = Uri.joinPath(context.extensionUri, 'out/src/mainBrowser.js');
     // Start our own webworker
     new Worker(serverMain.toString(true));
-    const lspWorker = new Worker(Uri.joinPath(context.extensionUri, 'out/coq_lsp_worker.bc.js').toString(true));
+    const lspWorker = new Worker(Uri.joinPath(context.extensionUri, 'out/wacoq_worker.js').toString(true));
+    lspWorker.postMessage(context.extensionUri.toString());
     return new (CoqLspClient(LanguageClient))(
         "waterproof",
         "Waterproof Document Checker",

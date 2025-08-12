@@ -298,7 +298,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				}
 			})];
 		} else if (message.startsWith("Hint, insert: ")) {
-			trimmedMessage = message.trim().replace("Hint, insert: ", "").replace(/\.\${}$/, ".").replaceAll(/\$\{.*?\}/g,"...");
+			trimmedMessage = message.trim().replace("Hint, insert: ", "").replace(/\.\${.*?}$/, ".").replaceAll(/\$\{.*?\}/g,"...");
 			actions = [({
 				name: "Insert ⤵️",
 				apply:(view: CodeMirror, from: number, to: number) => {

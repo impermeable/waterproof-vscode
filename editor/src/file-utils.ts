@@ -1,11 +1,13 @@
-import { DocChange, Message, MessageType, WrappingDocChange } from "../../../shared";
+import { DocChange, WrappingDocChange } from "waterproof-editor";
+import { Message, MessageType } from "../../shared";
+
 
 /**
 	 * If the file starts with a coqblock or ends with a coqblock this function adds a newline to the start for
 	 * insertion purposes
 	 * @param content the content of the file
 	 */
-export function checkPrePost(content: string): { resultingDocument: string, documentChange: WrappingDocChange | undefined} {
+export function checkPrePost(content: string): { resultingDocument: string, documentChange: WrappingDocChange | DocChange | undefined} {
     let result = content
     const edit1: DocChange = {startInFile: 0, endInFile: 0,finalText: ''};
     const edit2: DocChange = {startInFile: content.length, endInFile: content.length, finalText: ''};

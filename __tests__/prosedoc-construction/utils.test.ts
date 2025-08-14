@@ -1,6 +1,6 @@
-import { Block } from "../../editor/src/waterproof-editor/document/blocks";
-import { text } from "../../editor/src/waterproof-editor/document/blocks/schema";
-import { extractInterBlockRanges, iteratePairs, maskInputAndHints, sortBlocks } from "../../editor/src/waterproof-editor/document/utils";
+import { Block } from "../../editor/src/waterproof-editor/blocks";
+import { text } from "../../editor/src/waterproof-editor/blocks/schema";
+import { extractInterBlockRanges, iteratePairs, maskInputAndHints, sortBlocks } from "../../editor/src/waterproof-editor/utils";
 
 const toProseMirror = () => text("null");
 const debugPrint = () => null;

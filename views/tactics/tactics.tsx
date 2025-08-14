@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { MessageType } from '../../shared';
 
 // Import the JSON data containing the tactics
-import data from "../../shared/completions/tactics.json";
+import data from "../../completions/tactics.json";
 
 import '../styles/tactics.css';
 

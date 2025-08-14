@@ -1,6 +1,6 @@
-import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, DiagnosticMessage, SimpleProgressParams } from "waterproof-editor/api";
+import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, DiagnosticMessage, SimpleProgressParams } from "waterproof-editor";
 import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
-import { Completion } from "waterproof-editor/api";
+import { Completion } from "waterproof-editor";
 
 
 /** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)

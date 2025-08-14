@@ -11,7 +11,7 @@ import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger } from "..
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { FileFormat, Message, MessageType } from "../../shared";
-import { DocChange, HistoryChange, LineNumber, WrappingDocChange } from "waterproof-editor/api";
+import { DocChange, HistoryChange, LineNumber, WrappingDocChange } from "waterproof-editor";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */

@@ -1,5 +1,4 @@
-import { WaterproofEditor } from "waterproof-editor";
-import { WaterproofEditorConfig } from "waterproof-editor/api";
+import { WaterproofEditor, WaterproofEditorConfig } from "waterproof-editor";
 
 import { blocksFromMV } from "./document-construction/construct-document";
 // import { FileFormat } from "../../shared/FileFormat";

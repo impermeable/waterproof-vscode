@@ -2,7 +2,7 @@ import { Range, TextDocument } from "vscode";
 
 import { GoalAnswer, PpString } from "../../lib/types";
 import { ICoqLspClient } from "./clientTypes";
-import { InputAreaStatus } from "waterproof-editor/api";
+import { InputAreaStatus } from "waterproof-editor";
 
 // TODO: only consider Markdown parts
 function findOccurrences(substr: string, str: string): number[] {

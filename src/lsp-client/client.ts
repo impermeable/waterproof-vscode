@@ -1,4 +1,4 @@
-import { Completion } from "waterproof-editor/api";
+import { Completion } from "waterproof-editor";
 import { DiagnosticSeverity, Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
@@ -18,7 +18,7 @@ import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 import { WaterproofConfigHelper, WaterproofLogger as wpl } from "../helpers";
-import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity } from "waterproof-editor/api";
+import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity } from "waterproof-editor";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;

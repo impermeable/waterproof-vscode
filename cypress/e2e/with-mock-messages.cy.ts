@@ -1,5 +1,5 @@
 /// <reference types="cypress" />
-import { InputAreaStatus } from "waterproof-editor/api";
+import { InputAreaStatus } from "waterproof-editor";
 import { Message, MessageType } from "../../shared/Messages";
 
 const edits = [];

@@ -1,4 +1,4 @@
-import { Fragment, ReplaceStep } from "waterproof-editor/api";
+import { Fragment, ReplaceStep } from "waterproof-editor";
 import { OperationType, textEndHTML, textStartHTML } from "./types";
 
 

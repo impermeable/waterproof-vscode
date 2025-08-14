@@ -618,6 +618,18 @@
         "symbolPanelCategory": 5
     },
     {
+        "label": "\\^-",
+        "type": "symbol",
+        "apply": "⁻",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\inv",
+        "type": "symbol",
+        "apply": "⁻¹",
+        "symbolPanelCategory": 5
+    },
+    {
         "label": "\\^0",
         "type": "symbol",
         "apply": "⁰",

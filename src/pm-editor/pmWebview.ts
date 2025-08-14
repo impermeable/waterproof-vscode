@@ -186,10 +186,6 @@ export class ProseMirrorWebview extends EventEmitter {
                 this.updateTeacherMode();
             }
 
-            if (e.affectsConfiguration("waterproof.standardCoqSyntax")) {
-                this.updateSyntaxMode();
-            }
-
             if (e.affectsConfiguration("waterproof.enforceCorrectNonInputArea")) {
                 this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
             }
@@ -312,14 +308,6 @@ export class ProseMirrorWebview extends EventEmitter {
         this.postMessage({
             type: MessageType.teacher,
             body: mode
-        }, true);
-    }
-
-    /** Toggle the syntax mode*/
-    private updateSyntaxMode() {
-        this.postMessage({
-            type: MessageType.syntax,
-            body: WaterproofConfigHelper.standardCoqSyntax
         }, true);
     }
 

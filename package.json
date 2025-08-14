@@ -557,7 +557,7 @@
     "vscode-languageclient": "8.1.0",
     "vscode-languageserver-types": "3.17.5",
     "vscode-uri": "3.1.0",
-    "waterproof-editor": "file:../waterproof-editor"
+    "waterproof-editor": "git+https://git@github.com/impermeable/waterproof-editor.git"
   },
   "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"

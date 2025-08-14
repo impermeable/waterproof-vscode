@@ -6,6 +6,9 @@ import { blocksFromMV, blocksFromV } from "./document-construction/construct-doc
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 
+// import style sheet and fonts from waterproof-editor
+import "waterproof-editor/styles.css"
+
 /**
  * Very basic representation of the acquirable VSCodeApi.
  * At least supports `postMessage(message: Message)`.

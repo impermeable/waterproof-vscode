@@ -73,6 +73,7 @@ export const enum MessageType {
     setShowLineNumbers,
     syntax,
     teacher,
+    flash,
 }
 
 export const enum HistoryChangeType {

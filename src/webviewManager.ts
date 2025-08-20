@@ -111,16 +111,9 @@ export class WebviewManager extends EventEmitter {
         webview.on(WebviewEvents.message, (msg: Message) => {
             this.onToolsMessage(name, msg);
         });
-        /**webview.on(WebviewEvents.change, (state) => {
-            if (state == WebviewState.focus && webview.supportInsert) this._active.insert(name);
-            this.emit(WebviewManagerEvents.updateButton, { name, open: webview.isOpened});
-        });*/
+
         webview.on(WebviewEvents.change, (state) => {
             if (state == WebviewState.focus && webview.supportInsert) this._active.insert(name);
-            // Emit buttonClick for any state change that indicates user interaction
-            //if (state == WebviewState.focus || state == WebviewState.visible) {
-                //this.emit(WebviewManagerEvents.buttonClick, { name});
-            //}
         });
     }
 

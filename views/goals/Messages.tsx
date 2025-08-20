@@ -6,6 +6,7 @@ import {Box} from "./Box";
 import "../styles/messages.css";
 import { PropsWithChildren } from "react";
 
+
 //type that makes a GoalAnswer<PpString> also takes its childrens components with
 export type MessagesInfo = PropsWithChildren<
   {

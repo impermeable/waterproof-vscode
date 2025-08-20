@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // Disable because the @ts-expect-error clashes with the tests
-import { TextDocMappingMV as TextDocMapping } from "../editor/src/kroqed-editor/mappingModel/mvFile";
+import { TextDocMappingMV as TextDocMapping } from "../editor/src/mapping/mvFile";
 import { ReplaceStep } from "prosemirror-transform";
-import { TheSchema } from "../editor/src/kroqed-editor/kroqed-schema";
-import { translateMvToProsemirror } from "../editor/src/kroqed-editor/translation/toProsemirror";
+import { WaterproofSchema } from "../editor/src/waterproof-editor/schema";
+import { translateMvToProsemirror } from "../editor/src/waterproof-editor/translation/toProsemirror";
 import { expect } from "@jest/globals";
 
 test("Normal coqdown", () => {
@@ -124,7 +124,7 @@ test("testMapping 2", () => {
     } else {
         throw new Error("Index does not exist")
     }
-    
+
 })
 
 test("testMapping 3", () => {
@@ -142,7 +142,7 @@ test("testMapping 3", () => {
     } else {
         throw new Error("Index does not exist")
     }
-    
+
 })
 
 test("testMapping 4", () => {
@@ -154,7 +154,7 @@ test("testMapping 4", () => {
     } else {
         throw new Error("Index does not exist")
     }
-    
+
 })
 
 test("docString", () => {
@@ -210,9 +210,9 @@ test("test", () => {
     // TODO: Check if this test does anything
     const textDocMapping = new TextDocMapping(`<markdown>Hello</markdown>`,0)
     textDocMapping.getMapping()
-    const text = TheSchema.text("Text");
-    const coqCode = TheSchema.nodes['coqcode'].create({}, text);
-    const moreIntNode = TheSchema.nodes['coqblock'].create({}, coqCode);
+    const text = WaterproofSchema.text("Text");
+    const coqCode = WaterproofSchema.nodes['coqcode'].create({}, text);
+    const moreIntNode = WaterproofSchema.nodes['coqblock'].create({}, coqCode);
     // const slice = node.slice(0);
     const slice = moreIntNode.slice(0)
     new ReplaceStep(1, 1, slice)

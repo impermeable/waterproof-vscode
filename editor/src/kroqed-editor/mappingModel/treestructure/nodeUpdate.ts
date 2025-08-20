@@ -28,7 +28,9 @@ export class NodeUpdate {
 
             if (type === OperationType.delete) {
                 // Is the node deletion in a valid location
-                // if(!startHtmlMap.has(step.from) || !endHtmlMap.has(step.to) ) throw new Error(" Mapping does not contain this position, is node inserted in middle of another node?");
+                if (tree.findNodeByProsemirrorPosition(step.from) == null || tree.findNodeByProsemirrorPosition(step.to) == null) {
+                    throw new Error(" Mapping does not contain this position, is node inserted in middle of another node?");
+                }
                 result = NodeUpdate.replaceStepDelete(step,tree);
             } else {
                 
@@ -41,14 +43,20 @@ export class NodeUpdate {
             // Deletion ReplaceAroundstep
             if (step.slice.content.firstChild == null) {
                 // Error check Deletion step
-                // if (!startHtmlMap.has(step.from) || !endHtmlMap.has(step.gapFrom)) throw new Error(" ReplaceAroundStep deletion is in unconventional form");
-                // if (!startHtmlMap.has(step.gapTo) || !endHtmlMap.has(step.to)) throw new Error(" ReplaceAroundStep deletion is in unconventional form");
+                if (tree.findNodeByProsemirrorPosition(step.from) == null || tree.findNodeByProsemirrorPosition(step.gapFrom) == null) {
+                    throw new Error(" ReplaceAroundStep deletion is in unconventional form");
+                }
+                if (tree.findNodeByProsemirrorPosition(step.gapTo) == null || tree.findNodeByProsemirrorPosition(step.to) == null) {
+                    throw new Error(" ReplaceAroundStep deletion is in unconventional form");
+                }
 
                 result = NodeUpdate.replaceAroundStepDelete(step,tree);
             } else if (step.slice.content.childCount == 1 && step.slice.openStart == 0 && step.slice.openEnd == 0) {
                 // Error check ReplaceAroundStep insertion
                 if (step.gapFrom - step.from > 0 || step.to - step.gapTo > 0 || step.insert != 1) throw new Error(" We only support ReplaceAroundStep that inserts chunk in single node");
-                //if (!(startHtmlMap.has(step.from) || endHtmlMap.has(step.to))) throw new Error(" Not a proper wrapping ");
+                if (tree.findNodeByProsemirrorPosition(step.from) == null || tree.findNodeByProsemirrorPosition(step.to) == null) {
+                    throw new Error(" Not a proper wrapping ");
+                }
                 if(!(step.slice.content.firstChild.type.name == 'hint' || step.slice.content.firstChild.type.name == 'input')) throw new Error(" We only support wrapping in hints or inputs ");
 
                 result = NodeUpdate.replaceAroundStepInsert(step,tree);
@@ -302,6 +310,10 @@ export class NodeUpdate {
 
         if (!parent || startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
             throw new Error("ReplaceAroundStep insert must wrap a contiguous sibling range");
+        }
+
+        if (!parent) {
+            throw new Error("Cannot wrap the root node");
         }
         const firstChild = parent.children[startIdx];
         const lastChild  = parent.children[endIdx];

@@ -278,7 +278,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		}];
 		let trimmedMessage : string = "";
 		if (message.startsWith("Hint, replace with: ")) {
-			trimmedMessage = message.trim().replace("Hint, replace with: ", "").replace(/\.\${}$/, ".").replaceAll(/\$\{.*?\}/g,"...")
+			trimmedMessage = message.trim().replace("Hint, replace with: ", "").replace(/\.\${(.*?)}$/, ".").replaceAll(/\$\{.*?\}/g,"...")
 			actions = [({
 				name: "Replace ↩️",
 				apply:(view: CodeMirror, from: number, to: number) => {

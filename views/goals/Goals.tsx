@@ -5,12 +5,15 @@ import { convertToString, Goal, GoalConfig, Hyp, HypVisibility, PpString } from 
 import { Box } from "./Box";
 import { CoqPp } from "./CoqPp";
 import { HypEl } from "../debug/Hypothesis"
+import { MessageType } from "../../shared";
 
 import {
   Position,
   VersionedTextDocumentIdentifier
 } from "vscode-languageserver-types";
 import "../styles/goals.css";
+
+const vscode = acquireVsCodeApi();
 
 //type that contains Goal<PpString> and an ID for that goal
 type GoalP = { goal: Goal<PpString>; idx: number;};
@@ -27,10 +30,53 @@ function Goal({ goal}: GoalP) {
     }
   });
 
+  // Check if goal.ty starts with the required string
+  const tyString = convertToString(goal.ty);
+
+  const options = [];
+  // Use regex to extract suggestion
+  const regex = /Add the following line to the proof:\s*(\S([^.]*?)\.(.*\n)?)/;
+  const match = tyString.match(regex);
+  console.log("matches", match);
+  if (match) {
+    options.push(match[1].trim());
+  }
+  // Same for the option after "or write:"
+  const regex2 = /or write:\s*(\S.[^.]*?\.[^a-zA-Z]*?)if/;
+  const match2 = tyString.match(regex2);
+  if (match2) {
+    options.push(match2[1].trim());
+  }
+
+  // Handler for insert button
+  const handleInsert = (suggestion : string) => {
+    // Post insert message with the line as symbolUnicode and type "tactics"
+    vscode.postMessage({ 
+      time: Date.now(),
+      type: MessageType.insert, 
+      body: { 
+        symbolUnicode: suggestion,
+        type: "tactics" 
+      }
+    });
+  };
+
   return (
     <div className="coq-goal-env" ref={ref}>
       <div style={{ marginLeft: "1ex" }} ref={tyRef}>
         <CoqPp content={goal.ty} inline={false} />
+        {
+          options.map((option, index) => (
+          <div key={index}>
+            <button
+              className="goal-insert-btn"
+              onClick={handleInsert.bind(null, option)}
+            >
+              Adapt suggestion{index == 0 ? "" : " " + (index + 1)}
+            </button>
+          </div>
+          ))
+        }
       </div>
     </div>
   );

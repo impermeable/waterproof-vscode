@@ -268,7 +268,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		console.log(`Adding coq error: ${message} at ${from}-${to} with severity ${severityString}`);
 		// By default, there is the copy action
 		let actions = [{
-			name: "Copy 📋",
+			name: "📋",
 			apply: (view: CodeMirror, from: number, _to: number) => {
 				// give focus to this current codeblock instante to ensure it updates
 				this._codemirror?.focus();

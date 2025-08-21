@@ -263,9 +263,7 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
 		const severityString = severityToString(severity);
-		console.log(this._dynamicCompletions);
 		
-		console.log(`Adding coq error: ${message} at ${from}-${to} with severity ${severityString}`);
 		// By default, there is the copy action
 		let actions = [{
 			name: "📋",

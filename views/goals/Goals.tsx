@@ -37,7 +37,6 @@ function Goal({ goal}: GoalP) {
   // Use regex to extract suggestion
   const regex = /Add the following line to the proof:\s*(\S([^.]*?)\.(.*\n)?)/;
   const match = tyString.match(regex);
-  console.log("matches", match);
   if (match) {
     options.push(match[1].trim());
   }

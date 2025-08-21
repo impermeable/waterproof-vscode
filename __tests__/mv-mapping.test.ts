@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// Disable because the @ts-expect-error clashes with the tests
-import { TextDocMappingMV as TextDocMapping } from "../editor/src/mapping/mvFile";
-import { ReplaceStep } from "prosemirror-transform";
-import { WaterproofSchema } from "../editor/src/waterproof-editor/schema";
-import { translateMvToProsemirror } from "../editor/src/waterproof-editor/translation/toProsemirror";
+
+import { TextDocMappingMV as TextDocMapping } from "../editor/src/mapping";
+import { ReplaceStep, WaterproofSchema } from "waterproof-editor";
 import { expect } from "@jest/globals";
+import { FileTranslator } from "waterproof-editor";
 
 test("Normal coqdown", () => {
 
@@ -159,7 +157,7 @@ test("testMapping 4", () => {
 
 test("docString", () => {
     const docString = `Hello\n\`\`\`coq\nNo edit pls.\n\`\`\`\n<input-area>HELLO</input-area>\n<hint title="optional">## Header</hint>\n\n\`\`\`coq\nNo edit pls.\n\`\`\``
-    const translated = translateMvToProsemirror(docString)
+    const translated = (new FileTranslator()).toProsemirror(docString);
     const textDocMapping = new TextDocMapping(translated,0)
     const mapping = textDocMapping.getMapping()
     if (mapping.has(3-2)) {

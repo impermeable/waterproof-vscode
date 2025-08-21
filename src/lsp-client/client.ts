@@ -1,4 +1,3 @@
-import { Completion } from "waterproof-editor";
 import { DiagnosticSeverity, Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
@@ -18,7 +17,7 @@ import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 import { WaterproofConfigHelper, WaterproofLogger as wpl } from "../helpers";
-import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity } from "waterproof-editor";
+import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity, WaterproofCompletion } from "waterproof-editor";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -306,10 +305,11 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
 
             // convert symbols to completions
-            const completions: Completion[] = symbols.map(s => ({
+            const completions: WaterproofCompletion[] = symbols.map(s => ({
                 label:  s.name,
-                detail: s.detail?.toLowerCase(),
-                type:   "variable"
+                detail: s.detail?.toLowerCase() ?? "",
+                type:   "variable",
+                template: s.name
             }));
 
             // send completions to (all code blocks in) the document's editor (not cached!)

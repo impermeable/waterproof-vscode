@@ -5,6 +5,7 @@ import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
+import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
 import "waterproof-editor/styles.css"
@@ -21,6 +22,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
 		completions: tactics,
+		symbols: symbols,
 		api: {
 			executeHelp() {
 				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });

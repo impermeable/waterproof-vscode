@@ -72,7 +72,7 @@ function Goal({ goal}: GoalP) {
               className="goal-insert-btn"
               onClick={handleInsert.bind(null, option)}
             >
-              Adapt suggestion{index == 0 ? "" : " " + (index + 1)}
+              Adopt suggestion{index == 0 ? "" : " " + (index + 1)}
             </button>
           </div>
           ))

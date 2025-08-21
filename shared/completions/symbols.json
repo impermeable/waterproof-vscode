@@ -318,6 +318,12 @@
         "symbolPanelCategory": 2
     },
     {
+        "label": "\\not-in",
+        "type": "symbol",
+        "apply": "∉",
+        "symbolPanelCategory": 2
+    },
+    {
         "label": "\\QED",
         "type": "symbol",
         "apply": "∎",
@@ -360,9 +366,33 @@
         "symbolPanelCategory": 2
     },
     {
+        "label": "\\bigintersection",
+        "type": "symbol",
+        "apply": "⋂",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\bigunion",
+        "type": "symbol",
+        "apply": "⋃",
+        "symbolPanelCategory": 2
+    },
+    {
         "label": "\\empty-set",
         "type": "symbol",
         "apply": "∅",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\subset",
+        "type": "symbol",
+        "apply": "⊂",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\subseteq",
+        "type": "symbol",
+        "apply": "⊆",
         "symbolPanelCategory": 2
     },
     {
@@ -588,6 +618,18 @@
         "symbolPanelCategory": 5
     },
     {
+        "label": "\\^-",
+        "type": "symbol",
+        "apply": "⁻",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\inv",
+        "type": "symbol",
+        "apply": "⁻¹",
+        "symbolPanelCategory": 5
+    },
+    {
         "label": "\\^0",
         "type": "symbol",
         "apply": "⁰",
@@ -652,5 +694,161 @@
         "type": "symbol",
         "apply": "₀",
         "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\McA",
+        "type": "symbol",
+        "apply": "𝒜",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McB",
+        "type": "symbol",
+        "apply": "ℬ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McC",
+        "type": "symbol",
+        "apply": "𝒞",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McD",
+        "type": "symbol",
+        "apply": "𝒟",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McE",
+        "type": "symbol",
+        "apply": "ℰ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McF",
+        "type": "symbol",
+        "apply": "ℱ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McG",
+        "type": "symbol",
+        "apply": "𝒢",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McH",
+        "type": "symbol",
+        "apply": "ℋ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McI",
+        "type": "symbol",
+        "apply": "ℐ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McJ",
+        "type": "symbol",
+        "apply": "𝒥",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McK",
+        "type": "symbol",
+        "apply": "𝒦",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McL",
+        "type": "symbol",
+        "apply": "ℒ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McM",
+        "type": "symbol",
+        "apply": "ℳ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McN",
+        "type": "symbol",
+        "apply": "𝒩",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McO",
+        "type": "symbol",
+        "apply": "𝒪",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McP",
+        "type": "symbol",
+        "apply": "𝒫",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McQ",
+        "type": "symbol",
+        "apply": "𝒬",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McR",
+        "type": "symbol",
+        "apply": "ℛ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McS",
+        "type": "symbol",
+        "apply": "𝒮",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McT",
+        "type": "symbol",
+        "apply": "𝒯",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McU",
+        "type": "symbol",
+        "apply": "𝒰",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McV",
+        "type": "symbol",
+        "apply": "𝒱",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McW",
+        "type": "symbol",
+        "apply": "𝒲",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McX",
+        "type": "symbol",
+        "apply": "𝒳",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McY",
+        "type": "symbol",
+        "apply": "𝒴",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McZ",
+        "type": "symbol",
+        "apply": "𝒵",
+        "symbolPanelCategory": 6
     }
 ]

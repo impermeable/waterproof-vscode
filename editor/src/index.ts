@@ -1,11 +1,10 @@
-import { Completion } from "@codemirror/autocomplete";
-
 import { FileFormat, Message, MessageType } from "../../shared";
 import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
-import { CODE_PLUGIN_KEY } from "./waterproof-editor/codeview";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
+// TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
+import tactics from "../../shared/completions/tactics.json";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -18,6 +17,7 @@ interface VSCodeAPI {
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
+		completions: tactics,
 		api: {
 			executeHelp() {
 				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
@@ -91,15 +91,8 @@ window.onload = () => {
 				break; }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
-				{ const state = editor.state;
-				if (!state) break;
-				const completions: Completion[] = msg.body;
-				// Apply autocomplete to all coq cells
-				CODE_PLUGIN_KEY
-					.getState(state)
-					?.activeNodeViews
-					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
-				break; }
+				editor.handleCompletions(msg.body);
+				break;
 			case MessageType.qedStatus:
 				{ const statuses = msg.body;  // one status for each input area, in order
 				editor.updateQedStatus(statuses);
@@ -127,9 +120,6 @@ window.onload = () => {
 				{ const diagnostics = msg.body;
 				editor.parseCoqDiagnostics(diagnostics);
 				break; }
-			case MessageType.syntax:
-				editor.initTacticCompletion(msg.body);
-				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

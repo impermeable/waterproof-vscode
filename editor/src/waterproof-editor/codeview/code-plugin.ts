@@ -9,6 +9,8 @@ import { EditorView } from "prosemirror-view";
 import { CodeBlockView } from "./nodeview";
 import { ReplaceStep } from "prosemirror-transform";
 import { LineNumber } from "../../../../shared";
+import { Completion, snippetCompletion } from "@codemirror/autocomplete";
+import { WaterproofCompletion } from "../types";
 
 ////////////////////////////////////////////////////////////
 
@@ -30,7 +32,7 @@ export const CODE_PLUGIN_KEY = new PluginKey<ICodePluginState>("waterproof-edito
  * Returns a function suitable for passing as a field in `EditorProps.nodeViews`.
  * @see https://prosemirror.net/docs/ref/#view.EditorProps.nodeViews
  */
-export function createCoqCodeView(){
+export function createCoqCodeView(completions: Array<Completion>){
 	return (node: ProseNode, view: EditorView, getPos: () => number | undefined): CodeBlockView => {
 		/** @todo is this necessary?
 		* Docs says that for any function proprs, the current plugin instance
@@ -41,7 +43,7 @@ export function createCoqCodeView(){
 		const nodeViews = pluginState.activeNodeViews;
 
 		// set up NodeView
-		const nodeView = new CodeBlockView(node, view, getPos, pluginState.schema);
+		const nodeView = new CodeBlockView(node, view, getPos, pluginState.schema, completions);
 
 		nodeViews.add(nodeView);
 		return nodeView;
@@ -49,7 +51,7 @@ export function createCoqCodeView(){
 }
 
 
-const CoqCodePluginSpec:PluginSpec<ICodePluginState> = {
+const CoqCodePluginSpec = (completions: Array<Completion>) : PluginSpec<ICodePluginState> => { return {
 	key: CODE_PLUGIN_KEY,
 	state: {
 		init(config, instance){
@@ -105,11 +107,18 @@ const CoqCodePluginSpec:PluginSpec<ICodePluginState> = {
 	},
 	props: {
 		nodeViews: {
-			"coqcode" : createCoqCodeView()
+			"coqcode" : createCoqCodeView(completions)
 		}
 	}
+}};
+
+
+export const codePlugin = (completions: Array<WaterproofCompletion>) => {
+	// Here we turn the waterproof completions into proper codemirror completions
+	//   with template 'holes'
+	const cmCompletions =  completions.map((value) => {
+		return snippetCompletion(value.template, value);
+	}); 
+	return new ProsePlugin(CoqCodePluginSpec(cmCompletions));
 };
-
-export const codePlugin = new ProsePlugin(CoqCodePluginSpec);
-
 

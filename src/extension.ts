@@ -116,10 +116,11 @@ export class Waterproof implements Disposable {
             if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
                 this.client.activeDocument = document;
                 this.client.activeCursorPosition = undefined;
+                this.webviewManager.open("goals");
                 for (const g of this.goalsComponents) g.updateGoals(undefined);
+    
             }
-            this.webviewManager.open("goals")
-            // this.webviewManager.reveal("goals")
+
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
             // update active document and cursor
@@ -150,7 +151,7 @@ export class Waterproof implements Disposable {
         const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
-        this.webviewManager.open("goals")
+        this.webviewManager.open("goals");
         this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
         this.webviewManager.addToolWebview("search", new Search(this.context.extensionUri));
         this.webviewManager.addToolWebview("help", new Help(this.context.extensionUri));

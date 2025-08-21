@@ -22,7 +22,6 @@ export class GoalsPanel extends GoalsBase {
     //override updateGoals to save the previous goals and activating the panel before posting the goals message
     override updateGoals(goals: GoalAnswer<PpString> | undefined) {
         this.previousGoal = goals;
-        this.activatePanel();
         super.updateGoals(goals);
     }
 

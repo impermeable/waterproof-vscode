@@ -72,4 +72,5 @@ export const enum MessageType {
     setShowLineNumbers,
     setShowMenuItems,
     teacher,
+    flash,
 }

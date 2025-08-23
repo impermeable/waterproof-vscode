@@ -305,7 +305,7 @@
     ],
     "configuration": [
       {
-        "title": "User",
+        "title": "User Mode",
         "properties": {
           "waterproof.teacherMode": {
             "type": "boolean",
@@ -316,6 +316,21 @@
             "type": "boolean",
             "default": false,
             "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
+          }
+        }
+      },
+      {
+        "title": "Editor Appearance",
+        "properties": {
+          "waterproof.showLineNumbersInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show line numbers in the Waterproof editor"
+          },
+          "waterproof.showMenuItemsInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
           }
         }
       },
@@ -346,36 +361,6 @@
               "extended"
             ],
             "description": "Enable Server-Side Unicode Completion. Coq-lsp provides two character sets, a regular one, and an extended one with more than 1000 symbols."
-          }
-        }
-      },
-      {
-        "title": "Editor Appearance",
-        "properties": {
-          "waterproof.showLineNumbersInEditor": {
-            "type": "boolean",
-            "default": false,
-            "description": "Show line numbers in the Waterproof editor"
-          },
-          "waterproof.showMenuItemsInEditor": {
-            "type": "boolean",
-            "default": false,
-            "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
-          }
-        }
-      },
-      {
-        "title": "Advanced",
-        "properties": {
-          "waterproof.skipLaunchChecks": {
-            "type": "boolean",
-            "default": false,
-            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
-          },
-          "waterproof.updateIgnores": {
-            "type": "boolean",
-            "default": true,
-            "description": "Automatically ignore Coq object files in the workspace (.vo, .vos, ...)"
           }
         }
       },
@@ -452,7 +437,7 @@
         }
       },
       {
-        "title": "Language Server Binary",
+        "title": "Language Server",
         "type": "object",
         "properties": {
           "waterproof.trace.server": {
@@ -483,6 +468,21 @@
             },
             "default": [],
             "description": "Arguments to the coq-lsp server"
+          }
+        }
+      },
+      {
+        "title": "Extension",
+        "properties": {
+          "waterproof.skipLaunchChecks": {
+            "type": "boolean",
+            "default": false,
+            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+          },
+          "waterproof.updateIgnores": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically ignore Coq object files in the workspace (.vo, .vos, ...)"
           }
         }
       }

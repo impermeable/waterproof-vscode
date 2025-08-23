@@ -305,7 +305,7 @@
     ],
     "configuration": [
       {
-        "title": "User Mode",
+        "title": "User",
         "properties": {
           "waterproof.teacherMode": {
             "type": "boolean",
@@ -316,26 +316,11 @@
             "type": "boolean",
             "default": false,
             "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
-          },
-          "waterproof.showLineNumbersInEditor": {
-            "type": "boolean",
-            "default": false,
-            "description": "Show line numbers in the Waterproof editor"
-          },
-          "waterproof.skipLaunchChecks": {
-            "type": "boolean",
-            "default": false,
-            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
-          },
-          "waterproof.showMenuItemsInEditor": {
-            "type": "boolean",
-            "default": false,
-            "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
           }
         }
       },
       {
-        "title": "Waterproof Use Case",
+        "title": "Language and Syntax",
         "properties": {
           "waterproof.standardCoqSyntax": {
             "type": "boolean",
@@ -346,6 +331,51 @@
             "type": "boolean",
             "default": true,
             "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
+          },
+          "waterproof.admitOnBadQed": {
+            "type": "boolean",
+            "default": true,
+            "description": "If a `Qed.` command fails, admit the proof automatically."
+          },
+          "waterproof.unicodeCompletion": {
+            "type": "string",
+            "default": "normal",
+            "enum": [
+              "off",
+              "normal",
+              "extended"
+            ],
+            "description": "Enable Server-Side Unicode Completion. Coq-lsp provides two character sets, a regular one, and an extended one with more than 1000 symbols."
+          }
+        }
+      },
+      {
+        "title": "Editor Appearance",
+        "properties": {
+          "waterproof.showLineNumbersInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show line numbers in the Waterproof editor"
+          },
+          "waterproof.showMenuItemsInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
+          }
+        }
+      },
+      {
+        "title": "Advanced",
+        "properties": {
+          "waterproof.skipLaunchChecks": {
+            "type": "boolean",
+            "default": false,
+            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+          },
+          "waterproof.updateIgnores": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically ignore Coq object files in the workspace (.vo, .vos, ...)"
           }
         }
       },
@@ -353,27 +383,27 @@
         "title": "Diagnostics",
         "type": "object",
         "properties": {
-          "waterproof.eager_diagnostics": {
+          "waterproof.eagerDiagnostics": {
             "type": "boolean",
             "default": true,
             "description": "Send diagnostics as document is processed; if false, diagnostics are only sent when Waterproof finishes processing the file"
           },
-          "waterproof.show_waterproof_info_messages": {
+          "waterproof.showWaterproofInfoMessages": {
             "type": "boolean",
             "default": false,
             "description": "Show Waterproof's Info messages as diagnostics: use 'false' for the recommended user experience."
           },
-          "waterproof.show_notices_as_diagnostics": {
+          "waterproof.showNoticesAsDiagnostics": {
             "type": "boolean",
             "default": true,
             "description": "Show Waterproof's Notice messages as diagnostics: use 'true' for the recommended user experience."
           },
-          "waterproof.max_errors": {
+          "waterproof.maxErrors": {
             "type": "number",
             "default": 150,
             "description": "Maximum number of errors per file, after that, coq-lsp will stop checking the file."
           },
-          "waterproof.send_diags_extra_data": {
+          "waterproof.sendDiagsExtraData": {
             "type": "boolean",
             "default": true,
             "description": "Send extra diagnostics data, usually on error"
@@ -384,12 +414,12 @@
         "title": "Goals and Info Panel",
         "type": "object",
         "properties": {
-          "waterproof.goal_after_tactic": {
+          "waterproof.goalAfterTactic": {
             "type": "boolean",
             "default": false,
             "description": "When showing goals and the cursor is in a tactic, if false, show goals before executing the tactic, if true, show goals after"
           },
-          "waterproof.pp_type": {
+          "waterproof.ppType": {
             "type": "number",
             "default": 1,
             "description": "Method to Print Coq Terms",
@@ -453,44 +483,6 @@
             },
             "default": [],
             "description": "Arguments to the coq-lsp server"
-          }
-        }
-      },
-      {
-        "title": "Proof Checking",
-        "type": "object",
-        "properties": {
-          "waterproof.admit_on_bad_qed": {
-            "type": "boolean",
-            "default": true,
-            "description": "If a `Qed.` command fails, admit the proof automatically."
-          }
-        }
-      },
-      {
-        "title": "Input",
-        "type": "object",
-        "properties": {
-          "waterproof.unicode_completion": {
-            "type": "string",
-            "default": "normal",
-            "enum": [
-              "off",
-              "normal",
-              "extended"
-            ],
-            "description": "Enable Server-Side Unicode Completion. Coq-lsp provides two character sets, a regular one, and an extended one with more than 1000 symbols."
-          }
-        }
-      },
-      {
-        "title": "Editor",
-        "type": "object",
-        "properties": {
-          "waterproof.updateIgnores": {
-            "type": "boolean",
-            "default": true,
-            "description": "Automatically ignore Coq object files in the workspace (.vo, .vos, ...)"
           }
         }
       }

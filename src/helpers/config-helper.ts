@@ -57,34 +57,34 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("eagerDiagnostics") as boolean;
     }
 
-    /** `waterproof.show_waterproof_info_messages` */
-    static get show_waterproof_info_messages() {
-        return config().get<boolean>("show_waterproof_info_messages") as boolean;
+    /** `waterproof.showWaterproofInfoMessages` */
+    static get showWaterproofInfoMessages() {
+        return config().get<boolean>("showWaterproofInfoMessages") as boolean;
     }
 
-    /** `waterproof.show_notices_as_diagnostics` */
-    static get show_notices_as_diagnostics() {
-        return config().get<boolean>("show_notices_as_diagnostics") as boolean;
+    /** `waterproof.showNoticesAsDiagnostics` */
+    static get showNoticesAsDiagnostics() {
+        return config().get<boolean>("showNoticesAsDiagnostics") as boolean;
     }
 
-    /** `waterproof.max_errors` */
-    static get max_errors() {
-        return config().get<number>("max_errors") as number;
+    /** `waterproof.maxErrors` */
+    static get maxErrors() {
+        return config().get<number>("maxErrors") as number;
     }
 
-    /** `waterproof.send_diags_extra_data */
-    static get send_diags_extra_data() {
-        return config().get<boolean>("send_diags_extra_data") as boolean;
+    /** `waterproof.sendDiagsExtraData` */
+    static get sendDiagsExtraData() {
+        return config().get<boolean>("sendDiagsExtraData") as boolean;
     }
 
-    /** `waterproof.goal_after_tactic` */
-    static get goal_after_tactic() {
-        return config().get<boolean>("goal_after_tactic") as boolean;
+    /** `waterproof.goalAfterTactic` */
+    static get goalAfterTactic() {
+        return config().get<boolean>("goalAfterTactic") as boolean;
     }
 
-    /** `waterproof.pp_type` */
-    static get pp_type() {
-        return config().get<number>("pp_type") as number;
+    /** `waterproof.ppType` */
+    static get ppType() {
+        return config().get<number>("ppType") as number;
     }
 
 
@@ -122,14 +122,14 @@ export class WaterproofConfigHelper {
         return config().get<string[]>("args") as string[];
     }
 
-    /** `waterproof.admit_on_bad_qed` */
-    static get admit_on_bad_qed() {
-        return config().get<boolean>("admit_on_bad_qed") as boolean;
+    /** `waterproof.admitOnBadQed` */
+    static get admitOnBadQed() {
+        return config().get<boolean>("admitOnBadQed") as boolean;
     }
 
-    /** `waterproof.unicode_completion` */
-    static get unicode_completion() {
-        return config().get<"off" | "normal" | "extended">("unicode_completion") as "off" | "normal" | "extended";
+    /** `waterproof.unicodeCompletion` */
+    static get unicodeCompletion() {
+        return config().get<"off" | "normal" | "extended">("unicodeCompletion") as "off" | "normal" | "extended";
     }
 
     /** `waterproof.updateIgnores` */

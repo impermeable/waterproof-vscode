@@ -1,8 +1,7 @@
 
+import { ReplaceStep, WaterproofSchema, FileTranslator } from "waterproof-editor";
 import { TextDocMappingMV as TextDocMapping } from "../editor/src/mapping";
-import { ReplaceStep, WaterproofSchema } from "waterproof-editor";
 import { expect } from "@jest/globals";
-import { FileTranslator } from "waterproof-editor";
 
 test("Normal coqdown", () => {
 

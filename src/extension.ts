@@ -29,7 +29,7 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
-import { WaterproofConfigHelper, WaterproofLogger as wpl } from "./helpers";
+import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
 
 
@@ -208,9 +208,9 @@ export class Waterproof implements Disposable {
                 commands.executeCommand("workbench.action.openSettings", "waterproof.path");
             } else {
                 try {
-                    workspace.getConfiguration().update("waterproof.path", defaultValue, ConfigurationTarget.Global).then(() => {
+                    WaterproofConfigHelper.update(WaterproofSetting.Path, defaultValue, ConfigurationTarget.Global).then(() => {
                         setTimeout(() => {
-                            wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.path.toString());
+                            wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.get(WaterproofSetting.Path).toString());
                             window.showInformationMessage(`Waterproof Path setting succesfully updated!`);
                         }, 100);
                     });
@@ -231,10 +231,9 @@ export class Waterproof implements Disposable {
                 "--coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq"
             ];
             try {
-                workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
+                WaterproofConfigHelper.update(WaterproofSetting.Args, defaultArgs, ConfigurationTarget.Global).then(() => {
                     setTimeout(() => {
-                        wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
-
+                        wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.get(WaterproofSetting.Path).toString());
                         window.showInformationMessage(`Waterproof args setting succesfully updated!`);
                     }, 100);
                 });
@@ -283,8 +282,8 @@ export class Waterproof implements Disposable {
         });
 
         this.registerCommand("toggleInEditorLineNumbers", () => {
-            const updated = !WaterproofConfigHelper.showLineNumbersInEditor;
-            WaterproofConfigHelper.showLineNumbersInEditor = updated;
+            const updated = !WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
+            WaterproofConfigHelper.update(WaterproofSetting.ShowLineNumbersInEditor, updated);
             window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
     }
@@ -319,9 +318,9 @@ export class Waterproof implements Disposable {
             "--coqlib=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib\\coq"
         ];
         try {
-            workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
+            WaterproofConfigHelper.update(WaterproofSetting.Args, defaultArgs, ConfigurationTarget.Global).then(() => {
                 setTimeout(() => {
-                    wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
+                    wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.get(WaterproofSetting.Args).toString());
                 }, 100);
             });
         } catch (e) {
@@ -419,7 +418,7 @@ export class Waterproof implements Disposable {
         wpl.log("Start of initializeClient");
         
         // Whether the user has decided to skip the launch checks
-        const launchChecksDisabled = WaterproofConfigHelper.skipLaunchChecks;
+        const launchChecksDisabled = WaterproofConfigHelper.get(WaterproofSetting.SkipLaunchChecks);
 
         if (launchChecksDisabled || this._isWeb) {
             const reason = launchChecksDisabled ? "Launch checks disabled by user." : "Web extension, skipping launch checks.";
@@ -428,7 +427,7 @@ export class Waterproof implements Disposable {
             // Run the version checker.
             const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
             const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
-            const versionChecker = new VersionChecker(WaterproofConfigHelper.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
+            const versionChecker = new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
             
             // Check whether we can find coq-lsp
             const foundServer = await versionChecker.prelaunchChecks();

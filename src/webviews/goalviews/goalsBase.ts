@@ -4,7 +4,7 @@ import { MessageType } from "../../../shared";
 import { IGoalsComponent } from "../../components";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { CoqWebview } from "../coqWebview";
-import { WaterproofConfigHelper } from "../../helpers";
+import { WaterproofConfigHelper, WaterproofSetting } from "../../helpers";
 //class for panels that need Goals objects from coq-lsp
 export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
 
@@ -18,7 +18,7 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
     //sends message for renderGoals
     updateGoals(goals: GoalAnswer<PpString> | undefined) {
         if (goals) {
-            const visibility = WaterproofConfigHelper.visibilityOfHypotheses;
+            const visibility = WaterproofConfigHelper.get(WaterproofSetting.VisibilityOfHypotheses);
             this.postMessage({ type: MessageType.renderGoals, body: {goals, visibility } });
         }
     }

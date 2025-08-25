@@ -509,6 +509,7 @@
     "@vscode/vsce": "^2.21.0",
     "cypress": "^13.17.0",
     "esbuild": "^0.16.17",
+    "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.18.0",
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",

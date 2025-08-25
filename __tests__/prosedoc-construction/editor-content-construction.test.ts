@@ -1,5 +1,5 @@
-import { checkPrePost, fixLessThanBug } from "../editor/src/waterproof-editor/file-utils";
-import { Message, MessageType } from "../shared";
+import { checkPrePost, fixLessThanBug } from "../../editor/src/file-utils";
+import { Message, MessageType } from "../../shared";
 
 class PostManager {
     public storage: Array<Message> = [];

@@ -1,10 +1,8 @@
-import { Step, ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
-import { DocChange, WrappingDocChange } from "../../../../shared";
 import { getEndHtmlTagText, getStartHtmlTagText} from "./helper-functions";
 import { StringCell, HtmlTagInfo, ParsedStep} from "./types";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
-import { WaterproofMapping } from "../../waterproof-editor";
+import { DocChange, ReplaceAroundStep, ReplaceStep, Step, WaterproofMapping, WrappingDocChange } from "waterproof-editor";
 
 /**
  * A type to specify an HTML tag in the prosemirror content elem.

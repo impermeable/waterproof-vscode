@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { MessageType } from '../../shared';
 import "../styles/info.css";
 // Get the button data
-import data from "../../shared/completions/symbols.json";
+import data from "../../completions/symbols.json";
 
 const vscode = acquireVsCodeApi();
 

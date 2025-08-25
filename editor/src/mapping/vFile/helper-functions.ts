@@ -1,6 +1,5 @@
-import { Fragment } from "prosemirror-model";
+import { Fragment, ReplaceStep } from "waterproof-editor";
 import { OperationType, textEndHTML, textStartHTML } from "./types";
-import { ReplaceStep } from "prosemirror-transform";
 
 
 //// We define helper functions used by the vscode mapping 

@@ -1,5 +1,10 @@
 # Waterproof
 
+## Git lfs
+
+This repository uses git lfs for building the web version of the extension.
+Install git lfs from your package manager or from [here](https://git-lfs.com/).
+
 ## Installing dependencies
 Run `npm install` or `npm i` in the [root](./) folder of the repository.
 

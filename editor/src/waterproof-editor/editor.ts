@@ -362,17 +362,18 @@ export class WaterproofEditor {
 			top: scrollY,
 			bottom: scrollY + innerHeight
 		};
-		const posTop = this._view.posAtCoords({left: 10, top: viewport.top});
-		const posAtBottom = this._view.posAtCoords({left: 10, top: viewport.bottom});
+		const posTop = this._view.posAtCoords({left: 30, top: viewport.top});
+		const posAtBottom = this._view.posAtCoords({left: 30, top: viewport.bottom});
+		
 		if (!posTop || !posAtBottom) {
 			console.log("Positions not found", posTop, posAtBottom);
 			return;
 		}
-		
+
 		// Translate postions to line/offset
 		const offsetStart = this._mapping?.findPosition(posTop.pos);
 		const offsetEnd = this._mapping?.findPosition(posAtBottom.pos);
-
+		
 		this._editorConfig.api.viewportHint(offsetStart ?? 0, offsetEnd ?? 0);
 	
 	}

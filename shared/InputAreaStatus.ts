@@ -8,4 +8,6 @@ export enum InputAreaStatus {
     Incomplete = "incomplete",
     /** The input area does not contain `Qed.` at the end, so the status cannot be determined. */
     Invalid = "invalid",
+    /** Not in view, so was not requested */
+    NotInView = "not-in-view",
 }

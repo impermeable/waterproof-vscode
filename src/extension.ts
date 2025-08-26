@@ -90,6 +90,10 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
             this.client.updateCompletions(document);
         });
+        this.webviewManager.on(WebviewManagerEvents.viewportHint, ({document, start, end}) => {
+            this.client.sendViewportHint(document, start, end);
+        });
+
         this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
             wpl.log("Focus event received");
 

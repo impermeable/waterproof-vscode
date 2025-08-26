@@ -68,6 +68,8 @@ export interface ICoqLspClient {
     /** Sends an LSP request to retrieve the symbols in the `activeDocument`. */
     requestSymbols(): Promise<DocumentSymbol[]>;
 
+    sendViewportHint(document: TextDocument, start: number, end: number): Promise<void>;
+
     /**
      * Requests symbols and sends corresponding completions to the editor.
      */
@@ -129,6 +131,7 @@ export interface CoqLspServerConfig {
     pp_type: 0 | 1 | 2;
     show_stats_on_hover: boolean;
     send_diags_extra_data: boolean;
+    check_only_on_request: boolean;
 }
 
 // TODO: Rewrite namespace to modern syntax
@@ -152,6 +155,7 @@ export namespace CoqLspServerConfig {
             pp_type: wsConfig.pp_type,
             show_stats_on_hover: wsConfig.show_stats_on_hover,
             send_diags_extra_data: wsConfig.send_diags_extra_data,
+            check_only_on_request: true
         };
     }
 }

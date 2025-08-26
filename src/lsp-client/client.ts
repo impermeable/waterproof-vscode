@@ -5,6 +5,7 @@ import {
     LanguageClientOptions,
     LogTraceNotification,
     Middleware,
+    Range,
     SymbolInformation,
     VersionedTextDocumentIdentifier
 } from "vscode-languageclient";
@@ -281,6 +282,34 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
         }
 
+        async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
+            if (!this.isRunning()) return;
+            console.log("Document", document);
+            const startPos = document.positionAt(start);
+            const endPos = document.positionAt(end);
+            const requestBody = {
+                'textDocument':  VersionedTextDocumentIdentifier.create(
+                    document.uri.toString(),
+                    document.version
+                ),
+                'range': ({
+                    start: {
+                        line: startPos.line,
+                        character: startPos.character
+                    },
+                    end: {
+                        line: endPos.line,
+                        character: endPos.character
+                    }
+                } as Range)
+            };
+            console.log("Viewrange with body", requestBody);
+            
+            this.sendNotification("coq/viewRange", requestBody);
+
+
+        }
+
         async updateCompletions(document: TextDocument): Promise<void> {
             if (!this.isRunning()) return;
             if (!this.webviewManager?.has(document)) {
@@ -314,8 +343,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             this.fileProgressComponents.forEach(c => c.dispose());
             this.disposables.forEach(d => d.dispose());
             return super.dispose(timeout);
-        }
-
     }
 }
 
@@ -324,4 +351,5 @@ function wasCanceledByServer(reason: unknown): boolean {
         && typeof reason === "object"
         && "message" in reason
         && reason.message === "Request got old in server";  // or: code == -32802
+}
 }

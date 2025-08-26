@@ -240,6 +240,7 @@ export class ProseMirrorWebview extends EventEmitter {
             <title>ProseMirror Math</title>
             <meta charset="utf-8">
             <script defer src="${scriptUri}" nonce="${nonce}"></script><link href="${styleUri}" rel="stylesheet">
+            </script>
         </head>
         <body>
             <article>
@@ -407,6 +408,9 @@ export class ProseMirrorWebview extends EventEmitter {
                 this._linenumber = msg.body;
                 this.updateLineNumbers();
                 break;
+            case MessageType.viewportHint:
+                console.log("Received viewport hint:", msg.body);
+            // eslint-disable-next-line no-fallthrough
             default:
                 this.emit(WebviewEvents.message, msg);
                 break;

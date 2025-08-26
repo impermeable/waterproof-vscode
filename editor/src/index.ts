@@ -37,9 +37,13 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 			cursorChange(cursorPosition) {
 				codeAPI.postMessage({ type: MessageType.cursorChange, body: cursorPosition });
 			},
+			viewportHint(start, end) {
+				codeAPI.postMessage({ type: MessageType.viewportHint, body: { start, end } });
+			},
 			lineNumbers(linenumbers, version) {
 				codeAPI.postMessage({ type: MessageType.lineNumbers, body: { linenumbers, version } });
 			},
+
 		},
 		documentConstructor: format === FileFormat.MarkdownV ? blocksFromMV : blocksFromV,
 		// TODO: For now assuming we are constructing an mv file editor.
@@ -125,6 +129,19 @@ window.onload = () => {
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
 				break;
 		}
+	});
+
+	window.addEventListener('scroll', (event) => {
+		editor.handleScroll(window.scrollY, window.innerHeight);
+    console.log('Scroll Event:', event);
+    console.log('Scroll Data:', {
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+        pageXOffset: window.pageXOffset,
+        pageYOffset: window.pageYOffset,
+        timestamp: Date.now(),
+        target: event.target
+ 	   });
 	});
 
 	// Start the editor

@@ -46,7 +46,8 @@ export type Message =
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
-    | MessageBase<MessageType.teacher, boolean>;
+    | MessageBase<MessageType.teacher, boolean>
+    | MessageBase<MessageType.viewportHint, { start: number, end: number }>;
 
 /**
  * Message type enum. Every message that is send from the
@@ -76,6 +77,7 @@ export const enum MessageType {
     setShowMenuItems,
     teacher,
     flash,
+    viewportHint,
 }
 
 export const enum HistoryChangeType {

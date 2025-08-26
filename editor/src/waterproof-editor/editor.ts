@@ -211,6 +211,7 @@ export class WaterproofEditor {
 					e.preventDefault();
 				}
 			},
+			
 			handleDOMEvents: {
 				// This function will handle some DOM events before ProseMirror does.
 				// 	We use it here to cancel the 'drag' and 'drop' events, since these can
@@ -350,6 +351,30 @@ export class WaterproofEditor {
 		if (!view) return;
 		const func = type === HistoryChangeType.Undo ? undo : redo;
 		func(view.state, view.dispatch, view);
+	}
+
+	public handleScroll(scrollY: number, innerHeight: number) {
+		console.log("Enter handleScroll")
+		if (!this._view) return;
+		// Use the scroll height, window height and posAtCoords to obtain
+		// the current position of the viewport
+		const viewport = {
+			top: scrollY,
+			bottom: scrollY + innerHeight
+		};
+		const posTop = this._view.posAtCoords({left: 10, top: viewport.top});
+		const posAtBottom = this._view.posAtCoords({left: 10, top: viewport.bottom});
+		if (!posTop || !posAtBottom) {
+			console.log("Positions not found", posTop, posAtBottom);
+			return;
+		}
+		
+		// Translate postions to line/offset
+		const offsetStart = this._mapping?.findPosition(posTop.pos);
+		const offsetEnd = this._mapping?.findPosition(posAtBottom.pos);
+
+		this._editorConfig.api.viewportHint(offsetStart ?? 0, offsetEnd ?? 0);
+	
 	}
 
 	/**

@@ -1,11 +1,10 @@
 import { Completion } from "@codemirror/autocomplete";
-import { Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
+import { Disposable, OutputChannel, Position, Range, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
     LogTraceNotification,
     Middleware,
-    Range,
     SymbolInformation,
     VersionedTextDocumentIdentifier
 } from "vscode-languageclient";
@@ -177,29 +176,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     body: { numberOfLines: document.lineCount, progress: [] }
                 }
             );
-
-            // get input areas based on tags
-            const inputAreas = getInputAreas(document);
-            if (!inputAreas) {
-                throw new Error("Cannot check proof status; illegal input areas.");
-            }
-
-            // for each input area, check the proof status
-            let statuses: InputAreaStatus[];
-            try {
-                statuses = await Promise.all(inputAreas.map(a =>
-                    determineProofStatus(this, document, a)
-                ));
-            } catch (reason) {
-                if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
-                throw reason;
-            }
-
-            // forward statuses to corresponding ProseMirror editor
-            this.webviewManager!.postAndCacheMessage(document, {
-                type: MessageType.qedStatus,
-                body: statuses
-            });
         }
 
         startWithHandlers(webviewManager: WebviewManager): Promise<void> {
@@ -283,13 +259,20 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             if (!this.isRunning()) return;
             console.log("Document", document);
             const startPos = document.positionAt(start);
-            const endPos = document.positionAt(end);
+            let endPos = document.positionAt(end);
+            // Compute end of document position, use that if we're close
+            const endOfDocument = document.positionAt(document.getText().length);
+            if (endOfDocument.line - endPos.line < 20) {
+                endPos = endOfDocument;
+            }
+
+            console.log("Start line, end line", startPos.line, endPos.line);
             const requestBody = {
                 'textDocument':  VersionedTextDocumentIdentifier.create(
                     document.uri.toString(),
                     document.version
                 ),
-                'range': ({
+                'range': {
                     start: {
                         line: startPos.line,
                         character: startPos.character
@@ -298,13 +281,39 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                         line: endPos.line,
                         character: endPos.character
                     }
-                } as Range)
+                } 
             };
             console.log("Viewrange with body", requestBody);
             
-            this.sendNotification("coq/viewRange", requestBody);
+            await this.sendNotification("coq/viewRange", requestBody);
 
+            // get input areas based on tags
+            const inputAreas = getInputAreas(document);
+            if (!inputAreas) {
+                throw new Error("Cannot check proof status; illegal input areas.");
+            }
 
+            const currentRange : Range = new Range(startPos, endPos);
+            // for each input area, check the proof status
+            let statuses: InputAreaStatus[];
+            try {
+                statuses = await Promise.all(inputAreas.map((a : Range) => {
+                    if (a.intersection(currentRange)?.isEmpty) {
+                        return Promise.resolve(InputAreaStatus.NotInView);
+                    }
+                    return determineProofStatus(this, document, a);
+                }
+                ));
+            } catch (reason) {
+                if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
+                throw reason;
+            }
+
+            // forward statuses to corresponding ProseMirror editor
+            this.webviewManager!.postAndCacheMessage(document, {
+                type: MessageType.qedStatus,
+                body: statuses
+            });
         }
 
         async updateCompletions(document: TextDocument): Promise<void> {

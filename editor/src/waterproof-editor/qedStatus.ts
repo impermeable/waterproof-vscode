@@ -20,7 +20,7 @@ const statusToDecoration = (status: InputAreaStatus) => {
       return 'proven';
     case InputAreaStatus.Incomplete:
       return 'incomplete';
-    case InputAreaStatus.Invalid:
+    case InputAreaStatus.Invalid, InputAreaStatus.NotInView:
       return '';
   }
 };
@@ -42,8 +42,16 @@ const UpdateStatusPluginSpec = (editor: WaterproofEditor): PluginSpec<IUpdateSta
         if (newStatus === undefined) {
           return value;
         } else {
+          // newValues contains the values from newStatus, unless that value is NotInView,
+          // then we use the previous value
+          const newValues = newStatus.map((status : InputAreaStatus, index : number) => {
+            if (status === InputAreaStatus.NotInView) {
+              return value.status[index];
+            }
+            return status;
+          });
           return {
-            status: newStatus,
+            status: newValues,
           };
         }
       }

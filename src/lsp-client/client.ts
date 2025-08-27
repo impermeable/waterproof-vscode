@@ -176,6 +176,29 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     body: { numberOfLines: document.lineCount, progress: [] }
                 }
             );
+
+            // get input areas based on tags
+            const inputAreas = getInputAreas(document);
+            if (!inputAreas) {
+                throw new Error("Cannot check proof status; illegal input areas.");
+            }
+
+            // for each input area, check the proof status
+            let statuses: InputAreaStatus[];
+            try {
+                statuses = await Promise.all(inputAreas.map(a =>
+                    determineProofStatus(this, document, a)
+                ));
+            } catch (reason) {
+                if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
+                throw reason;
+            }
+
+            // forward statuses to corresponding ProseMirror editor
+            this.webviewManager!.postAndCacheMessage(document, {
+                type: MessageType.qedStatus,
+                body: statuses
+            });
         }
 
         startWithHandlers(webviewManager: WebviewManager): Promise<void> {

@@ -240,7 +240,6 @@ export class ProseMirrorWebview extends EventEmitter {
             <title>ProseMirror Math</title>
             <meta charset="utf-8">
             <script defer src="${scriptUri}" nonce="${nonce}"></script><link href="${styleUri}" rel="stylesheet">
-            </script>
         </head>
         <body>
             <article>

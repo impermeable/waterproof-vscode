@@ -2,7 +2,7 @@ import { DiagnosticSeverity } from "vscode";
 import { FileFormat } from "./FileFormat";
 import { LineNumber } from "./LineNumber";
 import { DocChange, WrappingDocChange } from "./DocChange";
-import { QedStatus } from "./QedStatus";
+import { InputAreaStatus } from "./InputAreaStatus";
 import { Completion } from "@codemirror/autocomplete";
 import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
 
@@ -37,7 +37,7 @@ export type Message =
     | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: "symbol" | "tactics", time: number }>
     | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>
-    | MessageBase<MessageType.qedStatus, QedStatus[]>
+    | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
     | MessageBase<MessageType.renderGoals, { goals : GoalAnswer<PpString>, visibility?: HypVisibility }>
     | MessageBase<MessageType.renderGoalsList, { goalsList : GoalAnswer<PpString>[]}>
@@ -46,7 +46,6 @@ export type Message =
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
-    | MessageBase<MessageType.syntax, boolean>
     | MessageBase<MessageType.teacher, boolean>;
 
 /**
@@ -75,8 +74,8 @@ export const enum MessageType {
     setData,
     setShowLineNumbers,
     setShowMenuItems,
-    syntax,
     teacher,
+    flash,
 }
 
 export const enum HistoryChangeType {

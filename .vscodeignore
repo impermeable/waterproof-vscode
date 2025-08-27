@@ -22,3 +22,5 @@ tsconfig.json
 .github/
 ExampleFiles/
 developer-resources/
+scripts/
+docs/

@@ -11,3 +11,4 @@ test_out/
 __tests_output__/
 **/*.cache
 ExampleFiles/
+/cypress/screenshots/

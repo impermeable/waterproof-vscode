@@ -143,7 +143,6 @@ export class WaterproofEditor {
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();
-
 		// notify extension that editor has loaded
 		this._editorConfig.api.editorReady();
 	}

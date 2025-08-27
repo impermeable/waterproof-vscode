@@ -4,7 +4,6 @@ import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscod
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
-import { WaterproofConfigHelper } from "../helpers";
 
 /**
  * The following are types related to the language client and the

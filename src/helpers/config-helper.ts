@@ -1,4 +1,6 @@
 import { workspace } from "vscode";
+import { HypVisibility } from "../../lib/types";
+import { WaterproofLogger as wpl } from "./logger";
 
 export class WaterproofConfigHelper {
 
@@ -22,6 +24,16 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("showLineNumbersInEditor") as boolean;
     }
 
+    /** `waterproof.skipLaunchChecks` */
+    static get skipLaunchChecks() {
+        return config().get<boolean>("skipLaunchChecks") as boolean;
+    }
+
+    /** `waterproof.showMenuItemsInEditor` */
+    static get showMenuItems() {
+        return config().get<boolean>("showMenuItemsInEditor") as boolean;
+    }
+
     /** `waterproof.showLineNumbersInEditor` */
     static set showLineNumbersInEditor(value: boolean) {
         // Update the Waterproof showLineNumbersInEditor configuration
@@ -33,11 +45,6 @@ export class WaterproofConfigHelper {
     /** `waterproof.enforceCorrectNonInputArea` */
     static get enforceCorrectNonInputArea() {
         return config().get<boolean>("enforceCorrectNonInputArea") as boolean;
-    }
-
-    /** `waterproof.standardCoqSyntax` */
-    static get standardCoqSyntax() {
-        return config().get<boolean>("standardCoqSyntax") as boolean;
     }
 
     /** `waterproof.eager_diagnostics` */
@@ -75,6 +82,21 @@ export class WaterproofConfigHelper {
         return config().get<number>("pp_type") as number;
     }
 
+
+    /** `waterproof.visibilityOfHypotheses` */
+    static get visibilityOfHypotheses() : HypVisibility {
+        const hypVisibility = config().get<string>("visibilityOfHypotheses");
+        wpl.log(`Hypothesis visibility set to: ${hypVisibility}`); 
+        switch(hypVisibility) {
+            case "all":
+                return HypVisibility.All;
+            case "limited":
+                return HypVisibility.Limited;
+            case "none":
+            default:
+                return HypVisibility.None;
+        }
+    }
     /** `waterproof.trace.server` */
     static get trace_server() {
         return config().get<"off" | "messages" | "verbose">("trace.server") as "off" | "messages" | "verbose";

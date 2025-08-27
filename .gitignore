@@ -5,8 +5,10 @@ node_modules/
 editor_output
 .DS_store
 .vscode-test
+.vscode-test-web
 test_out/
 .ui-test/
 __tests_output__/
 **/*.cache
 ExampleFiles/
+/cypress/screenshots/

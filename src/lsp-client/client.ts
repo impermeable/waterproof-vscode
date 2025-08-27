@@ -317,7 +317,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             let statuses: InputAreaStatus[];
             try {
                 statuses = await Promise.all(inputAreas.map((a : Range) => {
-                    if (a.intersection(currentRange)?.isEmpty) {
+                    if (a.intersection(currentRange) === undefined && !a.isEmpty) {
                         return Promise.resolve(InputAreaStatus.NotInView);
                     }
                     return determineProofStatus(this, document, a);

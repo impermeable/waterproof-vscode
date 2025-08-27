@@ -143,6 +143,7 @@ export class WaterproofEditor {
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();
+		this.handleScroll(window.innerHeight);
 		// notify extension that editor has loaded
 		this._editorConfig.api.editorReady();
 	}
@@ -354,11 +355,11 @@ export class WaterproofEditor {
 
 	public handleScroll(innerHeight: number) {
 		if (!this._view) return;
-		const posTop = this._view.posAtCoords({left: 10, top: 10});
-		const posBottom = this._view.posAtCoords({left: 10, top: innerHeight});
+		const posTop = this._view.posAtCoords({left: 10, top: 80}) ?? {pos : 0, inside : -1};
+		const posBottom = this._view.posAtCoords({left: 10, top: innerHeight}) ?? {pos : this._view.state.doc.content.size, inside : -1};
 
 		if (posBottom == null || posTop == null) {
-			console.log("Invalid positions, skipping viewport hint.")
+			console.log("Invalid positions, skipping viewport hint.", posTop, posBottom)
 			return;
 		}
 		
@@ -367,8 +368,18 @@ export class WaterproofEditor {
 		const pmOffsetEnd = this._view.state.doc.resolve(posBottom.pos).end()
 
 		// Translate postions to line/offset
-		const offsetStart = this._mapping?.findPosition(pmOffsetStart);
-		const offsetEnd = this._mapping?.findPosition(pmOffsetEnd);
+		let offsetStart;
+		try {
+			offsetStart = this._mapping?.findPosition(pmOffsetStart);
+		} catch (_e) {
+			offsetStart = pmOffsetStart;
+		}
+		let offsetEnd;
+		try {
+			offsetEnd = this._mapping?.findPosition(pmOffsetEnd);
+		} catch (_e) {
+			offsetEnd = pmOffsetEnd;
+		}
 
 		if (offsetStart == null || offsetEnd == null) {
 			console.log("Invalid offsets, skipping viewport hint.")

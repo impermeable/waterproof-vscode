@@ -75,6 +75,7 @@ export const enum MessageType {
     setShowLineNumbers,
     setShowMenuItems,
     teacher,
+    flash,
 }
 
 export const enum HistoryChangeType {

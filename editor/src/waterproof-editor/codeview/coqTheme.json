@@ -64,6 +64,10 @@
 	  "color": "var(--vscode-menu-foreground)",
 	  "backgroundColor": "var(--vscode-menu-background)"
 	},
+	".cm-tooltip-lint": {
+		"display": "flex",
+		"flexFlow": "column"
+	},
 	".cm-tooltip .cm-tooltip-arrow:before": {
 	  "borderTopColor": "transparent",
 	  "borderBottomColor": "transparent"

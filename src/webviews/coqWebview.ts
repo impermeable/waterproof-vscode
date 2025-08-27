@@ -60,10 +60,13 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     }
 
     public get isOpened() {
-        return (this._state == WebviewState.visible || this._state == WebviewState.open);
+        return (this._state == WebviewState.visible);
     }
+    public get isHidden() {
+        return (this._state == WebviewState.open);
+    }    
 
-    protected get state() {
+    public get state() {
         return this._state;
     }
 
@@ -89,19 +92,12 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 { preserveFocus: true, viewColumn: ViewColumn.Two },
                 webviewOpts
             );
-        } else if (this.name == "expandDefinition") {
-            this._panel = window.createWebviewPanel(
-                this.name,
-                "Expand definition",
-                { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts
-            );
         } else {
             this._panel = window.createWebviewPanel(
                 this.name,
                 this.name.charAt(0).toUpperCase() + this.name.slice(1),
                 { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts
+                webviewOpts,
             );
         }
         
@@ -160,6 +156,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         const prev = this._state;
         this._state = next;
         this.emit(WebviewEvents.change, prev);
+
     }
 
     /**
@@ -168,6 +165,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     public activatePanel() {
         if (this.state == WebviewState.ready) {
             this.create();
+            this.changeState(WebviewState.open);
         }
     }
 
@@ -176,7 +174,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      */
     public revealPanel() {
         if (!this._panel?.visible) {
-            this._panel?.reveal()
+            this._panel?.reveal(ViewColumn.Two);
         }
     }
 

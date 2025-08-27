@@ -16,6 +16,7 @@ import { Debouncer } from "./debouncer";
 import { INPUT_AREA_PLUGIN_KEY } from "../inputArea";
 
 
+
 /**
  * Export CodeBlockView class that implements the custom codeblock nodeview.
  * Corresponds with the example as can be found here:
@@ -190,12 +191,12 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 		return true; 
 	}
 
-	public handleSnippet(template: string, posFrom: number, posTo: number) {
+	public handleSnippet(template: string, posFrom: number, posTo: number, completion? : Completion | undefined) {
 		this._codemirror?.focus();
 		snippet(template)({
 			state: this._codemirror!.state,
 			dispatch: this._codemirror!.dispatch
-		}, null, posFrom, posTo);
+		}, completion ?? null, posFrom, posTo);
 	}
 
 	private lintingFunction: LintSource = (_view: CodeMirror): readonly Diagnostic[] => {
@@ -262,10 +263,10 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 	 */
 	public addCoqError(from: number, to: number, message: string, severity: number) {
 		const severityString = severityToString(severity);
-		const errorsCount = this._diags.filter(diag => diag.from === from && diag.to === to && diag.severity === "error").length;
-		//all diags have the copy action
-		const actions = [{
-			name: "Copy 📋",
+		
+		// By default, there is the copy action
+		let actions = [{
+			name: "📋",
 			apply: (view: CodeMirror, from: number, _to: number) => {
 				// give focus to this current codeblock instante to ensure it updates
 				this._codemirror?.focus();
@@ -273,109 +274,64 @@ export class CodeBlockView extends EmbeddedCodeMirrorEditor {
 				this.showCopyNotification(from);
 			}
 		}];
-
-		if (severityString !== "error") {
-			if (errorsCount > 0) {
-				actions.push({
-					name: "Replace",
-					apply:(view: CodeMirror, from: number, to: number) => {
-						// give focus to this current codeblock instante to ensure it updates
-						this._codemirror?.focus();
-						const trimmedMessage = message.trim();
-						const toInsert = trimmedMessage;
-						view.dispatch({
-							changes: {
-								from:from,
-								to:to,
-								insert: toInsert
-							},
-							selection: { anchor: from + toInsert.length }
-						});
-						this.forceUpdateLinting();
-					}
-				});
-			} else {
-				actions.push({
-					name: "Insert ↓",
-					apply:(view: CodeMirror, from: number, to: number) => {
-						// give focus to this current codeblock instante to ensure it updates
-						this._codemirror?.focus();
-						const textAtErrorLine = view.state.doc.lineAt(from).text;
-						const idents = textAtErrorLine.match(/^(\s*)/g)?.[0] ?? "";
-						const trimmedMessage = message.trim();
-						const toInsert = "\n".concat(idents, trimmedMessage);
-						view.dispatch({
-							changes: {
-								from: to, to,
-								insert: toInsert
-							},
-							selection: {anchor: to + toInsert.length}
-						});
-					}
-				});
-			}
+		let trimmedMessage : string = "";
+		if (message.startsWith("Hint, replace with: ")) {
+			trimmedMessage = message.trim().replace("Hint, replace with: ", "").replace(/\.\${(.*?)}$/, ".").replaceAll(/\$\{.*?\}/g,"...")
+			actions = [({
+				name: "Replace ↩️",
+				apply:(view: CodeMirror, from: number, to: number) => {
+					// give focus to this current codeblock instante to ensure it updates
+					this._codemirror?.focus();
+					const toInsert = message.trim().replace("Hint, replace with: ", "");
+					view.dispatch({
+						changes: {
+							from:from,
+							to:to,
+							insert: ""
+						},
+						selection: { anchor: from }
+					});
+					this.handleSnippet(toInsert, from, from);
+					this.forceUpdateLinting();
+				}
+			})];
+		} else if (message.startsWith("Hint, insert: ")) {
+			trimmedMessage = message.trim().replace("Hint, insert: ", "").replace(/\.\${.*?}$/, ".").replaceAll(/\$\{.*?\}/g,"...");
+			actions = [({
+				name: "Insert ⤵️",
+				apply:(view: CodeMirror, from: number, to: number) => {
+					// give focus to this current codeblock instante to ensure it updates
+					this._codemirror?.focus();
+					const toInsert = "\n" + message.trim().replace("Hint, insert: ", "");
+					this.handleSnippet(toInsert, to, to);
+				}
+			})];
+		} else if (message.startsWith("Remove this line")) {
+			actions = [({
+				name: "Delete 🗑️",
+				apply: (view: CodeMirror, from: number, to: number) => {
+					// give focus to this current codeblock instante to ensure it updates
+					this._codemirror?.focus();
+					view.dispatch({
+						changes: {
+							from: from,
+							to: to,
+							insert: ""
+						},
+						selection: { anchor: from }
+					});
+				}
+			})];
 		}
 
 		this._diags.push({
 			from:from,
 			to:to,
-			message: message,
+			message: (trimmedMessage === "" ? message : trimmedMessage),
 			severity: severityString,
 			actions,
 		});
-		//only when the first error is added, the other diagnostics are updated accordingly
-		if (severityString === "error" && errorsCount===0) {
-			this.updateDiagnostics(from, to, message);
-		}
 
-	}
-
-	private updateDiagnostics(from:number, to:number, _message :string) {
-		const diagUnchanged = this._diags.filter(diag => diag.from !== from || diag.to !== to);
-		const diagnosticsToUpdate = this._diags.filter(diag => diag.from === from && diag.to === to);
-		this.clearCoqErrors();
-		this._diags = diagUnchanged;
-		for (const diag of diagnosticsToUpdate) {
-			const actions = [{
-				name: "Copy 📋",
-				apply: (view: CodeMirror, from: number, _to: number) => {
-					// give focus to this current codeblock instante to ensure it updates
-					this._codemirror?.focus();
-					navigator.clipboard.writeText(diag.message);
-					this.showCopyNotification(from);
-				}
-			}];
-			
-			if (diag.severity !== "error"){
-				actions.push({
-					name: "Replace",
-					apply:(view: CodeMirror, from: number, to: number) => {
-						// give focus to this current codeblock instante to ensure it updates
-						this._codemirror?.focus();
-						const trimmedMessage = diag.message.trim();
-						const toInsert = trimmedMessage;
-						view.dispatch({
-							changes: {
-								from:from,
-								to:to,
-								insert: toInsert
-							},
-							selection: { anchor: from + toInsert.length }
-						});
-						this.forceUpdateLinting();
-					}
-				});
-			}
-
-			this._diags.push({
-				from: diag.from,
-				to: diag.to,
-				message: diag.message,
-				severity: diag.severity,
-				actions
-			});
-		}
-		// Trigger the linter update to refresh diagnostics display
 		this.debouncer.call();
 	}
 

@@ -408,9 +408,6 @@ export class ProseMirrorWebview extends EventEmitter {
                 this._linenumber = msg.body;
                 this.updateLineNumbers();
                 break;
-            case MessageType.viewportHint:
-                console.log("Received viewport hint:", msg.body);
-            // eslint-disable-next-line no-fallthrough
             default:
                 this.emit(WebviewEvents.message, msg);
                 break;

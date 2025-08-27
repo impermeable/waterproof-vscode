@@ -131,17 +131,8 @@ window.onload = () => {
 		}
 	});
 
-	window.addEventListener('scroll', (event) => {
-		editor.handleScroll(window.scrollY, window.innerHeight);
-    console.log('Scroll Event:', event);
-    console.log('Scroll Data:', {
-        scrollX: window.scrollX,
-        scrollY: window.scrollY,
-        pageXOffset: window.pageXOffset,
-        pageYOffset: window.pageYOffset,
-        timestamp: Date.now(),
-        target: event.target
- 	   });
+	window.addEventListener('scroll', (_event) => {
+		editor.handleScroll(window.innerHeight);
 	});
 
 	// Start the editor

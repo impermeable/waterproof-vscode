@@ -214,7 +214,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         }
 
         async requestGoals(params?: GoalRequest | Position): Promise<GoalAnswer<PpString>> {
-            wpl.debug(`Requesting goals with params: ${JSON.stringify(params)}`);
             if (!params || "line" in params) {  // if `params` is not a `GoalRequest` ...
                 params ??= this.activeCursorPosition;
                 if (!this.activeDocument || !params) {
@@ -222,7 +221,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
                 params = this.createGoalsRequestParameters(this.activeDocument, params);
             }
-            wpl.debug(`Sending request for goals with params: ${JSON.stringify(params)}`);
             return this.sendRequest(goalRequestType, params);
         }
 
@@ -260,7 +258,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
         async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
             if (!this.isRunning()) return;
-            console.log("Document", document);
             const startPos = document.positionAt(start);
             let endPos = document.positionAt(end);
             // Compute end of document position, use that if we're close
@@ -269,7 +266,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 endPos = endOfDocument;
             }
 
-            console.log("Start line, end line", startPos.line, endPos.line);
             const requestBody = {
                 'textDocument':  VersionedTextDocumentIdentifier.create(
                     document.uri.toString(),
@@ -286,7 +282,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     }
                 } 
             };
-            console.log("Viewrange with body", requestBody);
             
             await this.sendNotification("coq/viewRange", requestBody);
 

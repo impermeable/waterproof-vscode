@@ -371,13 +371,13 @@ export class WaterproofEditor {
 		let offsetStart;
 		try {
 			offsetStart = this._mapping?.findPosition(pmOffsetStart);
-		} catch (_e) {
+		} catch {
 			offsetStart = pmOffsetStart;
 		}
 		let offsetEnd;
 		try {
 			offsetEnd = this._mapping?.findPosition(pmOffsetEnd);
-		} catch (_e) {
+		} catch {
 			offsetEnd = pmOffsetEnd;
 		}
 

@@ -4,6 +4,7 @@ import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscod
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
+import { WaterproofConfigHelper } from "../helpers";
 
 /**
  * The following are types related to the language client and the
@@ -155,7 +156,7 @@ export namespace CoqLspServerConfig {
             pp_type: wsConfig.pp_type,
             show_stats_on_hover: wsConfig.show_stats_on_hover,
             send_diags_extra_data: wsConfig.send_diags_extra_data,
-            check_only_on_request: true
+            check_only_on_request: !wsConfig.check_only_on_request
         };
     }
 }

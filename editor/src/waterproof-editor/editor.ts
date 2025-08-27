@@ -148,6 +148,40 @@ export class WaterproofEditor {
 		this._editorConfig.api.editorReady();
 	}
 
+	refreshDocument(content: string, version: number) {
+		if (!this._view) return;
+		if (this._mapping && this._mapping.version === version) return;
+		//if (this._mapping && this._mapping.version == version) return;
+		//this._view.dispatch(this._view.state.tr.setMeta(MENU_PLUGIN_KEY, "remove"));
+		// Hack to forcefully remove the 'old' menubar
+		// document.querySelector(".menubar")?.remove();
+		//document.querySelector(".progress-bar")?.remove();
+		//document.querySelector(".spinner-container")?.remove();
+		// this._view.dom.remove();
+
+		this._translator = new FileTranslator(this._filef);
+
+		const { resultingDocument, documentChange } = checkPrePost(content);
+		if (documentChange !== undefined) {
+			this._editorConfig.api.documentChange(documentChange);
+		}
+		if (resultingDocument !== content) version = version + 1;
+
+		const parsedContent = this._translator.toProsemirror(resultingDocument);
+		const proseDoc = createProseMirrorDocument(resultingDocument, this._filef);
+
+		this._mapping = new TextDocMapping(this._filef, parsedContent, version);
+		const newState = EditorState.create({
+			doc: proseDoc,
+			plugins: this._view.state.plugins,
+			schema: this._schema
+		});
+		this._view.updateState(newState);
+
+		this.sendLineNumbers();
+	}
+
+
 	get state(): EditorState | undefined {
 		return this._view?.state;
 	}

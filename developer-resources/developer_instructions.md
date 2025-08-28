@@ -1,5 +1,10 @@
 # Waterproof
 
+## Git lfs
+
+This repository uses git lfs for building the web version of the extension.
+Install git lfs from your package manager or from [here](https://git-lfs.com/).
+
 ## Installing dependencies
 Run `npm install` or `npm i` in the [root](./) folder of the repository.
 
@@ -34,7 +39,7 @@ Insert the following setting into your `.vscode/settings.json` to stop it from d
 ```
 
 ### Running a debug version of the webextension
-
+TODO: Update instructions
 1. Obtain `coq-lsp_worker and front-end.zip` from the coq-lsp CI artifacts. (Latest build at the time of writing: https://github.com/ejgallego/coq-lsp/actions/runs/13566988935) (Build for 8.17 has serlib errors at this point in time).
 2. Unzip the file. Move `coq_lsp_worker.bc.js` to `out.
 3. Run the `Run Web Extension in VS Code` task.

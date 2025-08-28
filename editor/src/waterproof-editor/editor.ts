@@ -143,7 +143,7 @@ export class WaterproofEditor {
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();
-
+		this.handleScroll(window.innerHeight);
 		// notify extension that editor has loaded
 		this._editorConfig.api.editorReady();
 	}
@@ -211,6 +211,7 @@ export class WaterproofEditor {
 					e.preventDefault();
 				}
 			},
+			
 			handleDOMEvents: {
 				// This function will handle some DOM events before ProseMirror does.
 				// 	We use it here to cancel the 'drag' and 'drop' events, since these can
@@ -350,6 +351,43 @@ export class WaterproofEditor {
 		if (!view) return;
 		const func = type === HistoryChangeType.Undo ? undo : redo;
 		func(view.state, view.dispatch, view);
+	}
+
+	public handleScroll(innerHeight: number) {
+		if (!this._view) return;
+		const posTop = this._view.posAtCoords({left: 10, top: 80}) ?? {pos : 0, inside : -1};
+		const posBottom = this._view.posAtCoords({left: 10, top: innerHeight}) ?? {pos : this._view.state.doc.content.size, inside : -1};
+
+		if (posBottom == null || posTop == null) {
+			console.log("Invalid positions, skipping viewport hint.", posTop, posBottom)
+			return;
+		}
+		
+		// Get the offset before/after the node to overestimate the viewport
+		const pmOffsetStart = this._view.state.doc.resolve(posTop.pos).start()
+		const pmOffsetEnd = this._view.state.doc.resolve(posBottom.pos).end()
+
+		// Translate postions to line/offset
+		let offsetStart;
+		try {
+			offsetStart = this._mapping?.findPosition(pmOffsetStart);
+		} catch {
+			offsetStart = pmOffsetStart;
+		}
+		let offsetEnd;
+		try {
+			offsetEnd = this._mapping?.findPosition(pmOffsetEnd);
+		} catch {
+			offsetEnd = pmOffsetEnd;
+		}
+
+		if (offsetStart == null || offsetEnd == null) {
+			console.log("Invalid offsets, skipping viewport hint.")
+			return;
+		}
+
+		this._editorConfig.api.viewportHint(offsetStart, offsetEnd);
+
 	}
 
 	/**

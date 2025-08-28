@@ -1,7 +1,7 @@
-import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
+import { ExtensionContext, Uri, commands, env, window } from "vscode";
 import { Version, VersionRequirement } from "./version";
 import { COMPARE_MODE } from "./types";
-import { WaterproofFileUtil, WaterproofLogger as wpl } from "../helpers";
+import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 
 export type VersionError = {
     reason: string;
@@ -24,9 +24,9 @@ export class VersionChecker {
     private _reqVersionCoqLSP: VersionRequirement;
     private _reqVersionCoqWP: VersionRequirement;
 
-    constructor(configuration: WorkspaceConfiguration, context: ExtensionContext, coqLspVersion: string, coqWaterproofVersion: string) {
+    constructor(context: ExtensionContext, coqLspVersion: string, coqWaterproofVersion: string) {
         this._context = context;
-        this._wpPath = configuration.get<string>("path");
+        this._wpPath = WaterproofConfigHelper.get(WaterproofSetting.Path);
 
         this._reqVersionCoqLSP = VersionRequirement.fromString(coqLspVersion);
         this._reqVersionCoqWP = VersionRequirement.fromString(coqWaterproofVersion);

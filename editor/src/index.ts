@@ -130,9 +130,14 @@ window.onload = () => {
 				break;
 		}
 	});
-
+	let timeoutHandle: number | undefined;
 	window.addEventListener('scroll', (_event) => {
-		editor.handleScroll(window.innerHeight);
+		if (timeoutHandle === undefined) {
+			timeoutHandle = window.setTimeout(() => {
+				editor.handleScroll(window.innerHeight);
+				timeoutHandle = undefined;
+			}, 100);
+		}
 	});
 
 	// Start the editor

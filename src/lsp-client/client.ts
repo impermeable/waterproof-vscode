@@ -160,6 +160,17 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     this.onCheckingCompleted();
                 }
             }));
+
+            this.disposables.push(this.onNotification("$/coq/serverStatus", params => {
+                const document = this.activeDocument;
+                if (!document) return;
+                // Handle the server status notification
+                this.webviewManager!.postMessage(document.uri.toString(), {
+                    type: MessageType.serverStatus,
+                    body: params
+                }
+            );
+            }));
         }
 
         async onCheckingCompleted(): Promise<void> {

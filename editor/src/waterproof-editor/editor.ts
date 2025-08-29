@@ -17,6 +17,7 @@ import { REAL_MARKDOWN_PLUGIN_KEY, coqdocPlugin, realMarkdownPlugin } from "./ma
 import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
+import { DOCUMENT_PROGRESS_DECORATOR_KEY, documentProgressDecoratorPlugin } from "./documentProgressDecorator";
 import { FileTranslator } from "./translation";
 import { createContextMenuHTML } from "./context-menu";
 
@@ -248,6 +249,7 @@ export class WaterproofEditor {
 			coqdocPlugin(this._schema),
 			codePlugin(this._editorConfig.completions),
 			progressBarPlugin,
+			documentProgressDecoratorPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				"Mod-h": () => {
@@ -327,6 +329,84 @@ export class WaterproofEditor {
 		this._editorConfig.api.lineNumbers(linenumbers, this._mapping.version);
 	}
 
+	private updateDocumentProgress() {
+		// Use getState with the CODE_PLUGIN_KEY to obtain linenumbers
+		if (!this._view) return;
+		const lineNumbers = CODE_PLUGIN_KEY.getState(this._view.state)?.lines;
+		// Use getState with the CODE_PLUGIN_KEY to obtain progress activeNodeViews
+		const activeNodeViews = CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
+		// Use getState with the PROGRESS_PLUGIN_KEY to obtain progress status
+		const progressParams = PROGRESS_PLUGIN_KEY.getState(this._view.state)?.progressParams;
+		if (progressParams === undefined || lineNumbers === undefined || activeNodeViews === undefined) return;
+		// Compute currentLine from progressParams
+		if (progressParams.progress.length == 0) return;
+		const currentLine = progressParams?.progress[0].range.start.line + 1;
+		const endLine = progressParams?.progress[0].range.end.line + 1;
+	
+		console.log("Current line", currentLine);
+		console.log("End line", endLine);
+		console.log("Line numbers", lineNumbers);
+
+		if (currentLine == endLine) {
+			// Done checking, remove bar
+			const tr = this._view.state.tr.setMeta(DOCUMENT_PROGRESS_DECORATOR_KEY, 
+				{progressHeightLow: 0, progressHeightHigh: 0, total: 0});
+			this._view.dispatch(tr);
+			return;
+		}
+
+		// Compute current nodeView using lineNumbers and activeNodeViews
+		let currentNodeView = undefined;
+		let viewLineNumber = undefined;
+		let nextLineNumber = undefined;
+		let nextNodeView = undefined;
+		
+		let i = 0;
+		for (const nodeView of activeNodeViews) {
+			if (currentNodeView != undefined) {
+				nextNodeView = nodeView;
+				break;
+			}
+			if (currentLine >= lineNumbers.linenumbers[i] && currentLine < lineNumbers.linenumbers[i + 1]) {
+				currentNodeView = nodeView; 
+				viewLineNumber = lineNumbers.linenumbers[i];
+				nextLineNumber = lineNumbers.linenumbers[i + 1];
+
+				console.log("View line number", viewLineNumber);
+			}
+			i++;
+		}
+		// console.log("ViewLine number", viewLineNumber, "Next line number", nextLineNumber);
+		if (currentNodeView === undefined || viewLineNumber === undefined || nextLineNumber === undefined) return;
+		const startPos = currentNodeView._getPos();
+		const nextPos = nextNodeView?._getPos();
+		if (startPos === undefined || nextPos === undefined) return;
+		console.log("Start pos", startPos, "Next pos", nextPos);
+		const startDocCoords = this._view.coordsAtPos(0);
+		const startCoords = this._view.coordsAtPos(startPos, -1);
+		const nextCoords = this._view.coordsAtPos(nextPos);
+
+		const endDocCoords = this._view.coordsAtPos(this._view.state.doc.content.size);
+		console.log("Start coords", startCoords, "Next coords", nextCoords);
+		// const oneLineCoords = this._view.coordsAtPos(oneLinePos.pos);
+		console.log("Extra lines", currentLine - viewLineNumber);
+
+		// Approximate the extra needed height by interpolating between the known line numbers
+		// const currentSegmentProportion = ((currentLine - viewLineNumber)/(nextLineNumber - viewLineNumber))
+		// console.log("Current segment proportion", currentSegmentProportion)
+		// const addedHeight = currentSegmentProportion * (nextCoords.top - startCoords.top);
+		// console.log("Added height", addedHeight);
+
+		const height = startCoords.top - startDocCoords.top;
+		console.log("Sending progressHeightLow", height)
+		console.log("Sending progressHeightHigh", nextCoords.top - startDocCoords.top)
+		console.log("Sending total", endDocCoords.top - startDocCoords.top)
+
+		const tr = this._view.state.tr.setMeta(DOCUMENT_PROGRESS_DECORATOR_KEY, {
+			total: endDocCoords.top - startDocCoords.top, progressHeightLow: height, progressHeightHigh: nextCoords.top - startDocCoords.top});
+		this._view.dispatch(tr);
+	}
+
 	public handleCompletions(completions: Array<Completion>) {
 		const state = this._view?.state;
 		if (!state) return;
@@ -344,6 +424,8 @@ export class WaterproofEditor {
 		if (!state) return;
 		const tr = this._view.state.tr.setMeta(CODE_PLUGIN_KEY, msg);
 		this._view.dispatch(tr);
+		// Document progress uses lines to compute the right size of the decorator
+		this.updateDocumentProgress();
 	}
 
 	public handleHistoryChange(type: HistoryChangeType) {
@@ -495,6 +577,7 @@ export class WaterproofEditor {
 		const tr = state.tr;
 		tr.setMeta(PROGRESS_PLUGIN_KEY, progressParams);
 		this._view.dispatch(tr);
+		this.updateDocumentProgress();
 	}
 
 	public updateQedStatus(status: InputAreaStatus[]) : void {

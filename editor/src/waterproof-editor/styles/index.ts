@@ -27,6 +27,9 @@ import "./coqdoc.css";
 // for the progressBar
 import "./progressBar.css";
 
+// for the document progress decorator
+import "./documentProgressDecorator.css";
+
 // for the spinner
 import "./spinner.css";
 

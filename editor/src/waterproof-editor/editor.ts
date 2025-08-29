@@ -344,10 +344,6 @@ export class WaterproofEditor {
 		const currentLine = progressParams?.progress[0].range.start.line + 1;
 		const endLine = progressParams?.progress[0].range.end.line + 1;
 	
-		console.log("Current line", currentLine);
-		console.log("End line", endLine);
-		console.log("Line numbers", lineNumbers);
-
 		if (currentLine == endLine) {
 			// Done checking, remove bar
 			const tr = this._view.state.tr.setMeta(DOCUMENT_PROGRESS_DECORATOR_KEY, 
@@ -372,37 +368,36 @@ export class WaterproofEditor {
 				currentNodeView = nodeView; 
 				viewLineNumber = lineNumbers.linenumbers[i];
 				nextLineNumber = lineNumbers.linenumbers[i + 1];
-
-				console.log("View line number", viewLineNumber);
 			}
 			i++;
 		}
-		// console.log("ViewLine number", viewLineNumber, "Next line number", nextLineNumber);
 		if (currentNodeView === undefined || viewLineNumber === undefined || nextLineNumber === undefined) return;
-		const startPos = currentNodeView._getPos();
-		const nextPos = nextNodeView?._getPos();
+		let startPos = currentNodeView._getPos();
+		let nextPos = nextNodeView?._getPos();
 		if (startPos === undefined || nextPos === undefined) return;
-		console.log("Start pos", startPos, "Next pos", nextPos);
 		const startDocCoords = this._view.coordsAtPos(0);
-		const startCoords = this._view.coordsAtPos(startPos, -1);
-		const nextCoords = this._view.coordsAtPos(nextPos);
+		let startCoords = this._view.coordsAtPos(startPos, -1);
+		// If we don't find a good position, this is likely a hidden codeblock
+		// Go back until we find a position in the document or the top
+		while (startCoords == null || startCoords.top == 0) {
+			startPos--;
+			if (startPos < 0) break;
+			startCoords = this._view.coordsAtPos(startPos, -1);
+		}
 
+		// If we don't find a good position, this is likely a hidden codeblock
+		// Go forward until we find a position in the document or the bottom
+		let nextCoords = this._view.coordsAtPos(nextPos);
+		while (nextCoords == null || nextCoords.top == 0) {
+			nextPos++;
+			if (nextPos >= this._view.state.doc.content.size) break;
+			nextCoords = this._view.coordsAtPos(nextPos);
+		}
 		const endDocCoords = this._view.coordsAtPos(this._view.state.doc.content.size);
-		console.log("Start coords", startCoords, "Next coords", nextCoords);
-		// const oneLineCoords = this._view.coordsAtPos(oneLinePos.pos);
-		console.log("Extra lines", currentLine - viewLineNumber);
-
-		// Approximate the extra needed height by interpolating between the known line numbers
-		// const currentSegmentProportion = ((currentLine - viewLineNumber)/(nextLineNumber - viewLineNumber))
-		// console.log("Current segment proportion", currentSegmentProportion)
-		// const addedHeight = currentSegmentProportion * (nextCoords.top - startCoords.top);
-		// console.log("Added height", addedHeight);
-
 		const height = startCoords.top - startDocCoords.top;
-		console.log("Sending progressHeightLow", height)
-		console.log("Sending progressHeightHigh", nextCoords.top - startDocCoords.top)
-		console.log("Sending total", endDocCoords.top - startDocCoords.top)
 
+		// Communicate the total size of the document, the low estimate where processing is happening
+		// and the high estimate, unit is pixels for each
 		const tr = this._view.state.tr.setMeta(DOCUMENT_PROGRESS_DECORATOR_KEY, {
 			total: endDocCoords.top - startDocCoords.top, progressHeightLow: height, progressHeightHigh: nextCoords.top - startDocCoords.top});
 		this._view.dispatch(tr);

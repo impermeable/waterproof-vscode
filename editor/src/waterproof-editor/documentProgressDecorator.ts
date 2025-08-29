@@ -24,47 +24,6 @@ const DocumentProgressDecoratorPluginSpec: PluginSpec<IDocumentProgressDecorator
     apply(tr, value, _oldState, _newState) {
         const meta = tr.getMeta(DOCUMENT_PROGRESS_DECORATOR_KEY);
         return meta ?? value;
-      // Check for progress updates from the transaction meta data
-    // //   const meta: {progressParams? : SimpleProgressParams, lineNumbers? : Array<number>} = tr.getMeta(DOCUMENT_PROGRESS_DECORATOR_KEY);
-    // //   console.log("Meta", meta);
-    // //   console.log("Value", value)
-    // //   if (meta == null) return value;
-    // //   const newState = {
-    // //     progressParams: meta.progressParams ?? value.progressParams,
-    // //     lineNumbers: meta.lineNumbers ?? value.lineNumbers,
-    // //     progressHeight: value.progressHeight
-    // //   };
-    // //   if (newState.progressParams != null && newState.lineNumbers != null) {
-    // //     // Calculate progress percentage based on progress data
-    // //     if (newState.progressParams.progress.length > 0 && newState.progressParams.numberOfLines > 0) {
-    // //       const currentLine = newState.progressParams.progress[0].range.start.line + 1;
-    // //       const activeNodeViews = CODE_PLUGIN_KEY.getState(_newState)?.activeNodeViews;
-    // //       if (activeNodeViews?.size == newState.lineNumbers.length) {
-    // //         // Map currentLine to a position in the document using lineNumbers
-    // //         let currentView = undefined;
-    // //         let i = 0;
-    // //         let lineBefore;
-    // //         let lineAfter;
-            
-    // //         for (const view of activeNodeViews) {
-    // //             currentView = view;
-    // //             lineBefore = newState.lineNumbers[i];
-    // //             i++;
-    // //             if (newState.lineNumbers[i + 1] > currentLine) {
-    // //                 lineAfter = newState.lineNumbers[i + 1];
-    // //                 break;
-    // //             }
-    // //         }
-    // //         if (currentView != undefined) {
-    // //             const posBefore = currentView._getPos();
-    // //             // Resolve pos to coordinates
-    // //             const coords = editorView.coordsAtPos(posBefore);
-    // //         }
-    // //       }
-    // //     }
-    //   }
-      
-    //   return newState;
     }
   },
   view(editorView) {

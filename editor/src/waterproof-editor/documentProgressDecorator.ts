@@ -42,7 +42,7 @@ const DocumentProgressDecoratorPluginSpec: PluginSpec<IDocumentProgressDecorator
 
     // Function to update the decorator height based on progress
     const updateDecorator = (state: IDocumentProgressDecoratorState) => {
-        decoratorContainer.style.background = `linear-gradient(to bottom, #FFD700 0px, #ffd700 ${state.progressHeightLow}px, #ffed86ff ${state.progressHeightHigh}px, #ffffff ${state.progressHeightHigh + 1}px)`;
+        decoratorContainer.style.background = `linear-gradient(to bottom, var(--vscode-button-background) 0px, var(--vscode-button-background) ${state.progressHeightLow}px, var(--vscode-textCodeBlock-background) ${state.progressHeightHigh}px, #ffffff ${state.progressHeightHigh + 30}px)`;
         decoratorContainer.style.height = `${state.total}px`;
     };
 

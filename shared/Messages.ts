@@ -4,7 +4,7 @@ import { LineNumber } from "./LineNumber";
 import { DocChange, WrappingDocChange } from "./DocChange";
 import { InputAreaStatus } from "./InputAreaStatus";
 import { Completion } from "@codemirror/autocomplete";
-import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
+import { CoqServerStatus, GoalAnswer, HypVisibility, PpString } from "../lib/types";
 
 /** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)
  *
@@ -42,6 +42,7 @@ export type Message =
     | MessageBase<MessageType.renderGoals, { goals : GoalAnswer<PpString>, visibility?: HypVisibility }>
     | MessageBase<MessageType.renderGoalsList, { goalsList : GoalAnswer<PpString>[]}>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
+    | MessageBase<MessageType.serverStatus, CoqServerStatus>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
     | MessageBase<MessageType.setShowLineNumbers, boolean>
@@ -71,6 +72,7 @@ export const enum MessageType {
     renderGoals,
     renderGoalsList,
     response,
+    serverStatus,
     setAutocomplete,
     setData,
     setShowLineNumbers,

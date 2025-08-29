@@ -34,6 +34,7 @@ import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
 import { Positioned, WaterproofMapping, WaterproofEditorConfig } from "./types";
 import { Completion } from "@codemirror/autocomplete";
+import { CoqServerStatus } from "../../../lib/types";
 
 
 /** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
@@ -575,9 +576,17 @@ export class WaterproofEditor {
 		if (!this._view) return;
 		const state = this._view.state;
 		const tr = state.tr;
-		tr.setMeta(PROGRESS_PLUGIN_KEY, progressParams);
+		tr.setMeta(PROGRESS_PLUGIN_KEY, {progressParams});
 		this._view.dispatch(tr);
 		this.updateDocumentProgress();
+	}
+
+	public updateServerStatus(status: CoqServerStatus) : void {
+		if (!this._view) return;
+		const state = this._view.state;
+		const tr = state.tr;
+		tr.setMeta(PROGRESS_PLUGIN_KEY, {serverStatus: status});
+		this._view.dispatch(tr);
 	}
 
 	public updateQedStatus(status: InputAreaStatus[]) : void {

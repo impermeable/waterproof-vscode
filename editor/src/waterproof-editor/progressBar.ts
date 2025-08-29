@@ -1,10 +1,12 @@
 // Importing necessary components from various packages
 import { EditorState, Plugin, PluginKey, PluginSpec, Transaction } from "prosemirror-state";
 import { SimpleProgressParams } from "../../../shared";
+import { CoqServerStatus } from "../../../lib/types";
 
 // Interface for the state of the progress plugin
 export interface IProgressPluginState {
   progressParams: SimpleProgressParams;
+  serverStatus: CoqServerStatus;
   resetProgressBar: boolean;
   endLine: number;
   startLine: number;
@@ -13,8 +15,8 @@ export interface IProgressPluginState {
 // Plugin key for the progress plugin
 export const PROGRESS_PLUGIN_KEY = new PluginKey<IProgressPluginState>("prosemirror-progressBar");
 
-function startSpinner(_spinnerContainer: HTMLDivElement) {
-  // spinnerContainer.classList.add('spinner');
+function startSpinner(spinnerContainer: HTMLDivElement) {
+  spinnerContainer.classList.add('spinner');
 }
 
 function stopSpinner(spinnerContainer: HTMLDivElement) {
@@ -23,7 +25,7 @@ function stopSpinner(spinnerContainer: HTMLDivElement) {
 
 // Function to create a progress bar given the progress state and the container for the progress bar
 function createProgressBar(progressState: IProgressPluginState, progressBarContainer: HTMLDivElement, spinnerContainer: HTMLDivElement) {
-  const { progressParams, resetProgressBar, endLine, startLine } = progressState;
+  const { progressParams, resetProgressBar, serverStatus, endLine, startLine } = progressState;
 
   // Remove existing progress bar text
   const oldProgressBarText = progressBarContainer.querySelector('.progress-bar-text');
@@ -58,6 +60,12 @@ function createProgressBar(progressState: IProgressPluginState, progressBarConta
     progressBar.value = endLine;
   }
 
+  if (serverStatus.status === "Idle" || serverStatus.status === "Stopped") {
+    stopSpinner(spinnerContainer);
+  } else if (serverStatus.status === "Busy") {
+    startSpinner(spinnerContainer);
+  }
+
   // Create a span for the text
   const progressBarText = document.createElement('span');
   progressBarText.className = 'progress-bar-text';
@@ -67,10 +75,8 @@ function createProgressBar(progressState: IProgressPluginState, progressBarConta
   // Set the text of the span
   if (progressParams.progress.length > 0 && startLine + 2 < endLine) {
     progressBarText.textContent = `Verified file up to line: ${startLine + 1}`;
-    startSpinner(spinnerContainer);
   } else {
     progressBarText.textContent = `File verified`;
-    stopSpinner(spinnerContainer);
   }
 
   progressBarContainer.appendChild(progressBarText);
@@ -86,6 +92,7 @@ const ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
           numberOfLines: 1,
           progress: []
         },
+        serverStatus: {status: "Idle"},
         resetProgressBar: true,
         endLine: 1,
         startLine: 1,
@@ -93,18 +100,24 @@ const ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
     },
     apply(tr: Transaction, value: IProgressPluginState, _oldState: EditorState, _newState: EditorState): IProgressPluginState {
       // Retrieve progress parameters from the transaction meta data
-      const progressParams: SimpleProgressParams = tr.getMeta(PROGRESS_PLUGIN_KEY);
-      if (progressParams != null) {
+      const meta = tr.getMeta(PROGRESS_PLUGIN_KEY);
+      const newServerStatus = meta?.serverStatus ?? value.serverStatus
+
+      if (meta?.progressParams != null) {
         // If lines are being progressed, we reset the progress bar
-        const resetProgressBar = (progressParams.progress.length > 0);
+        const resetProgressBar = (meta.progressParams.progress.length > 0);
         return { 
-          progressParams,
+          progressParams: meta.progressParams,
           resetProgressBar,
-          startLine: resetProgressBar ? progressParams.progress[0].range.start.line + 1 : 1,
-          endLine: resetProgressBar ? progressParams.progress[0].range.end.line + 1 : 1,
+          serverStatus: newServerStatus,
+          startLine: resetProgressBar ? meta.progressParams.progress[0].range.start.line + 1 : 1,
+          endLine: resetProgressBar ? meta.progressParams.progress[0].range.end.line + 1 : 1,
         };
       }
-      return value;
+      return {
+        ...value,
+        serverStatus: newServerStatus,
+      };
     }
   },
   view(editorView) {

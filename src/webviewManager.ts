@@ -13,6 +13,7 @@ export enum WebviewManagerEvents {
     command         = "command",
     updateButton    = "updateButton",
     buttonClick     = "buttonClick",
+    viewportHint    = "viewportHint",
 }
 
 /**
@@ -265,6 +266,9 @@ export class WebviewManager extends EventEmitter {
                 // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
                 this.onToolsMessage("help", {type: MessageType.command, body: { command: "createHelp" }});
                 setTimeout(() => this.onToolsMessage("help", {type: MessageType.command, body: { command: "Help." }}), 250);
+                break;
+            case MessageType.viewportHint:
+                this.emit(WebviewManagerEvents.viewportHint, {document, ...message.body});
                 break;
             default:
                 console.error(`Unrecognized message type ${message.type}, not handled by webview manager`);

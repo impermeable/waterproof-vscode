@@ -17,6 +17,7 @@ import { REAL_MARKDOWN_PLUGIN_KEY, coqdocPlugin, realMarkdownPlugin } from "./ma
 import { menuPlugin } from "./menubar";
 import { MENU_PLUGIN_KEY } from "./menubar/menubar";
 import { PROGRESS_PLUGIN_KEY, progressBarPlugin } from "./progressBar";
+import { DOCUMENT_PROGRESS_DECORATOR_KEY, documentProgressDecoratorPlugin } from "./documentProgressDecorator";
 import { FileTranslator } from "./translation";
 import { createContextMenuHTML } from "./context-menu";
 
@@ -33,6 +34,7 @@ import { OS } from "./osType";
 import { checkPrePost } from "./file-utils";
 import { Positioned, WaterproofMapping, WaterproofEditorConfig } from "./types";
 import { Completion } from "@codemirror/autocomplete";
+import { CoqServerStatus } from "../../../lib/types";
 
 
 /** Type that contains a coq diagnostics object fit for use in the ProseMirror editor context. */
@@ -143,7 +145,7 @@ export class WaterproofEditor {
 
 		/** Ask for line numbers */
 		this.sendLineNumbers();
-
+		this.handleScroll(window.innerHeight);
 		// notify extension that editor has loaded
 		this._editorConfig.api.editorReady();
 	}
@@ -211,6 +213,7 @@ export class WaterproofEditor {
 					e.preventDefault();
 				}
 			},
+			
 			handleDOMEvents: {
 				// This function will handle some DOM events before ProseMirror does.
 				// 	We use it here to cancel the 'drag' and 'drop' events, since these can
@@ -247,6 +250,7 @@ export class WaterproofEditor {
 			coqdocPlugin(this._schema),
 			codePlugin(this._editorConfig.completions),
 			progressBarPlugin,
+			documentProgressDecoratorPlugin,
 			menuPlugin(this._schema, this._filef, this._userOS),
 			keymap({
 				"Mod-h": () => {
@@ -326,6 +330,79 @@ export class WaterproofEditor {
 		this._editorConfig.api.lineNumbers(linenumbers, this._mapping.version);
 	}
 
+	private updateDocumentProgress() {
+		// Use getState with the CODE_PLUGIN_KEY to obtain linenumbers
+		if (!this._view) return;
+		const lineNumbers = CODE_PLUGIN_KEY.getState(this._view.state)?.lines;
+		// Use getState with the CODE_PLUGIN_KEY to obtain progress activeNodeViews
+		const activeNodeViews = CODE_PLUGIN_KEY.getState(this._view.state)?.activeNodeViews;
+		// Use getState with the PROGRESS_PLUGIN_KEY to obtain progress status
+		const progressParams = PROGRESS_PLUGIN_KEY.getState(this._view.state)?.progressParams;
+		if (progressParams === undefined || lineNumbers === undefined || activeNodeViews === undefined) return;
+		// Compute currentLine from progressParams
+		if (progressParams.progress.length == 0) return;
+		const currentLine = progressParams?.progress[0].range.start.line + 1;
+		const endLine = progressParams?.progress[0].range.end.line + 1;
+	
+		if (currentLine == endLine) {
+			// Done checking, remove bar
+			const tr = this._view.state.tr.setMeta(DOCUMENT_PROGRESS_DECORATOR_KEY, 
+				{progressHeightLow: 0, progressHeightHigh: 0, total: 0});
+			this._view.dispatch(tr);
+			return;
+		}
+
+		// Compute current nodeView using lineNumbers and activeNodeViews
+		let currentNodeView = undefined;
+		let viewLineNumber = undefined;
+		let nextLineNumber = undefined;
+		let nextNodeView = undefined;
+		
+		let i = 0;
+		for (const nodeView of activeNodeViews) {
+			if (currentNodeView != undefined) {
+				nextNodeView = nodeView;
+				break;
+			}
+			if (currentLine >= lineNumbers.linenumbers[i] && currentLine < lineNumbers.linenumbers[i + 1]) {
+				currentNodeView = nodeView; 
+				viewLineNumber = lineNumbers.linenumbers[i];
+				nextLineNumber = lineNumbers.linenumbers[i + 1];
+			}
+			i++;
+		}
+		if (currentNodeView === undefined || viewLineNumber === undefined || nextLineNumber === undefined) return;
+		let startPos = currentNodeView._getPos();
+		let nextPos = nextNodeView?._getPos();
+		if (startPos === undefined || nextPos === undefined) return;
+		const startDocCoords = this._view.coordsAtPos(0);
+		let startCoords = this._view.coordsAtPos(startPos, -1);
+		// If we don't find a good position, this is likely a hidden codeblock
+		// Go back until we find a position in the document or the top
+		while (startCoords == null || startCoords.top == 0) {
+			startPos--;
+			if (startPos < 0) break;
+			startCoords = this._view.coordsAtPos(startPos, -1);
+		}
+
+		// If we don't find a good position, this is likely a hidden codeblock
+		// Go forward until we find a position in the document or the bottom
+		let nextCoords = this._view.coordsAtPos(nextPos);
+		while (nextCoords == null || nextCoords.top == 0) {
+			nextPos++;
+			if (nextPos >= this._view.state.doc.content.size) break;
+			nextCoords = this._view.coordsAtPos(nextPos);
+		}
+		const endDocCoords = this._view.coordsAtPos(this._view.state.doc.content.size);
+		const height = startCoords.top - startDocCoords.top;
+
+		// Communicate the total size of the document, the low estimate where processing is happening
+		// and the high estimate, unit is pixels for each
+		const tr = this._view.state.tr.setMeta(DOCUMENT_PROGRESS_DECORATOR_KEY, {
+			total: endDocCoords.top - startDocCoords.top, progressHeightLow: height, progressHeightHigh: nextCoords.top - startDocCoords.top});
+		this._view.dispatch(tr);
+	}
+
 	public handleCompletions(completions: Array<Completion>) {
 		const state = this._view?.state;
 		if (!state) return;
@@ -343,6 +420,8 @@ export class WaterproofEditor {
 		if (!state) return;
 		const tr = this._view.state.tr.setMeta(CODE_PLUGIN_KEY, msg);
 		this._view.dispatch(tr);
+		// Document progress uses lines to compute the right size of the decorator
+		this.updateDocumentProgress();
 	}
 
 	public handleHistoryChange(type: HistoryChangeType) {
@@ -350,6 +429,43 @@ export class WaterproofEditor {
 		if (!view) return;
 		const func = type === HistoryChangeType.Undo ? undo : redo;
 		func(view.state, view.dispatch, view);
+	}
+
+	public handleScroll(innerHeight: number) {
+		if (!this._view) return;
+		const posTop = this._view.posAtCoords({left: 10, top: 80}) ?? {pos : 0, inside : -1};
+		const posBottom = this._view.posAtCoords({left: 10, top: innerHeight}) ?? {pos : this._view.state.doc.content.size, inside : -1};
+
+		if (posBottom == null || posTop == null) {
+			console.log("Invalid positions, skipping viewport hint.", posTop, posBottom)
+			return;
+		}
+		
+		// Get the offset before/after the node to overestimate the viewport
+		const pmOffsetStart = this._view.state.doc.resolve(posTop.pos).start()
+		const pmOffsetEnd = this._view.state.doc.resolve(posBottom.pos).end()
+
+		// Translate postions to line/offset
+		let offsetStart;
+		try {
+			offsetStart = this._mapping?.findPosition(pmOffsetStart);
+		} catch {
+			offsetStart = pmOffsetStart;
+		}
+		let offsetEnd;
+		try {
+			offsetEnd = this._mapping?.findPosition(pmOffsetEnd);
+		} catch {
+			offsetEnd = pmOffsetEnd;
+		}
+
+		if (offsetStart == null || offsetEnd == null) {
+			console.log("Invalid offsets, skipping viewport hint.")
+			return;
+		}
+
+		this._editorConfig.api.viewportHint(offsetStart, offsetEnd);
+
 	}
 
 	/**
@@ -455,7 +571,16 @@ export class WaterproofEditor {
 		if (!this._view) return;
 		const state = this._view.state;
 		const tr = state.tr;
-		tr.setMeta(PROGRESS_PLUGIN_KEY, progressParams);
+		tr.setMeta(PROGRESS_PLUGIN_KEY, {progressParams});
+		this._view.dispatch(tr);
+		this.updateDocumentProgress();
+	}
+
+	public updateServerStatus(status: CoqServerStatus) : void {
+		if (!this._view) return;
+		const state = this._view.state;
+		const tr = state.tr;
+		tr.setMeta(PROGRESS_PLUGIN_KEY, {serverStatus: status});
 		this._view.dispatch(tr);
 	}
 

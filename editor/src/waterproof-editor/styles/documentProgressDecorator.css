@@ -1,0 +1,15 @@
+/* Document Progress Decorator Styles */
+
+/* Document progress decorator - fixed 50% height on left side */
+.document-progress-decorator {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  min-height: 100%;
+  border-radius: 2px;
+  z-index: 10;
+  pointer-events: none; /* Don't interfere with editor interactions */
+  opacity: 0.8;
+}

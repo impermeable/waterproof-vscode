@@ -319,7 +319,7 @@
           },
           "waterproof.showLineNumbersInEditor": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "description": "Show line numbers in the Waterproof editor"
           },
           "waterproof.skipLaunchChecks": {

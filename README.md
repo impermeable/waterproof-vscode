@@ -17,7 +17,7 @@ Install this extension and follow the installation instructions that pop up.
 ## Installation on Windows
 
 ### Step 1: Dependencies installer
-Download and execute the bundled installer `Waterproof-dependencies-installer-v2.2.0+8.17.exe` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v2.2.0%2B8.17)
+Download and execute the bundled installer `Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0)
 **Note:** do not change the default installation location, otherwise Waterproof will not work.
 
 ### Step 2: Install the vscode extension
@@ -67,7 +67,7 @@ Within a WSL distribution, execute the following lines:
 sudo apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.2.2+8.17
+opam install coq-lsp.0.2.3+9.0
 opam install coq-waterproof
 ```
 
@@ -100,7 +100,7 @@ In a terminal, execute the following lines
 apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.2.2+8.17
+opam install coq-lsp.0.2.3+9.0
 opam install coq-waterproof
 ```
 
@@ -131,7 +131,7 @@ Then execute
 ```
 opam init
 eval $(opam env)
-opam install coq-lsp.0.2.2+8.17
+opam install coq-lsp.0.2.3+9.0
 opam install coq-waterproof
 ```
 

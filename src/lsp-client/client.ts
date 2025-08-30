@@ -229,7 +229,10 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     document.uri.toString(),
                     document.version
                 ),
-                position
+                position: {
+                    line:      position.line,
+                    character: position.character
+                }
             };
         }
 
@@ -242,7 +245,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
                 params = this.createGoalsRequestParameters(this.activeDocument, params);
             }
-            wpl.debug(`Sending request for goals`);
+            wpl.debug(`Sending request for goals with params: ${JSON.stringify(params)}`);
             return this.sendRequest(goalRequestType, params);
         }
 

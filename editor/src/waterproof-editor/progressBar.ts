@@ -32,7 +32,7 @@ function createProgressBar(progressState: IProgressPluginState, progressBarConta
   }
 
   let progressBar;
-  
+
   if (resetProgressBar) {
     // If resetProgressBar is true, remove existing progress element
     const oldProgress = progressBarContainer.querySelector('progress');
@@ -43,7 +43,7 @@ function createProgressBar(progressState: IProgressPluginState, progressBarConta
     // If resetProgressBar is false, we just update the existing progress bar
     progressBar = progressBarContainer.querySelector('progress');
   }
-  
+
   if (progressBar == null) {
     progressBar = document.createElement('progress');
     progressBarContainer.appendChild(progressBar);
@@ -62,7 +62,7 @@ function createProgressBar(progressState: IProgressPluginState, progressBarConta
   const progressBarText = document.createElement('span');
   progressBarText.className = 'progress-bar-text';
 
-  
+
   // Set the text of the span
   if (progressParams.progress.length > 0) {
     progressBarText.textContent = `Verifying file, currently at line: ${startLine + 1}`;
@@ -96,7 +96,7 @@ const ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
       if (progressParams != null) {
         // If lines are being progressed, we reset the progress bar
         const resetProgressBar = (progressParams.progress.length > 0);
-        return { 
+        return {
           progressParams,
           resetProgressBar,
           startLine: resetProgressBar ? progressParams.progress[0].range.start.line + 1 : 1,
@@ -129,6 +129,10 @@ const ProgressBarPluginSpec: PluginSpec<IProgressPluginState> = {
           createProgressBar(progressState, progressBarContainer, spinnerContainer);
         }
       },
+      destroy() {
+        progressBarContainer.remove();
+        spinnerContainer.remove();
+      }
     };
   }
 };

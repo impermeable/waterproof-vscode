@@ -148,7 +148,7 @@ export class Waterproof implements Disposable {
 
         // make relevant gui components
         this.statusBar = new CoqnitiveStatusBar();
-        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
+        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create())
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals");
@@ -158,7 +158,7 @@ export class Waterproof implements Disposable {
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
-        const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
+        const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create());
         this.webviewManager.addToolWebview("debug", debug);
         this.goalsComponents.push(debug);
 
@@ -443,8 +443,7 @@ export class Waterproof implements Disposable {
 
         const serverOptions = CoqLspServerConfig.create(
             // TODO: Support +coqversion versions.
-            this.context.extension.packageJSON.requiredCoqLspVersion.slice(2),
-            WaterproofConfigHelper.configuration
+            this.context.extension.packageJSON.requiredCoqLspVersion.slice(2)
         );
 
         const clientOptions: LanguageClientOptions = {

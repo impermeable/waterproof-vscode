@@ -44,20 +44,20 @@ export const WaterproofSettingMap: Record<WaterproofSetting, string> = {
     [WaterproofSetting.SkipLaunchChecks]: "skipLaunchChecks",
     [WaterproofSetting.ShowMenuItemsInEditor]: "showMenuItemsInEditor",
     [WaterproofSetting.EnforceCorrectNonInputArea]: "enforceCorrectNonInputArea",
-    [WaterproofSetting.EagerDiagnostics]: "eager_diagnostics",
-    [WaterproofSetting.ShowWaterproofInfoMessages]: "show_waterproof_info_messages",
-    [WaterproofSetting.ShowNoticesAsDiagnostics]: "show_notices_as_diagnostics",
-    [WaterproofSetting.MaxErrors]: "max_errors",
-    [WaterproofSetting.SendDiagsExtraData]: "send_diags_extra_data",
-    [WaterproofSetting.GoalAfterTactic]: "goal_after_tactic",
-    [WaterproofSetting.PpType]: "pp_type",
+    [WaterproofSetting.EagerDiagnostics]: "eagerDiagnostics",
+    [WaterproofSetting.ShowWaterproofInfoMessages]: "showWaterproofInfoMessages",
+    [WaterproofSetting.ShowNoticesAsDiagnostics]: "showNoticesAsDiagnostics",
+    [WaterproofSetting.MaxErrors]: "maxErrors",
+    [WaterproofSetting.SendDiagsExtraData]: "sendDiagsExtraData",
+    [WaterproofSetting.GoalAfterTactic]: "goalAfterTactic",
+    [WaterproofSetting.PpType]: "ppType",
     [WaterproofSetting.VisibilityOfHypotheses]: "visibilityOfHypotheses",
     [WaterproofSetting.TraceServer]: "trace.server",
     [WaterproofSetting.Debug]: "debug",
     [WaterproofSetting.Path]: "path",
     [WaterproofSetting.Args]: "args",
-    [WaterproofSetting.AdmitOnBadQed]: "admit_on_bad_qed",
-    [WaterproofSetting.UnicodeCompletion]: "unicode_completion",
+    [WaterproofSetting.AdmitOnBadQed]: "admitOnBadQed",
+    [WaterproofSetting.UnicodeCompletion]: "unicodeCompletion",
     [WaterproofSetting.UpdateIgnores]: "updateIgnores"
 };
 
@@ -77,7 +77,7 @@ type WaterproofSettingTypes = {
     [WaterproofSetting.MaxErrors]: number;
     [WaterproofSetting.SendDiagsExtraData]: boolean;
     [WaterproofSetting.GoalAfterTactic]: boolean;
-    [WaterproofSetting.PpType]: number;
+    [WaterproofSetting.PpType]: 0 | 1 | 2;
     [WaterproofSetting.VisibilityOfHypotheses]: HypVisibility;
     [WaterproofSetting.TraceServer]: "off" | "messages" | "verbose";
     [WaterproofSetting.Debug]: boolean;

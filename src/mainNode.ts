@@ -1,8 +1,9 @@
-import { ExtensionContext, WorkspaceConfiguration } from "vscode";
+import { ExtensionContext } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 import { Waterproof } from "./extension";
 import { CoqLspClient } from "./lsp-client/client";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
+import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
 
 /**
  * This function is responsible for creating lsp clients with the extended
@@ -12,10 +13,10 @@ import { CoqLspClientFactory } from "./lsp-client/clientTypes";
  * @param wsConfig the workspace configuration of Waterproof
  * @returns an LSP client with the added functionality of `CoqFeatures`
  */
-const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOptions: LanguageClientOptions, wsConfig: WorkspaceConfiguration) => {
+const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOptions: LanguageClientOptions) => {
     const serverOptions: ServerOptions = {
-        command: wsConfig.path,
-        args: wsConfig.args,
+        command: WaterproofConfigHelper.get(WaterproofSetting.Path),
+        args: WaterproofConfigHelper.get(WaterproofSetting.Args),
     };
     return new (CoqLspClient(LanguageClient))(
         "waterproof",

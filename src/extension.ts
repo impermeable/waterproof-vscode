@@ -189,7 +189,7 @@ export class Waterproof implements Disposable {
                 case "aix": defaultValue = undefined; break;
                 case "android": defaultValue = undefined; break;
                 // MACOS
-                case "darwin": defaultValue = "/Applications/Waterproof_Background.app/Contents/Resources/bin/coq-lsp"; break;
+                case "darwin": defaultValue = "coq-lsp"; break;
                 case "freebsd": defaultValue = undefined; break;
                 case "haiku": defaultValue = undefined; break;
                 // LINUX
@@ -218,31 +218,8 @@ export class Waterproof implements Disposable {
             }
         });
 
-        this.registerCommand("defaultArgsMac", () => {
-            // If we are not on a mac platform, this is a no-op.
-            // if (process.platform !== "darwin") { window.showErrorMessage("Waterproof: This setting should only be used on Mac platforms."); return; }
-
-            const defaultArgs = [
-                "--ocamlpath=/Applications/Waterproof_Background.app/Contents/Resources/lib",
-                "--coqcorelib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq-core",
-                "--coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq"
-            ];
-            try {
-                workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
-                    setTimeout(() => {
-                        wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
-
-                        window.showInformationMessage(`Waterproof args setting succesfully updated!`);
-                    }, 100);
-                });
-            } catch (e) {
-                console.error("Error in updating Waterproof.args setting:", e);
-            }
-        });
-
         this.registerCommand("autoInstall", async () => {
             commands.executeCommand(`waterproof.defaultPath`);
-            commands.executeCommand(`waterproof.setDefaultArgsWin`);
 
             const windowsInstallationScript = `echo Begin Waterproof dependency software installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/wp-3.0.0%2B9.0/Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
             // TODO: this may need to be determined in a better way
@@ -305,26 +282,6 @@ export class Waterproof implements Disposable {
                 resolve(true)
             });
         });
-    }
-
-    /**
-     * Sets the default args for the Waterproof extension on Windows, for when the installer is used with the default location
-     */
-    private async setDefaultArgsWin() : Promise<void> {
-        const defaultArgs = [
-            "--ocamlpath=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib",
-            "--coqcorelib=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib\\coq-core",
-            "--coqlib=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib\\coq"
-        ];
-        try {
-            workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
-                setTimeout(() => {
-                    wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
-                }, 100);
-            });
-        } catch (e) {
-            console.error("Error in updating Waterproof.args setting:", e);
-        }
     }
 
     private async waterproofTutorialCommand(): Promise<void> {

@@ -131,10 +131,6 @@
         "title": "Waterproof: Automatically installs all required libraries."
       },
       {
-        "command": "waterproof.setDefaultArgsWin",
-        "title": "Waterproof: Set default arguments for Windows"
-      },
-      {
         "command": "waterproof.toggleInEditorLineNumbers",
         "title": "Toggle line numbers displayed in editor",
         "category": "Waterproof"
@@ -264,18 +260,6 @@
             ],
             "media": {
               "markdown": "walkthrough-data/initial-setup/change-setting-path-linux.md"
-            }
-          },
-          {
-            "title": "Configuring Waterproof Settings (Args)",
-            "when": "isMac",
-            "id": "configure-settings-args-mac",
-            "description": "Change the [Waterproof.Args](command:waterproof.argsSetting) setting.\n[Use Default](command:waterproof.defaultArgsMac)\n[Change Setting](command:waterproof.argsSetting)",
-            "completionEvents": [
-              "onSettingChanged:waterproof.args"
-            ],
-            "media": {
-              "markdown": "walkthrough-data/initial-setup/change-setting-args.md"
             }
           },
           {

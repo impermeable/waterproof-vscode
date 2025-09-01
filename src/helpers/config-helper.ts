@@ -84,7 +84,7 @@ export class WaterproofConfigHelper {
 
     /** `waterproof.ppType` */
     static get ppType() {
-        return config().get<number>("ppType") as number;
+        return config().get<number>("ppType") as 0 | 1 | 2;
     }
 
 

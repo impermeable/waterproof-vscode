@@ -164,7 +164,7 @@
         "label": "It holds that (*statement*).",
         "type": "type",
         "detail": "tactic",
-        "template": "It holds tht (${0 = 0}).${}",
+        "template": "It holds that ${0 = 0}.${}",
         "description": "Tries to automatically prove (*statement*). If that works, (*statement*) is added as a hypothesis.",
         "example": "Lemma example_it_holds_that :\n  ∀ ε > 0,\n    4 - Rmax(ε,1) ≤ 3.\n    \nProof.\nTake ε > 0.\nIt holds that Rmax(ε,1) ≥ 1.\nWe conclude that 4 - Rmax(ε,1) ≤ 3.\nQed.",
         "boost": 2

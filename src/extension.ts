@@ -217,8 +217,6 @@ export class Waterproof implements Disposable {
                 }
             }
         });
-        // No longer necessary
-        //this.registerCommand("setDefaultArgsWin", () => this.setDefaultArgsWin());
 
         this.registerCommand("defaultArgsMac", () => {
             // If we are not on a mac platform, this is a no-op.

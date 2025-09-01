@@ -304,7 +304,7 @@
         "walkThrough.embeddedEditorBackground": "#eceeff",
         "textLink.foreground": "#6183bb",
         "textLink.activeForeground": "#7dcfff",
-        "textPreformat.foreground": "#9699a8",
+        "textPreformat.foreground": "#56585e",
         "textBlockQuote.background": "#eceeff",
         "textCodeBlock.background": "#aab0d3",
         "textSeparator.foreground": "#363b54",

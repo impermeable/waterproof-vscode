@@ -1,5 +1,4 @@
-import { Completion } from "@codemirror/autocomplete";
-import { Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
+import { DiagnosticSeverity, Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
@@ -10,14 +9,15 @@ import {
 } from "vscode-languageclient";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
-import { MessageType, OffsetDiagnostic, QedStatus, SimpleProgressParams } from "../../shared";
+import { MessageType } from "../../shared";
 import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
-import { WaterproofConfigHelper } from "../helpers";
+import { WaterproofConfigHelper, WaterproofLogger as wpl } from "../helpers";
+import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity, WaterproofCompletion } from "waterproof-editor";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -26,6 +26,15 @@ interface TimeoutDisposable extends Disposable {
 // Seems to be needed for the mixin class below
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
+
+function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
+    switch (severity) {
+        case DiagnosticSeverity.Error: return Severity.Error;
+        case DiagnosticSeverity.Warning: return Severity.Warning;
+        case DiagnosticSeverity.Information: return Severity.Information;
+        case DiagnosticSeverity.Hint: return Severity.Hint;
+    }
+}
 
 /**
  * The following function allows for a Mixin i.e. we can add the interface
@@ -60,7 +69,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         constructor(...args: any[]) { 
             super(...args);
             this.sentenceManager = new SentenceManager();
-
+            wpl.debug("CoqLspClient constructor");
             // forward progress notifications to editor
             this.fileProgressComponents.push({
                 dispose() { /* noop */ },
@@ -100,11 +109,13 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 const diagnostics = (diagnostics_ as WpDiagnostic[]);
                 const document = this.activeDocument;
                 if (!document) return;
+
+                
                 const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
                     if (this.detailedErrors) {
                         return {
                             message:        d.message,
-                            severity:       d.severity,
+                            severity:       vscodeSeverityToWaterproof(d.severity),
                             startOffset:    document.offsetAt(d.range.start),
                             endOffset:      document.offsetAt(d.range.end)
                         };
@@ -121,14 +132,14 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                             );
                             return {
                                 message:        d.message,
-                                severity:       d.severity,
+                                severity:       vscodeSeverityToWaterproof(d.severity),
                                 startOffset:    document.offsetAt(newStart),
                                 endOffset:      document.offsetAt(newEnd)
                             };
                         } else {
                             return {
                                 message:        d.message,
-                                severity:       d.severity,
+                                severity:       vscodeSeverityToWaterproof(d.severity),
                                 startOffset:    document.offsetAt(d.range.start),
                                 endOffset:      document.offsetAt(d.range.end)
                             };
@@ -184,7 +195,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
 
             // for each input area, check the proof status
-            let statuses: QedStatus[];
+            let statuses: InputAreaStatus[];
             try {
                 statuses = await Promise.all(inputAreas.map(a =>
                     determineProofStatus(this, document, a)
@@ -234,6 +245,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         }
 
         async requestGoals(params?: GoalRequest | Position): Promise<GoalAnswer<PpString>> {
+            wpl.debug(`Requesting goals with params: ${JSON.stringify(params)}`);
             if (!params || "line" in params) {  // if `params` is not a `GoalRequest` ...
                 params ??= this.activeCursorPosition;
                 if (!this.activeDocument || !params) {
@@ -241,6 +253,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
                 params = this.createGoalsRequestParameters(this.activeDocument, params);
             }
+            wpl.debug(`Sending request for goals`);
             return this.sendRequest(goalRequestType, params);
         }
 
@@ -292,10 +305,11 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
 
             // convert symbols to completions
-            const completions: Completion[] = symbols.map(s => ({
+            const completions: WaterproofCompletion[] = symbols.map(s => ({
                 label:  s.name,
-                detail: s.detail?.toLowerCase(),
-                type:   "variable"
+                detail: s.detail?.toLowerCase() ?? "",
+                type:   "variable",
+                template: s.name
             }));
 
             // send completions to (all code blocks in) the document's editor (not cached!)

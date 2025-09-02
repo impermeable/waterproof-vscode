@@ -2,9 +2,9 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.18",
-  "requiredCoqLspVersion": "==0.2.2",
-  "requiredCoqWaterproofVersion": "==2.2.0",
+  "version": "0.9.19",
+  "requiredCoqLspVersion": ">=0.2.2",
+  "requiredCoqWaterproofVersion": ">=3.0.0",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",
@@ -326,17 +326,17 @@
             "type": "boolean",
             "default": false,
             "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+          },
+          "waterproof.showMenuItemsInEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
           }
         }
       },
       {
         "title": "Waterproof Use Case",
         "properties": {
-          "waterproof.standardCoqSyntax": {
-            "type": "boolean",
-            "default": false,
-            "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."
-          },
           "waterproof.enforceCorrectNonInputArea": {
             "type": "boolean",
             "default": true,
@@ -398,6 +398,21 @@
               "Use jsCoq's Pp rich layout printer",
               "Coq Layout Engine (experimental)"
             ]
+          },
+          "waterproof.visibilityOfHypotheses": {
+            "type": "string",
+            "default": "none",
+            "enum": [
+              "all",
+              "limited",
+              "none"
+            ],
+            "enumDescriptions": [
+              "Show all hypotheses in the goals panel",
+              "Show only hypotheses not starting with _ in the goals panel",
+              "Do not show any hypotheses in the goals panel"
+            ],
+            "description": "Visibility of hypotheses in the goals panel.\nFor didiactic purposes, we recommend \"none\" for mathematicians learning proofs and \"limited\" or \"all\" for students using the Rocq language."
           }
         }
       },
@@ -480,7 +495,7 @@
     "@eslint/js": "^9.18.0",
     "@lezer/generator": "^1.2.3",
     "@types/glob": "^7.1.1",
-    "@types/jest": "^29.5.1",
+    "@types/jest": "29.1.0",
     "@types/jquery": "^3.5.16",
     "@types/mocha": "^10.0.1",
     "@types/node": "^16.11.7",
@@ -497,11 +512,11 @@
     "eslint": "^9.18.0",
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
-    "jest": "^29.5.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jest": "29.1.0",
+    "jest-environment-jsdom": "29.1.0",
     "mocha": "^10.2.0",
     "prettier": "^2.8.1",
-    "ts-jest": "^29.1.0",
+    "ts-jest": "29.1.0",
     "typescript": "^5.1.3",
     "typescript-eslint": "^8.20.0",
     "vscode-extension-tester": "^5.6.0"
@@ -519,6 +534,7 @@
     "@types/markdown-it": "12.2.3",
     "@vscode/webview-ui-toolkit": "1.4.0",
     "eventemitter2": "6.4.9",
+    "events": "3.3.0",
     "jquery": "3.7.1",
     "katex": "0.16.11",
     "markdown-it": "13.0.2",
@@ -539,7 +555,9 @@
     "react-tooltip": "5.28.0",
     "throttle-debounce": "5.0.2",
     "vscode-languageclient": "8.1.0",
-    "vscode-languageserver-types": "3.17.5"
+    "vscode-languageserver-types": "3.17.5",
+    "vscode-uri": "3.1.0",
+    "waterproof-editor": "github:impermeable/waterproof-editor#main"
   },
   "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"
@@ -551,14 +569,15 @@
     "esbuild": "node esbuild.mjs",
     "typecheck": "tsc -b",
     "compile": "npm run esbuild",
-    "watch": "npm run lezer-generator && npm run esbuild -- --watch",
+    "watch": "npm run esbuild -- --watch",
     "test-package": "node_modules/.bin/vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
     "package": "npm run clean && npm run test-package",
     "unit-tests": "npx jest",
-    "lezer-generator": "npx lezer-generator ./editor/src/kroqed-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/kroqed-editor/codeview/lang-pack/syntax.ts",
+    "lezer-generator": "npx lezer-generator ./editor/src/waterproof-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/waterproof-editor/codeview/lang-pack/syntax.ts",
     "cypress-tests": "npx cypress run",
     "lint": "npx eslint .",
-    "lint-fix": "npx eslint . --fix"
+    "lint-fix": "npx eslint . --fix",
+    "test": "npm run unit-tests && npm run cypress-tests"
   }
 }

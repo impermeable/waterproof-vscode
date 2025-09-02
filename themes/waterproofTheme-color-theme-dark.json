@@ -1,5 +1,6 @@
 {
-	  "name": "Waterproof dark theme",
+    "$schema": "vscode://schemas/color-theme",
+    "name": "Waterproof dark theme",
     "type": "dark",
     "semanticTokenColors": {
         "parameter.declaration": {
@@ -158,8 +159,8 @@
         "editor.selectionHighlightBackground": "#8b8b8b",
 
         "editorCursor.foreground": "#8b8b8b",
-        "editorIndentGuide.background": "#1e202e",
-        "editorIndentGuide.activeBackground": "#363b54",
+        "editorIndentGuide.background1": "#1e202e",
+        "editorIndentGuide.activeBackground1": "#363b54",
         "editorLineNumber.foreground": "#737aa2",
         "editorLineNumber.activeForeground": "#ffffff",
         "editor.lineHighlightBackground": "#202020",
@@ -345,6 +346,8 @@
         "menu.background":"#505050",
         "menu.selectionForeground":"#ffffff",
         "menu.selectionBackground":"#11184d",
-        "menu.border":"#101014"
+        "menu.border":"#101014",
+
+        "walkthrough.stepTitle.foreground": "#ffffff"
     }
 }

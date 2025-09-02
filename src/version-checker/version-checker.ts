@@ -192,11 +192,12 @@ export class VersionChecker {
      * Inform the user that we could not find the coq-waterproof library.
      */
     private informWaterproofLibNotFound() {
-        const message = `Waterproof\n\nWe could not find a required library.\nUse the button below to download a new installer.`;
-        if (this.platformHasAutoInstaller()){
-            window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+        const message_installer = "Waterproof\n\nWe could not find a required library, in particular the coq-waterproof library.\nUse the button below to download a new installer.";
+        const message_no_installer = "Waterproof\n\nWe could not find a required library, in particular the `coq-waterproof` library.\nFor more information on how to make the waterproof extension work see the installation instructions.";
+        if (this.platformHasAutoInstaller() && env.remoteName === undefined){
+            window.showInformationMessage(message_installer, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleAutoInstallOrInstructions);
         } else {
-            window.showInformationMessage(message, { modal: true }, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
+            window.showInformationMessage(message_no_installer, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleAutoInstallOrInstructions);
         }
     }
 
@@ -208,7 +209,7 @@ export class VersionChecker {
      */
     private informUpdateAvailable(software: string, requirement: VersionRequirement, found: Version) {
         const platform = getPlatformHelper();
-        if (platform == "windows") {
+        if (platform == "windows" && env.remoteName === undefined) {
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to download a new installer.`;
             if (this.platformHasAutoInstaller()){
                 window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
@@ -233,7 +234,7 @@ export class VersionChecker {
     private handleDownloadInstaller(value: typeof AUTO_INSTALL | typeof DOWNLOAD_INSTALLER | undefined) {
         if (value === DOWNLOAD_INSTALLER){
             console.log("DOWNLOAD INSTALLER")
-            env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
+            env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/"));
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
         }
@@ -246,9 +247,9 @@ export class VersionChecker {
         const message_installer = "Waterproof\n\nWaterproof can't find everything it needs to properly function, in particular it doesn't seem to find the `coq-lsp` program.\nTry running the automatic installer, or for more information on how to make the waterproof extension work see the installation instructions.";
         const message_no_installer = "Waterproof\n\nWaterproof can't find everything it needs to properly function, in particular it doesn't seem to find the `coq-lsp` program. For more information on how to make the waterproof extension work see the installation instructions.";
         if (this.platformHasAutoInstaller()){
-            window.showInformationMessage(message_installer, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+            window.showInformationMessage(message_installer, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleAutoInstallOrInstructions);
         } else {
-            window.showInformationMessage(message_no_installer, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+            window.showInformationMessage(message_no_installer, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleAutoInstallOrInstructions);
         }
     }
 
@@ -256,7 +257,7 @@ export class VersionChecker {
      * Handle the options for the invalid waterproof path message.
      * @param value -
      */
-    private handleInvalidPath(value: typeof AUTO_INSTALL | typeof OPEN_INSTRUCTIONS | undefined) {
+    private handleAutoInstallOrInstructions(value: typeof AUTO_INSTALL | typeof OPEN_INSTRUCTIONS | undefined) {
         console.log("Invalid Path Handler")
         if (value === OPEN_INSTRUCTIONS) {
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);

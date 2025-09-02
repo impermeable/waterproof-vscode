@@ -34,10 +34,10 @@ export class VersionChecker {
     }
 
     /**
-     * Run version checks that should happen *before* the extension launches. 
-     * 
+     * Run version checks that should happen *before* the extension launches.
+     *
      * This call should likely be awaited.
-     * 
+     *
      * @returns `Promise<boolean>` where the boolean indicates whether we can start the extension.
      */
     public async prelaunchChecks(): Promise<boolean> {
@@ -50,7 +50,7 @@ export class VersionChecker {
         } else {
 
             this.informWaterproofPathInvalid();
-            
+
             return Promise.resolve(false);
         }
         return Promise.resolve(true);
@@ -92,7 +92,7 @@ export class VersionChecker {
 
     /**
      * Check installed version of coq using coqc.
-     * @returns 
+     * @returns
      */
     public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
@@ -100,32 +100,32 @@ export class VersionChecker {
         const coqcBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "coqc");
         const command = `${coqcBinary} --version`;
         const regex = /version (?<version>\d+\.\d+\.\d+)/g;
-    
+
         try {
             const stdout = await this.exec(command);
             const groups = regex.exec(stdout)?.groups;
             if (!groups) throw new Error("Failed to parse version string.");
             return Version.fromString(groups["version"]);
         } catch (err: unknown) {
-            return err instanceof Error 
+            return err instanceof Error
                 ? { reason: err.message }
                 : { reason: "Unknown error" };
         }
     }
 
     /**
-     * Check the version of coq-waterproof. 
-     * @returns 
+     * Check the version of coq-waterproof.
+     * @returns
      */
     public async checkWaterproofLib(): Promise<{ wpVersion: Version, requiredCoqVersion: Version } | VersionError> {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
         const ext = process.platform === "win32" ? ".exe" : "";
-        
+
         const coqtopPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `coqtop${ext}`);
         wpl.debug(`coqtopPath: ${coqtopPath}`)
         const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
         const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
-    
+
         try {
             const stdout = await this.exec(command);
             const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
@@ -133,7 +133,7 @@ export class VersionChecker {
             const versionRequiredCoq = Version.fromString(reqCoqVersion);
             return { wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq };
         } catch (err: unknown) {
-            return err instanceof Error 
+            return err instanceof Error
                 ? { reason: err.message }
                 : { reason: "Unknown error" };
         }
@@ -146,13 +146,13 @@ export class VersionChecker {
     private async checkLSPBinary(): Promise<Version | VersionError> {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
         const command = `${this._wpPath} --version`;
-    
+
         try {
             const stdout = await this.exec(command);
             const version = Version.fromString(stdout.trim());
             return version;
         } catch (err: unknown) {
-            return err instanceof Error 
+            return err instanceof Error
                 ? { reason: err.message }
                 : { reason: "Unknown error" };
         }
@@ -172,7 +172,7 @@ export class VersionChecker {
                     resolve(stdout);
                 }
             });
-            
+
         });
     }
 
@@ -208,7 +208,7 @@ export class VersionChecker {
      */
     private informUpdateAvailable(software: string, requirement: VersionRequirement, found: Version) {
         const platform = getPlatformHelper();
-        if (platform === "macos" || platform == "windows") {
+        if (platform == "windows") {
             const message = `This version of the Waterproof extension was created with version ${requirement.toEasyString()} of ${software} in mind, but we found ${found.toString()}.\nFor the best possible experience of Waterproof, we recommend using the correct version.\nUse the button below to download a new installer.`;
             if (this.platformHasAutoInstaller()){
                 window.showErrorMessage(message, { modal: true }, AUTO_INSTALL, DOWNLOAD_INSTALLER).then(this.handleDownloadInstaller);
@@ -236,18 +236,19 @@ export class VersionChecker {
             env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-dependencies-installer/releases/latest"));
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
-        } 
+        }
     }
 
     /**
      * Inform the user that the Waterproof path is invalid.
      */
     private informWaterproofPathInvalid() {
-        const message = "Waterproof\n\nWaterproof can't find everything it needs to properly function.\nTry running the automatic installer, or for more information on how to make the waterproof extension work see the installation instructions.";
+        const message_installer = "Waterproof\n\nWaterproof can't find everything it needs to properly function, in particular it doesn't seem to find the `coq-lsp` program.\nTry running the automatic installer, or for more information on how to make the waterproof extension work see the installation instructions.";
+        const message_no_installer = "Waterproof\n\nWaterproof can't find everything it needs to properly function, in particular it doesn't seem to find the `coq-lsp` program. For more information on how to make the waterproof extension work see the installation instructions.";
         if (this.platformHasAutoInstaller()){
-            window.showInformationMessage(message, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+            window.showInformationMessage(message_installer, { modal: true }, AUTO_INSTALL, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
         } else {
-            window.showInformationMessage(message, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
+            window.showInformationMessage(message_no_installer, { modal: true }, OPEN_INSTRUCTIONS).then(this.handleInvalidPath);
         }
     }
 
@@ -261,7 +262,7 @@ export class VersionChecker {
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
-        } 
+        }
     }
 }
 

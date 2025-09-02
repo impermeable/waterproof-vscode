@@ -175,10 +175,11 @@
       {
         "id": "waterproof.auto",
         "title": "Waterproof Automatic Setup",
-        "description": "Automatic installation for all dependencies to get up and running with Waterproof",
+        "description": "Automatic installation for all dependencies to get up and running with Waterproof (only available for Windows)",
         "steps": [
           {
             "id": "install-dependencies",
+            "when": "isWindows && !hasRemoteServer",
             "title": "Run Automatic Installer",
             "description": "Waterproof needs additional software to function.\n[Run Automatic Installer](command:waterproof.autoInstall)",
             "completionEvents": [],
@@ -209,21 +210,12 @@
             "id": "download-installer-windows",
             "when": "isWindows && !hasRemoteServer",
             "title": "Downloading the Installer",
-            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
+            "description": "Download the installer using the button below\n[Download the installer](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
             "completionEvents": [
-              "onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"
+              "onLink:https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0"
             ],
             "media": {
               "markdown": "walkthrough-data/initial-setup/download-installer-windows.md"
-            }
-          },
-          {
-            "id": "download-installer-mac",
-            "when": "isMac && !hasRemoteServer",
-            "title": "Downloading the Installer",
-            "description": "Currently only a manual installation is available for Mac, please follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
-            "media": {
-              "markdown": "walkthrough-data/initial-setup/download-installer-mac.md"
             }
           },
           {
@@ -242,7 +234,7 @@
             "title": "Configuring Waterproof Settings (Path)",
             "when": "isMac && !hasRemoteServer",
             "id": "configure-settings-mac",
-            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "If necessary (i.e. if running `which coq-lsp` does not turn up anything when run from a terminal within vscode) change the path to the `coq-lsp` program (you can find this path by running `which coq-lsp` in the terminal in which you installed `coq-lsp`).\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": [
               "onSettingChanged:waterproof.path"
             ],
@@ -254,7 +246,7 @@
             "title": "Configuring Waterproof Settings (Path)",
             "when": "!(isWindows || isMac) || hasRemoteServer",
             "id": "configure-settings-linux",
-            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "If necessary (i.e. if running `which coq-lsp` does not turn up anything when run from a terminal within vscode) change the path to the `coq-lsp` program (you can find this path by running `which coq-lsp` in the terminal in which you installed `coq-lsp`).\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": [
               "onSettingChanged:waterproof.path"
             ],

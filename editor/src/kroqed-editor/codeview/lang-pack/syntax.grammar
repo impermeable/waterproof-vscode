@@ -50,8 +50,7 @@ Sentence {
         "Obtain" space+ "such" space+ "a " TacticInput TacticEnd | 
         "(& " TacticInput " )." | 
         "It" space+ "suffices" space+ "to" space+ "show" space+ "that " TacticInput TacticEnd | 
-        "It" space+ "holds" space+ "that " TacticInput TacticEnd | 
-        "It" space+ "holds" space+ "that " TacticInput TacticEnd | 
+        "It" space+ "holds" space+ "that " TacticInput {TacticLabelAs TacticInput}? TacticEnd | 
         "We" space+ "claim" space+ "that " TacticInput TacticEnd | 
         "We" space+ "use" space+ "induction" space+ "on " TacticInput TacticEnd | 
         "Indeed, " TacticInput TacticEnd |
@@ -61,11 +60,15 @@ Sentence {
         // Multi Input Tactics
         "Expand" space+ "the" space+ "definition" space+ "of " TacticInput TacticMiddleExpand TacticInput TacticEnd | 
         "Obtain " TacticInput TacticMiddleObtain TacticInput TacticEnd | 
-        "By " TacticInput TacticMiddleByOrSince TacticInput TacticEnd | 
+        "By " TacticInput TacticMiddleByOrSince TacticInput {TacticLabelAs TacticInput}? TacticEnd | 
         "Define " TacticInput TacticMiddleDefine TacticInput TacticEnd | 
         "Since " TacticInput TacticMiddleByOrSince TacticInput TacticEnd | 
-        "Because " TacticInput TacticMiddleBecauseFirst TacticInput TacticMiddleBecauseSecond TacticInput TacticEnd | 
-        "Either " TacticInput TacticMiddleEither TacticInput TacticEnd
+        "Because " TacticInput TacticMiddleBecauseFirst TacticInput {TacticLabelAs TacticInput}? TacticMiddleBecauseSecond TacticInput {TacticLabelAs TacticInput}? TacticEnd | 
+        "Either " TacticInput TacticMiddleEither TacticInput TacticEnd |
+        "We" space+ "need" space+ "to" space+ "verify" space+ "that " TacticInput TacticEnd | 
+        "By" space+ "magic" space+ "it" space+ "holds" space+ "that " TacticInput {TacticLabelAs TacticInput}? TacticEnd |
+        "By" space+ "magic" space+ "we" space+ "conclude" space+ "that " TacticInput TacticEnd |  
+        "By" space+ "magic" space+ "it" space+ "suffices" space+ "to" space+ "show" space+ "that " TacticInput TacticEnd 
     }
 }
 

@@ -80,7 +80,7 @@
 
         "dropdown.foreground": "#787c99",
         "dropdown.background": "#ffffff",
-        "dropdown.listBackground": "#14141b",
+        "dropdown.listBackground": "#ffffff",
 
         "activityBar.background": "#2b3990",
         "activityBar.foreground": "#ffffff",
@@ -304,7 +304,7 @@
         "walkThrough.embeddedEditorBackground": "#eceeff",
         "textLink.foreground": "#6183bb",
         "textLink.activeForeground": "#7dcfff",
-        "textPreformat.foreground": "#9699a8",
+        "textPreformat.foreground": "#000000",
         "textBlockQuote.background": "#eceeff",
         "textCodeBlock.background": "#aab0d3",
         "textSeparator.foreground": "#363b54",

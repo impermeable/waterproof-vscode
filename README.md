@@ -2,6 +2,10 @@
 
 The Waterproof vscode extension helps students learn how to write mathematical proofs.
 
+1. [Automatic Installation](#quick-install-instructions-for-windows)
+2. [Manual Installation](#more-extensive-installation-instructions)
+3. [Getting Started](#getting-started)
+
 # Quick install instructions for Windows
 
 Install this extension and follow the installation instructions that pop up.
@@ -104,9 +108,7 @@ If vscode cannot detect the installation, set the coq-lsp path to the output of 
 using ctrl+shift+p and selecting "Waterproof: Change Waterproof path".
 Alternatively, make sure that the `PATH` available to vscode contains the coq-lsp binary.
 
-## Manual Installation on Mac
-
-If the above method did not work for Mac, it is possible to instead install the dependencies manually using opam.
+## Installation on Mac
 
 ### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
 
@@ -132,3 +134,14 @@ eval $(opam env)
 opam install coq-lsp.0.2.2+8.17
 opam install coq-waterproof
 ```
+
+# Getting Started
+
+### Tutorial
+To get started with Waterproof, we recommend going through the tutorial. The tutorial can be accessed in VS Code by pressing `Ctrl-Shift-P` (this opens the command palette), typing `open tutorial` until you find the option `Waterproof: Open Tutorial`.
+
+### Tactics
+Waterproof makes use of 'tactics', information on the available tactics, together with explanations and examples can be accessed via the extension or through the repository:
+
+* From the Waterproof extension: Navigate to the Waterproof sidebar (accessible via the droplet icon on the left) and click on the `Tactics` button. The panel that now opens shows all available tactics.
+* From the repository: The repository contains a [Markdown](/docs/tactics-sheet.md) version of the tactics sheet.

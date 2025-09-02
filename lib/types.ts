@@ -143,3 +143,9 @@ export interface DocumentPerfParams {
     summary: string;
     timings: SentencePerfParams[];
 }
+
+export enum HypVisibility {
+  All = "all",
+  Limited = "limited",
+  None = "none"
+}

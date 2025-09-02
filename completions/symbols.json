@@ -1,0 +1,854 @@
+[
+    {
+        "label": "\\alpha",
+        "type": "symbol",
+        "apply": "α",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\beta",
+        "type": "symbol",
+        "apply": "β",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\gamma",
+        "type": "symbol",
+        "apply": "γ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\delta",
+        "type": "symbol",
+        "apply": "δ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\epsilon",
+        "type": "symbol",
+        "apply": "ε",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\zeta",
+        "type": "symbol",
+        "apply": "ζ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\eta",
+        "type": "symbol",
+        "apply": "η",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\theta",
+        "type": "symbol",
+        "apply": "θ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\iota",
+        "type": "symbol",
+        "apply": "ι",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\kappa",
+        "type": "symbol",
+        "apply": "κ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\lambda",
+        "type": "symbol",
+        "apply": "λ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\mu",
+        "type": "symbol",
+        "apply": "μ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\nu",
+        "type": "symbol",
+        "apply": "ν",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\ksi",
+        "type": "symbol",
+        "apply": "ξ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\pi",
+        "type": "symbol",
+        "apply": "π",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\omikron",
+        "type": "symbol",
+        "apply": "ο",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\rho",
+        "type": "symbol",
+        "apply": "ρ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\sigma1",
+        "type": "symbol",
+        "apply": "ς",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\sigma2",
+        "type": "symbol",
+        "apply": "σ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\tau",
+        "type": "symbol",
+        "apply": "τ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\upsilon",
+        "type": "symbol",
+        "apply": "υ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\phi1",
+        "type": "symbol",
+        "apply": "ϕ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\phi2",
+        "type": "symbol",
+        "apply": "φ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\chi",
+        "type": "symbol",
+        "apply": "χ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\psi",
+        "type": "symbol",
+        "apply": "ψ",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\omega",
+        "type": "symbol",
+        "apply": "ω",
+        "symbolPanelCategory": 0
+    },
+    {
+        "label": "\\Alpha",
+        "type": "symbol",
+        "apply": "Α",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Beta",
+        "type": "symbol",
+        "apply": "Β",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Gamma",
+        "type": "symbol",
+        "apply": "Γ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Delta",
+        "type": "symbol",
+        "apply": "Δ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Epsilon",
+        "type": "symbol",
+        "apply": "Ε",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Zeta",
+        "type": "symbol",
+        "apply": "Ζ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Eta",
+        "type": "symbol",
+        "apply": "Η",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Theta",
+        "type": "symbol",
+        "apply": "Θ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Iota",
+        "type": "symbol",
+        "apply": "Ι",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Kappa",
+        "type": "symbol",
+        "apply": "Κ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Lambda",
+        "type": "symbol",
+        "apply": "Λ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Mu",
+        "type": "symbol",
+        "apply": "Μ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Nu",
+        "type": "symbol",
+        "apply": "Ν",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Ksi",
+        "type": "symbol",
+        "apply": "Ξ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Omicron",
+        "type": "symbol",
+        "apply": "Ο",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Pi",
+        "type": "symbol",
+        "apply": "Π",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Rho",
+        "type": "symbol",
+        "apply": "Ρ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Sigma",
+        "type": "symbol",
+        "apply": "Σ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Tau",
+        "type": "symbol",
+        "apply": "Τ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Upsilon",
+        "type": "symbol",
+        "apply": "Υ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Phi",
+        "type": "symbol",
+        "apply": "Φ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Chi",
+        "type": "symbol",
+        "apply": "Χ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Psi",
+        "type": "symbol",
+        "apply": "Ψ",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\Omega",
+        "type": "symbol",
+        "apply": "Ω",
+        "symbolPanelCategory": 1
+    },
+    {
+        "label": "\\forall",
+        "type": "symbol",
+        "apply": "∀",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\exists",
+        "type": "symbol",
+        "apply": "∃",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\in",
+        "type": "symbol",
+        "apply": "∈",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\not-in",
+        "type": "symbol",
+        "apply": "∉",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\QED",
+        "type": "symbol",
+        "apply": "∎",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\infty",
+        "type": "symbol",
+        "apply": "∞",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\and",
+        "type": "symbol",
+        "apply": "∧",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\or",
+        "type": "symbol",
+        "apply": "∨",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\abs",
+        "type": "symbol",
+        "apply": "∣",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\intersection",
+        "type": "symbol",
+        "apply": "∩",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\union",
+        "type": "symbol",
+        "apply": "∪",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\bigintersection",
+        "type": "symbol",
+        "apply": "⋂",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\bigunion",
+        "type": "symbol",
+        "apply": "⋃",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\empty-set",
+        "type": "symbol",
+        "apply": "∅",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\subset",
+        "type": "symbol",
+        "apply": "⊂",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\subseteq",
+        "type": "symbol",
+        "apply": "⊆",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\less-or-equal",
+        "type": "symbol",
+        "apply": "≤",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\leq",
+        "type": "symbol",
+        "apply": "≤",
+        "symbolPanelCategory": 99
+    },
+    {
+        "label": "\\greater-or-equal",
+        "type": "symbol",
+        "apply": "≥",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\geq",
+        "type": "symbol",
+        "apply": "≥",
+        "symbolPanelCategory": 99
+    },
+    {
+        "label": "\\not-equal",
+        "type": "symbol",
+        "apply": "≠",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\neq",
+        "type": "symbol",
+        "apply": "≠",
+        "symbolPanelCategory": 99
+    },
+    {
+        "label": "\\not",
+        "type": "symbol",
+        "apply": "¬",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\circle-plus",
+        "type": "symbol",
+        "apply": "⊕",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\circle-times",
+        "type": "symbol",
+        "apply": "⊗",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\arrow-left",
+        "type": "symbol",
+        "apply": "←",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\arrow-up",
+        "type": "symbol",
+        "apply": "⬆",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\arrow-right",
+        "type": "symbol",
+        "apply": "→",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\to",
+        "type": "symbol",
+        "apply": "→",
+        "symbolPanelCategory": 99
+    },
+    {
+        "label": "\\arrow-down",
+        "type": "symbol",
+        "apply": "↓",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\arrow-map",
+        "type": "symbol",
+        "apply": "↦",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\arrow-left-right",
+        "type": "symbol",
+        "apply": "↔",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\implies",
+        "type": "symbol",
+        "apply": "⇒",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\implies-left",
+        "type": "symbol",
+        "apply": "⇐",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\implies-right",
+        "type": "symbol",
+        "apply": "⇒",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\implies-left-right",
+        "type": "symbol",
+        "apply": "⇔",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\converges",
+        "type": "symbol",
+        "apply": "⟶",
+        "symbolPanelCategory": 3
+    },
+    {
+        "label": "\\naturals",
+        "type": "symbol",
+        "apply": "ℕ",
+        "symbolPanelCategory": 4
+    },
+    {
+        "label": "\\integers",
+        "type": "symbol",
+        "apply": "ℤ",
+        "symbolPanelCategory": 4
+    },
+    {
+        "label": "\\rationals",
+        "type": "symbol",
+        "apply": "ℚ",
+        "symbolPanelCategory": 4
+    },
+    {
+        "label": "\\reals",
+        "type": "symbol",
+        "apply": "ℝ",
+        "symbolPanelCategory": 4
+    },
+    {
+        "label": "\\complex-numbers",
+        "type": "symbol",
+        "apply": "ℂ",
+        "symbolPanelCategory": 4
+    },
+    {
+        "label": "\\contradiction",
+        "type": "symbol",
+        "apply": "↯",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\degree",
+        "type": "symbol",
+        "apply": "°",
+        "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\^1",
+        "type": "symbol",
+        "apply": "¹",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^2",
+        "type": "symbol",
+        "apply": "²",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^3",
+        "type": "symbol",
+        "apply": "³",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^4",
+        "type": "symbol",
+        "apply": "⁴",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^5",
+        "type": "symbol",
+        "apply": "⁵",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^6",
+        "type": "symbol",
+        "apply": "⁶",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^7",
+        "type": "symbol",
+        "apply": "⁷",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^8",
+        "type": "symbol",
+        "apply": "⁸",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^9",
+        "type": "symbol",
+        "apply": "⁹",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^-",
+        "type": "symbol",
+        "apply": "⁻",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\inv",
+        "type": "symbol",
+        "apply": "⁻¹",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\^0",
+        "type": "symbol",
+        "apply": "⁰",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_1",
+        "type": "symbol",
+        "apply": "₁",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_2",
+        "type": "symbol",
+        "apply": "₂",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_3",
+        "type": "symbol",
+        "apply": "₃",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_4",
+        "type": "symbol",
+        "apply": "₄",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_5",
+        "type": "symbol",
+        "apply": "₅",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_6",
+        "type": "symbol",
+        "apply": "₆",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_7",
+        "type": "symbol",
+        "apply": "₇",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_8",
+        "type": "symbol",
+        "apply": "₈",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_9",
+        "type": "symbol",
+        "apply": "₉",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\_0",
+        "type": "symbol",
+        "apply": "₀",
+        "symbolPanelCategory": 5
+    },
+    {
+        "label": "\\McA",
+        "type": "symbol",
+        "apply": "𝒜",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McB",
+        "type": "symbol",
+        "apply": "ℬ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McC",
+        "type": "symbol",
+        "apply": "𝒞",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McD",
+        "type": "symbol",
+        "apply": "𝒟",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McE",
+        "type": "symbol",
+        "apply": "ℰ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McF",
+        "type": "symbol",
+        "apply": "ℱ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McG",
+        "type": "symbol",
+        "apply": "𝒢",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McH",
+        "type": "symbol",
+        "apply": "ℋ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McI",
+        "type": "symbol",
+        "apply": "ℐ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McJ",
+        "type": "symbol",
+        "apply": "𝒥",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McK",
+        "type": "symbol",
+        "apply": "𝒦",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McL",
+        "type": "symbol",
+        "apply": "ℒ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McM",
+        "type": "symbol",
+        "apply": "ℳ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McN",
+        "type": "symbol",
+        "apply": "𝒩",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McO",
+        "type": "symbol",
+        "apply": "𝒪",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McP",
+        "type": "symbol",
+        "apply": "𝒫",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McQ",
+        "type": "symbol",
+        "apply": "𝒬",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McR",
+        "type": "symbol",
+        "apply": "ℛ",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McS",
+        "type": "symbol",
+        "apply": "𝒮",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McT",
+        "type": "symbol",
+        "apply": "𝒯",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McU",
+        "type": "symbol",
+        "apply": "𝒰",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McV",
+        "type": "symbol",
+        "apply": "𝒱",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McW",
+        "type": "symbol",
+        "apply": "𝒲",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McX",
+        "type": "symbol",
+        "apply": "𝒳",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McY",
+        "type": "symbol",
+        "apply": "𝒴",
+        "symbolPanelCategory": 6
+    },
+    {
+        "label": "\\McZ",
+        "type": "symbol",
+        "apply": "𝒵",
+        "symbolPanelCategory": 6
+    }
+]

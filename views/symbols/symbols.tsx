@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { MessageType } from '../../shared';
 import "../styles/info.css";
 // Get the button data
-import data from "../../shared/completions/symbols.json";
+import data from "../../completions/symbols.json";
 
 const vscode = acquireVsCodeApi();
 
@@ -62,6 +62,7 @@ export function Symbols() {
     const arrowButtons = generateButtons(3);
     const numberButtons = generateButtons(4);
     const supSubButtons = generateButtons(5);
+    const calligraphicButtons = generateButtons(6);
 
     return (
         <div className="info-panel-container">
@@ -78,6 +79,13 @@ export function Symbols() {
             </div>
             <div>
                 {capitalButtons}
+            </div>
+            <VSCodeDivider />
+            <div id="view-6">
+                <p>Calligraphic Letters</p>
+            </div>
+            <div>
+                {calligraphicButtons}
             </div>
             <VSCodeDivider />
             {/* Math symbol buttons */}

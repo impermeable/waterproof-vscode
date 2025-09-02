@@ -2,8 +2,16 @@
 
 The Waterproof vscode extension helps students learn how to write mathematical proofs.
 
-1. [Automatic Installation](#quick-install-instructions-for-windows)
-2. [Manual Installation](#more-extensive-installation-instructions)
+1. [Automatic Installation on Windows](#automatic-installation-instructions-for-windows)
+2. [Manual Installation](#installation-on-other-platforms-and-instructions-for-manual-installation)
+
+    a. [Installation on Linux](#installation-on-linux)
+
+    b. [Installation on Mac](#installation-on-mac)
+
+    c. [Manual installation on Windows with installer](#manual-installation-on-windows-with-installer)
+
+    d. [Manual installation on Windows with WSL](#manual-installation-on-windows-with-wsl)
 3. [Getting Started](#getting-started)
 
 # Automatic installation instructions for Windows

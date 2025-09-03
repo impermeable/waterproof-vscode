@@ -234,7 +234,7 @@
             "title": "Configuring Waterproof Settings (Path)",
             "when": "isMac && !hasRemoteServer",
             "id": "configure-settings-mac",
-            "description": "If necessary (i.e. if running `which coq-lsp` does not turn up anything when run from a terminal within vscode) change the path to the `coq-lsp` program (you can find this path by running `which coq-lsp` in the terminal in which you installed `coq-lsp`).\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "If necessary (i.e. Waterproof does not start) change the path to the `coq-lsp` program (you can find this path by running `which coq-lsp` in the terminal in which you installed `coq-lsp`).\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": [
               "onSettingChanged:waterproof.path"
             ],
@@ -246,7 +246,7 @@
             "title": "Configuring Waterproof Settings (Path)",
             "when": "!(isWindows || isMac) || hasRemoteServer",
             "id": "configure-settings-linux",
-            "description": "If necessary (i.e. if running `which coq-lsp` does not turn up anything when run from a terminal within vscode) change the path to the `coq-lsp` program (you can find this path by running `which coq-lsp` in the terminal in which you installed `coq-lsp`).\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "If necessary (i.e. if Waterproof does not start) change the path to the `coq-lsp` program (you can find this path by running `which coq-lsp` in the terminal in which you installed `coq-lsp`).\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": [
               "onSettingChanged:waterproof.path"
             ],

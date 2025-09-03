@@ -2,19 +2,74 @@
 
 The Waterproof vscode extension helps students learn how to write mathematical proofs.
 
-1. [Automatic Installation](#quick-install-instructions-for-windows)
-2. [Manual Installation](#more-extensive-installation-instructions)
+1. [Automatic Installation on Windows](#automatic-installation-instructions-for-windows)
+2. [Manual Installation](#installation-on-other-platforms-and-instructions-for-manual-installation)
+
+    a. [Installation on Linux](#installation-on-linux)
+
+    b. [Installation on Mac](#installation-on-mac)
+
+    c. [Manual installation on Windows with installer](#manual-installation-on-windows-with-installer)
+
+    d. [Manual installation on Windows with WSL](#manual-installation-on-windows-with-wsl)
 3. [Getting Started](#getting-started)
 
-# Quick install instructions for Windows
+# Automatic installation instructions for Windows
 
 Install this extension and follow the installation instructions that pop up.
 
 ---
 
-# More extensive installation instructions
+# Installation on other platforms and instructions for manual installation
 
-## Installation on Windows
+## Installation on Linux
+
+### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
+
+### Step 2: Install the coq-lsp and coq-waterproof plugins
+
+In a terminal, execute the following lines
+
+```
+apt-get install opam
+opam init
+eval $(opam env)
+opam install coq-lsp.0.2.3+9.0
+opam install coq-waterproof
+```
+
+If vscode cannot detect the installation, set the coq-lsp path to the output of `which coq-lsp`. This can be done
+using ctrl+shift+p and selecting "Waterproof: Change Waterproof path".
+Alternatively, make sure that the `PATH` available to vscode contains the coq-lsp binary.
+
+## Installation on Mac
+
+### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
+
+### Step 2: Install the coq-lsp and coq-waterproof plugins
+
+If you use homebrew, first install opam by executing the following lines in a terminal
+
+```
+brew install gpatch
+brew install opam
+```
+
+If you prefer MacPorts, instead run
+```
+port install opam
+```
+
+Then execute
+
+```
+opam init
+eval $(opam env)
+opam install coq-lsp.0.2.3+9.0
+opam install coq-waterproof
+```
+
+## Manual installation on Windows with installer
 
 ### Step 1: Dependencies installer
 Download and execute the bundled installer `Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0)
@@ -36,7 +91,7 @@ In the case that a different file location was used for the installation, find t
 
 
 
-## Installation on Windows with WSL
+## Manual installation on Windows with WSL
 
 If the above method did not work for Windows, it is possible to instead install the dependencies and run the Waterproof vscode extension using WSL
 
@@ -85,55 +140,6 @@ Alternatively, one navigate to a folder in WSL itself, and type `code .` to open
 ### Step 4: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
 
 From this page in vscode, you can just click on the "Install" button.
-
-
-
-## Installation on Linux
-
-### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
-
-### Step 2: Install the coq-lsp and coq-waterproof plugins
-
-In a terminal, execute the following lines
-
-```
-apt-get install opam
-opam init
-eval $(opam env)
-opam install coq-lsp.0.2.3+9.0
-opam install coq-waterproof
-```
-
-If vscode cannot detect the installation, set the coq-lsp path to the output of `which coq-lsp`. This can be done
-using ctrl+shift+p and selecting "Waterproof: Change Waterproof path".
-Alternatively, make sure that the `PATH` available to vscode contains the coq-lsp binary.
-
-## Installation on Mac
-
-### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
-
-### Step 2: Install the coq-lsp and coq-waterproof plugins
-
-If you use homebrew, first install opam by executing the following lines in a terminal
-
-```
-brew install gpatch
-brew install opam
-```
-
-If you prefer MacPorts, instead run
-```
-port install opam
-```
-
-Then execute
-
-```
-opam init
-eval $(opam env)
-opam install coq-lsp.0.2.3+9.0
-opam install coq-waterproof
-```
 
 # Getting Started
 

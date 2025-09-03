@@ -156,7 +156,7 @@
         "editor.rangeHighlightBackground": "#8b8b8b",
         "editor.wordHighlightBackground": "#8b8b8b",
         "editor.wordHighlightStrongBackground": "#8b8b8b",
-        "editor.selectionHighlightBackground": "#8b8b8b",
+        "editor.selectionHighlightBackground": "#55555579",
 
         "editorCursor.foreground": "#8b8b8b",
         "editorIndentGuide.background1": "#1e202e",

@@ -118,7 +118,7 @@ export class Waterproof implements Disposable {
                 this.client.activeCursorPosition = undefined;
                 this.webviewManager.open("goals");
                 for (const g of this.goalsComponents) g.updateGoals(undefined);
-    
+
             }
 
         });
@@ -189,7 +189,7 @@ export class Waterproof implements Disposable {
                 case "aix": defaultValue = undefined; break;
                 case "android": defaultValue = undefined; break;
                 // MACOS
-                case "darwin": defaultValue = "/Applications/Waterproof_Background.app/Contents/Resources/bin/coq-lsp"; break;
+                case "darwin": defaultValue = "coq-lsp"; break;
                 case "freebsd": defaultValue = undefined; break;
                 case "haiku": defaultValue = undefined; break;
                 // LINUX
@@ -197,7 +197,7 @@ export class Waterproof implements Disposable {
                 case "openbsd": defaultValue = undefined; break;
                 case "sunos": defaultValue = undefined; break;
                 // WINDOWS
-                case "win32": defaultValue = "C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\bin\\coq-lsp.exe"; break;
+                case "win32": defaultValue = "C:\\waterproof_dependencies\\opam\\wp-3.0.0+9.0\\bin\\coq-lsp.exe"; break;
                 case "cygwin": defaultValue = undefined; break;
                 case "netbsd": defaultValue = undefined; break;
             }
@@ -217,36 +217,13 @@ export class Waterproof implements Disposable {
                 }
             }
         });
-        this.registerCommand("setDefaultArgsWin", () => this.setDefaultArgsWin());
-
-        this.registerCommand("defaultArgsMac", () => {
-            // If we are not on a mac platform, this is a no-op.
-            // if (process.platform !== "darwin") { window.showErrorMessage("Waterproof: This setting should only be used on Mac platforms."); return; }
-
-            const defaultArgs = [
-                "--ocamlpath=/Applications/Waterproof_Background.app/Contents/Resources/lib",
-                "--coqcorelib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq-core",
-                "--coqlib=/Applications/Waterproof_Background.app/Contents/Resources/lib/coq"
-            ];
-            try {
-                workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
-                    setTimeout(() => {
-                        wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
-
-                        window.showInformationMessage(`Waterproof args setting succesfully updated!`);
-                    }, 100);
-                });
-            } catch (e) {
-                console.error("Error in updating Waterproof.args setting:", e);
-            }
-        });
 
         this.registerCommand("autoInstall", async () => {
             commands.executeCommand(`waterproof.defaultPath`);
-            commands.executeCommand(`waterproof.setDefaultArgsWin`);
 
-            const windowsInstallationScript = `echo Begin Waterproof Installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v2.2.0%2B8.17/Waterproof-dependencies-installer-v2.2.0+8.17.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
-            const uninstallerLocation = `C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\Uninstall.exe`
+            const windowsInstallationScript = `echo Begin Waterproof dependency software installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/wp-3.0.0%2B9.0/Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
+            // TODO: this may need to be determined in a better way
+            const uninstallerLocation = `C:\\waterproof_dependencies\\.opam\\wp-3.0.0+9.0\\Uninstall.exe`
 
             await this.stopClient();
 
@@ -307,26 +284,6 @@ export class Waterproof implements Disposable {
         });
     }
 
-    /**
-     * Sets the default args for the Waterproof extension on Windows, for when the installer is used with the default location
-     */
-    private async setDefaultArgsWin() : Promise<void> {
-        const defaultArgs = [
-            "--ocamlpath=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib",
-            "--coqcorelib=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib\\coq-core",
-            "--coqlib=C:\\cygwin_wp\\home\\runneradmin\\.opam\\wp\\lib\\coq"
-        ];
-        try {
-            workspace.getConfiguration().update("waterproof.args", defaultArgs, ConfigurationTarget.Global).then(() => {
-                setTimeout(() => {
-                    wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.args.toString());
-                }, 100);
-            });
-        } catch (e) {
-            console.error("Error in updating Waterproof.args setting:", e);
-        }
-    }
-
     private async waterproofTutorialCommand(): Promise<void> {
         const hasWorkspaceOpen = workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length != 0;
         const defaultUri = hasWorkspaceOpen ? Utils.joinPath(workspace.workspaceFolders![0].uri, "waterproof_tutorial.mv") : Uri.parse("./waterproof_tutorial.mv");
@@ -342,11 +299,11 @@ export class Waterproof implements Disposable {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
                         commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-                    });                    
+                    });
                 }, (err) => {
                     window.showErrorMessage("Could not a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
-                    return;                   
+                    return;
                 })
         });
     }
@@ -371,11 +328,11 @@ export class Waterproof implements Disposable {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
                         commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-                    });                    
+                    });
                 }, (err) => {
                     window.showErrorMessage("Could not create a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
-                    return;                   
+                    return;
                 })
         });
     }
@@ -415,7 +372,7 @@ export class Waterproof implements Disposable {
      */
     async initializeClient(): Promise<void> {
         wpl.log("Start of initializeClient");
-        
+
         // Whether the user has decided to skip the launch checks
         const launchChecksDisabled = WaterproofConfigHelper.skipLaunchChecks;
 
@@ -427,7 +384,7 @@ export class Waterproof implements Disposable {
             const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
             const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
             const versionChecker = new VersionChecker(WaterproofConfigHelper.configuration, this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-            
+
             // Check whether we can find coq-lsp
             const foundServer = await versionChecker.prelaunchChecks();
             if (foundServer) {
@@ -472,7 +429,7 @@ export class Waterproof implements Disposable {
                 throw reason;  // keep chain rejected
             }
         );
-        
+
     }
 
     /**
@@ -513,7 +470,7 @@ export class Waterproof implements Disposable {
      * This function gets called on TextEditorSelectionChange events and it requests the goals
      * if needed
      */
-    private async updateGoals(document: TextDocument, position: Position): Promise<void> {  
+    private async updateGoals(document: TextDocument, position: Position): Promise<void> {
         wpl.debug(`Updating goals for document: ${document.uri.toString()} at position: ${position.line}:${position.character}`);
         if (!this.client.isRunning()) {
             wpl.debug("Client is not running, cannot update goals.");
@@ -530,6 +487,7 @@ export class Waterproof implements Disposable {
                 }
             },
             reason => {
+                wpl.debug(`Failed for reason: ${reason}`);
                 for (const g of this.goalsComponents) {
                     wpl.debug(`Failed to update goals component: ${g.constructor.name}`);
                     g.failedGoals(reason);

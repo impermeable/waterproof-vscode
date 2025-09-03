@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import process from "process";
 import * as esbuild from "esbuild";
+import copy from "esbuild-plugin-copy";
 
 let watchConfig = (entry) => {
   return {
@@ -80,7 +81,16 @@ var browser = esbuild
     watch: watch("./src/mainBrowser.ts"),
     loader: {
       ".html": "text",
-    }
+    },
+    plugins: [
+      copy({
+        assets: {
+          from: ['./vendor/*.zip', './vendor/*.bc', './vendor/*.js', './vendor/*.wasm'],
+          to: ['..'],
+        },
+        keepStructure: false,
+      }),
+    ],
   })
   .then(() => {
     console.log("[watch] build finished for ./src/mainBrowser.ts");

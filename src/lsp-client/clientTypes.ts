@@ -155,7 +155,7 @@ export namespace CoqLspServerConfig {
             pp_type: wsConfig.pp_type,
             show_stats_on_hover: wsConfig.show_stats_on_hover,
             send_diags_extra_data: wsConfig.send_diags_extra_data,
-            check_only_on_request: !wsConfig.check_only_on_request
+            check_only_on_request: !wsConfig.ContinuousChecking
         };
     }
 }

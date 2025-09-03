@@ -1,6 +1,6 @@
 {
     "$schema": "vscode://schemas/color-theme",
-    "name": "Waterproof light theme",
+    "name": "Waterproof Light",
     "type": "light",
     "semanticTokenColors": {
         "parameter.declaration": {
@@ -148,7 +148,7 @@
         "editor.foldBackground": "#1111174a",
         "editorLink.activeForeground": "#acb0d0",
 
-        "editor.selectionBackground": "#acb0d0",
+        "editor.selectionBackground": "#acb0d07a",
 
         "editor.findMatchBackground": "#acb0d0",
         "editor.findMatchBorder": "#5561a6",
@@ -165,7 +165,7 @@
         "editorIndentGuide.activeBackground1": "#363b54",
         "editorLineNumber.foreground": "#363b54",
         "editorLineNumber.activeForeground": "#737aa2",
-        "editor.lineHighlightBackground": "#ececec",
+        "editor.lineHighlightBackground": "#b6b6b648",
         "editorWhitespace.foreground": "#363b54",
 
         "editorMarkerNavigation.background": "#000000",

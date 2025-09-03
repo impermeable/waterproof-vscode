@@ -1,7 +1,6 @@
-import { ReplaceAroundStep, ReplaceStep } from "prosemirror-transform";
-import { DocChange, WrappingDocChange } from "../../../../shared";
 import { HtmlTagInfo, OperationType, ParsedStep, StringCell } from "./types";
 import { getEndHtmlTagText, getStartHtmlTagText, getTextOffset, parseFragment } from "./helper-functions";
+import { ReplaceStep, ReplaceAroundStep, DocChange, WrappingDocChange } from "waterproof-editor";
 
 
 
@@ -268,26 +267,20 @@ export class NodeUpdate {
         const newHtmlMapS = new Map<number,HtmlTagInfo>();
         const newMap = new Map<number,StringCell>();
 
-        // @ts-expect-error TODO: Fix this
-        result.firstEdit.startInFile = startHtmlMap.get(step.from)?.offsetText;
-        // @ts-expect-error TODO: Fix this
-        result.firstEdit.endInFile = endHtmlMap.get(step.gapFrom)?.offsetText;
+        result.firstEdit.startInFile = startHtmlMap.get(step.from)!.offsetText;
+        result.firstEdit.endInFile = endHtmlMap.get(step.gapFrom)!.offsetText;
 
-        // @ts-expect-error TODO: Fix this
-        result.secondEdit.startInFile = startHtmlMap.get(step.gapTo)?.offsetText;
-        // @ts-expect-error TODO: Fix this
-        result.secondEdit.endInFile = endHtmlMap.get(step.to)?.offsetText;
+        result.secondEdit.startInFile = startHtmlMap.get(step.gapTo)!.offsetText;
+        result.secondEdit.endInFile = endHtmlMap.get(step.to)!.offsetText;
 
         for (const [key, value] of endHtmlMap) {
             let newkey = key; const newvalue = structuredClone(value);
             if (key == step.gapFrom || key == step.to) continue;
             if (key >= step.gapFrom && key >= step.to) {
-                // @ts-expect-error TODO: Fix this
-                newkey -= 2; newvalue.offsetText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost);
+                newkey -= 2; newvalue.offsetText -= (endHtmlMap.get(step.to)!.textCost + endHtmlMap.get(step.gapFrom)!.textCost);
                 newvalue.offsetProse -= 2;
             } else if(key >= step.gapFrom) {
-                // @ts-expect-error TODO: Fix this
-                newkey -= 1; newvalue.offsetText -= endHtmlMap.get(step.gapFrom)?.textCost;
+                newkey -= 1; newvalue.offsetText -= endHtmlMap.get(step.gapFrom)!.textCost;
                 newvalue.offsetProse -= 1;
             }
             newHtmlMap.set(newkey,newvalue);
@@ -296,12 +289,10 @@ export class NodeUpdate {
             let newkey = key; const newvalue = structuredClone(value);
             if (key == step.from || key == step.gapTo) continue;
             if (key >= step.from && key >= step.gapTo) {
-                // @ts-expect-error TODO: Fix this
-                newkey -= 2; newvalue.offsetText -= (startHtmlMap.get(step.from)?.textCost + startHtmlMap.get(step.gapTo)?.textCost);
+                newkey -= 2; newvalue.offsetText -= (startHtmlMap.get(step.from)!.textCost + startHtmlMap.get(step.gapTo)!.textCost);
                 newvalue.offsetProse -= 2;
             } else if(key >= step.from) {
-                // @ts-expect-error TODO: Fix this
-                newkey -= 1; newvalue.offsetText -= startHtmlMap.get(step.from)?.textCost;
+                newkey -= 1; newvalue.offsetText -= startHtmlMap.get(step.from)!.textCost;
                 newvalue.offsetProse -= 1;
             }
             newHtmlMapS.set(newkey,newvalue);
@@ -311,16 +302,12 @@ export class NodeUpdate {
             let newkey = key; const newvalue = structuredClone(value);
             if (key >= step.gapFrom && key >= step.to) {
                 newvalue.startProse -= 2; newkey -= 2;  newvalue.endProse -= 2;
-                // @ts-expect-error TODO: Fix this
-                newvalue.startText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost);
-                // @ts-expect-error TODO: Fix this
-                newvalue.endText -= (endHtmlMap.get(step.to)?.textCost + endHtmlMap.get(step.gapFrom)?.textCost);
+                newvalue.startText -= (endHtmlMap.get(step.to)!.textCost + endHtmlMap.get(step.gapFrom)!.textCost);
+                newvalue.endText -= (endHtmlMap.get(step.to)!.textCost + endHtmlMap.get(step.gapFrom)!.textCost);
             } else if (key >= step.gapFrom) {
                 newvalue.startProse -= 1; newkey -= 1;  newvalue.endProse -= 1;
-                // @ts-expect-error TODO: Fix this
-                newvalue.startText -= endHtmlMap.get(step.gapFrom)?.textCost;
-                // @ts-expect-error TODO: Fix this
-                newvalue.endText -= endHtmlMap.get(step.gapFrom)?.textCost;
+                newvalue.startText -= endHtmlMap.get(step.gapFrom)!.textCost;
+                newvalue.endText -= endHtmlMap.get(step.gapFrom)!.textCost;
             }
             newMap.set(newkey,newvalue);
         }

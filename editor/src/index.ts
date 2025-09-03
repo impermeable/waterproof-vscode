@@ -1,10 +1,14 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
+import { WaterproofEditor, WaterproofEditorConfig } from "waterproof-editor";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
-import tactics from "../../shared/completions/tactics.json";
+import tactics from "../../completions/tactics.json";
+import symbols from "../../completions/symbols.json";
+
+// import style sheet and fonts from waterproof-editor
+import "waterproof-editor/styles.css"
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -18,6 +22,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
 		completions: tactics,
+		symbols: symbols,
 		api: {
 			executeHelp() {
 				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
@@ -74,19 +79,19 @@ window.onload = () => {
 
 		switch(msg.type) {
 			case MessageType.init:
-				editor.init(msg.body.value, msg.body.format, msg.body.version);
+				editor.init(msg.body.value, msg.body.version);
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
 				{
-				const { symbolUnicode, symbolLatex } = msg.body;
+				const { symbolUnicode } = msg.body;
 				if (msg.body.type === "tactics") {
 					// `symbolUnicode` stores the tactic template.
 					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
 					const template = symbolUnicode;
 					editor.handleSnippet(template);
 				} else {
-					editor.insertSymbol(symbolUnicode, symbolLatex);
+					editor.insertSymbol(symbolUnicode);
 				}
 				break; }
 			case MessageType.setAutocomplete:

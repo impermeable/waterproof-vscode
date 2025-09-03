@@ -4,6 +4,7 @@
 
 This repository uses git lfs for building the web version of the extension.
 Install git lfs from your package manager or from [here](https://git-lfs.com/).
+Be sure to run `git lfs pull` to update the files tracked in lfs. (All these files are in the `vendor` folder.)
 
 ## Installing dependencies
 Run `npm install` or `npm i` in the [root](./) folder of the repository.

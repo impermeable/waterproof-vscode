@@ -91,18 +91,20 @@ export class VersionChecker {
     }
 
     /**
-     * Check installed version of coq using coqc.
+     * Check installed version of Rocq using rocq.
      * @returns
      */
     public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
 
-        const coqcBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "coqc");
-        const command = `${coqcBinary} --version`;
+        const rocqBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "rocq");
+        wpl.debug(`rocqBinary: ${rocqBinary}`);
+        const command = `${rocqBinary} --version`;
         const regex = /version (?<version>\d+\.\d+\.\d+)/g;
 
         try {
             const stdout = await this.exec(command);
+            wpl.debug(`Rocq version: ${stdout}`);
             const groups = regex.exec(stdout)?.groups;
             if (!groups) throw new Error("Failed to parse version string.");
             return Version.fromString(groups["version"]);

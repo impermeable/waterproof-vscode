@@ -341,10 +341,10 @@ export class Waterproof implements Disposable {
                     workspace.fs.writeFile(uri, data).then(() => {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
-                        commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+                        commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
                     });                    
                 }, (err) => {
-                    window.showErrorMessage("Could not a new Waterproof file.");
+                    window.showErrorMessage("Could not open Waterproof tutorial file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
                     return;                   
                 })
@@ -370,7 +370,7 @@ export class Waterproof implements Disposable {
                     workspace.fs.writeFile(uri, data).then(() => {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
-                        commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
+                        commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
                     });                    
                 }, (err) => {
                     window.showErrorMessage("Could not create a new Waterproof file.");
@@ -448,7 +448,7 @@ export class Waterproof implements Disposable {
         );
 
         const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "coqmarkdown" }, { language: "coq" }],  // both .mv and .v files
+            documentSelector: [{ language: "rocqmarkdown" }, { language: "rocq" }],  // both .mv and .v files
             outputChannelName: "Waterproof LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
             initializationOptions: serverOptions,

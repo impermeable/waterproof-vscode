@@ -33,11 +33,9 @@
     "url": "https://github.com/impermeable/waterproof-vscode"
   },
   "activationEvents": [
-    "onCommand:waterproof.start",
     "onCommand:waterproof.toggle",
-    "onCommand:waterproof.newWaterproofDocument",
-    "onLanguage:coq",
-    "onLanguage:coqmarkdown"
+    "onLanguage:rocq",
+    "onLanguage:rocqmarkdown"
   ],
   "contributes": {
     "themes": [
@@ -61,7 +59,7 @@
     ],
     "customEditors": [
       {
-        "viewType": "coqEditor.coqEditor",
+        "viewType": "waterproofTue.waterproofEditor",
         "displayName": "Waterproof Editor",
         "selector": [
           {
@@ -72,23 +70,14 @@
     ],
     "languages": [
       {
-        "id": "coq",
-        "aliases": [
-          "Coq",
-          "coq",
-          "Gallina",
-          "gallina"
-        ],
+        "id": "rocq",
         "extensions": [
           ".v",
           ".mv"
         ]
       },
       {
-        "id": "coqmarkdown",
-        "aliases": [
-          "Coq Markdown"
-        ],
+        "id": "rocqmarkdown",
         "extensions": [
           ".mv"
         ]
@@ -149,14 +138,6 @@
         }
       ]
     },
-    "keybindings": [
-      {
-        "command": "waterproof.goals",
-        "key": "alt+enter",
-        "mac": "meta+enter",
-        "when": "editorTextFocus && editorLangId == coq || editorTextFocus && editorLangId == coqmarkdown"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {

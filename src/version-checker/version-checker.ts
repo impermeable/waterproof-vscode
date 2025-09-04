@@ -85,7 +85,7 @@ export class VersionChecker {
             }
             const coqRequirement = new VersionRequirement(coqWaterproofResult.requiredCoqVersion, COMPARE_MODE.STRICT_EQUALS);
             if (coqResult.needsUpdate(coqRequirement)) {
-                this.informUpdateAvailable("coq", coqRequirement, coqResult);
+                this.informUpdateAvailable("rocq", coqRequirement, coqResult);
             }
         }
     }

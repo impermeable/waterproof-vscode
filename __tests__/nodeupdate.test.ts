@@ -38,43 +38,44 @@ test("ReplaceStep delete — removes lone markdown block", () => {
   const parsed = createTestMapping(content, (s) => {
     const first = s.doc.child(0);
     const from = 1;
-    const to = first.nodeSize;
+    const to = first.nodeSize-1;
     return s.tr.delete(from, to);
   });
 
   const dc = parsed.result as DocChange;
   expect(dc.finalText).toBe("");
+  console.log(parsed.newTree.root)
   expect(parsed.newTree.root!.children.length).toBe(0);
 });
 
-// test("ReplaceStep delete — removes middle code block, preserves neighbors", () => {
-//   const content = `before
-//     \`\`\`coq
-//     Lemma test
-//     \`\`\`
-//     after
-//     `;
+test("ReplaceStep delete — removes middle code block, preserves neighbors", () => {
+  const content = `before
+    \`\`\`coq
+    Lemma test
+    \`\`\`
+    after
+    `;
 
-//   const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
-//     const idx = 1; 
-//     let pos = 1;
-//     for (let k = 0; k < idx; k++) pos += s.doc.child(k).nodeSize; 
-//     const from = pos;
-//     const to = from + s.doc.child(idx).nodeSize;
-//     return s.tr.delete(from, to);
-//   });
+  const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
+    const idx = 1; 
+    let pos = 1;
+    for (let k = 0; k < idx; k++) pos += s.doc.child(k).nodeSize; 
+    const from = pos;
+    const to = from + s.doc.child(idx).nodeSize;
+    return s.tr.delete(from, to);
+  });
 
-//   const dc = parsed.result as DocChange;
-//   expect(dc.finalText).toBe("");
-//   expect(dc.endInFile).toBeGreaterThan(dc.startInFile);
+  const dc = parsed.result as DocChange;
+  expect(dc.finalText).toBe("");
+  expect(dc.endInFile).toBeGreaterThan(dc.startInFile);
 
-//   const children = parsed.newTree.root!.children;
-//   expect(children.length).toBe(2);
-//   expect(children[0].type).toBe("markdown");
-//   expect(children[1].type).toBe("markdown");
-//   expect(children[0].stringContent).toBe("before\n");
-//   expect(children[1].stringContent).toBe("after\n");
-// });
+  const children = parsed.newTree.root!.children;
+  expect(children.length).toBe(2);
+  expect(children[0].type).toBe("markdown");
+  expect(children[1].type).toBe("markdown");
+  expect(children[0].stringContent).toBe("before\n");
+  expect(children[1].stringContent).toBe("after\n");
+});
 
 // test("ReplaceStep delete — removes nested code inside input wrapper", () => {
 //   const content = `<input-area>

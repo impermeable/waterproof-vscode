@@ -29,8 +29,9 @@ export class TreeNode {
     }
 
     removeChild(child: TreeNode): void {
-        this.children = this.children.filter(c => c !== child);
+        this.children = this.children.filter(c => c != child);
     }
+
 }
 
 export class Tree {
@@ -63,6 +64,16 @@ export class Tree {
                 queue.push(...node.children);
             }
         }
+    }
+
+    findParent(target: TreeNode, node: TreeNode | null = this.root, parent: TreeNode | null = null): TreeNode | null {
+        if (!node) return null;
+        if (node === target) return parent;
+        for (const child of node.children) {
+            const result = this.findParent(target, child, node);
+            if (result) return result;
+        }
+        return null;
     }
 
     findNodeByOriginalPosition(pos: number, node: TreeNode | null = this.root): TreeNode | null {

@@ -21,15 +21,14 @@ export class NodeUpdate {
             if (step.from == step.to) type = OperationType.insert;
 
             // We only support pure insertions and deletions
-            console.log(step.slice.content)
-            console.log(step.slice.content.firstChild)
-            if (type == OperationType.delete && step.slice.content.firstChild !== null) throw new Error(" We support ReplaceStep for nodes, but, only, as pure insertions and deletions ");
+            //if (type == OperationType.delete && step.slice.content.firstChild !== null) throw new Error(" We support ReplaceStep for nodes, but, only, as pure insertions and deletions ");
 
             // Check that the slice conforms to our assumptions
             if (step.slice.openStart != 0 || step.slice.openEnd != 0) throw new Error(" We do not support partial slices for ReplaceSteps");
 
             if (type === OperationType.delete) {
                 // Is the node deletion in a valid location
+
                 if (tree.findNodeByProsemirrorPosition(step.from) == null || tree.findNodeByProsemirrorPosition(step.to) == null) {
                     throw new Error(" Mapping does not contain this position, is node inserted in middle of another node?");
                 }
@@ -97,7 +96,15 @@ export class NodeUpdate {
         tree.traverseDepthFirst((node: TreeNode) => {
             if (node.prosemirrorStart >= proseStart && node.prosemirrorEnd <= proseEnd) {
                 // Remove the node from the tree
-                node.removeChild(deletedNode);
+                const parent = tree.findParent(deletedNode);
+                if (parent) {
+                    parent.removeChild(deletedNode);
+                } else {
+                    // maybe it's the root
+                    if (tree.root === deletedNode) {
+                        tree.root = null; 
+                    }
+                }
             }
             if (node.prosemirrorStart > proseStart) {
                 node.prosemirrorStart += proseOffset;

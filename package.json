@@ -286,22 +286,7 @@
     ],
     "configuration": [
       {
-        "title": "User Mode",
-        "properties": {
-          "waterproof.teacherMode": {
-            "type": "boolean",
-            "default": false,
-            "description": "Enable teacher mode; if true, allows user to edit all content outside input fields."
-          },
-          "waterproof.detailedErrorsMode": {
-            "type": "boolean",
-            "default": false,
-            "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
-          }
-        }
-      },
-      {
-        "title": "Editor Appearance",
+        "title": "Editor Experience",
         "properties": {
           "waterproof.showLineNumbersInEditor": {
             "type": "boolean",
@@ -316,34 +301,29 @@
         }
       },
       {
-        "title": "Language and Syntax",
+        "title": "Safety Features",
         "properties": {
           "waterproof.enforceCorrectNonInputArea": {
             "type": "boolean",
             "default": true,
             "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
           },
-          "waterproof.admitOnBadQed": {
+          "waterproof.skipLaunchChecks": {
             "type": "boolean",
-            "default": true,
-            "description": "If a `Qed.` command fails, admit the proof automatically."
-          },
-          "waterproof.unicodeCompletion": {
-            "type": "string",
-            "default": "normal",
-            "enum": [
-              "off",
-              "normal",
-              "extended"
-            ],
-            "description": "Enable Server-Side Unicode Completion. Coq-lsp provides two character sets, a regular one, and an extended one with more than 1000 symbols."
-          }
+            "default": false,
+            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Rocq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+          }        
         }
       },
       {
-        "title": "Diagnostics",
+        "title": "Diagnostic Reporting",
         "type": "object",
         "properties": {
+          "waterproof.detailedErrorsMode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable detailed errors; if true, errors are displayed at the exact position they correspond to instead of the whole line."
+          },
           "waterproof.eagerDiagnostics": {
             "type": "boolean",
             "default": true,
@@ -373,7 +353,6 @@
       },
       {
         "title": "Goals and Info Panel",
-        "type": "object",
         "properties": {
           "waterproof.goalAfterTactic": {
             "type": "boolean",
@@ -413,8 +392,7 @@
         }
       },
       {
-        "title": "Language Server",
-        "type": "object",
+        "title": "Language Server Options",
         "properties": {
           "waterproof.trace.server": {
             "scope": "window",
@@ -450,15 +428,35 @@
       {
         "title": "Extension",
         "properties": {
-          "waterproof.skipLaunchChecks": {
-            "type": "boolean",
-            "default": false,
-            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Rocq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
-          },
           "waterproof.automaticallyUpdateFileIgnores": {
             "type": "boolean",
             "default": true,
-            "description": "When set to true, the Waterproof extension will update the `files.exclude` configuration option to ignore compiled Rocq files in the workspace (.vo, .vos, ...)"
+            "description": "When set to true, the Waterproof extension will update the `files.exclude` configuration option to ignore compiled Rocq files in the workspace (.vo, .vos, ...). This prevents them from showing up in the files window in VSCode."
+          }
+        }
+      },
+      {
+        "title": "Advanced Configuration",
+        "properties": {
+          "waterproof.teacherMode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable teacher mode; if true, allows user to edit all content outside input fields."
+          },
+          "waterproof.admitOnBadQed": {
+            "type": "boolean",
+            "default": true,
+            "description": "If a `Qed.` command fails, admit the proof automatically."
+          },
+          "waterproof.unicodeCompletion": {
+            "type": "string",
+            "default": "normal",
+            "enum": [
+              "off",
+              "normal",
+              "extended"
+            ],
+            "description": "Enable Server-Side Unicode Completion. Coq-lsp provides two character sets, a regular one, and an extended one with more than 1000 symbols."
           }
         }
       }

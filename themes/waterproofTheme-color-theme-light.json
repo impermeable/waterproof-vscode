@@ -1,5 +1,6 @@
 {
-    "name": "Waterproof light theme",
+    "$schema": "vscode://schemas/color-theme",
+    "name": "Waterproof Light",
     "type": "light",
     "semanticTokenColors": {
         "parameter.declaration": {
@@ -29,7 +30,7 @@
     },
     "colors": {
         "foreground": "#000000",
-        "descriptionForeground": "#ffffff",
+        "descriptionForeground": "#3f3f3f",
         "focusBorder": "#545c7e33",
         "errorForeground": "#ffffff",
         "widget.shadow": "#ffffff00",
@@ -59,7 +60,6 @@
         "button.secondaryForeground": "#ffffff",
         "button.secondaryHoverBackground": "#232d73",
         "progressBar.background": "#ffffff",
-        "progressBar.foreground": "#ffffff",
 
         "input.background": "#eceeff",
         "input.foreground": "#000000",
@@ -148,7 +148,7 @@
         "editor.foldBackground": "#1111174a",
         "editorLink.activeForeground": "#acb0d0",
 
-        "editor.selectionBackground": "#acb0d0",
+        "editor.selectionBackground": "#acb0d07a",
 
         "editor.findMatchBackground": "#acb0d0",
         "editor.findMatchBorder": "#5561a6",
@@ -161,11 +161,11 @@
         "editor.selectionHighlightBackground": "#acb0d0",
 
         "editorCursor.foreground": "#c0caf5",
-        "editorIndentGuide.background": "#1e202e",
-        "editorIndentGuide.activeBackground": "#363b54",
+        "editorIndentGuide.background1": "#1e202e",
+        "editorIndentGuide.activeBackground1": "#363b54",
         "editorLineNumber.foreground": "#363b54",
         "editorLineNumber.activeForeground": "#737aa2",
-        "editor.lineHighlightBackground": "#ececec",
+        "editor.lineHighlightBackground": "#b6b6b648",
         "editorWhitespace.foreground": "#363b54",
 
         "editorMarkerNavigation.background": "#000000",
@@ -262,7 +262,6 @@
         "tab.activeBorder": "#aab0d3",
         "tab.inactiveBackground": "#eceeff",
         "tab.inactiveForeground": "#000000",
-        "tab.inactiveBorder": "#aab0d3",
         "tab.hoverForeground": "#ffffff",
         "tab.hoverBackground": "#5561a6",
         "tab.border": "#aab0d3",
@@ -272,7 +271,6 @@
         "tab.unfocusedInactiveForeground": "#000000",
         "tab.unfocusedHoverForeground": "#ffffff",
         "tab.unfocusedHoverBackground": "#5561a6",
-        "tab.unfocusedBorder": "#aab0d3",
 
         "panel.background": "#eceeff",
         "panel.border": "#aab0d3",
@@ -302,6 +300,7 @@
         "titleBar.border": "#aab0d3",
 
         "walkThrough.embeddedEditorBackground": "#eceeff",
+        // "walkthrough.stepTitle.foreground": "#ff00000",
         "textLink.foreground": "#6183bb",
         "textLink.activeForeground": "#7dcfff",
         "textPreformat.foreground": "#000000",

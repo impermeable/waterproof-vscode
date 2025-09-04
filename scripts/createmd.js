@@ -1,7 +1,7 @@
 const { writeFileSync } = require("fs");
 
 // Open the tactics file
-const tactics = require("../shared/completions/tactics.json");
+const tactics = require("../completions/tactics.json");
 const outputLocation = "../docs/tactics-sheet.md";
 
 let mdContent = `# Waterproof Tactics Sheet\n\n`;

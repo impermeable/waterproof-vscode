@@ -147,7 +147,7 @@ export class WaterproofEditor {
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
 		console.log(this._mapping)
 		
-		this.createProseMirrorEditor(proseDoc);
+		this.createProseMirrorEditor(proseDoc[0]);
 
 
 

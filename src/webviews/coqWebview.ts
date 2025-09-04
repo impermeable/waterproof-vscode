@@ -92,13 +92,6 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 { preserveFocus: true, viewColumn: ViewColumn.Two },
                 webviewOpts
             );
-        } else if (this.name == "expandDefinition") {
-            this._panel = window.createWebviewPanel(
-                this.name,
-                "Expand definition",
-                { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts
-            );
         } else {
             this._panel = window.createWebviewPanel(
                 this.name,

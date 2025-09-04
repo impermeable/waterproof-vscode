@@ -7,6 +7,7 @@ These are used in the symbols panel:
 - 3 = arrows
 - 4 = number systems
 - 5 = super and subscripts
+- 6 = Calligraphic upper case letters (mathcal-style)
 - 99 = Not supposed to show up in symbols panel.
 
 ## Syntax to create a snippet template: 

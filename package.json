@@ -2,8 +2,8 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.19",
-  "requiredCoqLspVersion": ">=0.2.2",
+  "version": "0.9.20",
+  "requiredCoqLspVersion": ">=0.2.3",
   "requiredCoqWaterproofVersion": ">=3.0.0",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
@@ -133,10 +133,6 @@
         "title": "Waterproof: Automatically installs all required libraries."
       },
       {
-        "command": "waterproof.setDefaultArgsWin",
-        "title": "Waterproof: Set default arguments for Windows"
-      },
-      {
         "command": "waterproof.toggleInEditorLineNumbers",
         "title": "Toggle line numbers displayed in editor",
         "category": "Waterproof"
@@ -181,10 +177,11 @@
       {
         "id": "waterproof.auto",
         "title": "Waterproof Automatic Setup",
-        "description": "Automatic installation for all dependencies to get up and running with Waterproof",
+        "description": "Automatic installation for all dependencies to get up and running with Waterproof (only available for Windows)",
         "steps": [
           {
             "id": "install-dependencies",
+            "when": "isWindows && !hasRemoteServer",
             "title": "Run Automatic Installer",
             "description": "Waterproof needs additional software to function.\n[Run Automatic Installer](command:waterproof.autoInstall)",
             "completionEvents": [],
@@ -215,21 +212,12 @@
             "id": "download-installer-windows",
             "when": "isWindows && !hasRemoteServer",
             "title": "Downloading the Installer",
-            "description": "Download the installer using the button below\n[Download the installer](https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
+            "description": "Download the installer using the button below\n[Download the installer](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
             "completionEvents": [
-              "onLink:https://www.github.com/impermeable/waterproof-dependencies-installer/releases/latest"
+              "onLink:https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0"
             ],
             "media": {
               "markdown": "walkthrough-data/initial-setup/download-installer-windows.md"
-            }
-          },
-          {
-            "id": "download-installer-mac",
-            "when": "isMac && !hasRemoteServer",
-            "title": "Downloading the Installer",
-            "description": "Currently only a manual installation is available for Mac, please follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
-            "media": {
-              "markdown": "walkthrough-data/initial-setup/download-installer-mac.md"
             }
           },
           {
@@ -248,7 +236,7 @@
             "title": "Configuring Waterproof Settings (Path)",
             "when": "isMac && !hasRemoteServer",
             "id": "configure-settings-mac",
-            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "If necessary (i.e. Waterproof does not start) change the path to the `coq-lsp` program (you can find this path by running `which coq-lsp` in the terminal in which you installed `coq-lsp`).\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": [
               "onSettingChanged:waterproof.path"
             ],
@@ -260,24 +248,12 @@
             "title": "Configuring Waterproof Settings (Path)",
             "when": "!(isWindows || isMac) || hasRemoteServer",
             "id": "configure-settings-linux",
-            "description": "Change the [Waterproof.Path](command:waterproof.pathSetting) setting.\n[Use Default](command:waterproof.defaultPath)\n[Change Setting](command:waterproof.pathSetting)",
+            "description": "If necessary (i.e. if Waterproof does not start) change the path to the `coq-lsp` program (you can find this path by running `which coq-lsp` in the terminal in which you installed `coq-lsp`).\n[Change Setting](command:waterproof.pathSetting)",
             "completionEvents": [
               "onSettingChanged:waterproof.path"
             ],
             "media": {
               "markdown": "walkthrough-data/initial-setup/change-setting-path-linux.md"
-            }
-          },
-          {
-            "title": "Configuring Waterproof Settings (Args)",
-            "when": "isMac",
-            "id": "configure-settings-args-mac",
-            "description": "Change the [Waterproof.Args](command:waterproof.argsSetting) setting.\n[Use Default](command:waterproof.defaultArgsMac)\n[Change Setting](command:waterproof.argsSetting)",
-            "completionEvents": [
-              "onSettingChanged:waterproof.args"
-            ],
-            "media": {
-              "markdown": "walkthrough-data/initial-setup/change-setting-args.md"
             }
           },
           {
@@ -511,6 +487,7 @@
     "@vscode/vsce": "^2.21.0",
     "cypress": "^13.17.0",
     "esbuild": "^0.16.17",
+    "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.18.0",
     "fs-extra": "^11.1.1",
     "glob": "^7.1.4",
@@ -532,6 +509,9 @@
     "@codemirror/view": "6.27.0",
     "@lezer/highlight": "1.2.1",
     "@lezer/lr": "1.4.2",
+    "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
+    "@ocaml-wasm/4.12--num": "^1.4.0-0",
+    "@ocaml-wasm/4.12--zarith": "^1.13.0-0",
     "@types/double-ended-queue": "2.1.7",
     "@types/markdown-it": "12.2.3",
     "@vscode/webview-ui-toolkit": "1.4.0",
@@ -541,6 +521,7 @@
     "katex": "0.16.11",
     "markdown-it": "13.0.2",
     "object-hash": "3.0.0",
+    "ocaml-wasm": "^4.12.0-0",
     "prosemirror-commands": "1.6.0",
     "prosemirror-history": "1.4.1",
     "prosemirror-inputrules": "1.4.0",

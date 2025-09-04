@@ -2,7 +2,7 @@ import { ReplaceStep } from "prosemirror-transform";
 import { DocChange } from "../../../../../shared";
 import { TextDocMappingNew } from "./newmapping";
 import { ParsedStep, OperationType } from "./types";
-import { TreeNode } from "./Tree";
+import { Tree, TreeNode } from "./Tree";
 
 
 
@@ -22,7 +22,9 @@ export class TextUpdate {
         // Check that the slice conforms to our assumptions
         if (step.slice.openStart != 0 || step.slice.openEnd != 0) throw new Error(" We do not support partial slices for ReplaceSteps");
 
-        const targetCell: TreeNode | null = mapping.getMapping().findNodeByProsemirrorPosition(step.from)
+        let tree = mapping.getMapping()
+
+        const targetCell: TreeNode | null = tree.findNodeByProsemirrorPosition(step.from)
         if (targetCell === null) throw new Error(" Target cell is not in mapping!!! ");
 
         /** Check that the change is, indeed, happening within a stringcell */
@@ -42,6 +44,25 @@ export class TextUpdate {
             endInFile: targetCell.originalStart + offsetEnd,
             finalText: text
         }
+
+        tree.traverseDepthFirst((node: TreeNode) => {
+            if (node.prosemirrorStart >= targetCell.prosemirrorStart && node.prosemirrorEnd <= targetCell.prosemirrorEnd) {
+                // Remove the node from the tree
+                node.prosemirrorEnd += offsetEnd;
+                node.originalEnd += offsetEnd;
+            }
+            if (node.prosemirrorStart > targetCell.prosemirrorStart) {
+                node.prosemirrorStart += offsetBegin;
+                node.prosemirrorEnd += offsetEnd;
+            }
+            if (node.originalStart > targetCell.originalStart) {
+                node.originalStart += offsetBegin;
+                node.originalEnd += offsetEnd;
+            }
+        });
+        let newTree = new Tree;
+        newTree = tree;
+        return {result, newTree};
     }
 
 }

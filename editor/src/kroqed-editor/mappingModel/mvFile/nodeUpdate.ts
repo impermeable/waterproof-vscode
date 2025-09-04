@@ -57,7 +57,7 @@ export class NodeUpdate {
             
         }
 
-        return result;        
+        return result;
     }
 
     private static replaceStepDelete(step: ReplaceStep, stringBlocks: Map<number,StringCell>, endHtmlMap: Map<number,HtmlTagInfo>, startHtmlMap: Map<number,HtmlTagInfo>) : ParsedStep {

@@ -91,11 +91,7 @@ export class VersionChecker {
     }
 
     /**
-<<<<<<< HEAD
-     * Check installed version of coq using coqc.
-=======
      * Check installed version of Rocq using rocq.
->>>>>>> origin/fix/no-longer-rely-on-coqtop
      * @returns
      */
     public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {

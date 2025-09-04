@@ -186,7 +186,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 this.updateTeacherMode();
             }
 
-            if (e.affectsConfiguration("waterproof.standardCoqSyntax")) {
+            if (e.affectsConfiguration("waterproof.standardRocqSyntax")) {
                 this.updateSyntaxMode();
             }
 
@@ -320,7 +320,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private updateSyntaxMode() {
         this.postMessage({
             type: MessageType.syntax,
-            body: WaterproofConfigHelper.standardCoqSyntax
+            body: WaterproofConfigHelper.standardRocqSyntax
         }, true);
     }
 

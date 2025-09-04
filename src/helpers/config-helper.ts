@@ -47,9 +47,9 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("enforceCorrectNonInputArea") as boolean;
     }
 
-    /** `waterproof.standardCoqSyntax` */
-    static get standardCoqSyntax() {
-        return config().get<boolean>("standardCoqSyntax") as boolean;
+    /** `waterproof.standardRocqSyntax` */
+    static get standardRocqSyntax() {
+        return config().get<boolean>("standardRocqSyntax") as boolean;
     }
 
     /** `waterproof.eagerDiagnostics` */

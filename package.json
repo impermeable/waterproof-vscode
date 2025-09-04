@@ -24,7 +24,7 @@
   "keywords": [
     "interactive theorem proving",
     "dependent types",
-    "coq",
+    "Rocq",
     "software verification"
   ],
   "homepage": "https://impermeable.github.io/",
@@ -337,10 +337,10 @@
       {
         "title": "Language and Syntax",
         "properties": {
-          "waterproof.standardCoqSyntax": {
+          "waterproof.standardRocqSyntax": {
             "type": "boolean",
             "default": false,
-            "description": "Enable Standard Coq syntax; if true, standard Coq syntax will be used instead of the Waterproof proof language."
+            "description": "Enable Standard Rocq syntax; if true, standard Rocq syntax will be used instead of the Waterproof proof language."
           },
           "waterproof.enforceCorrectNonInputArea": {
             "type": "boolean",
@@ -407,7 +407,7 @@
           "waterproof.ppType": {
             "type": "number",
             "default": 1,
-            "description": "Method to Print Coq Terms",
+            "description": "Method to Print Rocq Terms",
             "enum": [
               0,
               1,
@@ -416,7 +416,7 @@
             "enumDescriptions": [
               "Print to string",
               "Use jsCoq's Pp rich layout printer",
-              "Coq Layout Engine (experimental)"
+              "Rocq Layout Engine (experimental)"
             ]
           },
           "waterproof.visibilityOfHypotheses" : {
@@ -454,7 +454,7 @@
           "waterproof.debug": {
             "type": "boolean",
             "default": false,
-            "description": "Enable Debug in Coq Server, usually this will produce backtraces on errors"
+            "description": "Enable Debug in Rocq Server, usually this will produce backtraces on errors"
           },
           "waterproof.path": {
             "type": "string",
@@ -477,12 +477,12 @@
           "waterproof.skipLaunchChecks": {
             "type": "boolean",
             "default": false,
-            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Coq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Rocq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
           },
-          "waterproof.updateIgnores": {
+          "waterproof.automaticallyUpdateFileIgnores": {
             "type": "boolean",
             "default": true,
-            "description": "Automatically ignore Coq object files in the workspace (.vo, .vos, ...)"
+            "description": "When set to true, the Waterproof extension will update the `files.exclude` configuration option to ignore compiled Rocq files in the workspace (.vo, .vos, ...)"
           }
         }
       }

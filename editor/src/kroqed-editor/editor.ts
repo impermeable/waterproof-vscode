@@ -141,13 +141,13 @@ export class WaterproofEditor {
 
 		const proseDocAndBlocks = createProseMirrorDocument(resultingDocument, fileFormat);
 
-		let test_mapping = new TextDocMappingNew(proseDocAndBlocks[1], version)
+		//let test_mapping = new TextDocMappingNew(proseDocAndBlocks[1], version)
 		const proseDoc = createProseMirrorDocument(resultingDocument, fileFormat);
 
 		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
 		console.log(this._mapping)
 		
-		this.createProseMirrorEditor(proseDoc);
+		this.createProseMirrorEditor(proseDoc[0]);
 
 
 

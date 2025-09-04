@@ -37,7 +37,7 @@ test("ReplaceStep delete — removes lone markdown block", () => {
   const content = `Hello`;
   const parsed = createTestMapping(content, (s) => {
     const first = s.doc.child(0);
-    const from = 1;
+    const from = 0;
     const to = first.nodeSize;
     return s.tr.delete(from, to);
   });

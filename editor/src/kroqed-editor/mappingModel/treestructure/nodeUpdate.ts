@@ -295,20 +295,22 @@ export class NodeUpdate {
             throw new Error("We only support wrapping in hints or inputs");
         }
 
-        let parent: TreeNode | null = null;
+        let parent1: TreeNode;
         let startIdx = -1;
         let endIdx = -1;
 
         tree.traverseDepthFirst((n: TreeNode) => {
-            if (parent) return; 
+            if (parent1) return; 
             if (!n.children.length) return;
             for (let i = 0; i < n.children.length; i++) {
                 if (n.children[i].prosemirrorStart === step.from && n.children[i].prosemirrorEnd   === step.to) {
-                    parent = n;
+                    parent1 = n;
                     break;
                 }
             }
         });
+
+        let parent:TreeNode = parent1!;
 
         if (!parent || startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
             throw new Error("ReplaceAroundStep insert must wrap a contiguous sibling range");

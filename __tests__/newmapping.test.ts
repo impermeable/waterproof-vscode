@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // Disable because the @ts-expect-error clashes with the tests
 import { TextDocMappingNew, TreeNode } from "../editor/src/kroqed-editor/mappingModel/treestructure"; 
+import { isCodeBlock } from "../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
 import { createProseMirrorDocument } from "../editor/src/kroqed-editor/prosedoc-construction/construct-document";
 import { FileFormat } from "../shared";
 import { expect } from "@jest/globals";

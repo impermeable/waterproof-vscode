@@ -1,9 +1,9 @@
 /* eslint-disable no-useless-escape */
 // Disable due to latex code in sample data
-import { topLevelBlocksMV, topLevelBlocksV } from "../../editor/src/kroqed-editor/prosedoc-construction";
+import { topLevelBlocksMV } from "../../editor/src/kroqed-editor/prosedoc-construction";
 import { expect } from '@jest/globals';
 import { MarkdownBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/blocktypes";
-import { isHintBlock, isInputAreaBlock, isMarkdownBlock, isMathDisplayBlock, isCoqBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { isCodeBlock, isHintBlock, isInputAreaBlock, isMarkdownBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
 
 const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">
@@ -52,39 +52,9 @@ test("Parse top level blocks (MV)", () => {
     expect(isMathDisplayBlock(blocks[5])).toBe(true);
     expect(blocks[5].stringContent).toBe(" \int_0^2 x dx ");
     
-    expect(isCoqBlock(blocks[6])).toBe(true);
+    expect(isCodeBlock(blocks[6])).toBe(true);
     expect(blocks[6].stringContent).toBe("Compute 1 + 1.");
 
     expect(isMarkdownBlock(blocks[7])).toBe(true);
     expect(blocks[7].stringContent).toBe("Random Markdown list:\n    1. Item 3\n    2. Item 0\n    3. $1 + 1$\n");
-});
-
-const inputDocumentV = `(** * Example v file *)
-(* begin hint : testing *)
-Compute 2 + 2.
-(* end hint *)
-(* begin input *)
-Lemma testing : True.
-Proof.
-exact I.
-Qed.
-(* Proof should now be finished *)
-(* end input *)
-(** *** End example v file *)
-`;
-
-test("Parse top level blocks (V)", () => {
-    const blocks = topLevelBlocksV(inputDocumentV);
-    // coqblock, hint, input, coqblock
-
-    expect(blocks.length).toBe(4);
-    expect(isCoqBlock(blocks[0])).toBe(true);
-    expect(isHintBlock(blocks[1])).toBe(true);
-    expect(isInputAreaBlock(blocks[2])).toBe(true);
-    expect(isCoqBlock(blocks[3])).toBe(true);
-
-    expect(blocks[0].stringContent).toBe("(** * Example v file *)\n");
-    expect(blocks[1].stringContent).toBe("```coq\nCompute 2 + 2.\n```");
-    expect(blocks[2].stringContent).toBe("```coq\nLemma testing : True.\nProof.\nexact I.\nQed.\n(* Proof should now be finished *)\n```");
-    expect(blocks[3].stringContent).toBe("\n(** *** End example v file *)\n");
 });

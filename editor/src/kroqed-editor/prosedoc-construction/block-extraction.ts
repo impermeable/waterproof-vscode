@@ -110,17 +110,29 @@ export function extractMathDisplayBlocks(inputDocument: string) {
     return mathDisplayBlocks;
 }
 
+const coqOpenLength = "```coq\n".length;
+const coqCloseLength = "\n```".length;
+
 /**
  * Create coq blocks from document string.
  * 
  * Uses regexes to search for ```coq and ``` markers.	
  */
-export function extractCoqBlocks(inputDocument: string, parentRange: BlockRange = {from : 0, to : 0}) {
+export function extractCoqBlocks(inputDocument: string, _parentRange: BlockRange = {from : 0, to : 0}) {
     const coq_code = Array.from(inputDocument.matchAll(regexes.coq));
     const coqBlocks = coq_code.map((coq) => {
         if (coq.index === undefined) throw new Error("Index of coq is undefined");
+
+        const startsWithNewLine = coq[1] === "\n";
+        const endsWithNewLine = coq[5] === "\n";
+        const newLineOffsetStart = startsWithNewLine ? 1 : 0;
+        const newLineOffsetEnd = endsWithNewLine ? 1 : 0;
+
+        // Range of the whole coq block including the ```coq and ``` markers.
         const range = { from: coq.index, to: coq.index + coq[0].length };
-        const innerRange = {from: coq.index + parentRange.from + "```coq\n".length, to: parentRange.to - "\n```".length}
+
+        // Range of the inner content of the coq block, excluding the ```coq and ``` markers.
+        const innerRange = {from: range.from + newLineOffsetStart + coqOpenLength, to: range.to - coqCloseLength - newLineOffsetEnd };
         // TODO: Documentation for this: 
         // - coq[0] the match;
         // - coq[1] capture group 1, prePreWhite;

@@ -17,7 +17,9 @@ export interface BlockRange {
 export interface Block {
     type: string;
     stringContent: string;
+    /** Range in the original document, including possible tags (like <input-area>) */
     range: BlockRange;
+    /** Range in the original document, but only the content within possible tags */
     innerRange: BlockRange;
 
     innerBlocks?: Block[];

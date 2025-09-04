@@ -142,7 +142,6 @@ export class TextDocMappingNew {
      */
     private initialize(inputBlocks: any): void {
         this.mapToTree(inputBlocks);
-        console.log(this.tree); // For debugging
     }
 
     private mapToTree(blocks: Block[]): void {
@@ -182,8 +181,6 @@ export class TextDocMappingNew {
         // Set the tree root after mapping
         this.tree.root = root;
 
-        console.log(this.tree);
-
         // Now compute the ProseMirror offsets after creating the tree structure
         this.computeProsemirrorOffsets(this.tree.root, this.startTag, this.endTag);
     }
@@ -222,8 +219,6 @@ export class TextDocMappingNew {
 
         if (node.children.length === 0) {
             // Leaf: add stringContent + end tag + +1 for exiting level
-            console.log("string_content")
-            console.log(node)
             offset += node.stringContent.length + endTagStr.length;
         } else {
             // Non-leaf: handle children and end tag
@@ -243,7 +238,6 @@ export class TextDocMappingNew {
             offset += endTagStr.length + 1;
         }
 
-        console.log(offset)
         node.prosemirrorEnd = offset;
 
         return offset;

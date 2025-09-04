@@ -81,8 +81,6 @@ export function topLevelBlocksV(inputDocument: string): Block[] {
 
 // 1. Construct the prosemirror document from the top level blocks.
 export function constructDocument(blocks: Block[]): ProseNode {
-    console.log("BLOKCS")
-    console.log(blocks)
     const documentContent: ProseNode[] = blocks.map(block => block.toProseMirror());
     return root(documentContent);
 }

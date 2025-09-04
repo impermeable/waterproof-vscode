@@ -21,6 +21,8 @@ export class NodeUpdate {
             if (step.from == step.to) type = OperationType.insert;
 
             // We only support pure insertions and deletions
+            console.log(step.slice.content)
+            console.log(step.slice.content.firstChild)
             if (type == OperationType.delete && step.slice.content.firstChild !== null) throw new Error(" We support ReplaceStep for nodes, but, only, as pure insertions and deletions ");
 
             // Check that the slice conforms to our assumptions

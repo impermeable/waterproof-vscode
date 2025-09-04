@@ -181,6 +181,8 @@ export class TextDocMappingNew {
         // Set the tree root after mapping
         this.tree.root = root;
 
+        console.log(this.tree)
+
         // Now compute the ProseMirror offsets after creating the tree structure
         this.computeProsemirrorOffsets(this.tree.root, this.startTag, this.endTag);
     }

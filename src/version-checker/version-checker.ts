@@ -91,18 +91,24 @@ export class VersionChecker {
     }
 
     /**
+<<<<<<< HEAD
      * Check installed version of coq using coqc.
+=======
+     * Check installed version of Rocq using rocq.
+>>>>>>> origin/fix/no-longer-rely-on-coqtop
      * @returns
      */
     public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
 
-        const coqcBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "coqc");
-        const command = `${coqcBinary} --version`;
+        const rocqBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "rocq");
+        wpl.debug(`rocqBinary: ${rocqBinary}`);
+        const command = `${rocqBinary} --version`;
         const regex = /version (?<version>\d+\.\d+\.\d+)/g;
 
         try {
             const stdout = await this.exec(command);
+            wpl.debug(`Rocq version: ${stdout}`);
             const groups = regex.exec(stdout)?.groups;
             if (!groups) throw new Error("Failed to parse version string.");
             return Version.fromString(groups["version"]);
@@ -121,13 +127,13 @@ export class VersionChecker {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
         const ext = process.platform === "win32" ? ".exe" : "";
 
-        const coqtopPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `coqtop${ext}`);
-        wpl.debug(`coqtopPath: ${coqtopPath}`)
-        const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
-        const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
+        const ocamlfindPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `ocamlfind${ext}`);
+        wpl.debug(`ocamlfindPath: ${ocamlfindPath}`);
+        const command = `${ocamlfindPath} query -format %v coq-waterproof.plugin`;
 
         try {
             const stdout = await this.exec(command);
+            wpl.debug(`Waterproof version: ${stdout}`);
             const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
             const versionCoqWaterproof = Version.fromString(wpVersion);
             const versionRequiredCoq = Version.fromString(reqCoqVersion);

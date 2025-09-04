@@ -26,6 +26,12 @@
     padding: 0.2em;
 }
 
+
+/* Styles the inline code parts of the markdown cells */
+code {
+    font-family: var(--wp-editor-font-family);
+}
+
 /* 
 .markdown-view-editor::after {
     border-top: 1px solid black;

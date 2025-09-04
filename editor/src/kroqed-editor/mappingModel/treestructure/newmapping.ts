@@ -110,7 +110,7 @@ export class TextDocMappingNew {
         let result : ParsedStep;
 
         /** Parse the step into a text document change */
-        if (step instanceof ReplaceStep && isText) result = TextUpdate.textUpdate(step, this.tree);
+        if (step instanceof ReplaceStep && isText) result = TextUpdate.textUpdate(step, this);
         else result = NodeUpdate.nodeUpdate(step, this.tree);
 
         this.tree = result.newTree

@@ -33,7 +33,6 @@ export class NodeUpdate {
                 }
                 result = NodeUpdate.replaceStepDelete(step,tree);
             } else {
-                
                 result = NodeUpdate.replaceStepInsert(step,tree);
             }
         } else {
@@ -81,7 +80,7 @@ export class NodeUpdate {
         const deletedNode = tree.findNodeByProsemirrorPosition(step.from);
         if (!deletedNode) throw new Error("We could not find the correct node");
         result.startInFile = deletedNode.originalStart;
-        result.endInFile = deletedNode.originalEnd;      
+        result.endInFile = deletedNode.originalEnd;
 
         //// Update the mapping to reflect the new prosemirror state
 
@@ -136,12 +135,13 @@ export class NodeUpdate {
             final = parseFragment(step.slice.content);
 
             /** Compute the resulting DocChange */
+            //TODO: check if this is correct
             result.startInFile = node.originalStart + final.starttext.length;
             result.endInFile = result.startInFile;
             result.finalText = final.starttext + final.endtext;
 
             const proseStart = node.prosemirrorStart + final.proseOffset;
-            const proseEnd = node.prosemirrorEnd + final.proseOffset;
+            const proseEnd = proseStart + step.slice.content.size + final.proseOffset;
             const proseOffset = proseStart - proseEnd;
             const textStart = node.originalStart + final.starttext.length;
             const textEnd = node.originalEnd + final.endtext.length;

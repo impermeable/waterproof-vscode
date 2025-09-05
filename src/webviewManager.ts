@@ -154,31 +154,34 @@ export class WebviewManager extends EventEmitter {
         if (!this._toolWebviews.has(id)) {
             throw new Error("Tool webview does not have this panel: " + id);
         }
-    
+
         // Emit button click event before performing any state checks
-    
+
         const panel = this._toolWebviews.get(id);
         // Check if the panel is already open
         if (panel?.isOpened) {
+            console.error("Panel is supposedly already open");
             this.emit(WebviewManagerEvents.buttonClick, { name: id });
             return;
         }
-    
+
         // Open the panel if it is not already open
         else if(panel?.isHidden) {
-            this.emit(WebviewManagerEvents.buttonClick, { name: id });   
+            console.error("Supposedly revealing hidden panel");
+            this.emit(WebviewManagerEvents.buttonClick, { name: id });
             panel?.revealPanel();
         }
-        
+
         // Open the panel if it is not hidden and not already open
         else{
+            console.error("Supposedly creating new panel");
             this.emit(WebviewManagerEvents.buttonClick, { name: id });
             panel?.readyPanel();
             panel?.activatePanel();
             panel?.revealPanel();
         }
     }
-    
+
     /**
      * Sends `message` to the specified panel.
      * @param panelName a URI to refer to a ProseMirror panel, or a name to refer to a tool panel

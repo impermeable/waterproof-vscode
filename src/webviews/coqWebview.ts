@@ -60,11 +60,16 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     }
 
     public get isOpened() {
+        if (!this._panel) {
+            this._state = WebviewState.closed;
+            console.error("Webview panel is null");
+            return false;
+        }
         return (this._state == WebviewState.visible);
     }
     public get isHidden() {
         return (this._state == WebviewState.open);
-    }    
+    }
 
     public get state() {
         return this._state;
@@ -100,7 +105,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 webviewOpts,
             );
         }
-        
+
 
         this._panel.onDidChangeViewState((e) => {
             if(e.webviewPanel.active) this.emit(WebviewEvents.change, WebviewState.focus);
@@ -142,6 +147,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
 
         this._panel.onDidDispose(() => {
             this.changeState(WebviewState.closed);
+            console.error("Disposing webview panel");
             this._panel = null;
         });
     }
@@ -190,7 +196,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      * Change the panel state to the ready state
      */
     public readyPanel() {
-        if(this._state != WebviewState.closed) return; 
+        if(this._state != WebviewState.closed) return;
         this.changeState(WebviewState.ready);
     }
 

@@ -370,7 +370,7 @@
         }
       },
       {
-        "title": "Language Server Options",
+        "title": "Language Server (Backend)",
         "properties": {
           "waterproof.trace.server": {
             "scope": "window",
@@ -414,7 +414,7 @@
         }
       },
       {
-        "title": "Advanced Configuration",
+        "title": "Advanced",
         "properties": {
           "waterproof.teacherMode": {
             "type": "boolean",

@@ -72,7 +72,7 @@ opam install coq-waterproof
 ## Manual installation on Windows with installer
 
 ### Step 1: Dependencies installer
-Download and execute the bundled installer `Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0)
+Download and execute the bundled installer `Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe` from the [release page](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v3.0.0%2B9.0)
 **Note:** do not change the default installation location, otherwise Waterproof will not work.
 
 ### Step 2: Install the vscode extension

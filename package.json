@@ -212,9 +212,9 @@
             "id": "download-installer-windows",
             "when": "isWindows && !hasRemoteServer",
             "title": "Downloading the Installer",
-            "description": "Download the installer using the button below\n[Download the installer](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
+            "description": "Download the installer using the button below\n[Download the installer](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v3.0.0%2B9.0)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
             "completionEvents": [
-              "onLink:https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/wp-3.0.0%2B9.0"
+              "onLink:https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v3.0.0%2B9.0"
             ],
             "media": {
               "markdown": "walkthrough-data/initial-setup/download-installer-windows.md"

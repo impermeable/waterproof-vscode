@@ -3,8 +3,9 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "target": "ESNext",
-    "module": "commonjs",
-    "resolveJsonModule": true
+    "module": "preserve",
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler"
   },
-  "include": ["**/*.ts", "**/*.js", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts", "../src/helpers/**/*.ts", "../shared/**/*.json"]
+  "include": ["**/*.ts", "**/*.js", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts", "../src/helpers/**/*.ts", "../shared/**/*.json", "../completions/**/*.json"]
 }

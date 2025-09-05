@@ -151,8 +151,12 @@ export class Waterproof implements Disposable {
 
 
         // make relevant gui components
+        const func = () => {
+            this.webviewManager._toolWebviews.delete("goals");
+        }
+
         this.statusBar = new CoqnitiveStatusBar();
-        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
+        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration), func.bind(this));
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals");

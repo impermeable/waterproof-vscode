@@ -5,6 +5,7 @@ import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
 import { ProseMirrorWebview } from "./pm-editor/pmWebview";
 import { CoqWebview, WebviewEvents, WebviewState } from "./webviews/coqWebview";
+import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 
 export enum WebviewManagerEvents {
     editorReady     = "ready",
@@ -65,7 +66,7 @@ class ActiveWebviews {
  */
 export class WebviewManager extends EventEmitter {
     // Tool webviews (UI such as panels), stores the view based on name
-    private readonly _toolWebviews: Map<string, CoqWebview> = new Map<string, CoqWebview>;
+    readonly _toolWebviews: Map<string, CoqWebview> = new Map<string, CoqWebview>;
 
     // ProseMirror webviews, stores the view based on Doc uri
     private readonly _pmWebviews: Map<string, ProseMirrorWebview> = new Map<string, ProseMirrorWebview>;
@@ -152,33 +153,47 @@ export class WebviewManager extends EventEmitter {
      */
     public open(id: string) {
         if (!this._toolWebviews.has(id)) {
-            throw new Error("Tool webview does not have this panel: " + id);
+            //throw new Error("Tool webview does not have this panel: " + id);
+            const func = () => {
+                        this._toolWebviews.delete("goals");
+                    }
+
+            const goalsPanel = new GoalsPanel(undefined, undefined, func.bind(this));
+            this.addToolWebview("goals", goalsPanel);
         }
-    
+
         // Emit button click event before performing any state checks
-    
+
         const panel = this._toolWebviews.get(id);
+
+        if (panel === undefined) {
+            console.error("Panel is undefined");
+        }
+
         // Check if the panel is already open
         if (panel?.isOpened) {
+            console.error("Panel is already open");
             this.emit(WebviewManagerEvents.buttonClick, { name: id });
             return;
         }
-    
+
         // Open the panel if it is not already open
         else if(panel?.isHidden) {
-            this.emit(WebviewManagerEvents.buttonClick, { name: id });   
+            console.error("Panel is hidden");
+            this.emit(WebviewManagerEvents.buttonClick, { name: id });
             panel?.revealPanel();
         }
-        
+
         // Open the panel if it is not hidden and not already open
         else{
+            console.error("Panel is not open nor hidden");
             this.emit(WebviewManagerEvents.buttonClick, { name: id });
             panel?.readyPanel();
             panel?.activatePanel();
             panel?.revealPanel();
         }
     }
-    
+
     /**
      * Sends `message` to the specified panel.
      * @param panelName a URI to refer to a ProseMirror panel, or a name to refer to a tool panel

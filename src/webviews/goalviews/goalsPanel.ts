@@ -10,8 +10,8 @@ export class GoalsPanel extends GoalsBase {
     private previousGoal: GoalAnswer<PpString> | undefined;
 
     // constructor to define the name and to listen for webview events
-    constructor(extensionUri: Uri, config: CoqLspClientConfig) {
-        super(extensionUri, config, "goals");
+    constructor(extensionUri: Uri, config: CoqLspClientConfig, onDidDispose : () => void) {
+        super(extensionUri, config, "goals", onDidDispose);
         this.on(WebviewEvents.change, () => {
             if (this.state === WebviewState.visible)
                 if (this.previousGoal)

@@ -47,7 +47,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     /** Whether the webview contains an input field. */
     private readonly _supportInsert: boolean;
 
-    constructor(extensionUri: Uri, name: string, supportInsert: boolean = false) {
+    constructor(extensionUri: Uri, name: string, supportInsert: boolean = false, private onDidDispose: () => void) {
         super();
         this.extensionUri = extensionUri;
         this.name = name;
@@ -64,7 +64,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     }
     public get isHidden() {
         return (this._state == WebviewState.open);
-    }    
+    }
 
     public get state() {
         return this._state;
@@ -100,7 +100,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 webviewOpts,
             );
         }
-        
+
 
         this._panel.onDidChangeViewState((e) => {
             if(e.webviewPanel.active) this.emit(WebviewEvents.change, WebviewState.focus);
@@ -143,6 +143,8 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         this._panel.onDidDispose(() => {
             this.changeState(WebviewState.closed);
             this._panel = null;
+            this.onDidDispose();
+            this.dispose();
         });
     }
 
@@ -190,7 +192,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      * Change the panel state to the ready state
      */
     public readyPanel() {
-        if(this._state != WebviewState.closed) return; 
+        if(this._state != WebviewState.closed) return;
         this.changeState(WebviewState.ready);
     }
 

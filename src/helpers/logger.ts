@@ -14,7 +14,7 @@ export class WaterproofLogger {
     }
 
     static debug(message: string) {
-        this.log(message)
+        //this.log(message)
     }
 
     static show() {

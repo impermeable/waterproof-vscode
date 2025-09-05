@@ -10,8 +10,8 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
 
     protected config: CoqLspClientConfig;
 
-    constructor(extensionUri: Uri, config: CoqLspClientConfig, name: string) {
-        super(extensionUri,name);
+    constructor(extensionUri: Uri, config: CoqLspClientConfig, name: string, onDidDispose : () => void) {
+        super(extensionUri, name, false, onDidDispose);
         this.config = config;
     }
 

@@ -1,4 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
+import { setCurrentTheme } from "./themeStore";
 import { WaterproofEditor, WaterproofEditorConfig } from "./waterproof-editor";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
@@ -128,6 +129,10 @@ window.onload = () => {
 				{ const status = msg.body;
 				editor.updateServerStatus(status);
 				break; }
+			case MessageType.themeUpdate:
+				setCurrentTheme(msg.body);
+				editor.updateNodeViewThemes(msg.body);
+				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

@@ -60,58 +60,15 @@ export class VersionChecker {
      * Run version checks asynchronously.
      */
     public async run(): Promise<void> {
-        const coqResult = await this.checkCoqVersionUsingBinary();
         const coqWaterproofResult = await this.checkWaterproofLib();
 
-        if (isVersionError(coqWaterproofResult) || isVersionError(coqResult)) {
-            if (isVersionError(coqWaterproofResult)) {
-                this.informWaterproofLibNotFound();
-            } else {
-                // TODO: Only check when default coq syntax is not set.
-                const coqWPversion = coqWaterproofResult.wpVersion;
-                if (coqWPversion.needsUpdate(this._reqVersionCoqWP)) {
-                    this.informUpdateAvailable("coq-waterproof", this._reqVersionCoqWP, coqWPversion);
-                }
-
-                if (isVersionError(coqResult)) {
-                    this.informWaterproofPathInvalid();
-                }
-            }
-
+        if (isVersionError(coqWaterproofResult)) {
+            this.informWaterproofLibNotFound();
         } else {
             const wpV = coqWaterproofResult.wpVersion;
             if (wpV.needsUpdate(this._reqVersionCoqWP)) {
                 this.informUpdateAvailable("coq-waterproof", this._reqVersionCoqWP, wpV);
             }
-            const coqRequirement = new VersionRequirement(coqWaterproofResult.requiredCoqVersion, COMPARE_MODE.STRICT_EQUALS);
-            if (coqResult.needsUpdate(coqRequirement)) {
-                this.informUpdateAvailable("coq", coqRequirement, coqResult);
-            }
-        }
-    }
-
-    /**
-     * Check installed version of Rocq using rocq.
-     * @returns
-     */
-    public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {
-        if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
-
-        const rocqBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "rocq");
-        wpl.debug(`rocqBinary: ${rocqBinary}`);
-        const command = `${rocqBinary} --version`;
-        const regex = /version (?<version>\d+\.\d+\.\d+)/g;
-
-        try {
-            const stdout = await this.exec(command);
-            wpl.debug(`Rocq version: ${stdout}`);
-            const groups = regex.exec(stdout)?.groups;
-            if (!groups) throw new Error("Failed to parse version string.");
-            return Version.fromString(groups["version"]);
-        } catch (err: unknown) {
-            return err instanceof Error
-                ? { reason: err.message }
-                : { reason: "Unknown error" };
         }
     }
 

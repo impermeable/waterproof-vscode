@@ -61,12 +61,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     }
 
     public get isOpened() {
-        if (!this._panel) {
-            // FIXME: Sanity check to make sure the state is set to closed.
-            this.closePanel();
-            return false;
-        }
-        return (this._state == WebviewState.visible);
+        return this._panel && (this._state == WebviewState.visible);
     }
     public get isHidden() {
         return (this._state == WebviewState.open);

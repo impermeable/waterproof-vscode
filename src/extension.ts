@@ -421,6 +421,7 @@ export class Waterproof implements Disposable {
         this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
         return this.client.startWithHandlers(this.webviewManager).then(
             () => {
+                this.webviewManager.open("goals");
                 // show user that LSP is working
                 this.statusBar.update(true);
                 this.clientRunning = true;

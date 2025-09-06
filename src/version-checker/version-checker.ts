@@ -1,6 +1,5 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
 import { Version, VersionRequirement } from "./version";
-import { COMPARE_MODE } from "./types";
 import { WaterproofFileUtil, WaterproofLogger as wpl } from "../helpers";
 
 export type VersionError = {
@@ -60,56 +59,15 @@ export class VersionChecker {
      * Run version checks asynchronously.
      */
     public async run(): Promise<void> {
-        const coqResult = await this.checkCoqVersionUsingBinary();
         const coqWaterproofResult = await this.checkWaterproofLib();
 
-        if (isVersionError(coqWaterproofResult) || isVersionError(coqResult)) {
-            if (isVersionError(coqWaterproofResult)) {
-                this.informWaterproofLibNotFound();
-            } else {
-                // TODO: Only check when default coq syntax is not set.
-                const coqWPversion = coqWaterproofResult.wpVersion;
-                if (coqWPversion.needsUpdate(this._reqVersionCoqWP)) {
-                    this.informUpdateAvailable("coq-waterproof", this._reqVersionCoqWP, coqWPversion);
-                }
-
-                if (isVersionError(coqResult)) {
-                    this.informWaterproofPathInvalid();
-                }
-            }
-
+        if (isVersionError(coqWaterproofResult)) {
+            this.informWaterproofLibNotFound();
         } else {
             const wpV = coqWaterproofResult.wpVersion;
             if (wpV.needsUpdate(this._reqVersionCoqWP)) {
                 this.informUpdateAvailable("coq-waterproof", this._reqVersionCoqWP, wpV);
             }
-            const coqRequirement = new VersionRequirement(coqWaterproofResult.requiredCoqVersion, COMPARE_MODE.STRICT_EQUALS);
-            if (coqResult.needsUpdate(coqRequirement)) {
-                this.informUpdateAvailable("coq", coqRequirement, coqResult);
-            }
-        }
-    }
-
-    /**
-     * Check installed version of coq using coqc.
-     * @returns
-     */
-    public async checkCoqVersionUsingBinary(): Promise<Version | VersionError> {
-        if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
-
-        const coqcBinary = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), "coqc");
-        const command = `${coqcBinary} --version`;
-        const regex = /version (?<version>\d+\.\d+\.\d+)/g;
-
-        try {
-            const stdout = await this.exec(command);
-            const groups = regex.exec(stdout)?.groups;
-            if (!groups) throw new Error("Failed to parse version string.");
-            return Version.fromString(groups["version"]);
-        } catch (err: unknown) {
-            return err instanceof Error
-                ? { reason: err.message }
-                : { reason: "Unknown error" };
         }
     }
 
@@ -121,13 +79,13 @@ export class VersionChecker {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
         const ext = process.platform === "win32" ? ".exe" : "";
 
-        const coqtopPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `coqtop${ext}`);
-        wpl.debug(`coqtopPath: ${coqtopPath}`)
-        const printVersionFile = Uri.joinPath(this._context.extensionUri, "misc-includes", "printversion.v").fsPath;
-        const command = `${coqtopPath} -l ${printVersionFile} -set "Coqtop Exit On Error" -batch`;
+        const ocamlfindPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `ocamlfind${ext}`);
+        wpl.debug(`ocamlfindPath: ${ocamlfindPath}`);
+        const command = `${ocamlfindPath} query -format %v coq-waterproof.plugin`;
 
         try {
             const stdout = await this.exec(command);
+            wpl.debug(`Waterproof version: ${stdout}`);
             const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
             const versionCoqWaterproof = Version.fromString(wpVersion);
             const versionRequiredCoq = Version.fromString(reqCoqVersion);

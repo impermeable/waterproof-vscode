@@ -89,7 +89,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // deduce (end) positions of sentences from progress notifications
             this.fileProgressComponents.push(this.sentenceManager);
-            const diagnosticsCollection = languages.createDiagnosticCollection("coq");
+            const diagnosticsCollection = languages.createDiagnosticCollection("rocq");
             
             // Set detailedErrors to the value of the `Waterproof.detailedErrorsMode` setting.
             this.detailedErrors = WaterproofConfigHelper.detailedErrors;

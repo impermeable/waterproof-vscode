@@ -223,7 +223,7 @@ export class Waterproof implements Disposable {
 
             const windowsInstallationScript = `echo Begin Waterproof dependency software installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v3.0.0%2B9.0/Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
             // TODO: this may need to be determined in a better way
-            const uninstallerLocation = `C:\\waterproof_dependencies\\.opam\\wp-3.0.0+9.0\\Uninstall.exe`
+            const uninstallerLocation = `C:\\waterproof_dependencies\\opam\\wp-3.0.0+9.0\\Uninstall.exe`
 
             await this.stopClient();
 

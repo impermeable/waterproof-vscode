@@ -69,6 +69,13 @@ opam install coq-lsp.0.2.3+9.0
 opam install coq-waterproof
 ```
 
+Note: It may be that you need to install more dependencies, for which you can also use homebrew or MacPorts.
+For instance, if at some point the compilation fails because `pkgconf` does not compile, at that stage one may first need to execute
+```
+brew install pkgconf
+```
+before you re-execute the command `opam install coq-lsp.0.2.3+9.0`.
+
 ## Manual installation on Windows with installer
 
 ### Step 1: Dependencies installer
@@ -145,6 +152,9 @@ From this page in vscode, you can just click on the "Install" button.
 
 ### Tutorial
 To get started with Waterproof, we recommend going through the tutorial. The tutorial can be accessed in VS Code by pressing `Ctrl-Shift-P` (this opens the command palette), typing `open tutorial` until you find the option `Waterproof: Open Tutorial`.
+
+### Where to put Waterproof files
+In order for the Waterproof extension to work on files, the folder in which the files are located needs to be indicated as *trusted* in vscode, for which vscode will usually show a popup. It is therefore recommended to organize your Waterproof files in folders, open such a folder with vscode, and if the popup occurs, trust these folders.
 
 ### Tactics
 Waterproof makes use of 'tactics', information on the available tactics, together with explanations and examples can be accessed via the extension or through the repository:

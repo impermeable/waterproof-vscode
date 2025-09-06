@@ -42,14 +42,16 @@
   "contributes": {
     "themes": [
       {
-        "label": "Waterproof light theme",
+        "label": "Waterproof Light",
         "uiTheme": "vs",
-        "path": "./themes/waterproofTheme-color-theme-light.json"
+        "path": "./themes/waterproofTheme-color-theme-light.json",
+        "id": "waterproof-light"
       },
       {
-        "label": "Waterproof dark theme",
-        "uiTheme": "vs",
-        "path": "./themes/waterproofTheme-color-theme-dark.json"
+        "label": "Waterproof Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/waterproofTheme-color-theme-dark.json",
+        "id": "waterproof-dark"
       }
     ],
     "iconThemes": [

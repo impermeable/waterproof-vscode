@@ -101,7 +101,7 @@ export function createProseMirrorDocument(input: string, fileFormat: FileFormat)
             throw new Error("Unknown file format in prosemirror document constructor");
     }
 
-    let document = constructDocument(blocks)
+    const document = constructDocument(blocks)
     // 2.2 Construct the document and return
     return [document, blocks];
 }

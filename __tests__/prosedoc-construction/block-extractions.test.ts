@@ -1,5 +1,7 @@
-import { extractCoqBlocks, extractCoqDoc, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/kroqed-editor/prosedoc-construction/block-extraction";
-import { isCoqBlock, isCoqDocBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { createProseMirrorDocument } from "../../editor/src/kroqed-editor/prosedoc-construction";
+import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/kroqed-editor/prosedoc-construction/block-extraction";
+import { isCodeBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { FileFormat } from "../../shared";
 
 test("Identify input blocks", () => {
     const document = "# Example\n<input-area>\n# Test input area\n</input-area>\n";
@@ -66,10 +68,17 @@ test("Parse Coq blocks #1", () => {
     const blocks = extractCoqBlocks(document);
 
     expect(blocks.length).toBe(1);
-    expect(isCoqBlock(blocks[0])).toBe(true);
+    expect(isCodeBlock(blocks[0])).toBe(true);
     expect(blocks[0].stringContent).toBe("Lemma trivial.");
+
+    // Outer ranges
     expect(blocks[0].range.from).toBe(9);
-    expect(blocks[0].range.to).toBe(35);
+    expect(blocks[0].range.to).toBe(document.length);
+
+    // Inner ranges
+    expect(blocks[0].innerRange.from).toBe(17);
+    expect(blocks[0].innerRange.to).toBe(31);
+
 });
 
 test("Parse Coq blocks #2", () => {
@@ -77,29 +86,40 @@ test("Parse Coq blocks #2", () => {
     const blocks = extractCoqBlocks(document);
 
     expect(blocks.length).toBe(2);
-    expect(isCoqBlock(blocks[0])).toBe(true);
-    expect(isCoqBlock(blocks[1])).toBe(true);
+    expect(isCodeBlock(blocks[0])).toBe(true);
+    expect(isCodeBlock(blocks[1])).toBe(true);
     expect(blocks[0].stringContent).toBe("Require Import ZArith.");
     expect(blocks[1].stringContent).toBe("Lemma trivial.");
+
+    // Outer ranges first block
     expect(blocks[0].range.from).toBe(0);
     expect(blocks[0].range.to).toBe(34);
 
+    // Inner ranges first block
+    expect(blocks[0].innerRange.from).toBe(7);
+    expect(blocks[0].innerRange.to).toBe(29);
+
+    // Outer ranges second block
     expect(blocks[1].range.from).toBe(43);
-    expect(blocks[1].range.to).toBe(69);
+    expect(blocks[1].range.to).toBe(document.length);
+
+    // Inner ranges second block
+    expect(blocks[1].innerRange.from).toBe(51);
+    expect(blocks[1].innerRange.to).toBe(65);
 });
 
-test("Extract coqdoc blocks", () => {
-    const input = `(** * Header in coqdoc comment *)\nCoq code\n(** $\\text{math display}$ *)\nMore Coq code\n`;
-    const blocks = extractCoqDoc(input);
 
-    // console.log(blocks);
+test("Parse Coq Blocks #3", () => {
+    const content = "```coq\nLemma test\n```";
+    const [_, blocks] = createProseMirrorDocument(content, FileFormat.MarkdownV);
 
-    expect(blocks.length).toBe(2);
-    expect(isCoqDocBlock(blocks[0])).toBe(true);
-    expect(isCoqDocBlock(blocks[1])).toBe(true);
-
-    expect(blocks[0].stringContent).toBe("* Header in coqdoc comment ");
-    expect(blocks[1].stringContent).toBe("$\\text{math display}$ ");
+    expect(blocks.length).toBe(1);
+    expect(isCodeBlock(blocks[0])).toBe(true);
+    expect(blocks[0].stringContent).toBe("Lemma test");
+    expect(blocks[0].range.from).toBe(0);
+    expect(blocks[0].range.to).toBe(content.length);
+    expect(blocks[0].innerRange.from).toBe(7);
+    expect(blocks[0].innerRange.to).toBe(content.length - "\n```".length);
 });
 
 test("Extract math display from inside coqdoc comment", () => {

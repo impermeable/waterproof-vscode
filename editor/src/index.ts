@@ -42,9 +42,13 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 			cursorChange(cursorPosition) {
 				codeAPI.postMessage({ type: MessageType.cursorChange, body: cursorPosition });
 			},
+			viewportHint(start, end) {
+				codeAPI.postMessage({ type: MessageType.viewportHint, body: { start, end } });
+			},
 			lineNumbers(linenumbers, version) {
 				codeAPI.postMessage({ type: MessageType.lineNumbers, body: { linenumbers, version } });
 			},
+
 		},
 		documentConstructor: format === FileFormat.MarkdownV ? blocksFromMV : blocksFromV,
 		// TODO: For now assuming we are constructing an mv file editor.
@@ -125,10 +129,23 @@ window.onload = () => {
 				{ const diagnostics = msg.body;
 				editor.parseCoqDiagnostics(diagnostics);
 				break; }
+			case MessageType.serverStatus:
+				{ const status = msg.body;
+				editor.updateServerStatus(status);
+				break; }
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
 				break;
+		}
+	});
+	let timeoutHandle: number | undefined;
+	window.addEventListener('scroll', (_event) => {
+		if (timeoutHandle === undefined) {
+			timeoutHandle = window.setTimeout(() => {
+				editor.handleScroll(window.innerHeight);
+				timeoutHandle = undefined;
+			}, 100);
 		}
 	});
 

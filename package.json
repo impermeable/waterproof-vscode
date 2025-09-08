@@ -268,7 +268,7 @@
         "properties": {
           "waterproof.showLineNumbersInEditor": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "description": "Show line numbers in the Waterproof editor"
           },
           "waterproof.showMenuItemsInEditor": {
@@ -290,7 +290,7 @@
             "type": "boolean",
             "default": false,
             "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Rocq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
-          }        
+          }
         }
       },
       {
@@ -326,6 +326,11 @@
             "type": "boolean",
             "default": true,
             "description": "Send extra diagnostics data, usually on error"
+          },
+          "waterproof.ContinuousChecking": {
+            "type": "boolean",
+            "default": false,
+            "description": "By default, Waterproof only checks the part of the document that is visble. Turning this setting on will check the whole document continuously. Turning this on may cause performance issues."
           }
         }
       },

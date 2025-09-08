@@ -1,4 +1,4 @@
-import { DiagnosticSeverity, Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
+import { DiagnosticSeverity, Disposable, OutputChannel, Position, Range, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
@@ -171,6 +171,17 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     this.onCheckingCompleted();
                 }
             }));
+
+            this.disposables.push(this.onNotification("$/coq/serverStatus", params => {
+                const document = this.activeDocument;
+                if (!document) return;
+                // Handle the server status notification
+                this.webviewManager!.postMessage(document.uri.toString(), {
+                    type: MessageType.serverStatus,
+                    body: params
+                }
+            );
+            }));
         }
 
         async onCheckingCompleted(): Promise<void> {
@@ -248,7 +259,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         }
 
         async requestGoals(params?: GoalRequest | Position): Promise<GoalAnswer<PpString>> {
-            wpl.debug(`Requesting goals with params: ${JSON.stringify(params)}`);
             if (!params || "line" in params) {  // if `params` is not a `GoalRequest` ...
                 params ??= this.activeCursorPosition;
                 if (!this.activeDocument || !params) {
@@ -292,6 +302,64 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
         }
 
+        async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
+            if (!this.isRunning()) return;
+            const startPos = document.positionAt(start);
+            let endPos = document.positionAt(end);
+            // Compute end of document position, use that if we're close
+            const endOfDocument = document.positionAt(document.getText().length);
+            if (endOfDocument.line - endPos.line < 20) {
+                endPos = endOfDocument;
+            }
+
+            const requestBody = {
+                'textDocument':  VersionedTextDocumentIdentifier.create(
+                    document.uri.toString(),
+                    document.version
+                ),
+                'range': {
+                    start: {
+                        line: startPos.line,
+                        character: startPos.character
+                    },
+                    end: {
+                        line: endPos.line,
+                        character: endPos.character
+                    }
+                } 
+            };
+            
+            await this.sendNotification("coq/viewRange", requestBody);
+
+            // get input areas based on tags
+            const inputAreas = getInputAreas(document);
+            if (!inputAreas) {
+                throw new Error("Cannot check proof status; illegal input areas.");
+            }
+
+            const currentRange : Range = new Range(startPos, endPos);
+            // for each input area, check the proof status
+            let statuses: InputAreaStatus[];
+            try {
+                statuses = await Promise.all(inputAreas.map((a : Range) => {
+                    if (a.intersection(currentRange) === undefined && !a.isEmpty) {
+                        return Promise.resolve(InputAreaStatus.NotInView);
+                    }
+                    return determineProofStatus(this, document, a);
+                }
+                ));
+            } catch (reason) {
+                if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
+                throw reason;
+            }
+
+            // forward statuses to corresponding ProseMirror editor
+            this.webviewManager!.postAndCacheMessage(document, {
+                type: MessageType.qedStatus,
+                body: statuses
+            });
+        }
+
         async updateCompletions(document: TextDocument): Promise<void> {
             if (!this.isRunning()) return;
             if (!this.webviewManager?.has(document)) {
@@ -326,8 +394,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             this.fileProgressComponents.forEach(c => c.dispose());
             this.disposables.forEach(d => d.dispose());
             return super.dispose(timeout);
-        }
-
     }
 }
 
@@ -336,4 +402,5 @@ function wasCanceledByServer(reason: unknown): boolean {
         && typeof reason === "object"
         && "message" in reason
         && reason.message === "Request got old in server";  // or: code == -32802
+}
 }

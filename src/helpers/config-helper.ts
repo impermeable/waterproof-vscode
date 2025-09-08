@@ -72,6 +72,12 @@ export class WaterproofConfigHelper {
         return config().get<boolean>("sendDiagsExtraData") as boolean;
     }
 
+    /** `waterproof.ContinuousChecking` */
+    static get ContinuousChecking() {
+        return config().get<boolean>("ContinuousChecking") as boolean;
+    }
+
+
     /** `waterproof.goalAfterTactic` */
     static get goalAfterTactic() {
         return config().get<boolean>("goalAfterTactic") as boolean;

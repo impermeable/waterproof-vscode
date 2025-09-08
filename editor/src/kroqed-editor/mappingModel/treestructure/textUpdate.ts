@@ -16,6 +16,7 @@ export class TextUpdate {
         if (step.from == step.to) type = OperationType.insert;
         if (step.slice.content.firstChild === null) type = OperationType.delete;
 
+
         // If there is more than one node in the fragment of step, throw an error
         if(step.slice.content.childCount > 1) throw new Error(" Text edit contained more text nodes than expected ");
 
@@ -45,19 +46,22 @@ export class TextUpdate {
             finalText: text
         }
 
+        const offset = getTextOffset(type,step);
+
         tree.traverseDepthFirst((node: TreeNode) => {
             if (node.prosemirrorStart >= targetCell.prosemirrorStart && node.prosemirrorEnd <= targetCell.prosemirrorEnd) {
                 // Remove the node from the tree
-                node.prosemirrorEnd += offsetEnd;
-                node.originalEnd += offsetEnd;
+                node.prosemirrorEnd += offset;
+                node.originalEnd += offset;
+                node.stringContent = text
             }
             if (node.prosemirrorStart > targetCell.prosemirrorStart) {
-                node.prosemirrorStart += offsetBegin;
-                node.prosemirrorEnd += offsetEnd;
+                node.prosemirrorStart += offset;
+                node.prosemirrorEnd += offset;
             }
             if (node.originalStart > targetCell.originalStart) {
-                node.originalStart += offsetBegin;
-                node.originalEnd += offsetEnd;
+                node.originalStart += offset;
+                node.originalEnd += offset;
             }
         });
         let newTree = new Tree;
@@ -65,4 +69,17 @@ export class TextUpdate {
         return {result, newTree};
     }
 
+
+
+}
+/** This gets the offset in the vscode document that is being added (then >0) or removed (then <0) */
+function getTextOffset(type: OperationType, step: ReplaceStep) : number  {
+    if (type == OperationType.delete) return step.from - step.to;
+
+    /** Validate step if not a delete type */
+    if (step.slice.content.firstChild === null || step.slice.content.firstChild.text === undefined) throw new Error(" Invalid replace step " + step);
+
+    if (type == OperationType.insert) return step.slice.content.firstChild.text?.length;
+
+    return step.slice.content.firstChild.text?.length + step.from - step.to;
 }

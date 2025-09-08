@@ -114,7 +114,6 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     <button class="symbol-button" id="goals">Goals</button>
                     <button class="symbol-button" id="help">Help</button>
                     <button class="symbol-button" id="search">Search</button>
-                    <button class="symbol-button" id="expandDefinition">Expand definition</button>
                     <button class="symbol-button" id="symbols">Symbols</button>
                     <button class="symbol-button" id="tactics">Tactics</button>
                     <button class="symbol-button" id="execute">Execute</button>
@@ -129,7 +128,6 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     const executeButton = document.getElementById('execute');
                     const helpButton = document.getElementById('help');
                     const searchButton = document.getElementById('search');
-                    const expandButton = document.getElementById('expandDefinition');
                     const symbolsButton = document.getElementById('symbols');
                     const tacticsButton = document.getElementById('tactics');
 
@@ -156,11 +154,6 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     searchButton.addEventListener('click', () => {
                         // Handle commonExecute button click event by sending a message to vscode
                         vscode.postMessage({ command: 'search' });
-                    });
-
-                    expandButton.addEventListener('click', () => {
-                        // Handle expandDefinition button click event by sending a message to vscode
-                        vscode.postMessage({ command: 'expandDefinition' });
                     });
 
                     symbolsButton.addEventListener('click', () => {

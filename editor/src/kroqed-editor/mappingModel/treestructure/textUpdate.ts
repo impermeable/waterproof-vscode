@@ -23,7 +23,7 @@ export class TextUpdate {
         // Check that the slice conforms to our assumptions
         if (step.slice.openStart != 0 || step.slice.openEnd != 0) throw new Error(" We do not support partial slices for ReplaceSteps");
 
-        let tree = mapping.getMapping()
+        const tree = mapping.getMapping()
 
         const targetCell: TreeNode | null = tree.findNodeByProsemirrorPosition(step.from)
         if (targetCell === null) throw new Error(" Target cell is not in mapping!!! ");
@@ -37,33 +37,47 @@ export class TextUpdate {
         /** The offset within the correct stringCell for the step action */ 
         const offsetEnd = step.to - targetCell.prosemirrorStart;  
 
-        const text = step.slice.content.firstChild && step.slice.content.firstChild.text ? step.slice.content.firstChild.text : "";
-
-                /** The resulting document change to document model */
-        const result: DocChange = {
-            startInFile: targetCell.originalStart + offsetBegin,
-            endInFile: targetCell.originalStart + offsetEnd,
-            finalText: text
-        }
+        let resultText = ""
 
         const offset = getTextOffset(type,step);
 
         tree.traverseDepthFirst((node: TreeNode) => {
             if (node.prosemirrorStart >= targetCell.prosemirrorStart && node.prosemirrorEnd <= targetCell.prosemirrorEnd) {
                 // Remove the node from the tree
+                // console.log(node.prosemirrorEnd)
+                // console.log(node.originalEnd)
+
+                // Update only if it's a leaf
+                const localOffsetBegin = step.from - node.prosemirrorStart;
+                const localOffsetEnd   = step.to   - node.prosemirrorStart;
+
+                const insertedText = step.slice.content.firstChild?.text ?? "";
+
+                node.stringContent =
+                    node.stringContent.slice(0, localOffsetBegin) +
+                    insertedText +
+                    node.stringContent.slice(localOffsetEnd);
+
+                resultText = node.stringContent
+                    
                 node.prosemirrorEnd += offset;
                 node.originalEnd += offset;
-                node.stringContent = text
-            }
-            if (node.prosemirrorStart > targetCell.prosemirrorStart) {
+            } else if (node.prosemirrorStart > targetCell.prosemirrorStart) {
                 node.prosemirrorStart += offset;
                 node.prosemirrorEnd += offset;
-            }
-            if (node.originalStart > targetCell.originalStart) {
+            } else if (node.originalStart > targetCell.originalStart) {
                 node.originalStart += offset;
                 node.originalEnd += offset;
-            }
+            } 
         });
+
+        /** The resulting document change to document model */
+        const result: DocChange = {
+            startInFile: targetCell.originalStart + offsetBegin,
+            endInFile: targetCell.originalStart + offsetEnd,
+            finalText: resultText
+        }
+
         let newTree = new Tree;
         newTree = tree;
         return {result, newTree};

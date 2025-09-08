@@ -117,6 +117,7 @@ export class NodeUpdate {
         });
         let newTree = new Tree;
         newTree = tree;
+        console.log(newTree.root);
         return {result, newTree};
     }
 

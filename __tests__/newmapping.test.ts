@@ -64,6 +64,8 @@ test("Input-area with nested coqblock", () => {
     
     // Nested coqblock
     const coqblockNode = nodes[2];
+    console.log(coqblockNode)
+    expect(coqblockNode.type).toBe("code");
     expect(coqblockNode.originalStart).toBe(20); 
     expect(coqblockNode.originalEnd).toBe(24);
     expect(coqblockNode.prosemirrorStart).toBe(2);

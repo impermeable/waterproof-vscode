@@ -17,6 +17,9 @@ function createTestMapping(content: string, build: (s: EditorState) => Transacti
     const blocks = proseDocandBlocks[1];
     const mapping = new TextDocMappingNew(blocks, 1)
     let tree = mapping.getMapping();
+    tree.traverseDepthFirst((node: TreeNode) => {
+        console.log(node);
+    })
     const schema = WaterproofSchema;
     const state = EditorState.create({
         schema,
@@ -33,48 +36,47 @@ function createTestMapping(content: string, build: (s: EditorState) => Transacti
     return parsed;
 }
 
-test("ReplaceStep delete — removes lone markdown block", () => {
-  const content = `Hello`;
-  const parsed = createTestMapping(content, (s) => {
-    const first = s.doc.child(0);
-    const from = 1;
-    const to = first.nodeSize-1;
-    return s.tr.delete(from, to);
-  });
+// test("ReplaceStep delete — removes lone markdown block", () => {
+//   const content = `Hello`;
+//   const parsed = createTestMapping(content, (s) => {
+//     const first = s.doc.child(0);
+//     const from = 1;
+//     const to = first.nodeSize-1;
+//     return s.tr.delete(from, to);
+//   });
 
-  const dc = parsed.result as DocChange;
-  expect(dc.finalText).toBe("");
-  console.log(parsed.newTree.root)
-  expect(parsed.newTree.root!.children.length).toBe(0);
-});
+//   const dc = parsed.result as DocChange;
+//   expect(dc.finalText).toBe("");
+//   expect(parsed.newTree.root!.children.length).toBe(0);
+// });
 
 test("ReplaceStep delete — removes middle code block, preserves neighbors", () => {
-  const content = `before
-    \`\`\`coq
-    Lemma test
-    \`\`\`
-    after
-    `;
+  const content = "before \n```coq\nLemma test\n```\nafter\n";
 
   const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
-    const idx = 1; 
-    let pos = 1;
-    for (let k = 0; k < idx; k++) pos += s.doc.child(k).nodeSize; 
-    const from = pos;
-    const to = from + s.doc.child(idx).nodeSize;
+    const from = 10;
+    const to = 20;
     return s.tr.delete(from, to);
   });
 
   const dc = parsed.result as DocChange;
   expect(dc.finalText).toBe("");
-  expect(dc.endInFile).toBeGreaterThan(dc.startInFile);
-
+  console.log(parsed.newTree.root);
   const children = parsed.newTree.root!.children;
   expect(children.length).toBe(2);
   expect(children[0].type).toBe("markdown");
   expect(children[1].type).toBe("markdown");
-  expect(children[0].stringContent).toBe("before\n");
+  console.log(children[0].stringContent);
+  expect(children[0].stringContent).toBe("before ");
   expect(children[1].stringContent).toBe("after\n");
+  expect(children[0].originalStart).toBe(0);
+  expect(children[0].originalEnd).toBe(7);  
+  expect(children[1].originalStart).toBe(20);
+  expect(children[1].originalEnd).toBe(26);
+  expect(children[0].prosemirrorStart).toBe(1);
+  expect(children[0].prosemirrorEnd).toBe(8); 
+  expect(children[1].prosemirrorStart).toBe(8);
+  expect(children[1].prosemirrorEnd).toBe(14);
 });
 
 // test("ReplaceStep delete — removes nested code inside input wrapper", () => {

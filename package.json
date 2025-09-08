@@ -290,7 +290,7 @@
             "type": "boolean",
             "default": false,
             "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Rocq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
-          }        
+          }
         }
       },
       {
@@ -516,7 +516,7 @@
     "vscode-languageclient": "8.1.0",
     "vscode-languageserver-types": "3.17.5",
     "vscode-uri": "3.1.0",
-    "waterproof-editor": "github:impermeable/waterproof-editor#main"
+    "waterproof-editor": "github:impermeable/waterproof-editor#wp-pr208"
   },
   "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"

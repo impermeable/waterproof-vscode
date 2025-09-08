@@ -152,7 +152,7 @@ export class Waterproof implements Disposable {
 
         // make relevant gui components
         this.statusBar = new CoqnitiveStatusBar();
-        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration))
+        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create())
         this.goalsComponents.push(goalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals");
@@ -162,7 +162,7 @@ export class Waterproof implements Disposable {
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
-        const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create(WaterproofConfigHelper.configuration));
+        const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create());
         this.webviewManager.addToolWebview("debug", debug);
         this.goalsComponents.push(debug);
 
@@ -302,10 +302,10 @@ export class Waterproof implements Disposable {
                     workspace.fs.writeFile(uri, data).then(() => {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
-                        commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-                    });
+                        commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
+                    });                    
                 }, (err) => {
-                    window.showErrorMessage("Could not a new Waterproof file.");
+                    window.showErrorMessage("Could not open Waterproof tutorial file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
                     return;
                 })
@@ -331,8 +331,8 @@ export class Waterproof implements Disposable {
                     workspace.fs.writeFile(uri, data).then(() => {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
-                        commands.executeCommand("vscode.openWith", uri, "coqEditor.coqEditor");
-                    });
+                        commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
+                    });                    
                 }, (err) => {
                     window.showErrorMessage("Could not create a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
@@ -405,12 +405,11 @@ export class Waterproof implements Disposable {
 
         const serverOptions = CoqLspServerConfig.create(
             // TODO: Support +coqversion versions.
-            this.context.extension.packageJSON.requiredCoqLspVersion.slice(2),
-            WaterproofConfigHelper.configuration
+            this.context.extension.packageJSON.requiredCoqLspVersion.slice(2)
         );
 
         const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "coqmarkdown" }, { language: "coq" }],  // both .mv and .v files
+            documentSelector: [{ language: "rocqmarkdown" }, { language: "rocq" }],  // both .mv and .v files
             outputChannelName: "Waterproof LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
             initializationOptions: serverOptions,

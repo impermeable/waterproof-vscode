@@ -1,6 +1,5 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration, commands, env, window } from "vscode";
 import { Version, VersionRequirement } from "./version";
-import { COMPARE_MODE } from "./types";
 import { WaterproofFileUtil, WaterproofLogger as wpl } from "../helpers";
 
 export type VersionError = {

@@ -4,6 +4,7 @@ import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscod
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
+import { WaterproofConfigHelper } from "../helpers";
 
 /**
  * The following are types related to the language client and the
@@ -129,7 +130,6 @@ export interface CoqLspServerConfig {
     unicode_completion: "off" | "normal" | "extended";
     max_errors: number;
     pp_type: 0 | 1 | 2;
-    show_stats_on_hover: boolean;
     send_diags_extra_data: boolean;
     check_only_on_request: boolean;
 }
@@ -138,24 +138,21 @@ export interface CoqLspServerConfig {
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CoqLspServerConfig {
     export function create(
-        client_version: string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        wsConfig: any
+        client_version: string
     ): CoqLspServerConfig {
         return {
             client_version: client_version,
-            eager_diagnostics: wsConfig.eager_diagnostics,
-            goal_after_tactic: wsConfig.goal_after_tactic,
-            show_coq_info_messages: wsConfig.show_waterproof_info_messages,
-            show_notices_as_diagnostics: wsConfig.show_notices_as_diagnostics,
-            admit_on_bad_qed: wsConfig.admit_on_bad_qed,
-            debug: wsConfig.debug,
-            unicode_completion: wsConfig.unicode_completion,
-            max_errors: wsConfig.max_errors,
-            pp_type: wsConfig.pp_type,
-            show_stats_on_hover: wsConfig.show_stats_on_hover,
-            send_diags_extra_data: wsConfig.send_diags_extra_data,
-            check_only_on_request: !wsConfig.ContinuousChecking
+            eager_diagnostics: WaterproofConfigHelper.eagerDiagnostics,
+            goal_after_tactic: WaterproofConfigHelper.goalAfterTactic,
+            show_coq_info_messages: WaterproofConfigHelper.showWaterproofInfoMessages,
+            show_notices_as_diagnostics: WaterproofConfigHelper.showNoticesAsDiagnostics,
+            admit_on_bad_qed: WaterproofConfigHelper.admitOnBadQed,
+            debug: WaterproofConfigHelper.debug,
+            unicode_completion: WaterproofConfigHelper.unicodeCompletion,
+            max_errors: WaterproofConfigHelper.maxErrors,
+            pp_type: WaterproofConfigHelper.ppType,
+            send_diags_extra_data: WaterproofConfigHelper.sendDiagsExtraData,
+            check_only_on_request: !WaterproofConfigHelper.ContinuousChecking
         };
     }
 }
@@ -163,9 +160,8 @@ export namespace CoqLspServerConfig {
 // TODO: Rewrite namespace to modern syntax
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CoqLspClientConfig {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function create(wsConfig: any): CoqLspClientConfig {
-        const obj: CoqLspClientConfig = { show_goals_on: wsConfig.show_goals_on };
+    export function create(): CoqLspClientConfig {
+        const obj: CoqLspClientConfig = { show_goals_on: ShowGoalsOnCursorChange.Never };
         return obj;
     }
 }

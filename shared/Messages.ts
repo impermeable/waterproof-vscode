@@ -45,6 +45,7 @@ export type Message =
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>
+    | MessageBase<MessageType.themeUpdate, "dark" | "light">
     | MessageBase<MessageType.viewportHint, { start: number, end: number }>;
 
 /**
@@ -75,6 +76,7 @@ export const enum MessageType {
     setShowLineNumbers,
     setShowMenuItems,
     teacher,
+    themeUpdate,
     flash,
     viewportHint,
 }

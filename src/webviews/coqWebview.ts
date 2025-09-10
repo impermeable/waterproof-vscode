@@ -46,6 +46,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     private name: string;
     /** Whether the webview contains an input field. */
     private readonly _supportInsert: boolean;
+    private disposables: Disposable[] = [];
 
     constructor(extensionUri: Uri, name: string, supportInsert: boolean = false) {
         super();
@@ -60,11 +61,11 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     }
 
     public get isOpened() {
-        return (this._state == WebviewState.visible);
+        return this._panel && (this._state == WebviewState.visible);
     }
     public get isHidden() {
         return (this._state == WebviewState.open);
-    }    
+    }
 
     public get state() {
         return this._state;
@@ -72,6 +73,9 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
 
     dispose() {
         this._panel?.dispose();
+        for (const d of this.disposables) {
+            d.dispose();
+        }
     }
 
     protected create() {
@@ -100,7 +104,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 webviewOpts,
             );
         }
-        
+
 
         this._panel.onDidChangeViewState((e) => {
             if(e.webviewPanel.active) this.emit(WebviewEvents.change, WebviewState.focus);
@@ -140,10 +144,20 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         `;
 
 
-        this._panel.onDidDispose(() => {
-            this.changeState(WebviewState.closed);
-            this._panel = null;
-        });
+        this.disposables.push(this._panel.onDidDispose(() => {
+            // Once the panel has been disposed (for example when the user has closed the panel), we close (in terms of state) it here.
+            this.closePanel();
+        }));
+    }
+
+    /**
+     * Closes the panel
+     */
+    private closePanel() {
+        // Update the state to closed
+        this.changeState(WebviewState.closed);
+        // Remove the webview panel instance
+        this._panel = null;
     }
 
     /**
@@ -183,14 +197,14 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      */
     public deactivatePanel() {
         this._panel?.dispose();
-        this.changeState(WebviewState.closed);
+        this.closePanel();
     }
 
     /**
      * Change the panel state to the ready state
      */
     public readyPanel() {
-        if(this._state != WebviewState.closed) return; 
+        if(this._state != WebviewState.closed) return;
         this.changeState(WebviewState.ready);
     }
 

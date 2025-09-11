@@ -4,7 +4,7 @@ import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscod
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
-import { WaterproofConfigHelper } from "../helpers";
+import { WaterproofConfigHelper, WaterproofSetting } from "../helpers";
 
 /**
  * The following are types related to the language client and the
@@ -142,17 +142,17 @@ export namespace CoqLspServerConfig {
     ): CoqLspServerConfig {
         return {
             client_version: client_version,
-            eager_diagnostics: WaterproofConfigHelper.eagerDiagnostics,
-            goal_after_tactic: WaterproofConfigHelper.goalAfterTactic,
-            show_coq_info_messages: WaterproofConfigHelper.showWaterproofInfoMessages,
-            show_notices_as_diagnostics: WaterproofConfigHelper.showNoticesAsDiagnostics,
-            admit_on_bad_qed: WaterproofConfigHelper.admitOnBadQed,
-            debug: WaterproofConfigHelper.debug,
-            unicode_completion: WaterproofConfigHelper.unicodeCompletion,
-            max_errors: WaterproofConfigHelper.maxErrors,
-            pp_type: WaterproofConfigHelper.ppType,
-            send_diags_extra_data: WaterproofConfigHelper.sendDiagsExtraData,
-            check_only_on_request: !WaterproofConfigHelper.ContinuousChecking
+            eager_diagnostics: WaterproofConfigHelper.get(WaterproofSetting.EagerDiagnostics),
+            goal_after_tactic: WaterproofConfigHelper.get(WaterproofSetting.GoalAfterTactic),
+            show_coq_info_messages: WaterproofConfigHelper.get(WaterproofSetting.ShowWaterproofInfoMessages),
+            show_notices_as_diagnostics: WaterproofConfigHelper.get(WaterproofSetting.ShowNoticesAsDiagnostics),
+            admit_on_bad_qed: WaterproofConfigHelper.get(WaterproofSetting.AdmitOnBadQed),
+            debug: WaterproofConfigHelper.get(WaterproofSetting.Debug),
+            unicode_completion: WaterproofConfigHelper.get(WaterproofSetting.UnicodeCompletion),
+            max_errors: WaterproofConfigHelper.get(WaterproofSetting.MaxErrors),
+            pp_type: WaterproofConfigHelper.get(WaterproofSetting.PpType),
+            send_diags_extra_data: WaterproofConfigHelper.get(WaterproofSetting.SendDiagsExtraData),
+            check_only_on_request: !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking)
         };
     }
 }

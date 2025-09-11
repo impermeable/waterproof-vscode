@@ -7,7 +7,7 @@ import { SequentialEditor } from "./edit";
 import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
-import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger } from "../helpers";
+import { qualifiedSettingName, WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger, WaterproofSetting } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { FileFormat, Message, MessageType } from "../../shared";
@@ -38,8 +38,8 @@ export class ProseMirrorWebview extends EventEmitter {
 
     private _provider: CoqEditorProvider;
 
-    private _showLineNrsInEditor: boolean = WaterproofConfigHelper.showLineNumbersInEditor;
-    private _showMenuItemsInEditor: boolean = WaterproofConfigHelper.showMenuItems;
+    private _showLineNrsInEditor: boolean = WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
+    private _showMenuItemsInEditor: boolean = WaterproofConfigHelper.get(WaterproofSetting.ShowMenuItemsInEditor);
 
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
@@ -102,8 +102,8 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this._nonInputRegions = getNonInputRegions(doc.getText());
 
-        this._teacherMode = WaterproofConfigHelper.teacherMode;
-        this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
+        this._teacherMode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
+        this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(WaterproofSetting.EnforceCorrectNonInputArea);
         this._lastCorrectDocString = doc.getText();
 
         const format = getFormatFromExtension(doc);
@@ -182,22 +182,22 @@ export class ProseMirrorWebview extends EventEmitter {
         }));
 
         this._disposables.push(workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration("waterproof.teacherMode")) {
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.TeacherMode))) {
                 this.updateTeacherMode();
             }
 
-            if (e.affectsConfiguration("waterproof.enforceCorrectNonInputArea")) {
-                this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.EnforceCorrectNonInputArea))) {
+                this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(WaterproofSetting.EnforceCorrectNonInputArea);
             }
 
-            if (e.affectsConfiguration("waterproof.showLineNumbersInEditor")) {
-                this._showLineNrsInEditor = WaterproofConfigHelper.showLineNumbersInEditor;
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.ShowLineNumbersInEditor))) {
+                this._showLineNrsInEditor = WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
                 this.updateLineNumberStatusInEditor();
             }
 
-            if (e.affectsConfiguration("waterproof.showMenuItemsInEditor")) {
-                this._showMenuItemsInEditor = WaterproofConfigHelper.showMenuItems;
-                WaterproofLogger.log(`Menu items will now be ${WaterproofConfigHelper.showMenuItems ? "shown" : "hidden"} in student mode`);
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.ShowMenuItemsInEditor))) {
+                this._showMenuItemsInEditor = WaterproofConfigHelper.get(WaterproofSetting.ShowMenuItemsInEditor);
+                WaterproofLogger.log(`Menu items will now be ${this._showMenuItemsInEditor ? "shown" : "hidden"} in student mode`);
                 this.updateMenuItemsInEditor();
             }
         }));
@@ -317,7 +317,7 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Toggle the teacher mode */
     private updateTeacherMode() {
-        const mode = WaterproofConfigHelper.teacherMode;
+        const mode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
         this._teacherMode = mode;
         this.postMessage({
             type: MessageType.teacher,

@@ -1,7 +1,7 @@
 
 //// The types used by this module
 
-import { DocChange, WrappingDocChange } from "waterproof-editor";
+import { DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 /**
  * In prosemirror, every step is a replace step. This enum is used to classify

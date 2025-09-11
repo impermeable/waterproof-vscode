@@ -483,6 +483,7 @@
     "@codemirror/language": "6.10.3",
     "@codemirror/lint": "6.8.2",
     "@codemirror/view": "6.27.0",
+    "@impermeable/waterproof-editor": "^0.9.0",
     "@lezer/highlight": "1.2.1",
     "@lezer/lr": "1.4.2",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
@@ -515,8 +516,7 @@
     "throttle-debounce": "5.0.2",
     "vscode-languageclient": "8.1.0",
     "vscode-languageserver-types": "3.17.5",
-    "vscode-uri": "3.1.0",
-    "waterproof-editor": "github:impermeable/waterproof-editor#main"
+    "vscode-uri": "3.1.0"
   },
   "dependenciesComments": {
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"

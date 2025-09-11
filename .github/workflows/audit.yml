@@ -1,0 +1,24 @@
+name: Run audit
+
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Use Node.js 24.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: 24.x
+
+    - name: Run npm audit
+      run: npm audit

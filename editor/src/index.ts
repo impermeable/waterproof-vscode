@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { WaterproofEditor, WaterproofEditorConfig } from "waterproof-editor";
+import { WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
@@ -8,7 +8,7 @@ import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
-import "waterproof-editor/styles.css"
+import "@impermeable/waterproof-editor/styles.css"
 
 /**
  * Very basic representation of the acquirable VSCodeApi.

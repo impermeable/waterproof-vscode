@@ -1,4 +1,4 @@
-import { typeguards } from "waterproof-editor";
+import { typeguards } from "@impermeable/waterproof-editor";
 import { extractCoqBlocks, extractCoqDoc, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/document-construction/block-extraction";
 
 test("Identify input blocks", () => {

@@ -1,6 +1,6 @@
 import { FileFormat } from "../../../shared";
 import { extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractCoqBlocks, extractBlocksUsingRanges } from "./block-extraction";
-import { Block, CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock, utils, typeguards } from "waterproof-editor";
+import { Block, CoqBlock, HintBlock, InputAreaBlock, MarkdownBlock, utils, typeguards } from "@impermeable/waterproof-editor";
 import { createCoqInnerBlocks } from "./inner-blocks";
 
 // 0A. Extract the top level blocks from the input document.

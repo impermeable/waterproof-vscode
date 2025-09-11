@@ -1,5 +1,5 @@
 import { FileFormat } from "../../../shared";
-import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock, CoqDocBlock } from "waterproof-editor";
+import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock, CoqDocBlock } from "@impermeable/waterproof-editor";
 import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
 
 const regexes = {

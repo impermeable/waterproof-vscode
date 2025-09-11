@@ -1,6 +1,6 @@
 import { HtmlTagInfo, OperationType, ParsedStep, StringCell } from "./types";
 import { getTextOffset } from "./helper-functions";
-import { ReplaceStep, DocChange } from "waterproof-editor";
+import { ReplaceStep, DocChange } from "@impermeable/waterproof-editor";
 
 
 

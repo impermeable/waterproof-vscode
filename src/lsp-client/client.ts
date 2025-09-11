@@ -16,7 +16,7 @@ import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
-import { WaterproofConfigHelper, WaterproofLogger as wpl } from "../helpers";
+import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity, WaterproofCompletion } from "@impermeable/waterproof-editor";
 
 interface TimeoutDisposable extends Disposable {
@@ -92,11 +92,11 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             const diagnosticsCollection = languages.createDiagnosticCollection("rocq");
             
             // Set detailedErrors to the value of the `Waterproof.detailedErrorsMode` setting.
-            this.detailedErrors = WaterproofConfigHelper.detailedErrors;
+            this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
             // Update `detailedErrors` when the setting changes.
             this.disposables.push(workspace.onDidChangeConfiguration(e => {
-                if (e.affectsConfiguration("waterproof.detailedErrorsMode")) {
-                    this.detailedErrors = WaterproofConfigHelper.detailedErrors;
+                if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.DetailedErrorsMode))) {
+                    this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
                 }
             }));
 

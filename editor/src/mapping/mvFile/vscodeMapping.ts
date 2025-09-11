@@ -2,7 +2,7 @@ import { getEndHtmlTagText, getStartHtmlTagText} from "./helper-functions";
 import { StringCell, HtmlTagInfo, ParsedStep} from "./types";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
-import { DocChange, ReplaceAroundStep, ReplaceStep, Step, WaterproofMapping, WrappingDocChange } from "waterproof-editor";
+import { DocChange, ReplaceAroundStep, ReplaceStep, Step, WaterproofMapping, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 /**
  * A type to specify an HTML tag in the prosemirror content elem.

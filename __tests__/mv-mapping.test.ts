@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // FIXME: Remove this and linting fails, change the ts-ignore to ts-expect-error and the unit tests fail
-import { ReplaceStep, WaterproofSchema, FileTranslator } from "waterproof-editor";
+import { ReplaceStep, WaterproofSchema, FileTranslator } from "@impermeable/waterproof-editor";
 import { TextDocMappingMV as TextDocMapping } from "../editor/src/mapping";
 import { expect } from "@jest/globals";
 

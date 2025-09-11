@@ -1,4 +1,5 @@
 import { extensions, window, workspace } from "vscode";
+import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
 
 /**
  * Returns a random alphanumerical string of length 32.
@@ -37,13 +38,11 @@ export function checkConflictingExtensions() {
  * configuration accordingly.
  */
 export function excludeCoqFileTypes() {
-    const activationConfig = workspace.getConfiguration();
-    const updateIgnores = activationConfig.get("waterproof.updateIgnores") ?? true;
+    const updateIgnores = WaterproofConfigHelper.get(WaterproofSetting.UpdateIgnores);
     if (updateIgnores) {
-        // TODO: Look at 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fexc : any = activationConfig.get("files.exclude");
-        activationConfig.update("files.exclude", {
+        const config = workspace.getConfiguration();
+        const fexc = config.get<object>("files.exclude") as object;
+        config.update("files.exclude", {
             "**/*.vo": true,
             "**/*.vok": true,
             "**/*.vos": true,

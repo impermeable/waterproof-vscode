@@ -1,4 +1,4 @@
-import { Block, MarkdownBlock, utils, CoqCodeBlock, CoqMarkdownBlock } from "waterproof-editor";
+import { Block, MarkdownBlock, utils, CoqCodeBlock, CoqMarkdownBlock } from "@impermeable/waterproof-editor";
 import { extractMathDisplayBlocks, extractCoqBlocks, extractBlocksUsingRanges, extractCoqDoc, extractMathDisplayBlocksCoqDoc } from "./block-extraction";
 
 

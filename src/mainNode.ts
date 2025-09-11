@@ -3,7 +3,7 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-lan
 import { Waterproof } from "./extension";
 import { CoqLspClient } from "./lsp-client/client";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
-import { WaterproofConfigHelper } from "./helpers";
+import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
 
 /**
  * This function is responsible for creating lsp clients with the extended
@@ -15,8 +15,8 @@ import { WaterproofConfigHelper } from "./helpers";
  */
 const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOptions: LanguageClientOptions) => {
     const serverOptions: ServerOptions = {
-        command: WaterproofConfigHelper.path,
-        args: WaterproofConfigHelper.args,
+        command: WaterproofConfigHelper.get(WaterproofSetting.Path),
+        args: WaterproofConfigHelper.get(WaterproofSetting.Args),
     };
     return new (CoqLspClient(LanguageClient))(
         "waterproof",

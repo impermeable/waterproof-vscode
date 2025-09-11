@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { HtmlTagInfo, OperationType, ParsedStep, StringCell } from "./types";
 import { getEndHtmlTagText, getStartHtmlTagText, getTextOffset, parseFragment } from "./helper-functions";
-import { DocChange, ReplaceAroundStep, ReplaceStep, WrappingDocChange } from "waterproof-editor";
+import { DocChange, ReplaceAroundStep, ReplaceStep, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 
 

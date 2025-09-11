@@ -206,6 +206,11 @@ export class ProseMirrorWebview extends EventEmitter {
             this.handleMessage(msg);
         }));
 
+        this._disposables.push(window.onDidChangeActiveColorTheme(() => {
+            this.themeUpdate();
+        }));
+        this.themeUpdate(); // Update the theme when the webview is created
+
         this._disposables.push(this._panel.onDidDispose(() => {
             this._panel.dispose();
             for (const d of this._disposables) {
@@ -253,6 +258,15 @@ export class ProseMirrorWebview extends EventEmitter {
         </body>
         </html>
         `;
+    }
+
+    private themeUpdate() {
+        // Get kind of active ColorTheme (dark or light)
+        const themeType = window.activeColorTheme.kind === 2 ? 'dark' : 'light';
+        this.postMessage({
+            type: MessageType.themeUpdate,
+            body: themeType
+        }, true);
     }
 
     private syncWebview() {

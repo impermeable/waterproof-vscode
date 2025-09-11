@@ -133,6 +133,9 @@ window.onload = () => {
 				{ const status = msg.body;
 				editor.updateServerStatus(status);
 				break; }
+			case MessageType.themeUpdate:
+				editor.updateNodeViewThemes(msg.body);
+				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

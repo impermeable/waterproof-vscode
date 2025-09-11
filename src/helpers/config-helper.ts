@@ -31,7 +31,8 @@ export enum WaterproofSetting {
     Args,
     AdmitOnBadQed,
     UnicodeCompletion,
-    UpdateIgnores
+    UpdateIgnores,
+    ContinuousChecking,
 }
 
 /**
@@ -58,7 +59,8 @@ export const WaterproofSettingMap: Record<WaterproofSetting, string> = {
     [WaterproofSetting.Args]: "args",
     [WaterproofSetting.AdmitOnBadQed]: "admitOnBadQed",
     [WaterproofSetting.UnicodeCompletion]: "unicodeCompletion",
-    [WaterproofSetting.UpdateIgnores]: "updateIgnores"
+    [WaterproofSetting.UpdateIgnores]: "updateIgnores",
+    [WaterproofSetting.ContinuousChecking]: "ContinuousChecking",
 };
 
 /**
@@ -86,6 +88,7 @@ type WaterproofSettingTypes = {
     [WaterproofSetting.AdmitOnBadQed]: boolean;
     [WaterproofSetting.UnicodeCompletion]: "off" | "normal" | "extended";
     [WaterproofSetting.UpdateIgnores]: boolean;
+    [WaterproofSetting.ContinuousChecking]: boolean;
 };
 
 /**

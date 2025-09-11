@@ -13,6 +13,7 @@ export enum WebviewManagerEvents {
     command         = "command",
     updateButton    = "updateButton",
     buttonClick     = "buttonClick",
+    viewportHint    = "viewportHint",
 }
 
 /**
@@ -153,22 +154,22 @@ export class WebviewManager extends EventEmitter {
         if (!this._toolWebviews.has(id)) {
             throw new Error("Tool webview does not have this panel: " + id);
         }
-    
+
         // Emit button click event before performing any state checks
-    
+
         const panel = this._toolWebviews.get(id);
         // Check if the panel is already open
         if (panel?.isOpened) {
             this.emit(WebviewManagerEvents.buttonClick, { name: id });
             return;
         }
-    
+
         // Open the panel if it is not already open
         else if(panel?.isHidden) {
-            this.emit(WebviewManagerEvents.buttonClick, { name: id });   
+            this.emit(WebviewManagerEvents.buttonClick, { name: id });
             panel?.revealPanel();
         }
-        
+
         // Open the panel if it is not hidden and not already open
         else{
             this.emit(WebviewManagerEvents.buttonClick, { name: id });
@@ -177,7 +178,7 @@ export class WebviewManager extends EventEmitter {
             panel?.revealPanel();
         }
     }
-    
+
     /**
      * Sends `message` to the specified panel.
      * @param panelName a URI to refer to a ProseMirror panel, or a name to refer to a tool panel
@@ -265,6 +266,9 @@ export class WebviewManager extends EventEmitter {
                 // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
                 this.onToolsMessage("help", {type: MessageType.command, body: { command: "createHelp" }});
                 setTimeout(() => this.onToolsMessage("help", {type: MessageType.command, body: { command: "Help." }}), 250);
+                break;
+            case MessageType.viewportHint:
+                this.emit(WebviewManagerEvents.viewportHint, {document, ...message.body});
                 break;
             default:
                 console.error(`Unrecognized message type ${message.type}, not handled by webview manager`);

@@ -28,6 +28,8 @@ export class TextUpdate {
         const targetCell: TreeNode | null = tree.findNodeByProsemirrorPosition(step.from)
         if (targetCell === null) throw new Error(" Target cell is not in mapping!!! ");
 
+        console.log(targetCell)
+
         /** Check that the change is, indeed, happening within a stringcell */
         if (targetCell.prosemirrorEnd < step.from) throw new Error(" Step does not happen within cell ");
 
@@ -37,9 +39,18 @@ export class TextUpdate {
         /** The offset within the correct stringCell for the step action */ 
         const offsetEnd = step.to - targetCell.prosemirrorStart;  
 
-        let resultText = ""
+        const text = step.slice.content.firstChild && step.slice.content.firstChild.text ? step.slice.content.firstChild.text : "";
 
         const offset = getTextOffset(type,step);
+
+        /** The resulting document change to document model */
+        const result: DocChange = {
+            startInFile: targetCell.originalStart + offsetBegin,
+            endInFile: targetCell.originalStart + offsetEnd,
+            finalText: text
+        }
+
+        console.log(result)
 
         tree.traverseDepthFirst((node: TreeNode) => {
             if (node.prosemirrorStart >= targetCell.prosemirrorStart && node.prosemirrorEnd <= targetCell.prosemirrorEnd) {
@@ -58,7 +69,6 @@ export class TextUpdate {
                     insertedText +
                     node.stringContent.slice(localOffsetEnd);
 
-                resultText = node.stringContent
                     
                 node.prosemirrorEnd += offset;
                 node.originalEnd += offset;
@@ -70,13 +80,6 @@ export class TextUpdate {
                 node.originalEnd += offset;
             } 
         });
-
-        /** The resulting document change to document model */
-        const result: DocChange = {
-            startInFile: targetCell.originalStart + offsetBegin,
-            endInFile: targetCell.originalStart + offsetEnd,
-            finalText: resultText
-        }
 
         let newTree = new Tree;
         newTree = tree;

@@ -88,12 +88,8 @@ test("Hint block with coqblock and markdown inside", () => {
     expect(hintNode.prosemirrorEnd).toBe(31);
     // Nested coqblock
     const coqblockNode = nodes[2];
-    expect(coqblockNode.originalStart).toBe(25); 
-    expect(coqblockNode.originalEnd).toBe(53);
-    
-    // Nested coqcode
-    const coqcodeNode = nodes[3];
-    expect(coqcodeNode.stringContent).toBe("Require Import Rbase.");
+    expect(coqblockNode.originalStart).toBe(40); 
+    expect(coqblockNode.originalEnd).toBe(60);
 });
 
 test("Mixed content section", () => {

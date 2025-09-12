@@ -90,7 +90,7 @@ export class Tree {
 
     findNodeByProsemirrorPosition(pos: number, node: TreeNode | null = this.root): TreeNode | null {
         if (!node) return null;
-        if (pos >= node.prosemirrorStart && pos < node.prosemirrorEnd) {
+        if (pos >= node.prosemirrorStart && pos <= node.prosemirrorEnd) {
             for (const child of node.children) {
                 const result = this.findNodeByProsemirrorPosition(pos, child);
                 if (result) return result;

@@ -3,7 +3,7 @@ import { Block } from "../../prosedoc-construction/blocks";
 import { DocChange, WrappingDocChange } from "../../../../../shared";
 import { Step, ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
 import { TextUpdate } from "./textUpdate";
-import { NodeUpdate } from "./nodeUpdate";
+// import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
 
 
@@ -59,10 +59,11 @@ export class TextDocMappingNew {
      *
      * @param inputBlocks a string containing the prosemirror content html element
      */
-    constructor(inputBlocks: any, versionNum: number) {
+    constructor(inputBlocks: Block[], versionNum: number) {
         this._version = versionNum;
         this.tree = new Tree();
         this.initialize(inputBlocks);
+        console.log(inputBlocks)
     }
 
     //// The getters of this class
@@ -83,20 +84,20 @@ export class TextDocMappingNew {
 
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
-        let correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(index);
+        const correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(index);
         if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
         return (index - correctNode.prosemirrorStart) + correctNode.originalStart;
     }
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
-        let correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
+        const correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
         if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
         return (index - correctNode.originalStart) + correctNode.prosemirrorStart;
     }
 
     private inStringCell(step: ReplaceStep | ReplaceAroundStep): boolean {
-        let correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(step.from);
+        const correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(step.from);
         return correctNode !== null && step.to <= correctNode.prosemirrorEnd;
     }
 
@@ -111,7 +112,9 @@ export class TextDocMappingNew {
 
         /** Parse the step into a text document change */
         if (step instanceof ReplaceStep && isText) result = TextUpdate.textUpdate(step, this);
-        else result = NodeUpdate.nodeUpdate(step, this.tree);
+        else throw new Error("Nodeupdate not yet supported")
+        
+        //result = NodeUpdate.nodeUpdate(step, this.tree);
 
         this.tree = result.newTree
         
@@ -140,7 +143,7 @@ export class TextDocMappingNew {
      *
      * @param inputBlocks the structure representing the inputted HTML content
      */
-    private initialize(inputBlocks: any): void {
+    private initialize(inputBlocks: Block[]): void {
         this.mapToTree(inputBlocks);
     }
 

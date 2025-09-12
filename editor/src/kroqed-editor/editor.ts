@@ -62,7 +62,7 @@ export class WaterproofEditor {
 	private _translator: FileTranslator | undefined;
 
 	// The file document mapping
-	private _mapping: TextDocMapping | undefined;
+	private _mapping: TextDocMappingNew | undefined;
 
 	// User operating system.
 	private readonly _userOS;
@@ -136,16 +136,14 @@ export class WaterproofEditor {
 		}
 		if (resultingDocument !== content) version = version + 1;
 
-		const parsedContent = this._translator.toProsemirror(resultingDocument);
+		// const parsedContent = this._translator.toProsemirror(resultingDocument);
 		// this._contentElem.innerHTML = parsedContent;
 
 		const proseDocAndBlocks = createProseMirrorDocument(resultingDocument, fileFormat);
 
-		//let test_mapping = new TextDocMappingNew(proseDocAndBlocks[1], version)
 		const proseDoc = createProseMirrorDocument(resultingDocument, fileFormat);
 
-		this._mapping = new TextDocMapping(fileFormat, parsedContent, version);
-		console.log(this._mapping)
+		this._mapping = new TextDocMappingNew(proseDocAndBlocks[1], version);
 		
 		this.createProseMirrorEditor(proseDoc[0]);
 
@@ -177,6 +175,7 @@ export class WaterproofEditor {
 						if (this._mapping === undefined) throw new Error(" Mapping is undefined, cannot synchronize with vscode");
 						try {
 							const change: DocChange | WrappingDocChange = this._mapping.stepUpdate(step); // Get text document update
+							console.log(this._mapping)
 							this._editorConfig.api.documentChange(change);
 						} catch (error) {
 							console.error((error as Error).message);

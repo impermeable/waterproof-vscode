@@ -35,13 +35,12 @@ export function iteratePairs<ArrayType, FunctionReturnType>(input: Array<ArrayTy
  * @param inputDocument The document the blocks are part of.
  * @returns The ranges between the blocks.
  */
-export const extractInterBlockRanges = (blocks: Array<Block>, inputDocument: string): {from: number, to: number}[] => {
+export const extractInterBlockRanges = (blocks: Array<Block>, inputDocument: string, parentOffset: number = 0): {from: number, to: number}[] => {
     let ranges =  iteratePairs(blocks, (blockA, blockB) => {
         return { from: blockA.range.to, to: blockB.range.from };
-    });
-
+    }).filter(range => range.from < range.to); // Filter out empty ranges.
     // Add first range if it exists
-    if (blocks.length > 0 && blocks[0].range.from > 0) ranges = [{from: 0, to: blocks[0].range.from}, ...ranges];
+    if (blocks.length > 0 && blocks[0].range.from > parentOffset) ranges = [{from: 0, to: blocks[0].range.from}, ...ranges];
     // Add last range if it exists
     if (blocks.length > 0 && blocks[blocks.length - 1].range.to < inputDocument.length) ranges = [...ranges, {from: blocks[blocks.length - 1].range.to, to: inputDocument.length}];
 

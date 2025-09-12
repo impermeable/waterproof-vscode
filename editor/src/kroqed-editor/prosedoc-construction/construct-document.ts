@@ -26,7 +26,7 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
     inputDocument = maskInputAndHints(inputDocument, [...hintBlocks, ...inputAreaBlocks]);
 
     // 0A.3 Extract the coq and math display blocks.
-    const mathDisplayBlocks = extractMathDisplayBlocks(inputDocument);
+    const mathDisplayBlocks = extractMathDisplayBlocks(inputDocument, 0);
     const coqBlocks = extractCoqBlocks(inputDocument);
 
     // 0A.4 Sort the blocks by their range.

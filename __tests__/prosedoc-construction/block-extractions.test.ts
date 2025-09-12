@@ -8,10 +8,14 @@ test("Identify input blocks", () => {
     const blocks = extractInputBlocks(document);
 
     expect(blocks.length).toBe(1);
-    expect(isInputAreaBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("\n# Test input area\n");
-    expect(blocks[0].range.from).toBe(10);
-    expect(blocks[0].range.to).toBe(54);
+    const [b] = blocks;
+    expect(isInputAreaBlock(b)).toBe(true);
+    expect(b.stringContent).toBe("\n# Test input area\n");
+    expect(b.range.from).toBe(10);
+    expect(b.range.to).toBe(54);
+
+    expect(b.innerRange.from).toBe(22);
+    expect(b.innerRange.to).toBe(41);
 });
 
 test("Identity input blocks #2", () => {
@@ -19,10 +23,36 @@ test("Identity input blocks #2", () => {
     const blocks = extractInputBlocks(document);
 
     expect(blocks.length).toBe(1);
-    expect(isInputAreaBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("\n# Test input area\n");
-    expect(blocks[0].range.from).toBe(1);
-    expect(blocks[0].range.to).toBe(45);
+    const [b] = blocks;
+    expect(isInputAreaBlock(b)).toBe(true);
+    expect(b.stringContent).toBe("\n# Test input area\n");
+    expect(b.range.from).toBe(1);
+    expect(b.range.to).toBe(45);
+    expect(b.innerRange.from).toBe(13);
+    expect(b.innerRange.to).toBe(32);
+
+});
+
+test("Identify input blocks #3", () => {
+    const document = "<input-area>First input area</input-area>\n<input-area>Second input area</input-area>";
+    const blocks = extractInputBlocks(document);
+
+    expect(blocks.length).toBe(2);
+    const [b1, b2] = blocks;
+    expect(isInputAreaBlock(b1)).toBe(true);
+    expect(isInputAreaBlock(b2)).toBe(true);
+
+    expect(b1.stringContent).toBe("First input area");
+    expect(b1.range.from).toBe(0);
+    expect(b1.range.to).toBe(41);
+    expect(b1.innerRange.from).toBe(12);
+    expect(b1.innerRange.to).toBe(28);
+    
+    expect(b2.stringContent).toBe("Second input area");
+    expect(b2.range.from).toBe(42);
+    expect(b2.range.to).toBe(document.length);
+    expect(b2.innerRange.from).toBe(54);
+    expect(b2.innerRange.to).toBe(71);
 });
 
 test("Identify hint blocks", () => {
@@ -35,6 +65,33 @@ test("Identify hint blocks", () => {
     expect(blocks[0].stringContent).toBe("\n# Test hint\n");
     expect(blocks[0].range.from).toBe(10);
     expect(blocks[0].range.to).toBe(60);
+    expect(blocks[0].innerRange.from).toBe(40);
+    expect(blocks[0].innerRange.to).toBe(53);
+});
+
+test("Identify hint blocks #2", () => {
+    const document = "# Example\n<hint title=\"hint-title-test\">\n# Test hint\n</hint><hint title=\"hint title 2\">Test</hint>";
+    const blocks = extractHintBlocks(document);
+
+    expect(blocks.length).toBe(2);
+
+    const [block1, block2] = blocks;
+
+    expect(isHintBlock(block1)).toBe(true);
+    expect(block1.title).toBe("hint-title-test");
+    expect(block1.stringContent).toBe("\n# Test hint\n");
+    expect(block1.range.from).toBe(10);
+    expect(block1.range.to).toBe(60);
+    expect(block1.innerRange.from).toBe(40);
+    expect(block1.innerRange.to).toBe(53);
+
+    expect(isHintBlock(block2)).toBe(true);
+    expect(block2.title).toBe("hint title 2");
+    expect(block2.stringContent).toBe("Test");
+    expect(block2.range.from).toBe(60);
+    expect(block2.range.to).toBe(98);
+    expect(block2.innerRange.from).toBe(87);
+    expect(block2.innerRange.to).toBe(91);
 });
 
 test("Parse Math Display blocks", () => {

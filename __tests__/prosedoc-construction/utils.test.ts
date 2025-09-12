@@ -113,6 +113,22 @@ test("Extract inter-block ranges", () => {
     expect(interBlockRanges[2]).toEqual({ from: 30, to: document.length })
 });
 
+test("Extract inter-block ranges with touching blocks", () => {
+    const type = "test";
+    const stringContent = "test";
+    
+    const document = "012345678901234567890123456789"
+
+    const blocks: Block[] = [
+        { range: { from: 0, to: 10 }, innerRange, type, stringContent, toProseMirror, debugPrint },
+        { range: { from: 10, to: 20 }, innerRange, type, stringContent, toProseMirror, debugPrint },
+        { range: { from: 20, to: 30 }, innerRange, type, stringContent, toProseMirror, debugPrint },
+    ];
+    
+    const interBlockRanges = extractInterBlockRanges(blocks, document);
+    expect(interBlockRanges.length).toBe(0);
+});
+
 test("Extract inter-block ranges with no blocks", () => {
     const document = "Hello, this is a test document, I am testing this document. Test test test test."
 

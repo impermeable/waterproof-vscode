@@ -25,13 +25,16 @@ export function extractInputBlocks(document: string, fileFormat: FileFormat = Fi
     return extractInputBlocksMV(document);
 }
 
+const inputAreaTagOpenLength = "<input-area>".length;
+const inputAreaTagCloseLength = "</input-area>".length;
+
 function extractInputBlocksMV(document: string) {
     const input_areas = document.matchAll(regexes.input_area);
 
     const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
-        const innerRange = { from: range.from + "<input-area>\n".length, to: range.to - "\n</input-area>".length }
+        const innerRange = { from: range.from + inputAreaTagOpenLength, to: range.to - inputAreaTagCloseLength }
         return new InputAreaBlock(input_area[1], range, innerRange);
     });
 
@@ -66,6 +69,9 @@ export function extractHintBlocks(document: string, fileFormat: (FileFormat.Mark
     return extractHintBlocksMV(document);
 }
 
+const hintTagOpenLength = "<hint title=\"\">".length;
+const hintTagCloseLength = "</hint>".length;
+
 function extractHintBlocksMV(document: string) {
     const hints = document.matchAll(regexes.hint);
 
@@ -73,7 +79,7 @@ function extractHintBlocksMV(document: string) {
         if (hint.index === undefined) throw new Error("Index of hint is undefined");
         const title = hint[1];
         const range = { from: hint.index, to: hint.index + hint[0].length };
-        const innerRange = { from: range.from + `<hint title="">`.length + title.length, to: range.to - "</hint>".length };
+        const innerRange = { from: range.from + hintTagOpenLength + title.length, to: range.to - hintTagCloseLength };
         return new HintBlock(hint[2], title, range, innerRange);
     });
 
@@ -99,11 +105,11 @@ function extractHintBlocksV(document: string) {
  * 
  * Uses regexes to search for `$$`.
  */
-export function extractMathDisplayBlocks(inputDocument: string) {
+export function extractMathDisplayBlocks(inputDocument: string, parentOffset: number = 0) {
     const math_display = inputDocument.matchAll(regexes.math_display);
     const mathDisplayBlocks = Array.from(math_display).map((math) => {
         if (math.index === undefined) throw new Error("Index of math is undefined");
-        const range = { from: math.index, to: math.index + math[0].length };
+        const range = { from: math.index + parentOffset, to: math.index + math[0].length + parentOffset };
         const innerRange = { from: range.from + "$$".length, to: range.to - "$$".length}
         return new MathDisplayBlock(math[1], range, innerRange);
     });
@@ -118,7 +124,7 @@ const coqCloseLength = "\n```".length;
  * 
  * Uses regexes to search for ```coq and ``` markers.	
  */
-export function extractCoqBlocks(inputDocument: string, _parentRange: BlockRange = {from : 0, to : 0}) {
+export function extractCoqBlocks(inputDocument: string, parentOffset: number = 0) {
     const coq_code = Array.from(inputDocument.matchAll(regexes.coq));
     const coqBlocks = coq_code.map((coq) => {
         if (coq.index === undefined) throw new Error("Index of coq is undefined");
@@ -129,7 +135,7 @@ export function extractCoqBlocks(inputDocument: string, _parentRange: BlockRange
         const newLineOffsetEnd = endsWithNewLine ? 1 : 0;
 
         // Range of the whole coq block including the ```coq and ``` markers.
-        const range = { from: coq.index, to: coq.index + coq[0].length };
+        const range = { from: coq.index + parentOffset, to: coq.index + coq[0].length + parentOffset };
 
         // Range of the inner content of the coq block, excluding the ```coq and ``` markers.
         const innerRange = {from: range.from + newLineOffsetStart + coqOpenLength, to: range.to - coqCloseLength - newLineOffsetEnd };

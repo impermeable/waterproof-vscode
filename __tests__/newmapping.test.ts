@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // Disable because the @ts-expect-error clashes with the tests
 import { TextDocMappingNew, TreeNode } from "../editor/src/kroqed-editor/mappingModel/treestructure"; 
-import { isCodeBlock } from "../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
 import { createProseMirrorDocument } from "../editor/src/kroqed-editor/prosedoc-construction/construct-document";
 import { FileFormat } from "../shared";
 import { expect } from "@jest/globals";
@@ -57,7 +56,7 @@ test("Input-area with nested coqblock", () => {
     // Input-area node
     const inputAreaNode = nodes[1];
     expect(inputAreaNode.type).toBe("input_area");
-    expect(inputAreaNode.originalStart).toBe(13);
+    expect(inputAreaNode.originalStart).toBe(12);
     expect(inputAreaNode.originalEnd).toBe(29);
     expect(inputAreaNode.prosemirrorStart).toBe(1); 
     expect(inputAreaNode.prosemirrorEnd).toBe(7); 
@@ -74,7 +73,7 @@ test("Input-area with nested coqblock", () => {
 });
 
 test("Hint block with coqblock and markdown inside", () => {
-    const content = `<hint title="Import libraries">\n\`\`\`coq\nRequire Import Rbase.\n\`\`\`\n</hint>`;
+    const content = "<hint title=\"Import libraries\">\n```coq\nRequire Import Rbase.\n```\n</hint>";
     const nodes = createTestMapping(content);
     
     expect(nodes.length).toBe(3);
@@ -88,7 +87,7 @@ test("Hint block with coqblock and markdown inside", () => {
     expect(hintNode.prosemirrorEnd).toBe(31);
     // Nested coqblock
     const coqblockNode = nodes[2];
-    expect(coqblockNode.originalStart).toBe(40); 
+    expect(coqblockNode.originalStart).toBe(39); 
     expect(coqblockNode.originalEnd).toBe(60);
 });
 

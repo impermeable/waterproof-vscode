@@ -10,9 +10,9 @@ export function createInputAndHintInnerBlocks(input: string, innerRange: BlockRa
     // - math_display
     // - markdown   
     // This amounts to the same as steps 0.3 - 0.5 in topLevelBlocks.
-    const mathDisplayBlocks = extractMathDisplayBlocks(input);
-    const coqBlocks = extractCoqBlocks(input, innerRange);
-    const markdownRanges = extractInterBlockRanges([...mathDisplayBlocks, ...coqBlocks], input);
+    const mathDisplayBlocks = extractMathDisplayBlocks(input, innerRange.from);
+    const coqBlocks = extractCoqBlocks(input, innerRange.from);
+    const markdownRanges = extractInterBlockRanges([...mathDisplayBlocks, ...coqBlocks], input, innerRange.from);
     const markdownBlocks = extractBlocksUsingRanges<MarkdownBlock>(input, markdownRanges, MarkdownBlock);
     const sorted = sortBlocks([...mathDisplayBlocks, ...coqBlocks, ...markdownBlocks]);
     return sorted;

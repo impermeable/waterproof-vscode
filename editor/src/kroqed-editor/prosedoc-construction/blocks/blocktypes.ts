@@ -1,17 +1,32 @@
 import { WaterproofSchema } from "../../schema";
 import { BLOCK_NAME, Block, BlockRange } from "./block";
-import { createInputAndHintInnerBlocks } from "./inner-blocks";
 import { code, hint, inputArea, markdown, mathDisplay } from "./schema";
 
 const indentation = (level: number): string => "  ".repeat(level);
 const debugInfo = (block: Block): string => `{range=${block.range.from}-${block.range.to}}`;
 
+/**
+ * InputAreaBlocks are the parts of the document that should be editable by students.
+ * Every input area has an accompanying status to indicate whether the input area is 'correct'. 
+ */
 export class InputAreaBlock implements Block {
     public type = BLOCK_NAME.INPUT_AREA;
     public innerBlocks: Block[];
 
-    constructor( public stringContent: string, public range: BlockRange, public innerRange: BlockRange) {
-        this.innerBlocks = createInputAndHintInnerBlocks(stringContent, innerRange);
+    /**
+     * Construct a new InputAreaBlock.
+     * @param stringContent Content of the input area
+     * @param range The range (from position to to position in the original document) of the entire input area block, including the its tags.
+     * @param innerRange The range (from position to to position in the original document) of the inner content of the input area block, excluding its tags.
+     * @param childBlocks Either an array of child blocks of this input area block, or a function that constructs the child blocks given the inner range and content.
+     */
+    constructor( public stringContent: string, public range: BlockRange, public innerRange: BlockRange, childBlocks: Block[] | ((innerContent: string, innerRange: BlockRange) => Block[])) {
+        if (typeof childBlocks === "function") {
+            this.innerBlocks = childBlocks(stringContent, innerRange);
+        }
+        else {
+            this.innerBlocks = childBlocks;
+        }
     };
 
     toProseMirror() {
@@ -27,13 +42,28 @@ export class InputAreaBlock implements Block {
     }
 }
 
+/**
+ * HintBlocks are foldable blocks that can be used to hide parts of the document by default. 
+ * Useful for giving hints to students or hiding import/configuration statements from the student.
+ */
 export class HintBlock implements Block {
     public type = BLOCK_NAME.HINT;
     public innerBlocks: Block[];
 
-    // Note: Hint blocks have a title attribute.
-    constructor( public stringContent: string, public title: string, public range: BlockRange, public innerRange: BlockRange ) {
-        this.innerBlocks = createInputAndHintInnerBlocks(stringContent, innerRange);
+    /**
+     * Construct a new HintBlock.
+     * @param stringContent Content of the hint block
+     * @param title Title of the hint block (the part that is displayed in the document when folded)
+     * @param range The range (from position to to position in the original document) of the entire hint block, including its tags.
+     * @param innerRange The range (from position to to position in the original document) of the inner content of the hint block, excluding its tags.
+     * @param childBlocks Either an array of child blocks of this hint block, or a function that constructs the child blocks given the inner range and content.
+     */
+    constructor( public stringContent: string, public title: string, public range: BlockRange, public innerRange: BlockRange, childBlocks: Block[] | ((innerContent: string, innerRange: BlockRange) => Block[])) {
+        if (typeof childBlocks === "function") {
+            this.innerBlocks = childBlocks(stringContent, innerRange);
+        } else {
+            this.innerBlocks = childBlocks;
+        }
     };
 
     toProseMirror() {
@@ -50,6 +80,9 @@ export class HintBlock implements Block {
     }
 }
 
+/**
+ * MathDisplayBlocks display LaTeX in display mode (i.e., centered and on its own line).
+ */
 export class MathDisplayBlock implements Block {
     public type = BLOCK_NAME.MATH_DISPLAY;
     constructor( public stringContent: string, public range: BlockRange, public innerRange: BlockRange ) {};
@@ -64,6 +97,9 @@ export class MathDisplayBlock implements Block {
     }
 }
 
+/**
+ * MarkdownBlocks contain markdown content (including inline LaTeX inside single dollars `$`).
+ */
 export class MarkdownBlock implements Block {
     public type = BLOCK_NAME.MARKDOWN;
     public isNewLineOnly = false;
@@ -82,6 +118,9 @@ export class MarkdownBlock implements Block {
     }
 }
 
+/**
+ * CodeBlocks contain source code. 
+ */
 export class CodeBlock implements Block {
     public type = BLOCK_NAME.CODE;
 

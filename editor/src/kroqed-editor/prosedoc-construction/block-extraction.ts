@@ -1,5 +1,6 @@
 import { FileFormat } from "../../../../shared";
 import { Block, BlockRange, CodeBlock, HintBlock, InputAreaBlock, MathDisplayBlock } from "./blocks";
+import { createInputAndHintInnerBlocks } from "./blocks/inner-blocks";
 
 const regexes = {
     // coq: /```coq\n([\s\S]*?)\n```/g,
@@ -35,7 +36,7 @@ function extractInputBlocksMV(document: string) {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
         const innerRange = { from: range.from + inputAreaTagOpenLength, to: range.to - inputAreaTagCloseLength }
-        return new InputAreaBlock(input_area[1], range, innerRange);
+        return new InputAreaBlock(input_area[1], range, innerRange, createInputAndHintInnerBlocks(input_area[1], innerRange));
     });
 
     return inputAreaBlocks;
@@ -48,7 +49,7 @@ function extractInputBlocksV(document: string) {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
         // FIXME: inner block range
-        return new InputAreaBlock("```coq\n" + input_area[1] + "\n```", range, {from: 0, to: 0});
+        return new InputAreaBlock("```coq\n" + input_area[1] + "\n```", range, {from: 0, to: 0}, createInputAndHintInnerBlocks("```coq\n" + input_area[1] + "\n```", {from:0, to:0}));
     });
 
     return inputAreaBlocks;
@@ -80,7 +81,7 @@ function extractHintBlocksMV(document: string) {
         const title = hint[1];
         const range = { from: hint.index, to: hint.index + hint[0].length };
         const innerRange = { from: range.from + hintTagOpenLength + title.length, to: range.to - hintTagCloseLength };
-        return new HintBlock(hint[2], title, range, innerRange);
+        return new HintBlock(hint[2], title, range, innerRange, createInputAndHintInnerBlocks(hint[2], innerRange));
     });
 
     return hintBlocks;
@@ -94,7 +95,7 @@ function extractHintBlocksV(document: string) {
         const range = { from: hint.index, to: hint.index + hint[0].length };
         // This is incorrect as we should wrap the content part in a coqblock.
         // FIXME: inner range
-        return new HintBlock(`\`\`\`coq\n${hint[2]}\n\`\`\``, hint[1], range, {from:0, to:0});
+        return new HintBlock(`\`\`\`coq\n${hint[2]}\n\`\`\``, hint[1], range, {from:0, to:0}, createInputAndHintInnerBlocks(`\`\`\`coq\n${hint[2]}\n\`\`\``, {from:0, to:0}));
     });
 
     return hintBlocks;

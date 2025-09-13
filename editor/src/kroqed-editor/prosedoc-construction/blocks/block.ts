@@ -22,8 +22,10 @@ export interface Block {
     /** Range in the original document, but only the content within possible tags */
     innerRange: BlockRange;
 
+    /** Blocks that are children of this block, only valid for InputArea and Hint Blocks. */
     innerBlocks?: Block[];
 
+    /** Convert this block to the corresponding ProseMirror node. */
     toProseMirror(): ProseNode;
     debugPrint(level: number): void;
 }

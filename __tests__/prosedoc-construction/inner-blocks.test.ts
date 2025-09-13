@@ -1,7 +1,7 @@
-import { topLevelBlocksMV } from "../../editor/src/kroqed-editor/prosedoc-construction";
-import { createInputAndHintInnerBlocks } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/inner-blocks";
-import { isCodeBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
+import { typeguards } from "@impermeable/waterproof-editor";
 import { expect } from "@jest/globals";
+import { createInputAndHintInnerBlocks } from "../../editor/src/document-construction/inner-blocks";
+import { topLevelBlocksMV } from "../../editor/src/document-construction/construct-document";
 
 test("Inner input area (and hint) blocks", () => {
     const inputAreaContent = "$$1028 + 23 = ?$$\n```coq\nCompute 1028 + 23.\n```";
@@ -9,7 +9,7 @@ test("Inner input area (and hint) blocks", () => {
     const blocks = createInputAndHintInnerBlocks(inputAreaContent, {from: 0, to: 0});
 
     expect(blocks.length).toBe(2);
-    expect(isMathDisplayBlock(blocks[0])).toBe(true);
+    expect(typeguards.isMathDisplayBlock(blocks[0])).toBe(true);
 
     // Math display content:
     expect(blocks[0].stringContent).toBe("1028 + 23 = ?");
@@ -28,7 +28,7 @@ test("Verify newlines are part of the coq tags", () => {
 
     expect(blocks.length).toBe(1);
     const [b] = blocks;
-    expect(isCodeBlock(b)).toBe(true);
+    expect(typeguards.isCodeBlock(b)).toBe(true);
     expect(b.stringContent).toBe("Lemma test");
     expect(b.range.from).toBe(0);
     expect(b.range.to).toBe(document.length);
@@ -42,14 +42,14 @@ test("Inner input area (and hint) blocks #2", () => {
     expect(blocks.length).toBe(2);
     const [b1, b2] = blocks;
 
-    expect(isMathDisplayBlock(b1)).toBe(true);
+    expect(typeguards.isMathDisplayBlock(b1)).toBe(true);
     expect(b1.stringContent).toBe("1028 + 23 = ?");
     expect(b1.range.from).toBe(0 + offset);
     expect(b1.range.to).toBe(17 + offset);
     expect(b1.innerRange.from).toBe(2 + offset);
     expect(b1.innerRange.to).toBe(15 + offset);
 
-    expect(isCodeBlock(b2)).toBe(true);
+    expect(typeguards.isCodeBlock(b2)).toBe(true);
     expect(b2.stringContent).toBe("Compute 1028 + 23.");
     expect(b2.range.from).toBe(17 + offset);
     expect(b2.range.to).toBe(48 + offset);

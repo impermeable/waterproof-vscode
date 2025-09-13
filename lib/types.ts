@@ -143,3 +143,21 @@ export interface DocumentPerfParams {
     summary: string;
     timings: SentencePerfParams[];
 }
+
+export interface CoqBusyStatus {
+    status: "Busy";
+    modname: string;
+}
+
+export interface CoqIdleStatus {
+    status: "Idle" | "Stopped";
+}
+
+export type CoqServerStatus = CoqBusyStatus | CoqIdleStatus;
+
+export enum HypVisibility {
+  All = "all",
+  Limited = "limited",
+  None = "none"
+}
+

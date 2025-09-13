@@ -1,19 +1,17 @@
-import { EventEmitter } from "stream";
+import { EventEmitter } from "events";
 import { Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
-import { DocChange, FileFormat, Message, MessageType, WrappingDocChange, LineNumber } from "../../shared";
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
 import { SequentialEditor } from "./edit";
 import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
-import { WaterproofConfigHelper, WaterproofLogger } from "../helpers";
+import { qualifiedSettingName, WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger, WaterproofSetting } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
-import { HistoryChangeType } from "../../shared/Messages";
-
-import * as path from 'path';
+import { FileFormat, Message, MessageType } from "../../shared";
+import { DocChange, HistoryChange, LineNumber, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -23,7 +21,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private readonly _document: TextDocument;
 
     /** The file format of the doc associated with this ProseMirror instance */
-    private readonly _format: FileFormat;
+    private readonly _format: FileFormat = FileFormat.MarkdownV;
 
     /** The editor that appends changes to the document associated with this panel */
     private readonly _workspaceEditor = new SequentialEditor();
@@ -40,7 +38,8 @@ export class ProseMirrorWebview extends EventEmitter {
 
     private _provider: CoqEditorProvider;
 
-    private _showLineNrsInEditor: boolean = WaterproofConfigHelper.showLineNumbersInEditor;
+    private _showLineNrsInEditor: boolean = WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
+    private _showMenuItemsInEditor: boolean = WaterproofConfigHelper.get(WaterproofSetting.ShowMenuItemsInEditor);
 
     /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
     private _nonInputRegions: {
@@ -67,11 +66,11 @@ export class ProseMirrorWebview extends EventEmitter {
     // These can either be triggered by the user via a keybinding or by the undo/redo command
     //     under `edit > edit` and `edit > undo` in the menubar.
     private undoHandler() {
-        this.sendHistoryChangeToEditor(HistoryChangeType.Undo);
+        this.sendHistoryChangeToEditor(HistoryChange.Undo);
 
     };
     private redoHandler() {
-        this.sendHistoryChangeToEditor(HistoryChangeType.Redo);
+        this.sendHistoryChangeToEditor(HistoryChange.Redo);
     };
 
     private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
@@ -83,17 +82,14 @@ export class ProseMirrorWebview extends EventEmitter {
             this.undoHandler.bind(this),
             this.redoHandler.bind(this));
 
-
-
-        const fileName = path.basename(doc.uri.fsPath)
-
+        const fileName = WaterproofFileUtil.getBasename(doc.uri)
+        
         if (isIllegalFileName(fileName)) {
             const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "-", "(", ")". Please rename the file.`
             window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
             WaterproofLogger.log("Error: Illegal file name encountered.");
         }
 
-        this._format = getFormatFromExtension(doc);
 
         this._panel = webview;
         this._workspaceEditor.onFinish(() => {
@@ -106,9 +102,17 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this._nonInputRegions = getNonInputRegions(doc.getText());
 
-        this._teacherMode = WaterproofConfigHelper.teacherMode;
-        this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
+        this._teacherMode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
+        this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(WaterproofSetting.EnforceCorrectNonInputArea);
         this._lastCorrectDocString = doc.getText();
+
+        const format = getFormatFromExtension(doc);
+        if (format === undefined) {
+            // FIXME: We should never encounter this, as the extension is only activated for .v and .mv files?
+            WaterproofLogger.log("Aborting creation of Waterproof editor. Encountered a file with extension different from .mv or .v!");
+            return;
+        }
+        this._format = format;
     }
 
     private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {
@@ -178,27 +182,34 @@ export class ProseMirrorWebview extends EventEmitter {
         }));
 
         this._disposables.push(workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration("waterproof.teacherMode")) {
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.TeacherMode))) {
                 this.updateTeacherMode();
             }
 
-            if (e.affectsConfiguration("waterproof.standardCoqSyntax")) {
-                this.updateSyntaxMode();
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.EnforceCorrectNonInputArea))) {
+                this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(WaterproofSetting.EnforceCorrectNonInputArea);
             }
 
-            if (e.affectsConfiguration("waterproof.enforceCorrectNonInputArea")) {
-                this._enforceCorrectNonInputArea = WaterproofConfigHelper.enforceCorrectNonInputArea;
-            }
-
-            if (e.affectsConfiguration("waterproof.showLineNumbersInEditor")) {
-                this._showLineNrsInEditor = WaterproofConfigHelper.showLineNumbersInEditor;
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.ShowLineNumbersInEditor))) {
+                this._showLineNrsInEditor = WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
                 this.updateLineNumberStatusInEditor();
+            }
+
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.ShowMenuItemsInEditor))) {
+                this._showMenuItemsInEditor = WaterproofConfigHelper.get(WaterproofSetting.ShowMenuItemsInEditor);
+                WaterproofLogger.log(`Menu items will now be ${this._showMenuItemsInEditor ? "shown" : "hidden"} in student mode`);
+                this.updateMenuItemsInEditor();
             }
         }));
 
         this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
             this.handleMessage(msg);
         }));
+
+        this._disposables.push(window.onDidChangeActiveColorTheme(() => {
+            this.themeUpdate();
+        }));
+        this.themeUpdate(); // Update the theme when the webview is created
 
         this._disposables.push(this._panel.onDidDispose(() => {
             this._panel.dispose();
@@ -249,13 +260,21 @@ export class ProseMirrorWebview extends EventEmitter {
         `;
     }
 
+    private themeUpdate() {
+        // Get kind of active ColorTheme (dark or light)
+        const themeType = window.activeColorTheme.kind === 2 ? 'dark' : 'light';
+        this.postMessage({
+            type: MessageType.themeUpdate,
+            body: themeType
+        }, true);
+    }
+
     private syncWebview() {
         // send document content
         this.postMessage({
             type: MessageType.init,
             body: {
                 value: this._document.getText(),
-                format: this._format,
                 version: this._document.version,
             }
         });
@@ -275,6 +294,13 @@ export class ProseMirrorWebview extends EventEmitter {
 
     }
 
+    private updateMenuItemsInEditor() {
+        this.postMessage({
+            type: MessageType.setShowMenuItems,
+            body: this._showMenuItemsInEditor
+        }, true);
+    }
+
     /** Convert line number offsets to line indices and send message to Editor webview */
     private updateLineNumbers() {
         // Early return if line numbers should not be shown in the editor.
@@ -291,19 +317,11 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Toggle the teacher mode */
     private updateTeacherMode() {
-        const mode = WaterproofConfigHelper.teacherMode;
+        const mode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
         this._teacherMode = mode;
         this.postMessage({
             type: MessageType.teacher,
             body: mode
-        }, true);
-    }
-
-    /** Toggle the syntax mode*/
-    private updateSyntaxMode() {
-        this.postMessage({
-            type: MessageType.syntax,
-            body: WaterproofConfigHelper.standardCoqSyntax
         }, true);
     }
 
@@ -379,7 +397,7 @@ export class ProseMirrorWebview extends EventEmitter {
         }
     }
 
-    private sendHistoryChangeToEditor(type: HistoryChangeType) {
+    private sendHistoryChangeToEditor(type: HistoryChange) {
         this.postMessage({
             type: MessageType.editorHistoryChange,
             body: type
@@ -394,7 +412,9 @@ export class ProseMirrorWebview extends EventEmitter {
                 break;
             case MessageType.ready:
                 this.syncWebview();
+                // When ready send the state of the teacher mode and show menu items settings to editor
                 this.updateTeacherMode();
+                this.updateMenuItemsInEditor();
                 break;
             case MessageType.lineNumbers:
                 this._linenumber = msg.body;

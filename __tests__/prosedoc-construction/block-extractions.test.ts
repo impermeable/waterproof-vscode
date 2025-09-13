@@ -1,7 +1,6 @@
-import { createProseMirrorDocument } from "../../editor/src/kroqed-editor/prosedoc-construction";
-import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/kroqed-editor/prosedoc-construction/block-extraction";
-import { isCodeBlock, isHintBlock, isInputAreaBlock, isMathDisplayBlock } from "../../editor/src/kroqed-editor/prosedoc-construction/blocks/typeguards";
-import { FileFormat } from "../../shared";
+import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/document-construction/block-extraction";
+import { typeguards } from "@impermeable/waterproof-editor";
+import { topLevelBlocksMV } from "../../editor/src/document-construction/construct-document";
 
 test("Identify input blocks", () => {
     const document = "# Example\n<input-area>\n# Test input area\n</input-area>\n";
@@ -9,7 +8,7 @@ test("Identify input blocks", () => {
 
     expect(blocks.length).toBe(1);
     const [b] = blocks;
-    expect(isInputAreaBlock(b)).toBe(true);
+    expect(typeguards.isInputAreaBlock(b)).toBe(true);
     expect(b.stringContent).toBe("\n# Test input area\n");
     expect(b.range.from).toBe(10);
     expect(b.range.to).toBe(54);
@@ -24,7 +23,7 @@ test("Identity input blocks #2", () => {
 
     expect(blocks.length).toBe(1);
     const [b] = blocks;
-    expect(isInputAreaBlock(b)).toBe(true);
+    expect(typeguards.isInputAreaBlock(b)).toBe(true);
     expect(b.stringContent).toBe("\n# Test input area\n");
     expect(b.range.from).toBe(1);
     expect(b.range.to).toBe(45);
@@ -39,8 +38,8 @@ test("Identify input blocks #3", () => {
 
     expect(blocks.length).toBe(2);
     const [b1, b2] = blocks;
-    expect(isInputAreaBlock(b1)).toBe(true);
-    expect(isInputAreaBlock(b2)).toBe(true);
+    expect(typeguards.isInputAreaBlock(b1)).toBe(true);
+    expect(typeguards.isInputAreaBlock(b2)).toBe(true);
 
     expect(b1.stringContent).toBe("First input area");
     expect(b1.range.from).toBe(0);
@@ -60,7 +59,7 @@ test("Identify hint blocks", () => {
     const blocks = extractHintBlocks(document);
 
     expect(blocks.length).toBe(1);
-    expect(isHintBlock(blocks[0])).toBe(true);
+    expect(typeguards.isHintBlock(blocks[0])).toBe(true);
     expect(blocks[0].title).toBe("hint-title-test");
     expect(blocks[0].stringContent).toBe("\n# Test hint\n");
     expect(blocks[0].range.from).toBe(10);
@@ -77,7 +76,7 @@ test("Identify hint blocks #2", () => {
 
     const [block1, block2] = blocks;
 
-    expect(isHintBlock(block1)).toBe(true);
+    expect(typeguards.isHintBlock(block1)).toBe(true);
     expect(block1.title).toBe("hint-title-test");
     expect(block1.stringContent).toBe("\n# Test hint\n");
     expect(block1.range.from).toBe(10);
@@ -85,7 +84,7 @@ test("Identify hint blocks #2", () => {
     expect(block1.innerRange.from).toBe(40);
     expect(block1.innerRange.to).toBe(53);
 
-    expect(isHintBlock(block2)).toBe(true);
+    expect(typeguards.isHintBlock(block2)).toBe(true);
     expect(block2.title).toBe("hint title 2");
     expect(block2.stringContent).toBe("Test");
     expect(block2.range.from).toBe(60);
@@ -99,7 +98,7 @@ test("Parse Math Display blocks", () => {
     const blocks = extractMathDisplayBlocks(document);
 
     expect(blocks.length).toBe(1);
-    expect(isMathDisplayBlock(blocks[0])).toBe(true);
+    expect(typeguards.isMathDisplayBlock(blocks[0])).toBe(true);
     expect(blocks[0].stringContent).toBe(" \\frac{1}{2} ");
     expect(blocks[0].range.from).toBe(10);
     expect(blocks[0].range.to).toBe(27);
@@ -110,8 +109,8 @@ test("Parse Math Display blocks #2", () => {
     const blocks = extractMathDisplayBlocks(document);
 
     expect(blocks.length).toBe(2);
-    expect(isMathDisplayBlock(blocks[0])).toBe(true);
-    expect(isMathDisplayBlock(blocks[1])).toBe(true);
+    expect(typeguards.isMathDisplayBlock(blocks[0])).toBe(true);
+    expect(typeguards.isMathDisplayBlock(blocks[1])).toBe(true);
     expect(blocks[0].stringContent).toBe(" \\frac{1}{3} ");
     expect(blocks[1].stringContent).toBe(" \\frac{1}{2} ");
     expect(blocks[0].range.from).toBe(10);
@@ -125,7 +124,7 @@ test("Parse Coq blocks #1", () => {
     const blocks = extractCoqBlocks(document);
 
     expect(blocks.length).toBe(1);
-    expect(isCodeBlock(blocks[0])).toBe(true);
+    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
     expect(blocks[0].stringContent).toBe("Lemma trivial.");
 
     // Outer ranges
@@ -143,8 +142,8 @@ test("Parse Coq blocks #2", () => {
     const blocks = extractCoqBlocks(document);
 
     expect(blocks.length).toBe(2);
-    expect(isCodeBlock(blocks[0])).toBe(true);
-    expect(isCodeBlock(blocks[1])).toBe(true);
+    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
+    expect(typeguards.isCodeBlock(blocks[1])).toBe(true);
     expect(blocks[0].stringContent).toBe("Require Import ZArith.");
     expect(blocks[1].stringContent).toBe("Lemma trivial.");
 
@@ -168,10 +167,10 @@ test("Parse Coq blocks #2", () => {
 
 test("Parse Coq Blocks #3", () => {
     const content = "```coq\nLemma test\n```";
-    const [_, blocks] = createProseMirrorDocument(content, FileFormat.MarkdownV);
+    const blocks = topLevelBlocksMV(content);
 
     expect(blocks.length).toBe(1);
-    expect(isCodeBlock(blocks[0])).toBe(true);
+    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
     expect(blocks[0].stringContent).toBe("Lemma test");
     expect(blocks[0].range.from).toBe(0);
     expect(blocks[0].range.to).toBe(content.length);
@@ -186,6 +185,6 @@ test("Extract math display from inside coqdoc comment", () => {
     // console.log(blocks);
 
     expect(blocks.length).toBe(1);
-    expect(isMathDisplayBlock(blocks[0])).toBe(true);
+    expect(typeguards.isMathDisplayBlock(blocks[0])).toBe(true);
     expect(blocks[0].stringContent).toBe("\\text{math display}");
 })

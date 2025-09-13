@@ -13,6 +13,10 @@ export class WaterproofLogger {
         WaterproofLogger.outputChannel.appendLine(message);
     }
 
+    static debug(message: string) {
+        this.log(message)
+    }
+
     static show() {
         if (!WaterproofLogger.outputChannel) {
             WaterproofLogger.outputChannel = window.createOutputChannel(OUTPUT_CHANNEL_NAME);

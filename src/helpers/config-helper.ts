@@ -1,4 +1,104 @@
-import { workspace } from "vscode";
+import { ConfigurationTarget, workspace } from "vscode";
+import { HypVisibility } from "../../lib/types";
+
+// READ THIS WHEN ADDING A NEW SETTING OR MODIFYING AN EXISTING ONE.
+// Adding a setting is done by modifying the WaterproofSetting enum underneath with the new setting name.
+// WaterproofSettingMap will then complain that it is incomplete, you should add the setting name there.
+// and then update WaterproofSettingTypes with the proper type of the setting.
+// Finally, you can use WaterproofConfigHelper.get and WaterproofConfigHelper.update to get and set the setting.
+
+/**
+ * Available settings in the `waterproof` configuration section.
+ */
+export enum WaterproofSetting {
+    TeacherMode,
+    DetailedErrorsMode,
+    ShowLineNumbersInEditor,
+    SkipLaunchChecks,
+    ShowMenuItemsInEditor,
+    EnforceCorrectNonInputArea,
+    EagerDiagnostics,
+    ShowWaterproofInfoMessages,
+    ShowNoticesAsDiagnostics,
+    MaxErrors,
+    SendDiagsExtraData,
+    GoalAfterTactic,
+    PpType,
+    VisibilityOfHypotheses,
+    TraceServer,
+    Debug,
+    Path,
+    Args,
+    AdmitOnBadQed,
+    UnicodeCompletion,
+    UpdateIgnores,
+    ContinuousChecking,
+}
+
+/**
+ * Maps WaterproofSetting enum values to their string representation in the configuration.
+ */
+export const WaterproofSettingMap: Record<WaterproofSetting, string> = {
+    [WaterproofSetting.TeacherMode]: "teacherMode",
+    [WaterproofSetting.DetailedErrorsMode]: "detailedErrorsMode",
+    [WaterproofSetting.ShowLineNumbersInEditor]: "showLineNumbersInEditor",
+    [WaterproofSetting.SkipLaunchChecks]: "skipLaunchChecks",
+    [WaterproofSetting.ShowMenuItemsInEditor]: "showMenuItemsInEditor",
+    [WaterproofSetting.EnforceCorrectNonInputArea]: "enforceCorrectNonInputArea",
+    [WaterproofSetting.EagerDiagnostics]: "eagerDiagnostics",
+    [WaterproofSetting.ShowWaterproofInfoMessages]: "showWaterproofInfoMessages",
+    [WaterproofSetting.ShowNoticesAsDiagnostics]: "showNoticesAsDiagnostics",
+    [WaterproofSetting.MaxErrors]: "maxErrors",
+    [WaterproofSetting.SendDiagsExtraData]: "sendDiagsExtraData",
+    [WaterproofSetting.GoalAfterTactic]: "goalAfterTactic",
+    [WaterproofSetting.PpType]: "ppType",
+    [WaterproofSetting.VisibilityOfHypotheses]: "visibilityOfHypotheses",
+    [WaterproofSetting.TraceServer]: "trace.server",
+    [WaterproofSetting.Debug]: "debug",
+    [WaterproofSetting.Path]: "path",
+    [WaterproofSetting.Args]: "args",
+    [WaterproofSetting.AdmitOnBadQed]: "admitOnBadQed",
+    [WaterproofSetting.UnicodeCompletion]: "unicodeCompletion",
+    [WaterproofSetting.UpdateIgnores]: "updateIgnores",
+    [WaterproofSetting.ContinuousChecking]: "ContinuousChecking",
+};
+
+/**
+ * Maps WaterproofSetting enum values to their types.
+ */
+type WaterproofSettingTypes = {
+    [WaterproofSetting.TeacherMode]: boolean;
+    [WaterproofSetting.DetailedErrorsMode]: boolean;
+    [WaterproofSetting.ShowLineNumbersInEditor]: boolean;
+    [WaterproofSetting.SkipLaunchChecks]: boolean;
+    [WaterproofSetting.ShowMenuItemsInEditor]: boolean;
+    [WaterproofSetting.EnforceCorrectNonInputArea]: boolean;
+    [WaterproofSetting.EagerDiagnostics]: boolean;
+    [WaterproofSetting.ShowWaterproofInfoMessages]: boolean;
+    [WaterproofSetting.ShowNoticesAsDiagnostics]: boolean;
+    [WaterproofSetting.MaxErrors]: number;
+    [WaterproofSetting.SendDiagsExtraData]: boolean;
+    [WaterproofSetting.GoalAfterTactic]: boolean;
+    [WaterproofSetting.PpType]: 0 | 1 | 2;
+    [WaterproofSetting.VisibilityOfHypotheses]: HypVisibility;
+    [WaterproofSetting.TraceServer]: "off" | "messages" | "verbose";
+    [WaterproofSetting.Debug]: boolean;
+    [WaterproofSetting.Path]: string;
+    [WaterproofSetting.Args]: string[];
+    [WaterproofSetting.AdmitOnBadQed]: boolean;
+    [WaterproofSetting.UnicodeCompletion]: "off" | "normal" | "extended";
+    [WaterproofSetting.UpdateIgnores]: boolean;
+    [WaterproofSetting.ContinuousChecking]: boolean;
+};
+
+/**
+ * Returns the fully qualified setting name for a given WaterproofSetting enum value.
+ * @param setting A setting from the WaterproofSetting enum
+ * @returns The fully qualified setting name, e.g., `waterproof.teacherMode`
+ */
+export function qualifiedSettingName(setting: WaterproofSetting): string {
+    return `waterproof.${WaterproofSettingMap[setting]}`;
+}
 
 export class WaterproofConfigHelper {
 
@@ -7,110 +107,25 @@ export class WaterproofConfigHelper {
         return config();
     }
 
-    /** `waterproof.teacherMode` */
-    static get teacherMode() {
-        return config().get<boolean>("teacherMode") as boolean;
+    /**
+     * Get the configuration with name `waterproof.[setting]`
+     * @param setting The configuration to retrieve.
+     * @returns The configuration.
+     */
+    static get<T extends WaterproofSetting>(setting: T): WaterproofSettingTypes[T]
+    {
+        return config().get<WaterproofSettingTypes[T]>(WaterproofSettingMap[setting]) as WaterproofSettingTypes[T];
     }
 
-    /** `waterproof.detailedErrorsMode` */
-    static get detailedErrors() {
-        return config().get<boolean>("detailedErrorsMode") as boolean;
+    /**
+     * Update the configuration with name `waterproof.[setting]`
+     * @param setting The configuration to update.
+     * @param value The new value.
+     * @param global Whether to update the global or workspace setting.
+     */
+    static async update<T extends WaterproofSetting>(setting: T, value: WaterproofSettingTypes[T], target: ConfigurationTarget = ConfigurationTarget.Global) {
+        return config().update(WaterproofSettingMap[setting], value, target);
     }
-
-    /** `waterproof.showLineNumbersInEditor` */
-    static get showLineNumbersInEditor() {
-        return config().get<boolean>("showLineNumbersInEditor") as boolean;
-    }
-
-    /** `waterproof.showLineNumbersInEditor` */
-    static set showLineNumbersInEditor(value: boolean) {
-        // Update the Waterproof showLineNumbersInEditor configuration
-        // entry, true means we set the global configuration value.
-        config().update("showLineNumbersInEditor", value, true);
-    }
-
-
-    /** `waterproof.enforceCorrectNonInputArea` */
-    static get enforceCorrectNonInputArea() {
-        return config().get<boolean>("enforceCorrectNonInputArea") as boolean;
-    }
-
-    /** `waterproof.standardCoqSyntax` */
-    static get standardCoqSyntax() {
-        return config().get<boolean>("standardCoqSyntax") as boolean;
-    }
-
-    /** `waterproof.eager_diagnostics` */
-    static get eager_diagnostics() {
-        return config().get<boolean>("eager_diagnostics") as boolean;
-    }
-
-    /** `waterproof.show_waterproof_info_messages` */
-    static get show_waterproof_info_messages() {
-        return config().get<boolean>("show_waterproof_info_messages") as boolean;
-    }
-
-    /** `waterproof.show_notices_as_diagnostics` */
-    static get show_notices_as_diagnostics() {
-        return config().get<boolean>("show_notices_as_diagnostics") as boolean;
-    }
-
-    /** `waterproof.max_errors` */
-    static get max_errors() {
-        return config().get<number>("max_errors") as number;
-    }
-
-    /** `waterproof.send_diags_extra_data */
-    static get send_diags_extra_data() {
-        return config().get<boolean>("send_diags_extra_data") as boolean;
-    }
-
-    /** `waterproof.goal_after_tactic` */
-    static get goal_after_tactic() {
-        return config().get<boolean>("goal_after_tactic") as boolean;
-    }
-
-    /** `waterproof.pp_type` */
-    static get pp_type() {
-        return config().get<number>("pp_type") as number;
-    }
-
-    /** `waterproof.trace.server` */
-    static get trace_server() {
-        return config().get<"off" | "messages" | "verbose">("trace.server") as "off" | "messages" | "verbose";
-    }
-
-    /** `waterproof.debug` */
-    static get debug() {
-        return config().get<boolean>("debug") as boolean;
-    }
-
-    /** `waterproof.path` */
-    static get path() {
-        return config().get<string>("path") as string;
-    }
-
-    /** `waterproof.args` */
-    static get args() {
-        return config().get<string[]>("args") as string[];
-    }
-
-    /** `waterproof.admit_on_bad_qed` */
-    static get admit_on_bad_qed() {
-        return config().get<boolean>("admit_on_bad_qed") as boolean;
-    }
-
-    /** `waterproof.unicode_completion` */
-    static get unicode_completion() {
-        return config().get<"off" | "normal" | "extended">("unicode_completion") as "off" | "normal" | "extended";
-    }
-
-    /** `waterproof.updateIgnores` */
-    static get updateIgnores() {
-        return config().get<boolean>("updateIgnores") as boolean;
-    }
-
-
 }
 
 function config() {

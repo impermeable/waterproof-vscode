@@ -1,21 +1,19 @@
-import { TextDocMappingNew } from "../editor/src/kroqed-editor/mappingModel/treestructure";
+import { TextDocMappingNew } from "../editor/src/mapping";
 import { ReplaceStep, Step } from "prosemirror-transform";
-import { createProseMirrorDocument } from "../editor/src/kroqed-editor/prosedoc-construction/construct-document";
-import { WaterproofSchema } from "../editor/src/kroqed-editor/schema";
-import { FileFormat, DocChange } from "../shared";
+import { topLevelBlocksMV } from "../editor/src/document-construction/construct-document";
+import { constructDocument, DocChange, WaterproofSchema } from "@impermeable/waterproof-editor";
 import { expect } from "@jest/globals";
 import { EditorState, Transaction } from "prosemirror-state";
-import { ParsedStep } from "../editor/src/kroqed-editor/mappingModel/treestructure/types";
-import { TextUpdate } from "../editor/src/kroqed-editor/mappingModel/treestructure/textUpdate";
+import { TextUpdate } from "../editor/src/mapping/textUpdate";
+import { ParsedStep } from "../editor/src/mapping/types";
 
 function createTextUpdateMapping(
   content: string,
   build: (s: EditorState) => Transaction
 ): ParsedStep {
-  const [proseDoc, blocks] = createProseMirrorDocument(
-    content,
-    FileFormat.MarkdownV
-  );
+  const blocks = topLevelBlocksMV(content);
+  const proseDoc = constructDocument(blocks);
+
   const mapping = new TextDocMappingNew(blocks, 1);
   //console.log(mapping.getMapping().root)
   const schema = WaterproofSchema;

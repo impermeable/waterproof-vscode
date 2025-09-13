@@ -1,5 +1,4 @@
-import { Completion } from "@codemirror/autocomplete";
-import { Disposable, OutputChannel, Position, TextDocument, languages, window, workspace } from "vscode";
+import { DiagnosticSeverity, Disposable, OutputChannel, Position, Range, TextDocument, languages, window, workspace } from "vscode";
 import {
     DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient,
     LanguageClientOptions,
@@ -10,14 +9,15 @@ import {
 } from "vscode-languageclient";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
-import { MessageType, OffsetDiagnostic, QedStatus, SimpleProgressParams } from "../../shared";
+import { MessageType } from "../../shared";
 import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
-import { WaterproofConfigHelper } from "../helpers";
+import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
+import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity, WaterproofCompletion } from "@impermeable/waterproof-editor";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -26,6 +26,15 @@ interface TimeoutDisposable extends Disposable {
 // Seems to be needed for the mixin class below
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
+
+function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
+    switch (severity) {
+        case DiagnosticSeverity.Error: return Severity.Error;
+        case DiagnosticSeverity.Warning: return Severity.Warning;
+        case DiagnosticSeverity.Information: return Severity.Information;
+        case DiagnosticSeverity.Hint: return Severity.Hint;
+    }
+}
 
 /**
  * The following function allows for a Mixin i.e. we can add the interface
@@ -60,7 +69,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         constructor(...args: any[]) { 
             super(...args);
             this.sentenceManager = new SentenceManager();
-
+            wpl.debug("CoqLspClient constructor");
             // forward progress notifications to editor
             this.fileProgressComponents.push({
                 dispose() { /* noop */ },
@@ -80,14 +89,14 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // deduce (end) positions of sentences from progress notifications
             this.fileProgressComponents.push(this.sentenceManager);
-            const diagnosticsCollection = languages.createDiagnosticCollection("coq");
+            const diagnosticsCollection = languages.createDiagnosticCollection("rocq");
             
             // Set detailedErrors to the value of the `Waterproof.detailedErrorsMode` setting.
-            this.detailedErrors = WaterproofConfigHelper.detailedErrors;
+            this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
             // Update `detailedErrors` when the setting changes.
             this.disposables.push(workspace.onDidChangeConfiguration(e => {
-                if (e.affectsConfiguration("waterproof.detailedErrorsMode")) {
-                    this.detailedErrors = WaterproofConfigHelper.detailedErrors;
+                if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.DetailedErrorsMode))) {
+                    this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
                 }
             }));
 
@@ -100,11 +109,13 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 const diagnostics = (diagnostics_ as WpDiagnostic[]);
                 const document = this.activeDocument;
                 if (!document) return;
+
+                
                 const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
                     if (this.detailedErrors) {
                         return {
                             message:        d.message,
-                            severity:       d.severity,
+                            severity:       vscodeSeverityToWaterproof(d.severity),
                             startOffset:    document.offsetAt(d.range.start),
                             endOffset:      document.offsetAt(d.range.end)
                         };
@@ -121,14 +132,14 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                             );
                             return {
                                 message:        d.message,
-                                severity:       d.severity,
+                                severity:       vscodeSeverityToWaterproof(d.severity),
                                 startOffset:    document.offsetAt(newStart),
                                 endOffset:      document.offsetAt(newEnd)
                             };
                         } else {
                             return {
                                 message:        d.message,
-                                severity:       d.severity,
+                                severity:       vscodeSeverityToWaterproof(d.severity),
                                 startOffset:    document.offsetAt(d.range.start),
                                 endOffset:      document.offsetAt(d.range.end)
                             };
@@ -160,6 +171,17 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     this.onCheckingCompleted();
                 }
             }));
+
+            this.disposables.push(this.onNotification("$/coq/serverStatus", params => {
+                const document = this.activeDocument;
+                if (!document) return;
+                // Handle the server status notification
+                this.webviewManager!.postMessage(document.uri.toString(), {
+                    type: MessageType.serverStatus,
+                    body: params
+                }
+            );
+            }));
         }
 
         async onCheckingCompleted(): Promise<void> {
@@ -184,7 +206,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
 
             // for each input area, check the proof status
-            let statuses: QedStatus[];
+            let statuses: InputAreaStatus[];
             try {
                 statuses = await Promise.all(inputAreas.map(a =>
                     determineProofStatus(this, document, a)
@@ -229,7 +251,10 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     document.uri.toString(),
                     document.version
                 ),
-                position
+                position: {
+                    line:      position.line,
+                    character: position.character
+                }
             };
         }
 
@@ -241,6 +266,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
                 params = this.createGoalsRequestParameters(this.activeDocument, params);
             }
+            wpl.debug(`Sending request for goals with params: ${JSON.stringify(params)}`);
             return this.sendRequest(goalRequestType, params);
         }
 
@@ -276,6 +302,64 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
         }
 
+        async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
+            if (!this.isRunning()) return;
+            const startPos = document.positionAt(start);
+            let endPos = document.positionAt(end);
+            // Compute end of document position, use that if we're close
+            const endOfDocument = document.positionAt(document.getText().length);
+            if (endOfDocument.line - endPos.line < 20) {
+                endPos = endOfDocument;
+            }
+
+            const requestBody = {
+                'textDocument':  VersionedTextDocumentIdentifier.create(
+                    document.uri.toString(),
+                    document.version
+                ),
+                'range': {
+                    start: {
+                        line: startPos.line,
+                        character: startPos.character
+                    },
+                    end: {
+                        line: endPos.line,
+                        character: endPos.character
+                    }
+                } 
+            };
+            
+            await this.sendNotification("coq/viewRange", requestBody);
+
+            // get input areas based on tags
+            const inputAreas = getInputAreas(document);
+            if (!inputAreas) {
+                throw new Error("Cannot check proof status; illegal input areas.");
+            }
+
+            const currentRange : Range = new Range(startPos, endPos);
+            // for each input area, check the proof status
+            let statuses: InputAreaStatus[];
+            try {
+                statuses = await Promise.all(inputAreas.map((a : Range) => {
+                    if (a.intersection(currentRange) === undefined && !a.isEmpty) {
+                        return Promise.resolve(InputAreaStatus.NotInView);
+                    }
+                    return determineProofStatus(this, document, a);
+                }
+                ));
+            } catch (reason) {
+                if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
+                throw reason;
+            }
+
+            // forward statuses to corresponding ProseMirror editor
+            this.webviewManager!.postAndCacheMessage(document, {
+                type: MessageType.qedStatus,
+                body: statuses
+            });
+        }
+
         async updateCompletions(document: TextDocument): Promise<void> {
             if (!this.isRunning()) return;
             if (!this.webviewManager?.has(document)) {
@@ -292,10 +376,11 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
 
             // convert symbols to completions
-            const completions: Completion[] = symbols.map(s => ({
+            const completions: WaterproofCompletion[] = symbols.map(s => ({
                 label:  s.name,
-                detail: s.detail?.toLowerCase(),
-                type:   "variable"
+                detail: s.detail?.toLowerCase() ?? "",
+                type:   "variable",
+                template: s.name
             }));
 
             // send completions to (all code blocks in) the document's editor (not cached!)
@@ -309,8 +394,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             this.fileProgressComponents.forEach(c => c.dispose());
             this.disposables.forEach(d => d.dispose());
             return super.dispose(timeout);
-        }
-
     }
 }
 
@@ -319,4 +402,5 @@ function wasCanceledByServer(reason: unknown): boolean {
         && typeof reason === "object"
         && "message" in reason
         && reason.message === "Request got old in server";  // or: code == -32802
+}
 }

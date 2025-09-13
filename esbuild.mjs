@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import process from "process";
 import * as esbuild from "esbuild";
+import copy from "esbuild-plugin-copy";
 
 let watchConfig = (entry) => {
   return {
@@ -74,13 +75,22 @@ var browser = esbuild
     ...sourcemap_client,
     format: "cjs",
     platform: "browser",
-    external: ["vscode"],
+    external: ["vscode", "child_process"],
     outfile: "out/src/mainBrowser.js",
     minify,
     watch: watch("./src/mainBrowser.ts"),
     loader: {
       ".html": "text",
-    }
+    },
+    plugins: [
+      copy({
+        assets: {
+          from: ['./vendor/*.zip', './vendor/*.bc', './vendor/*.js', './vendor/*.wasm'],
+          to: ['..'],
+        },
+        keepStructure: false,
+      }),
+    ],
   })
   .then(() => {
     console.log("[watch] build finished for ./src/mainBrowser.ts");
@@ -107,12 +117,10 @@ function viewBuild(file) {
 }
 
 var infoView = viewBuild("./views/goals/index.tsx");
-var logView = viewBuild("./views/logbook/index.tsx")
 var executeView = viewBuild("./views/execute/index.tsx");
 var debugView = viewBuild("./views/debug/index.tsx");
 var helpView = viewBuild("./views/help/index.tsx");
 var searchView = viewBuild("./views/search/index.tsx");
-var expandDefinitionView = viewBuild("./views/expandDefinition/index.tsx");
 var symbolsView = viewBuild("./views/symbols/index.tsx");
 var executeView = viewBuild("./views/execute/index.tsx");
 var tacticsView = viewBuild("./views/tactics/index.tsx");

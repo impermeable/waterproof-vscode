@@ -5,6 +5,10 @@ __tests_output__/
 editor/
 lib/
 node_modules/
+!node_modules/@ocaml-wasm/4.12--zarith/bin/dllzarith.wasm
+!node_modules/@ocaml-wasm/4.12--janestreet-base/bin/dllbase_stubs.wasm
+!node_modules/@ocaml-wasm/4.12--janestreet-base/bin/dllbase_internalhash_types_stubs.wasm
+!node_modules/ocaml-wasm/bin/
 shared/
 src/
 test/
@@ -22,3 +26,5 @@ tsconfig.json
 .github/
 ExampleFiles/
 developer-resources/
+scripts/
+docs/

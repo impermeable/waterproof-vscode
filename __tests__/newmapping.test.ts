@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // Disable because the @ts-expect-error clashes with the tests
-import { TextDocMappingNew, TreeNode } from "../editor/src/kroqed-editor/mappingModel/treestructure"; 
-import { createProseMirrorDocument } from "../editor/src/kroqed-editor/prosedoc-construction/construct-document";
-import { FileFormat } from "../shared";
+import { topLevelBlocksMV } from "../editor/src/document-construction/construct-document";
+import { TextDocMappingNew, TreeNode } from "../editor/src/mapping";
 import { expect } from "@jest/globals";
 
 function createTestMapping(content: string): TreeNode[] {
-    const proseDocandBlocks = createProseMirrorDocument(content, FileFormat.MarkdownV);
-    const mapping = new TextDocMappingNew(proseDocandBlocks[1], 1)
+    const blocks = topLevelBlocksMV(content);
+
+    const mapping = new TextDocMappingNew(blocks, 1)
     const tree = mapping.getMapping();
     const nodes: TreeNode[] = [];
     tree.traverseDepthFirst((node: TreeNode) => {

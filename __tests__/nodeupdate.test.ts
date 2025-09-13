@@ -1,22 +1,18 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // Disable because the @ts-expect-error clashes with the tests
-import { TextDocMappingNew, TreeNode, NodeUpdate } from "../editor/src/kroqed-editor/mappingModel/treestructure";
-import { ReplaceStep, ReplaceAroundStep, Step } from "prosemirror-transform";
-import { createProseMirrorDocument } from "../editor/src/kroqed-editor/prosedoc-construction/construct-document";
-import { WaterproofSchema } from "../editor/src/kroqed-editor/schema";
-import { FileFormat, DocChange, WrappingDocChange } from "../shared";
+import { TextDocMappingNew, TreeNode, NodeUpdate } from "../editor/src/mapping";
 import { expect } from "@jest/globals";
-import { EditorState, Transaction, TextSelection } from "prosemirror-state";
-import { ParsedPath } from "node:path/win32";
-import { ParsedStep } from "../editor/src/kroqed-editor/mappingModel/treestructure/types";
-import { lift, wrapIn } from "prosemirror-commands";
+import { EditorState, Transaction } from "prosemirror-state";
+import { constructDocument, DocChange, ReplaceAroundStep, ReplaceStep, Step, WaterproofSchema } from "@impermeable/waterproof-editor";
+import { topLevelBlocksMV } from "../editor/src/document-construction/construct-document";
+import { ParsedStep } from "../editor/src/mapping/types";
 
 function createTestMapping(content: string, build: (s: EditorState) => Transaction): ParsedStep {
-    const proseDocandBlocks = createProseMirrorDocument(content, FileFormat.MarkdownV);
-    const proseDoc = proseDocandBlocks[0];
-    const blocks = proseDocandBlocks[1];
+
+    const blocks = topLevelBlocksMV(content);
+    const proseDoc = constructDocument(blocks);
     const mapping = new TextDocMappingNew(blocks, 1)
-    let tree = mapping.getMapping();
+    const tree = mapping.getMapping();
     tree.traverseDepthFirst((node: TreeNode) => {
         console.log(node);
     })

@@ -1,9 +1,13 @@
-import { Completion } from "@codemirror/autocomplete";
+import { FileFormat, Message, MessageType } from "../../shared";
+import { WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+// TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
+import tactics from "../../completions/tactics.json";
+import symbols from "../../completions/symbols.json";
 
-import { Message, MessageType } from "../../shared";
-import { Editor } from "./kroqed-editor";
-import { COQ_CODE_PLUGIN_KEY } from "./kroqed-editor/codeview/coqcodeplugin";
-import { WaterproofEditorConfig } from "./kroqed-editor/utilities/types";
+// import style sheet and fonts from waterproof-editor
+import "@impermeable/waterproof-editor/styles.css"
+import { TextDocMappingNew } from "./mapping";
+import { topLevelBlocksMV, topLevelBlocksV } from "./document-construction/construct-document";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -11,6 +15,45 @@ import { WaterproofEditorConfig } from "./kroqed-editor/utilities/types";
  */
 interface VSCodeAPI {
 	postMessage: (message: Message) => void;
+}
+
+function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
+	// Create the WaterproofEditorConfig object
+	const cfg: WaterproofEditorConfig = {
+		completions: tactics,
+		symbols: symbols,
+		api: {
+			executeHelp() {
+				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
+			},
+			executeCommand(command: string, time: number) {
+				codeAPI.postMessage({ type: MessageType.command, body: { command, time } });
+			},
+			editorReady() {
+				codeAPI.postMessage({ type: MessageType.editorReady });
+			},
+			documentChange(change) {
+				codeAPI.postMessage({ type: MessageType.docChange, body: change });
+			},
+			applyStepError(errorMessage) {
+				codeAPI.postMessage({ type: MessageType.applyStepError, body: errorMessage });
+			},
+			cursorChange(cursorPosition) {
+				codeAPI.postMessage({ type: MessageType.cursorChange, body: cursorPosition });
+			},
+			viewportHint(start, end) {
+				codeAPI.postMessage({ type: MessageType.viewportHint, body: { start, end } });
+			},
+			lineNumbers(linenumbers, version) {
+				codeAPI.postMessage({ type: MessageType.lineNumbers, body: { linenumbers, version } });
+			},
+
+		},
+		documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
+		mapping: TextDocMappingNew
+	}
+
+	return cfg;
 }
 
 window.onload = () => {
@@ -27,31 +70,10 @@ window.onload = () => {
 		// TODO: maybe sent some sort of test message?
 	}
 
-	// Create the WaterproofEditorConfig object
-	const cfg: WaterproofEditorConfig = {
-		api: {
-			executeCommand(command: string, time: number) {
-				codeAPI.postMessage({ type: MessageType.command, body: {command, time} });
-			},
-			editorReady() {
-				codeAPI.postMessage({ type: MessageType.editorReady });
-			},
-			documentChange(change) {
-				codeAPI.postMessage({ type: MessageType.docChange, body: change });
-			},
-			applyStepError(errorMessage) {
-				codeAPI.postMessage({ type: MessageType.applyStepError, body: errorMessage });
-			},
-			cursorChange(cursorPosition) {
-				codeAPI.postMessage({ type: MessageType.cursorChange, body: cursorPosition });
-			},
-			lineNumbers(linenumbers, version) {
-				codeAPI.postMessage({ type: MessageType.lineNumbers, body: {linenumbers, version} });
-			},
-		}
-	}
+
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
-	const editor = new Editor(editorElement, cfg);
+	const cfg = createConfiguration(FileFormat.MarkdownV, codeAPI);
+	const editor = new WaterproofEditor(editorElement, cfg);
 
 	// Register event listener for communication between extension and editor
 	window.addEventListener("message", (event: MessageEvent<Message>) => {
@@ -59,32 +81,25 @@ window.onload = () => {
 
 		switch(msg.type) {
 			case MessageType.init:
-				editor.init(msg.body.value, msg.body.format, msg.body.version);
+				editor.init(msg.body.value, msg.body.version);
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
 				{
-				const { symbolUnicode, symbolLatex } = msg.body;
+				const { symbolUnicode } = msg.body;
 				if (msg.body.type === "tactics") {
 					// `symbolUnicode` stores the tactic template.
 					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
 					const template = symbolUnicode;
 					editor.handleSnippet(template);
 				} else {
-					editor.insertSymbol(symbolUnicode, symbolLatex);
+					editor.insertSymbol(symbolUnicode);
 				}
 				break; }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
-				{ const state = editor.state;
-				if (!state) break;
-				const completions: Completion[] = msg.body;
-				// Apply autocomplete to all coq cells
-				COQ_CODE_PLUGIN_KEY
-					.getState(state)
-					?.activeNodeViews
-					?.forEach(codeBlock => codeBlock.handleNewComplete(completions));
-				break; }
+				editor.handleCompletions(msg.body);
+				break;
 			case MessageType.qedStatus:
 				{ const statuses = msg.body;  // one status for each input area, in order
 				editor.updateQedStatus(statuses);
@@ -93,6 +108,8 @@ window.onload = () => {
 				{ const show = msg.body;
 				editor.setShowLineNumbers(show);
 				break; }
+			case MessageType.setShowMenuItems:
+				{ const show = msg.body; editor.setShowMenuItems(show); break; }
 			case MessageType.editorHistoryChange:
 				editor.handleHistoryChange(msg.body);
 				break;
@@ -110,13 +127,26 @@ window.onload = () => {
 				{ const diagnostics = msg.body;
 				editor.parseCoqDiagnostics(diagnostics);
 				break; }
-			case MessageType.syntax:
-				editor.initTacticCompletion(msg.body);
+			case MessageType.serverStatus:
+				{ const status = msg.body;
+				editor.updateServerStatus(status);
+				break; }
+			case MessageType.themeUpdate:
+				editor.updateNodeViewThemes(msg.body);
 				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
 				break;
+		}
+	});
+	let timeoutHandle: number | undefined;
+	window.addEventListener('scroll', (_event) => {
+		if (timeoutHandle === undefined) {
+			timeoutHandle = window.setTimeout(() => {
+				editor.handleScroll(window.innerHeight);
+				timeoutHandle = undefined;
+			}, 100);
 		}
 	});
 

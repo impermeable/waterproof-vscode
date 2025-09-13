@@ -9,7 +9,7 @@ export class CoqEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly _context: vscode.ExtensionContext;
 
     /** The editor type */
-    private static readonly viewType = 'coqEditor.coqEditor';
+    private static readonly viewType = 'waterproofTue.waterproofEditor';
 
     /** The webview manager of the extension */
     private readonly _manager: WebviewManager;

@@ -1,8 +1,8 @@
 import { Range, TextDocument } from "vscode";
 
 import { GoalAnswer, PpString } from "../../lib/types";
-import { QedStatus } from "../../shared";
 import { ICoqLspClient } from "./clientTypes";
+import { InputAreaStatus } from "@impermeable/waterproof-editor";
 
 // TODO: only consider Markdown parts
 function findOccurrences(substr: string, str: string): number[] {
@@ -45,13 +45,13 @@ function isComplete(response: GoalAnswer<PpString>): boolean {
     return !("error" in response);
 }
 
-export async function determineProofStatus(client: ICoqLspClient, document: TextDocument, inputArea: Range): Promise<QedStatus> {
+export async function determineProofStatus(client: ICoqLspClient, document: TextDocument, inputArea: Range): Promise<InputAreaStatus> {
     // get the (end) position of the last line in the input area
     // funnily, it can be in a next input area, and we accept this
     const position = client.sentenceManager.getEndOfSentence(inputArea.end, true);
     if (!position) {
         // console.warn("qedStatus.ts : No sentence after input area");
-        return QedStatus.InvalidInputArea;
+        return InputAreaStatus.Invalid;
     }
 
     // check that last command is "Qed" (or return "invalid")
@@ -59,10 +59,10 @@ export async function determineProofStatus(client: ICoqLspClient, document: Text
     const i = position.character - 4;
     if (i < 0 || document.lineAt(position).text.slice(i, i+4) !== "Qed.") {
         // console.warn("qedStatus.ts : Last sentence is not `Qed.`");
-        return QedStatus.InvalidInputArea;
+        return InputAreaStatus.Invalid;
     }
 
     // request goals and return conclusion based on them
     const response = await client.requestGoals(position.translate(0, -1));
-    return isComplete(response) ? QedStatus.Proven : QedStatus.Incomplete;
+    return isComplete(response) ? InputAreaStatus.Proven : InputAreaStatus.Incomplete;
 }

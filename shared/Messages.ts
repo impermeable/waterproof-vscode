@@ -1,10 +1,7 @@
-import { DiagnosticSeverity } from "vscode";
-import { FileFormat } from "./FileFormat";
-import { LineNumber } from "./LineNumber";
-import { DocChange, WrappingDocChange } from "./DocChange";
-import { QedStatus } from "./QedStatus";
-import { Completion } from "@codemirror/autocomplete";
-import { GoalAnswer, PpString } from "../lib/types";
+import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, DiagnosticMessage, SimpleProgressParams, ServerStatus } from "@impermeable/waterproof-editor";
+import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
+import { Completion } from "@impermeable/waterproof-editor";
+
 
 /** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)
  *
@@ -30,22 +27,26 @@ export type Message =
     | MessageBase<MessageType.cursorChange, number>
     | MessageBase<MessageType.diagnostics, DiagnosticMessage>
     | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
-    | MessageBase<MessageType.editorHistoryChange, HistoryChangeType>
+    | MessageBase<MessageType.editorHistoryChange, HistoryChange>
     | MessageBase<MessageType.editorReady>
     | MessageBase<MessageType.errorGoals, unknown>
-    | MessageBase<MessageType.init, { value: string, format: FileFormat, version: number }>
-    | MessageBase<MessageType.insert, { symbolUnicode: string, symbolLatex: string, type: "symbol" | "tactics", time: number }>
+    | MessageBase<MessageType.init, { value: string, version: number }>
+    | MessageBase<MessageType.insert, { symbolUnicode: string, type: "symbol" | "tactics", time: number }>
     | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>
-    | MessageBase<MessageType.qedStatus, QedStatus[]>
+    | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
-    | MessageBase<MessageType.renderGoals, unknown>
+    | MessageBase<MessageType.renderGoals, { goals : GoalAnswer<PpString>, visibility?: HypVisibility }>
+    | MessageBase<MessageType.renderGoalsList, { goalsList : GoalAnswer<PpString>[]}>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
+    | MessageBase<MessageType.serverStatus, ServerStatus>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
     | MessageBase<MessageType.setShowLineNumbers, boolean>
-    | MessageBase<MessageType.syntax, boolean>
-    | MessageBase<MessageType.teacher, boolean>;
+    | MessageBase<MessageType.setShowMenuItems, boolean>
+    | MessageBase<MessageType.teacher, boolean>
+    | MessageBase<MessageType.themeUpdate, "dark" | "light">
+    | MessageBase<MessageType.viewportHint, { start: number, end: number }>;
 
 /**
  * Message type enum. Every message that is send from the
@@ -67,47 +68,15 @@ export const enum MessageType {
     qedStatus,
     ready,
     renderGoals,
+    renderGoalsList,
     response,
+    serverStatus,
     setAutocomplete,
     setData,
     setShowLineNumbers,
-    syntax,
+    setShowMenuItems,
     teacher,
-}
-
-export const enum HistoryChangeType {
-    Undo,
-    Redo
-}
-
-export enum CoqFileProgressKind {
-    Processing = 1,
-    FatalError = 2,
-}
-
-export interface SimpleProgressInfo {
-    /** Range for which the processing info was reported. */
-    range: {
-        start: { line: number, character: number },
-        end: { line: number, character: number },
-    };
-    /** Kind of progress that was reported. */
-    kind?: CoqFileProgressKind;
-}
-
-export interface SimpleProgressParams {
-    numberOfLines: number;
-    progress: SimpleProgressInfo[];
-}
-
-export interface OffsetDiagnostic {
-    message: string;
-    severity: DiagnosticSeverity;
-    startOffset: number;
-    endOffset: number;
-}
-
-export type DiagnosticMessage = {
-    positionedDiagnostics: OffsetDiagnostic[],
-    version: number
+    themeUpdate,
+    flash,
+    viewportHint,
 }

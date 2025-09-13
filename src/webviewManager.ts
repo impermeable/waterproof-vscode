@@ -1,6 +1,5 @@
-import { EventEmitter } from "stream";
 import { TextDocument, Uri, window } from "vscode";
-
+import { EventEmitter } from "events";
 import { Message, MessageType } from "../shared";
 import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
@@ -12,7 +11,9 @@ export enum WebviewManagerEvents {
     focus           = "focus",
     cursorChange    = "cursorChange",
     command         = "command",
-    updateButton    = "updateButton"
+    updateButton    = "updateButton",
+    buttonClick     = "buttonClick",
+    viewportHint    = "viewportHint",
 }
 
 /**
@@ -110,9 +111,9 @@ export class WebviewManager extends EventEmitter {
         webview.on(WebviewEvents.message, (msg: Message) => {
             this.onToolsMessage(name, msg);
         });
+
         webview.on(WebviewEvents.change, (state) => {
             if (state == WebviewState.focus && webview.supportInsert) this._active.insert(name);
-            this.emit(WebviewManagerEvents.updateButton, { name, open: webview.isOpened});
         });
     }
 
@@ -146,22 +147,36 @@ export class WebviewManager extends EventEmitter {
 
     /**
      * Opens a tool webview to the user
+     * If the webview is already open, it will be revealed.
      * @param id the id of the tool webview
      */
     public open(id: string) {
-        if (this._toolWebviews.has(id)) new Error("Tool webview does not have this panel: " + id);
-        this._toolWebviews.get(id)?.readyPanel();
-        this._toolWebviews.get(id)?.activatePanel();
-    }
+        if (!this._toolWebviews.has(id)) {
+            throw new Error("Tool webview does not have this panel: " + id);
+        }
 
-    /**
-     * Reveals a panel to the user
-     * @param id the id of the tool webview
-     */
-    public reveal(id: string) {
-        if (this._toolWebviews.has(id)) new Error("Tool webview does not have this panel: " + id);
-        console.log(this._toolWebviews)
-        this._toolWebviews.get(id)?.revealPanel()
+        // Emit button click event before performing any state checks
+
+        const panel = this._toolWebviews.get(id);
+        // Check if the panel is already open
+        if (panel?.isOpened) {
+            this.emit(WebviewManagerEvents.buttonClick, { name: id });
+            return;
+        }
+
+        // Open the panel if it is not already open
+        else if(panel?.isHidden) {
+            this.emit(WebviewManagerEvents.buttonClick, { name: id });
+            panel?.revealPanel();
+        }
+
+        // Open the panel if it is not hidden and not already open
+        else{
+            this.emit(WebviewManagerEvents.buttonClick, { name: id });
+            panel?.readyPanel();
+            panel?.activatePanel();
+            panel?.revealPanel();
+        }
     }
 
     /**
@@ -251,6 +266,9 @@ export class WebviewManager extends EventEmitter {
                 // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
                 this.onToolsMessage("help", {type: MessageType.command, body: { command: "createHelp" }});
                 setTimeout(() => this.onToolsMessage("help", {type: MessageType.command, body: { command: "Help." }}), 250);
+                break;
+            case MessageType.viewportHint:
+                this.emit(WebviewManagerEvents.viewportHint, {document, ...message.body});
                 break;
             default:
                 console.error(`Unrecognized message type ${message.type}, not handled by webview manager`);

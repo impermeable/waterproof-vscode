@@ -1,5 +1,5 @@
 import { Tree, TreeNode } from "./Tree";
-import { Step, ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
+import { Step, ReplaceStep, ReplaceAroundStep } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
 // import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";

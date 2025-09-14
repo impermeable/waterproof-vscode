@@ -56,3 +56,36 @@ test("Inner input area (and hint) blocks #2", () => {
     expect(b2.innerRange.from).toBe(25 + offset);
     expect(b2.innerRange.to).toBe(43 + offset);
 });
+
+test("Inner input area (and hint) blocks #3", () => {
+    const doc = `<input-area>
+t
+</input-area>Afteeer hint`;
+    const blocks = topLevelBlocksMV(doc);
+
+    expect(blocks.length).toBe(2);
+    const [b1, b2] = blocks;
+    expect(typeguards.isInputAreaBlock(b1)).toBe(true);
+    expect(b1.stringContent).toBe("\nt\n");
+
+    expect(b1.range.from).toBe(0);
+    expect(b1.range.to).toBe(28);
+    expect(b1.innerRange.from).toBe(12);
+    expect(b1.innerRange.to).toBe(15);
+
+    expect(b1.innerBlocks?.length).toBe(1);
+    const [inner] = b1.innerBlocks!;
+    expect(typeguards.isMarkdownBlock(inner)).toBe(true);
+    expect(inner.stringContent).toBe("\nt\n");
+    expect(inner.range.from).toBe(12);
+    expect(inner.range.to).toBe(15);
+    expect(inner.innerRange.from).toBe(12);
+    expect(inner.innerRange.to).toBe(15);
+
+    expect(typeguards.isMarkdownBlock(b2)).toBe(true);
+    expect(b2.stringContent).toBe("Afteeer hint");
+    expect(b2.range.from).toBe(28);
+    expect(b2.range.to).toBe(doc.length);
+    expect(b2.innerRange.from).toBe(28);
+    expect(b2.innerRange.to).toBe(doc.length);
+});

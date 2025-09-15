@@ -1,9 +1,9 @@
 import { Tree, TreeNode } from "./Tree";
-import { Step, ReplaceStep, ReplaceAroundStep } from "@impermeable/waterproof-editor";
+import { Step, ReplaceStep, ReplaceAroundStep, typeguards } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
 // import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
-import { Block, HintBlock, DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
+import { Block, DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 
 
@@ -128,9 +128,7 @@ export class TextDocMappingNew {
         function buildSubtree(blocks: Block[]): TreeNode[] {
             return blocks.map(block => {
 
-                const title = block.type === "hintblock"
-                ? (block as any).title  // 👈 escape hatch
-                : "";
+                const title = typeguards.isHintBlock(block) ? block.title : "";
 
                 const node = new TreeNode(
                     block.type,

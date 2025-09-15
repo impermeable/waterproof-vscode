@@ -11,6 +11,7 @@ import { TextDocMappingNew } from "./mapping";
 import { vFileParser } from "./document-construction/vFile";
 import { markdownParser } from "./document-construction/statemachine";
 import { coqdocToMarkdown } from "./coqdoc";
+import { topLevelBlocksMV } from "./document-construction/construct-document";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -53,7 +54,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 
 		},
 		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
-		documentConstructor: format === FileFormat.MarkdownV ? (doc: string) => markdownParser(doc, "coq") : vFileParser,
+		documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : vFileParser,
 		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
 		// documentConstructor: vFileParser,

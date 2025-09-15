@@ -2,6 +2,7 @@ export class TreeNode {
     type: string;
     originalStart: number;
     originalEnd: number;
+    title: string;
     prosemirrorStart: number;
     prosemirrorEnd: number;
     stringContent: string;
@@ -11,6 +12,7 @@ export class TreeNode {
         type: string,
         originalStart: number,
         originalEnd: number,
+        title: string,
         prosemirrorStart: number,
         prosemirrorEnd: number,
         stringContent: string
@@ -18,6 +20,7 @@ export class TreeNode {
         this.type = type;
         this.originalStart = originalStart;
         this.originalEnd = originalEnd;
+        this.title = title;
         this.prosemirrorStart = prosemirrorStart;
         this.prosemirrorEnd = prosemirrorEnd;
         this.stringContent = stringContent;
@@ -41,11 +44,12 @@ export class Tree {
         type: string = "",
         originalStart: number = 0,
         originalEnd: number = 0,
+        title: string = "",
         prosemirrorStart: number = 0,
         prosemirrorEnd: number = 0,
         stringContent: string = ""
     ) {
-        this.root = new TreeNode(type, originalStart, originalEnd, prosemirrorStart, prosemirrorEnd, stringContent);
+        this.root = new TreeNode(type, originalStart, originalEnd, title, prosemirrorStart, prosemirrorEnd, stringContent);
     }
 
     traverseDepthFirst(callback: (node: TreeNode) => void, node: TreeNode | null = this.root): void {
@@ -78,7 +82,7 @@ export class Tree {
 
     findNodeByOriginalPosition(pos: number, node: TreeNode | null = this.root): TreeNode | null {
         if (!node) return null;
-        if (pos >= node.originalStart && pos < node.originalEnd) {
+        if (pos >= node.originalStart && pos <= node.originalEnd) {
             for (const child of node.children) {
                 const result = this.findNodeByOriginalPosition(pos, child);
                 if (result) return result;

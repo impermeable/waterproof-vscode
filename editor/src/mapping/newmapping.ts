@@ -1,9 +1,9 @@
 import { Tree, TreeNode } from "./Tree";
-import { Step, ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
+import { Step, ReplaceStep, ReplaceAroundStep } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
 // import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
-import { Block, DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
+import { Block, HintBlock, DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 
 
@@ -16,42 +16,6 @@ export class TextDocMappingNew {
     private tree: Tree;
     /** The version of the underlying textDocument */
     private _version: number;
-
-    /** The different possible HTMLtags in kroqed-schema */
-    private static types: Set<string> = new Set<string>([
-        "markdown",
-        "input-area",
-        "coqblock",
-        "coqcode",
-        "coqdoc",
-        "math-display",
-        "hint",
-        "coqdown",
-    ]);
-
-
-    /** This stores the characters that each 'starting' HTML tag represents in the original document */
-    private startTag: Map<string, string> = new Map<string, string>([
-        ["coqblock", "```coq"],
-        ["math-display", "$"],
-        ["input-area", "<input-area>"],
-        ["markdown", ""],
-        ["math_display", "$"],
-        ["input", "<input-area>"],
-        ["text", ""],
-    ]);
-
-    /** This stores the characters that each 'ending' HTML tag represents in the original document */
-    private endTag: Map<string, string> = new Map<string, string>([
-        ["coqblock", "```"],
-        ["math-display", "$"],
-        ["input-area", "</input-area>"],
-        ["markdown", ""],
-        ["hint", "</hint>"],
-        ["math_display", "$"],
-        ["input", "</input-area>"],
-        ["text", ""],
-    ]);
 
     /**
      * Constructs a prosemirror view vscode mapping for the inputted prosemirror html element
@@ -90,6 +54,7 @@ export class TextDocMappingNew {
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
+        console.log(index)
         const correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
         if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
         return (index - correctNode.originalStart) + correctNode.prosemirrorStart;
@@ -101,6 +66,7 @@ export class TextDocMappingNew {
     }
 
     public update(step: Step) : DocChange | WrappingDocChange {
+        console.log(step)
         if (!(step instanceof ReplaceStep || step instanceof ReplaceAroundStep)) 
             throw new Error("Step update (in textDocMapping) should not be called with a non document changing step");
 
@@ -148,10 +114,12 @@ export class TextDocMappingNew {
 
     private mapToTree(blocks: Block[]): void {
         // Create a root node with dummy values
+
         const root = new TreeNode(
             "", // type
             0, // originalStart
-            0, // originalEnd
+            blocks.at(-1)!.range.to, // originalEnd
+            "", // title
             0, // prosemirrorStart
             0, // prosemirrorEnd
             "" // stringContent
@@ -159,10 +127,16 @@ export class TextDocMappingNew {
 
         function buildSubtree(blocks: Block[]): TreeNode[] {
             return blocks.map(block => {
+
+                const title = block.type === "hintblock"
+                ? (block as any).title  // 👈 escape hatch
+                : "";
+
                 const node = new TreeNode(
                     block.type,
                     block.innerRange.from,
                     block.innerRange.to,
+                    title,
                     0, // prosemirrorStart (to be calculated later)
                     0, // prosemirrorEnd (to be calculated later)
                     block.stringContent // always keep the stringContent
@@ -182,8 +156,9 @@ export class TextDocMappingNew {
 
         // Set the tree root after mapping
         this.tree.root = root;
+        console.log(this.tree)
         // Now compute the ProseMirror offsets after creating the tree structure
-        this.computeProsemirrorOffsets(this.tree.root, this.startTag, this.endTag);
+        this.computeProsemirrorOffsets(this.tree.root);
     }
 
     /**
@@ -198,21 +173,17 @@ export class TextDocMappingNew {
      */
     private computeProsemirrorOffsets(
         node: TreeNode | null,
-        startTagMap: Map<string, string>,
-        endTagMap: Map<string, string>,
         currentOffset: number = 0,
         level: number = 0
     ): number {
         if (!node) return currentOffset;
 
-        const startTagStr = startTagMap.get(node.type) ?? "";
-        const endTagStr = endTagMap.get(node.type) ?? "";
 
         let offset = currentOffset;
 
         // Add start tag and +1 for going one level deeper
         if (node !== this.tree.root) {
-            offset += startTagStr.length + 1;
+            offset +=  1;
         }
 
         // Record the ProseMirror start after entering this node
@@ -220,7 +191,7 @@ export class TextDocMappingNew {
 
         if (node.children.length === 0) {
             // Leaf: add stringContent + end tag + +1 for exiting level
-            offset += node.stringContent.length + endTagStr.length;
+            offset += node.stringContent.length;
         } else {
             // Non-leaf: handle children and end tag
             for (let i = 0; i < node.children.length; i++) {
@@ -229,14 +200,12 @@ export class TextDocMappingNew {
                 }
                 offset = this.computeProsemirrorOffsets(
                     node.children[i],
-                    startTagMap,
-                    endTagMap,
                     offset,
                     level + 1
                 );
             }
             // After all children: add end tag
-            offset += endTagStr.length + 1;
+            offset += 1;
         }
 
         node.prosemirrorEnd = offset;

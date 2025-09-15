@@ -1,6 +1,6 @@
 // Disabled because the ts-ignores later can't be made into ts-expect-error
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { ReplaceAroundStep, ReplaceStep } from "prosemirror-transform";
+import { ReplaceAroundStep, ReplaceStep } from "@impermeable/waterproof-editor";
 import { Tree, TreeNode } from "./Tree";
 import { OperationType, ParsedStep } from "./types";
 import { DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";

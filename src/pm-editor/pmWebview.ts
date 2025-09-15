@@ -97,15 +97,14 @@ export class ProseMirrorWebview extends EventEmitter {
             this.emit(WebviewEvents.finishUpdate);
         });
         this._cachedMessages = new Map();
-        this.initWebview(extensionUri);
         this._document = doc;
-
+        
         this._nonInputRegions = getNonInputRegions(doc.getText());
-
+        
         this._teacherMode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
         this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(WaterproofSetting.EnforceCorrectNonInputArea);
         this._lastCorrectDocString = doc.getText();
-
+        
         const format = getFormatFromExtension(doc);
         if (format === undefined) {
             // FIXME: We should never encounter this, as the extension is only activated for .v and .mv files?
@@ -113,6 +112,7 @@ export class ProseMirrorWebview extends EventEmitter {
             return;
         }
         this._format = format;
+        this.initWebview(extensionUri);
     }
 
     private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {
@@ -246,7 +246,7 @@ export class ProseMirrorWebview extends EventEmitter {
             <meta charset="utf-8">
             <script defer src="${scriptUri}" nonce="${nonce}"></script><link href="${styleUri}" rel="stylesheet">
         </head>
-        <body>
+        <body format="${this._format === FileFormat.MarkdownV ? "markdownv" : "regularv"}">
             <article>
                 <!-- The div underneath stores the editor -->
                 <div id="editor" spellcheck="false">

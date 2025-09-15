@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
@@ -7,7 +7,10 @@ import symbols from "../../completions/symbols.json";
 // import style sheet and fonts from waterproof-editor
 import "@impermeable/waterproof-editor/styles.css"
 import { TextDocMappingNew } from "./mapping";
-import { topLevelBlocksMV, topLevelBlocksV } from "./document-construction/construct-document";
+// import { topLevelBlocksMV } from "./document-construction/construct-document";
+import { vFileParser } from "./document-construction/vFile";
+import { markdownParser } from "./document-construction/statemachine";
+import { coqdocToMarkdown } from "./coqdoc";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -49,7 +52,11 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 			},
 
 		},
-		documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
+		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
+		documentConstructor: format === FileFormat.MarkdownV ? (doc: string) => markdownParser(doc, "coq") : vFileParser,
+		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
+		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
+		// documentConstructor: vFileParser,
 		mapping: TextDocMappingNew
 	}
 
@@ -69,10 +76,10 @@ window.onload = () => {
 		throw Error("Could not acquire the vscode api.");
 		// TODO: maybe sent some sort of test message?
 	}
-
+	const format = document.body.getAttribute("format") === "markdownv" ? FileFormat.MarkdownV : FileFormat.RegularV;
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
-	const cfg = createConfiguration(FileFormat.MarkdownV, codeAPI);
+	const cfg = createConfiguration(format, codeAPI);
 	const editor = new WaterproofEditor(editorElement, cfg);
 
 	// Register event listener for communication between extension and editor

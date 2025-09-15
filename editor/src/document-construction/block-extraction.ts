@@ -1,4 +1,4 @@
-import { FileFormat, InputAreaBlock, HintBlock, MathDisplayBlock, CodeBlock } from "@impermeable/waterproof-editor";
+import { InputAreaBlock, HintBlock, MathDisplayBlock, CodeBlock } from "@impermeable/waterproof-editor";
 import { createInputAndHintInnerBlocks } from "./inner-blocks";
 
 
@@ -19,10 +19,7 @@ const regexes = {
  * - `<input-area>` and `</input-area>` tags (mv files)
  * - `(* begin input *)` and `(* end input *)` (v files)
  */
-export function extractInputBlocks(document: string, fileFormat: FileFormat = FileFormat.MarkdownV) {
-    if (fileFormat === FileFormat.RegularV) {
-        return extractInputBlocksV(document);
-    }
+export function extractInputBlocks(document: string) {
     return extractInputBlocksMV(document);
 }
 
@@ -42,19 +39,6 @@ function extractInputBlocksMV(document: string) {
     return inputAreaBlocks;
 }
 
-function extractInputBlocksV(document: string) {
-    const input_areas = document.matchAll(regexes.input_areaV);
-
-    const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
-        if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
-        const range = { from: input_area.index, to: input_area.index + input_area[0].length };
-        // FIXME: inner block range
-        return new InputAreaBlock("```coq\n" + input_area[1] + "\n```", range, {from: 0, to: 0}, createInputAndHintInnerBlocks("```coq\n" + input_area[1] + "\n```", {from:0, to:0}));
-    });
-
-    return inputAreaBlocks;
-}
-
 /**
  * Create hint blocks from document string.
  *
@@ -62,11 +46,7 @@ function extractInputBlocksV(document: string) {
  * - `<hint title=[hint title]>` and `</hint>` tags (mv files)
  * - `(* begin hint : [hint title] *)` and `(* end hint *)` (v files)
  */
-export function extractHintBlocks(document: string, fileFormat: (FileFormat.MarkdownV | FileFormat.RegularV) = FileFormat.MarkdownV): HintBlock[] {
-
-    if (fileFormat === FileFormat.RegularV) {
-        return extractHintBlocksV(document);
-    }
+export function extractHintBlocks(document: string): HintBlock[] {
     return extractHintBlocksMV(document);
 }
 
@@ -82,20 +62,6 @@ function extractHintBlocksMV(document: string) {
         const range = { from: hint.index, to: hint.index + hint[0].length };
         const innerRange = { from: range.from + hintTagOpenLength + title.length, to: range.to - hintTagCloseLength };
         return new HintBlock(hint[2], title, range, innerRange, createInputAndHintInnerBlocks(hint[2], innerRange));
-    });
-
-    return hintBlocks;
-}
-
-function extractHintBlocksV(document: string) {
-    const hints = document.matchAll(regexes.hintV);
-
-    const hintBlocks = Array.from(hints).map((hint) => {
-        if (hint.index === undefined) throw new Error("Index of hint is undefined");
-        const range = { from: hint.index, to: hint.index + hint[0].length };
-        // This is incorrect as we should wrap the content part in a coqblock.
-        // FIXME: inner range
-        return new HintBlock(`\`\`\`coq\n${hint[2]}\n\`\`\``, hint[1], range, {from:0, to:0}, createInputAndHintInnerBlocks(`\`\`\`coq\n${hint[2]}\n\`\`\``, {from:0, to:0}));
     });
 
     return hintBlocks;

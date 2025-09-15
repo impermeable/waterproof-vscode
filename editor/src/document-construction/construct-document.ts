@@ -1,4 +1,4 @@
-import { Block, FileFormat, HintBlock, InputAreaBlock, MarkdownBlock, typeguards, utils } from "@impermeable/waterproof-editor";
+import { Block, HintBlock, InputAreaBlock, MarkdownBlock, utils } from "@impermeable/waterproof-editor";
 import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks } from "./block-extraction";
 
 // 0A. Extract the top level blocks from the input document.
@@ -39,34 +39,3 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
     return allBlocks;
 }
 
-// 0B. Extract the top level blocks from the input document.
-export function topLevelBlocksV(inputDocument: string): Block[] {
-    // There are three different 'top level' blocks, 
-    // - Hint
-    // - InputArea
-    // - Coq
-
-    // We should also allow input and hints as we do with v files.
-    // The syntax is 
-    // (* begin hint : [hint description] *) and (* end hint *)
-    // (* begin input *) and (* end input *)
-
-    const hintBlocks = extractHintBlocks(inputDocument, FileFormat.RegularV);
-    const inputAreaBlocks = extractInputBlocks(inputDocument, FileFormat.RegularV);
-    // const blocks = [...hintBlocks, ...inputAreaBlocks];
-    // const coqBlockRanges = extractInterBlockRanges(blocks, inputDocument);
-    
-    // Extract the coq blocks based on the ranges.
-    // const coqBlocks = coqBlockRanges.map(range => {
-    //     const content = inputDocument.slice(range.from, range.to);
-    //     return new CodeBlock(content, "", "", "", "", range);
-    // });
-
-    const sortedBlocks = utils.sortBlocks([...hintBlocks, ...inputAreaBlocks]); // , ...coqBlocks]);
-    const prunedBlocks = sortedBlocks.filter(block => {
-        if (typeguards.isCodeBlock(block) && (block.stringContent === "\n")) return false;
-
-        return true;
-    });
-    return prunedBlocks;
-}

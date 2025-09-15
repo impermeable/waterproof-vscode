@@ -83,6 +83,7 @@ export class Tree {
     findNodeByOriginalPosition(pos: number, node: TreeNode | null = this.root): TreeNode | null {
         if (!node) return null;
         if (pos >= node.originalStart && pos <= node.originalEnd) {
+            console.log(node)
             for (const child of node.children) {
                 const result = this.findNodeByOriginalPosition(pos, child);
                 if (result) return result;

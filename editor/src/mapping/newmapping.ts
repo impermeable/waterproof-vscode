@@ -118,7 +118,7 @@ export class TextDocMappingNew {
         const root = new TreeNode(
             "", // type
             0, // originalStart
-            blocks.at(-1)!.range.to, // originalEnd
+            blocks.at(-1)!.range.to + 1, // originalEnd
             "", // title
             0, // prosemirrorStart
             0, // prosemirrorEnd

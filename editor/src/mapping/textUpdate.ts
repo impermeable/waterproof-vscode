@@ -55,30 +55,16 @@ export class TextUpdate {
         tree.traverseDepthFirst((node: TreeNode) => {
             if (node.prosemirrorStart >= targetCell.prosemirrorStart && node.prosemirrorEnd <= targetCell.prosemirrorEnd) {
                 // Remove the node from the tree
-                // console.log(node.prosemirrorEnd)
-                // console.log(node.originalEnd)
-
-                // Update only if it's a leaf
-                const localOffsetBegin = step.from - node.prosemirrorStart;
-                const localOffsetEnd   = step.to   - node.prosemirrorStart;
-
-                const insertedText = step.slice.content.firstChild?.text ?? "";
-
-                node.stringContent =
-                    node.stringContent.slice(0, localOffsetBegin) +
-                    insertedText +
-                    node.stringContent.slice(localOffsetEnd);
-
-                    
                 node.prosemirrorEnd += offset;
                 node.originalEnd += offset;
-            } else if (node.prosemirrorStart > targetCell.prosemirrorStart) {
+                node.stringContent = text
+            }
+            if (node.prosemirrorStart > targetCell.prosemirrorStart) {
                 node.prosemirrorStart += offset;
                 node.prosemirrorEnd += offset;
-            } else if (node.originalStart > targetCell.originalStart) {
                 node.originalStart += offset;
                 node.originalEnd += offset;
-            } 
+            }
         });
 
         let newTree = new Tree;

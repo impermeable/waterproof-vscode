@@ -1,6 +1,5 @@
-import { Fragment } from "prosemirror-model";
+import { Fragment, ReplaceStep } from "@impermeable/waterproof-editor";
 import { OperationType } from "./types";
-import { ReplaceStep } from "prosemirror-transform";
 
 
 /** This stores the characters that each 'starting' HTML tag represents in the orginal document */                                               

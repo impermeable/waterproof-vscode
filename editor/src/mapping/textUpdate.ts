@@ -1,8 +1,7 @@
-import { ReplaceStep } from "prosemirror-transform";
 import { TextDocMappingNew } from "./newmapping";
 import { ParsedStep, OperationType } from "./types";
 import { Tree, TreeNode } from "./Tree";
-import { DocChange } from "@impermeable/waterproof-editor";
+import { DocChange, ReplaceStep } from "@impermeable/waterproof-editor";
 
 
 

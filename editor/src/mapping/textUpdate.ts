@@ -49,16 +49,13 @@ export class TextUpdate {
             finalText: text
         }
 
-        console.log(result)
-
         tree.traverseDepthFirst((node: TreeNode) => {
             if (node.prosemirrorStart >= targetCell.prosemirrorStart && node.prosemirrorEnd <= targetCell.prosemirrorEnd) {
-                // Remove the node from the tree
                 node.prosemirrorEnd += offset;
                 node.originalEnd += offset;
                 node.stringContent = text
             }
-            if (node.prosemirrorStart > targetCell.prosemirrorStart) {
+            if (node.prosemirrorEnd > targetCell.prosemirrorEnd) {
                 node.prosemirrorStart += offset;
                 node.prosemirrorEnd += offset;
                 node.originalStart += offset;

@@ -54,7 +54,6 @@ export class TextDocMappingNew {
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
-        console.log(index)
         const correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
         if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
         return (index - correctNode.originalStart) + correctNode.prosemirrorStart;
@@ -118,7 +117,7 @@ export class TextDocMappingNew {
         const root = new TreeNode(
             "", // type
             0, // originalStart
-            blocks.at(-1)!.range.to + 1, // originalEnd
+            blocks.at(-1)!.range.to, // originalEnd
             "", // title
             0, // prosemirrorStart
             0, // prosemirrorEnd

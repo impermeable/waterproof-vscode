@@ -33,6 +33,7 @@ export enum WaterproofSetting {
     UnicodeCompletion,
     UpdateIgnores,
     ContinuousChecking,
+    LogDebugStatements,
 }
 
 /**
@@ -61,6 +62,7 @@ export const WaterproofSettingMap: Record<WaterproofSetting, string> = {
     [WaterproofSetting.UnicodeCompletion]: "unicodeCompletion",
     [WaterproofSetting.UpdateIgnores]: "updateIgnores",
     [WaterproofSetting.ContinuousChecking]: "ContinuousChecking",
+    [WaterproofSetting.LogDebugStatements]: "LogDebugStatements",
 };
 
 /**
@@ -89,6 +91,7 @@ type WaterproofSettingTypes = {
     [WaterproofSetting.UnicodeCompletion]: "off" | "normal" | "extended";
     [WaterproofSetting.UpdateIgnores]: boolean;
     [WaterproofSetting.ContinuousChecking]: boolean;
+    [WaterproofSetting.LogDebugStatements]: boolean;
 };
 
 /**

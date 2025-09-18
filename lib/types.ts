@@ -1,3 +1,4 @@
+import { ServerStatus } from "@impermeable/waterproof-editor";
 import {
     Position,
     Range,
@@ -154,6 +155,17 @@ export interface CoqIdleStatus {
 }
 
 export type CoqServerStatus = CoqBusyStatus | CoqIdleStatus;
+
+function isBusyStatus(status: CoqServerStatus): status is CoqBusyStatus {
+    return status.status === "Busy";
+}
+
+export function CoqServerStatusToServerStatus(status: CoqServerStatus): ServerStatus {
+    if (isBusyStatus(status)) {
+        return { status: status.status, metadata: status.modname };
+    }
+    return status;
+}
 
 export enum HypVisibility {
   All = "all",

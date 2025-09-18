@@ -17,7 +17,7 @@ import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType, serverStatusNotificationType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
-import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity, WaterproofCompletion } from "@impermeable/waterproof-editor";
+import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -59,6 +59,11 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         readonly lspOutputChannel: OutputChannel;
 
         webviewManager: WebviewManager | undefined;
+
+        // Whether we are using viewport based checking.
+        readonly viewPortBasedChecking: boolean = !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking);
+        // The range of the current viewport.
+        viewPortRange: Range | undefined = undefined;
 
         /**
          * Initializes the client.
@@ -225,8 +230,14 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
                 // for each input area, check the proof status
                 try {
-                    const statuses = await Promise.all(inputAreas.map(a =>
-                        determineProofStatus(this, document, a)
+                    const statuses = await Promise.all(inputAreas.map(a => {
+                            if (this.viewPortBasedChecking && this.viewPortRange && a.intersection(this.viewPortRange) === undefined) {
+                                // This input area is outside of the range that has been checked and thus we can't determine its status
+                                return Promise.resolve(InputAreaStatus.NotInView);
+                            } else {
+                                return determineProofStatus(this, document, a);
+                            }
+                        }
                     ));
 
                     // forward statuses to corresponding ProseMirror editor
@@ -348,35 +359,9 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 } 
             };
             
+            // Save the range for which the document has been checked
+            this.viewPortRange = new Range(startPos, endPos);
             await this.sendNotification("coq/viewRange", requestBody);
-
-            // get input areas based on tags
-            const inputAreas = getInputAreas(document);
-            if (!inputAreas) {
-                throw new Error("Cannot check proof status; illegal input areas.");
-            }
-
-            const currentRange : Range = new Range(startPos, endPos);
-            // for each input area, check the proof status
-            let statuses: InputAreaStatus[];
-            try {
-                statuses = await Promise.all(inputAreas.map((a : Range) => {
-                    if (a.intersection(currentRange) === undefined && !a.isEmpty) {
-                        return Promise.resolve(InputAreaStatus.NotInView);
-                    }
-                    return determineProofStatus(this, document, a);
-                }
-                ));
-            } catch (reason) {
-                if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
-                throw reason;
-            }
-
-            // forward statuses to corresponding ProseMirror editor
-            this.webviewManager!.postAndCacheMessage(document, {
-                type: MessageType.qedStatus,
-                body: statuses
-            });
         }
 
         async updateCompletions(document: TextDocument): Promise<void> {

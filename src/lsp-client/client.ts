@@ -8,13 +8,13 @@ import {
     VersionedTextDocumentIdentifier
 } from "vscode-languageclient";
 
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { CoqServerStatusToServerStatus, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { MessageType } from "../../shared";
 import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
-import { convertToSimple, fileProgressNotificationType, goalRequestType } from "./requestTypes";
+import { convertToSimple, fileProgressNotificationType, goalRequestType, serverStatusNotificationType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 import { SimpleProgressParams, OffsetDiagnostic, InputAreaStatus, Severity, WaterproofCompletion } from "@impermeable/waterproof-editor";
@@ -172,13 +172,18 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
             }));
 
-            this.disposables.push(this.onNotification("$/coq/serverStatus", params => {
+            this.disposables.push(this.onNotification(serverStatusNotificationType, params => {
                 const document = this.activeDocument;
                 if (!document) return;
+
+                if (params.status === "Idle") {
+                    this.computeInputAreaStatus(document);
+                }
+
                 // Handle the server status notification
                 this.webviewManager!.postMessage(document.uri.toString(), {
                     type: MessageType.serverStatus,
-                    body: params
+                    body: CoqServerStatusToServerStatus(params)
                 }
             );
             }));
@@ -199,28 +204,42 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 }
             );
 
-            // get input areas based on tags
-            const inputAreas = getInputAreas(document);
-            if (!inputAreas) {
-                throw new Error("Cannot check proof status; illegal input areas.");
-            }
+            this.computeInputAreaStatus(document);
+        }
 
-            // for each input area, check the proof status
-            let statuses: InputAreaStatus[];
-            try {
-                statuses = await Promise.all(inputAreas.map(a =>
-                    determineProofStatus(this, document, a)
-                ));
-            } catch (reason) {
-                if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
-                throw reason;
-            }
+        // This setTimeout creates a NodeJS.Timeout object, but in the browser it is just a number.
+        computeInputAreaStatusTimer?: NodeJS.Timeout | number;
 
-            // forward statuses to corresponding ProseMirror editor
-            this.webviewManager!.postAndCacheMessage(document, {
-                type: MessageType.qedStatus,
-                body: statuses
-            });
+        async computeInputAreaStatus(document: TextDocument) {
+            if (this.computeInputAreaStatusTimer) {
+                clearTimeout(this.computeInputAreaStatusTimer);
+            }
+            // Computing where all the input areas are requires a fair bit of work,
+            // so we add a debounce delay to this function to avoid recomputing on every keystroke.
+            this.computeInputAreaStatusTimer = setTimeout(async () => {
+                // get input areas based on tags
+                const inputAreas = getInputAreas(document);
+                if (!inputAreas) {
+                    throw new Error("Cannot check proof status; illegal input areas.");
+                }
+
+                // for each input area, check the proof status
+                try {
+                    const statuses = await Promise.all(inputAreas.map(a =>
+                        determineProofStatus(this, document, a)
+                    ));
+
+                    // forward statuses to corresponding ProseMirror editor
+                    this.webviewManager!.postAndCacheMessage(document, {
+                        type: MessageType.qedStatus,
+                        body: statuses
+                    });
+                } catch (reason) {
+                    if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
+                    // FIXME: Do we want to throw here?
+                    throw reason;
+                }
+            }, 250);
         }
 
         startWithHandlers(webviewManager: WebviewManager): Promise<void> {

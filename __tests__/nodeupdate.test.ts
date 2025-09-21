@@ -2,8 +2,7 @@
 // Disable because the @ts-expect-error clashes with the tests
 import { TextDocMappingNew, TreeNode, NodeUpdate } from "../editor/src/mapping";
 import { expect } from "@jest/globals";
-import { EditorState, Transaction } from "prosemirror-state";
-import { constructDocument, DocChange, ReplaceAroundStep, ReplaceStep, Step, WaterproofSchema } from "@impermeable/waterproof-editor";
+import { constructDocument, DocChange, ReplaceAroundStep, ReplaceStep, Step, WaterproofSchema, EditorState, Transaction } from "@impermeable/waterproof-editor";
 import { topLevelBlocksMV } from "../editor/src/document-construction/construct-document";
 import { ParsedStep } from "../editor/src/mapping/types";
 
@@ -26,10 +25,24 @@ function createTestMapping(content: string, build: (s: EditorState) => Transacti
         (s: Step) => s instanceof ReplaceStep || s instanceof ReplaceAroundStep
     );
     if (!step) throw new Error("No Replace step produced by transaction");
-
-    const parsed = NodeUpdate.nodeUpdate(step, tree);
+    console.log(state.doc.content.textBetween(0, state.doc.content.size, "\n"));
+    const isText: boolean = (step.slice.content.firstChild === null) ? inStringCell(step, tree) : step.slice.content.firstChild.type.name === "text";
     
+    if (step instanceof ReplaceStep && isText) console.log("text update");
+    else console.log("node update");
+    const parsed = NodeUpdate.nodeUpdate(step, tree);
+    console.log(state.doc.content.textBetween(0, state.doc.content.size, "\n"));
+
+    parsed.newTree.traverseDepthFirst((node: TreeNode) => {
+        console.log(node);
+    })
     return parsed;
+}
+
+function inStringCell(step: ReplaceStep | ReplaceAroundStep, tree: any): boolean {
+  const correctNode: TreeNode | null = tree.findNodeByProsemirrorPosition(step.from+1);
+  console.log(correctNode);
+  return correctNode !== null && step.to <= correctNode.prosemirrorEnd;
 }
 
 // test("ReplaceStep delete — removes lone markdown block", () => {
@@ -47,32 +60,33 @@ function createTestMapping(content: string, build: (s: EditorState) => Transacti
 // });
 
 test("ReplaceStep delete — removes middle code block, preserves neighbors", () => {
-  const content = "before \n```coq\nLemma test\n```\nafter\n";
+  const content = "before \n\`\`\`coq\nLemma test\n\`\`\`\nafter\n";
 
   const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
-    const from = 10;
-    const to = 20;
+    const from = 9;
+    const to = 21;
     return s.tr.delete(from, to);
   });
 
   const dc = parsed.result as DocChange;
-  expect(dc.finalText).toBe("");
   console.log(parsed.newTree.root);
+  expect(dc.finalText).toBe("");
+  //console.log(parsed.newTree.root);
   const children = parsed.newTree.root!.children;
   expect(children.length).toBe(2);
   expect(children[0].type).toBe("markdown");
   expect(children[1].type).toBe("markdown");
-  console.log(children[0].stringContent);
+  //console.log(children[0].stringContent);
   expect(children[0].stringContent).toBe("before ");
   expect(children[1].stringContent).toBe("after\n");
   expect(children[0].originalStart).toBe(0);
   expect(children[0].originalEnd).toBe(7);  
-  expect(children[1].originalStart).toBe(20);
-  expect(children[1].originalEnd).toBe(26);
+  expect(children[1].originalStart).toBe(9);
+  expect(children[1].originalEnd).toBe(15);
   expect(children[0].prosemirrorStart).toBe(1);
   expect(children[0].prosemirrorEnd).toBe(8); 
-  expect(children[1].prosemirrorStart).toBe(8);
-  expect(children[1].prosemirrorEnd).toBe(14);
+  expect(children[1].prosemirrorStart).toBe(10);
+  expect(children[1].prosemirrorEnd).toBe(16);
 });
 
 // test("ReplaceStep delete — removes nested code inside input wrapper", () => {

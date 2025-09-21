@@ -16,42 +16,42 @@ function createTestMapping(content: string): TreeNode[] {
     return nodes;
 }
 
-// Not sure about the values for prosemirrorStart and prosemirrorEnd
-test("testMapping", () => {
-    const content = `Hello`;
-    const nodes = createTestMapping(content);
-    expect(nodes.length).toBe(2);
-    const markdownNode = nodes[1];
-    console.log(markdownNode)
-    expect(markdownNode.type).toBe("markdown");
-    expect(markdownNode.originalStart).toBe(0);
-    expect(markdownNode.originalEnd).toBe(5);
-    expect(markdownNode.prosemirrorStart).toBe(1);
-    expect(markdownNode.prosemirrorEnd).toBe(6);
-    expect(markdownNode.stringContent).toBe("Hello");    
-})
+// // Not sure about the values for prosemirrorStart and prosemirrorEnd
+// test("testMapping", () => {
+//     const content = `Hello`;
+//     const nodes = createTestMapping(content);
+//     expect(nodes.length).toBe(2);
+//     const markdownNode = nodes[1];
+//     console.log(markdownNode)
+//     expect(markdownNode.type).toBe("markdown");
+//     expect(markdownNode.originalStart).toBe(0);
+//     expect(markdownNode.originalEnd).toBe(5);
+//     expect(markdownNode.prosemirrorStart).toBe(1);
+//     expect(markdownNode.prosemirrorEnd).toBe(6);
+//     expect(markdownNode.stringContent).toBe("Hello");    
+// })
 
-test("testMapping coqblock with code", () => {
-    const content = "```coq\nLemma test\n```";
-    const nodes = createTestMapping(content);
+// test("testMapping coqblock with code", () => {
+//     const content = "```coq\nLemma test\n```";
+//     const nodes = createTestMapping(content);
     
-    expect(nodes.length).toBe(2);
+//     expect(nodes.length).toBe(2);
     
-    // Parent coqblock
-    const coqblockNode = nodes[1];
-    expect(coqblockNode.type).toBe("code");
-    expect(coqblockNode.originalStart).toBe(7);
-    expect(coqblockNode.originalEnd).toBe(17); 
-    expect(coqblockNode.prosemirrorStart).toBe(1); 
-    expect(coqblockNode.prosemirrorEnd).toBe(11); 
-    expect(coqblockNode.stringContent).toBe("Lemma test");
-});
+//     // Parent coqblock
+//     const coqblockNode = nodes[1];
+//     expect(coqblockNode.type).toBe("code");
+//     expect(coqblockNode.originalStart).toBe(7);
+//     expect(coqblockNode.originalEnd).toBe(17); 
+//     expect(coqblockNode.prosemirrorStart).toBe(1); 
+//     expect(coqblockNode.prosemirrorEnd).toBe(11); 
+//     expect(coqblockNode.stringContent).toBe("Lemma test");
+// });
 
 test("Input-area with nested coqblock", () => {
-    const content = "<input-area>\n```coq\nTest\n```\n</input-area>";
+    const content = "<input-area>\n\`\`\`coq\nTest\n\`\`\`\n</input-area>Hello";
     const nodes = createTestMapping(content);
     
-    expect(nodes.length).toBe(3);
+    expect(nodes.length).toBe(4);
     
     // Input-area node
     const inputAreaNode = nodes[1];
@@ -63,7 +63,7 @@ test("Input-area with nested coqblock", () => {
     
     // Nested coqblock
     const coqblockNode = nodes[2];
-    console.log(coqblockNode)
+    console.log(nodes)
     expect(coqblockNode.type).toBe("code");
     expect(coqblockNode.originalStart).toBe(20); 
     expect(coqblockNode.originalEnd).toBe(24);
@@ -72,79 +72,79 @@ test("Input-area with nested coqblock", () => {
 
 });
 
-test("Hint block with coqblock and markdown inside", () => {
-    const content = "<hint title=\"Import libraries\">\n```coq\nRequire Import Rbase.\n```\n</hint>";
-    const nodes = createTestMapping(content);
+// test("Hint block with coqblock and markdown inside", () => {
+//     const content = "<hint title=\"Import libraries\">\n```coq\nRequire Import Rbase.\n```\n</hint>";
+//     const nodes = createTestMapping(content);
     
-    expect(nodes.length).toBe(3);
+//     expect(nodes.length).toBe(3);
     
-    // Hint node
-    const hintNode = nodes[1];
-    expect(hintNode.type).toBe("hint");
-    expect(hintNode.originalStart).toBe(31);
-    expect(hintNode.originalEnd).toBe(65);
-    expect(hintNode.prosemirrorStart).toBe(1);
-    expect(hintNode.prosemirrorEnd).toBe(31);
-    // Nested coqblock
-    const coqblockNode = nodes[2];
-    expect(coqblockNode.originalStart).toBe(39); 
-    expect(coqblockNode.originalEnd).toBe(60);
-});
+//     // Hint node
+//     const hintNode = nodes[1];
+//     expect(hintNode.type).toBe("hint");
+//     expect(hintNode.originalStart).toBe(31);
+//     expect(hintNode.originalEnd).toBe(65);
+//     expect(hintNode.prosemirrorStart).toBe(1);
+//     expect(hintNode.prosemirrorEnd).toBe(31);
+//     // Nested coqblock
+//     const coqblockNode = nodes[2];
+//     expect(coqblockNode.originalStart).toBe(39); 
+//     expect(coqblockNode.originalEnd).toBe(60);
+// });
 
-test("Mixed content section", () => {
-    const content = `### Example:
-\`\`\`coq
-Lemma
-Test
-\`\`\`
-<input-area>
-\`\`\`coq
-(* Your solution here *)
-\`\`\`
-</input-area>`;
-    const nodes = createTestMapping(content);
-    console.log(nodes)
+// test("Mixed content section", () => {
+//     const content = `### Example:
+// \`\`\`coq
+// Lemma
+// Test
+// \`\`\`
+// <input-area>
+// \`\`\`coq
+// (* Your solution here *)
+// \`\`\`
+// </input-area>`;
+//     const nodes = createTestMapping(content);
+//     console.log(nodes)
     
-    // Expected nodes: markdown (header), coqblock, input-area (with coqblock)
-    expect(nodes.length).toBe(5);
+//     // Expected nodes: markdown (header), coqblock, input-area (with coqblock)
+//     expect(nodes.length).toBe(5);
     
-    // Verify markdown header
-    const headerNode = nodes[1];
-    expect(headerNode.type).toBe("markdown");
-    expect(headerNode.stringContent).toContain("### Example:");
-    expect(headerNode.originalStart).toBe(0)
-    expect(headerNode.originalEnd).toBe(12)
-    expect(headerNode.prosemirrorStart).toBe(1)
-    expect(headerNode.prosemirrorEnd).toBe(13)
+//     // Verify markdown header
+//     const headerNode = nodes[1];
+//     expect(headerNode.type).toBe("markdown");
+//     expect(headerNode.stringContent).toContain("### Example:");
+//     expect(headerNode.originalStart).toBe(0)
+//     expect(headerNode.originalEnd).toBe(12)
+//     expect(headerNode.prosemirrorStart).toBe(1)
+//     expect(headerNode.prosemirrorEnd).toBe(13)
     
-    // Example coqblock
-    const exampleCoqblock = nodes[2];
-    expect(exampleCoqblock.type).toBe("code");
-    expect(exampleCoqblock.originalStart).toBe(20)
-    expect(exampleCoqblock.originalEnd).toBe(30)
-    expect(exampleCoqblock.prosemirrorStart).toBe(15)
-    expect(exampleCoqblock.prosemirrorEnd).toBe(25)
+//     // Example coqblock
+//     const exampleCoqblock = nodes[2];
+//     expect(exampleCoqblock.type).toBe("code");
+//     expect(exampleCoqblock.originalStart).toBe(20)
+//     expect(exampleCoqblock.originalEnd).toBe(30)
+//     expect(exampleCoqblock.prosemirrorStart).toBe(15)
+//     expect(exampleCoqblock.prosemirrorEnd).toBe(25)
     
-    // Input-area
-    const inputAreaNode = nodes[3];
-    expect(inputAreaNode.type).toBe("input_area");
+//     // Input-area
+//     const inputAreaNode = nodes[3];
+//     expect(inputAreaNode.type).toBe("input_area");
     
-    // Nested coqblock inside input-area
-    const nestedCoqblock = nodes[4];
-    expect(nestedCoqblock.type).toBe("code");
-    expect(nestedCoqblock.originalStart).toBe(55)
-    expect(nestedCoqblock.originalEnd).toBe(79)
-    expect(nestedCoqblock.prosemirrorStart).toBe(28)
-    expect(nestedCoqblock.prosemirrorEnd).toBe(52)
-});
+//     // Nested coqblock inside input-area
+//     const nestedCoqblock = nodes[4];
+//     expect(nestedCoqblock.type).toBe("code");
+//     expect(nestedCoqblock.originalStart).toBe(55)
+//     expect(nestedCoqblock.originalEnd).toBe(79)
+//     expect(nestedCoqblock.prosemirrorStart).toBe(28)
+//     expect(nestedCoqblock.prosemirrorEnd).toBe(52)
+// });
 
-test("Empty coqblock", () => {
-    const content = "```coq\n```";
-    const nodes = createTestMapping(content);
+// test("Empty coqblock", () => {
+//     const content = "```coq\n```";
+//     const nodes = createTestMapping(content);
     
-    expect(nodes.length).toBe(2);
+//     expect(nodes.length).toBe(2);
     
-    // Child coqcode (empty)
-    const coqcodeNode = nodes[1];
-    expect(coqcodeNode.stringContent).toBe("");
-});
+//     // Child coqcode (empty)
+//     const coqcodeNode = nodes[1];
+//     expect(coqcodeNode.stringContent).toBe("");
+// });

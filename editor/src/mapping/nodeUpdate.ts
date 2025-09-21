@@ -69,7 +69,7 @@ export class NodeUpdate {
 
     private static replaceStepDelete(step: ReplaceStep, tree: Tree) : ParsedStep {
         //// Determine the in text document change vscode side
-
+        console.log("replace step delete");
         /** The resulting change of this step operation */
         const result : DocChange = {
             startInFile: 0,
@@ -78,7 +78,7 @@ export class NodeUpdate {
         }
 
         /** Determine the resulting DocChange indices */
-        const deletedNode = tree.findNodeByProsemirrorPosition(step.from);
+        const deletedNode = tree.findNodeByProsemirrorPosition(step.from+1);
         if (!deletedNode) throw new Error("We could not find the correct node");
         result.startInFile = deletedNode.originalStart;
         result.endInFile = deletedNode.originalEnd;
@@ -117,7 +117,7 @@ export class NodeUpdate {
         });
         let newTree = new Tree;
         newTree = tree;
-        console.log(newTree.root);
+        //console.log(newTree.root);
         return {result, newTree};
     }
 
@@ -178,6 +178,7 @@ export class NodeUpdate {
                     fragmentNode.type.name,
                     node.originalStart + final.starttext.length,
                     fragmentNode.textContent.length,
+                    "",
                     node.prosemirrorStart + final.proseOffset,
                     node.prosemirrorEnd + final.proseOffset,
                     fragmentNode.textContent || ""
@@ -374,6 +375,7 @@ export class NodeUpdate {
             wrapType,
             wrappedChildren[0].originalStart,                    
             wrappedChildren[wrappedChildren.length - 1].originalEnd,
+            "",
             step.from,                                           
             wrappedChildren[wrappedChildren.length - 1].prosemirrorEnd + 1,
             ""                                                   

@@ -1,7 +1,7 @@
 import { Tree, TreeNode } from "./Tree";
 import { Step, ReplaceStep, ReplaceAroundStep, typeguards } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
-// import { NodeUpdate } from "./nodeUpdate";
+import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
 import { Block, DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
 
@@ -26,7 +26,7 @@ export class TextDocMappingNew {
         this._version = versionNum;
         this.tree = new Tree();
         this.initialize(inputBlocks);
-        console.log(inputBlocks)
+        //console.log(inputBlocks)
     }
 
     //// The getters of this class
@@ -76,9 +76,7 @@ export class TextDocMappingNew {
 
         /** Parse the step into a text document change */
         if (step instanceof ReplaceStep && isText) result = TextUpdate.textUpdate(step, this);
-        else throw new Error("Nodeupdate not yet supported")
-        
-        //result = NodeUpdate.nodeUpdate(step, this.tree);
+        else result = NodeUpdate.nodeUpdate(step, this.tree);
 
         this.tree = result.newTree
         

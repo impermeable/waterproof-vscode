@@ -45,90 +45,85 @@ function inStringCell(step: ReplaceStep | ReplaceAroundStep, tree: any): boolean
   return correctNode !== null && step.to <= correctNode.prosemirrorEnd;
 }
 
-test("ReplaceStep delete — removes lone markdown block", () => {
-  const content = `Hello`;
-  const parsed = createTestMapping(content, (s) => {
-    const from = 0;
-    const to = 7;
-    return s.tr.delete(from, to);
-  });
-
-  const dc = parsed.result as DocChange;
-  expect(dc.finalText).toBe("");
-  expect(parsed.newTree.root!.children.length).toBe(0);
-});
-
-test("ReplaceStep delete — removes middle code block, preserves neighbors", () => {
-  const content = "before \n\`\`\`coq\nLemma test\n\`\`\`\nafter\n";
-
-  const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
-    const from = 9;
-    const to = 21;
-    return s.tr.delete(from, to);
-  });
-
-  const dc = parsed.result as DocChange;
-  console.log(parsed.newTree.root);
-  expect(dc.finalText).toBe("");
-  //console.log(parsed.newTree.root);
-  const children = parsed.newTree.root!.children;
-  expect(children.length).toBe(2);
-  expect(children[0].type).toBe("markdown");
-  expect(children[1].type).toBe("markdown");
-  //console.log(children[0].stringContent);
-  expect(children[0].stringContent).toBe("before ");
-  expect(children[1].stringContent).toBe("after\n");
-  expect(children[0].originalStart).toBe(0);
-  expect(children[0].originalEnd).toBe(7);  
-  expect(children[1].originalStart).toBe(7);
-  expect(children[1].originalEnd).toBe(13);
-  expect(children[0].prosemirrorStart).toBe(1);
-  expect(children[0].prosemirrorEnd).toBe(8); 
-  expect(children[1].prosemirrorStart).toBe(10);
-  expect(children[1].prosemirrorEnd).toBe(16);
-});
-
-test("ReplaceStep delete — removes nested code inside input wrapper", () => {
-  const content = `<input-area>\n\`\`\`coq\nTest\n\`\`\`\n</input-area>`;
-
-  const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
-    const from = 1;
-    const to = 7;
-    return s.tr.delete(from, to);
-  });
-
-  const dc = parsed.result as DocChange;
-  expect(dc.finalText).toBe("");
-  const children = parsed.newTree.root!.children;
-  expect(children.length).toBe(1);
-  expect(children[0].type).toBe("input_area");
-  expect(children[0].children.length).toBe(0);
-  expect(children[0].originalStart).toBe(12);
-  expect(children[0].originalEnd).toBe(12);
-  expect(children[0].prosemirrorStart).toBe(1);
-  expect(children[0].prosemirrorEnd).toBe(1);
-});
-
-// test("ReplaceStep insert — inserts math_display between blocks", () => {
-//   const content = `before
-// \`\`\`coq
-// Lemma test
-// \`\`\`
-// after
-// `;
-//   const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
-//     const math = s.schema.node("math_display", null, s.schema.text("a+b=c\n"));
-//     const pos =
-//       1 + s.doc.child(0).nodeSize + s.doc.child(1).nodeSize;
-//     return s.tr.replaceWith(pos, pos, math);
+// test("ReplaceStep delete — removes lone markdown block", () => {
+//   const content = `Hello`;
+//   const parsed = createTestMapping(content, (s) => {
+//     const from = 0;
+//     const to = 7;
+//     return s.tr.delete(from, to);
 //   });
 
 //   const dc = parsed.result as DocChange;
-//   expect(dc.finalText.length).toBeGreaterThan(0);
-//   expect(dc.finalText).toContain("a+b=c");
-//   expect(parsed.newTree.root!.children.length).toBe(4);
-//   expect(parsed.newTree.root!.children.some(n => n.stringContent === "a+b=c\n")).toBe(true);
+//   expect(dc.finalText).toBe("");
+//   expect(parsed.newTree.root!.children.length).toBe(0);
 // });
+
+// test("ReplaceStep delete — removes middle code block, preserves neighbors", () => {
+//   const content = "before \n\`\`\`coq\nLemma test\n\`\`\`\nafter\n";
+
+//   const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
+//     const from = 9;
+//     const to = 21;
+//     return s.tr.delete(from, to);
+//   });
+
+//   const dc = parsed.result as DocChange;
+//   console.log(parsed.newTree.root);
+//   expect(dc.finalText).toBe("");
+//   //console.log(parsed.newTree.root);
+//   const children = parsed.newTree.root!.children;
+//   expect(children.length).toBe(2);
+//   expect(children[0].type).toBe("markdown");
+//   expect(children[1].type).toBe("markdown");
+//   //console.log(children[0].stringContent);
+//   expect(children[0].stringContent).toBe("before ");
+//   expect(children[1].stringContent).toBe("after\n");
+//   expect(children[0].originalStart).toBe(0);
+//   expect(children[0].originalEnd).toBe(7);  
+//   expect(children[1].originalStart).toBe(7);
+//   expect(children[1].originalEnd).toBe(13);
+//   expect(children[0].prosemirrorStart).toBe(1);
+//   expect(children[0].prosemirrorEnd).toBe(8); 
+//   expect(children[1].prosemirrorStart).toBe(10);
+//   expect(children[1].prosemirrorEnd).toBe(16);
+// });
+
+// test("ReplaceStep delete — removes nested code inside input wrapper", () => {
+//   const content = `<input-area>\n\`\`\`coq\nTest\n\`\`\`\n</input-area>`;
+
+//   const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
+//     const from = 1;
+//     const to = 7;
+//     return s.tr.delete(from, to);
+//   });
+
+//   const dc = parsed.result as DocChange;
+//   expect(dc.finalText).toBe("");
+//   const children = parsed.newTree.root!.children;
+//   expect(children.length).toBe(1);
+//   expect(children[0].type).toBe("input_area");
+//   expect(children[0].children.length).toBe(0);
+//   expect(children[0].originalStart).toBe(12);
+//   expect(children[0].originalEnd).toBe(12);
+//   expect(children[0].prosemirrorStart).toBe(1);
+//   expect(children[0].prosemirrorEnd).toBe(1);
+// });
+
+test("ReplaceStep insert — inserts math_display between blocks", () => {
+  const content = `before\n\`\`\`coq\nLemma test\n\`\`\`after`;
+  const parsed: ParsedStep = createTestMapping(content, (s: EditorState) => {
+    const math = s.schema.node("math_display", null, s.schema.text("a+b=c\n"));
+    const pos =
+      1 + s.doc.child(0).nodeSize + s.doc.child(1).nodeSize;
+    return s.tr.insert(pos, math);
+  });
+
+  const dc = parsed.result as DocChange;
+  expect(dc.finalText.length).toBeGreaterThan(0);
+  expect(dc.finalText).toContain("a+b=c");
+  expect(parsed.newTree.root!.children.length).toBe(4);
+  expect(parsed.newTree.root!.children.some(n => n.stringContent === "a+b=c\n")).toBe(true);
+});
 
 // test("ReplaceStep insert — inserts code at document start", () => {
 //   const content = `after

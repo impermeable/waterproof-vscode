@@ -146,59 +146,63 @@ export class NodeUpdate {
             result.startInFile = 0;
             result.endInFile = 0;
             result.finalText = final.starttext + inBetweenText + final.endtext;
+            const nodeType = step.slice.content.firstChild!.type.name;
+            tree.root.addChild(new TreeNode(nodeType, 0, result.finalText.length, "", 1, 1+result.finalText.length, inBetweenText));
         } else {
-            const node = tree.findNodeByProsemirrorPosition(step.from);
-            if (!node) throw new Error("We could not find the correct node");
+            const parentNode = tree.findNodeByProsemirrorPosition(step.from);
+            if (!parentNode) throw new Error("We could not find the correct node");
             final = parseFragment(step.slice.content);
+            if (step.slice.content.firstChild!.content.firstChild !== null) inBetweenText = step.slice.content.firstChild!.content.firstChild.textContent;
 
             /** Compute the resulting DocChange */
-            //TODO: check if this is correct
-            result.startInFile = node.originalStart + final.starttext.length;
-            result.endInFile = result.startInFile;
-            result.finalText = final.starttext + final.endtext;
+            const indent = step.from - parentNode.prosemirrorStart;
 
-            const proseStart = node.prosemirrorStart + final.proseOffset;
-            const proseEnd = proseStart + step.slice.content.size + final.proseOffset;
-            const proseOffset = proseStart - proseEnd;
-            const textStart = node.originalStart + final.starttext.length;
-            const textEnd = node.originalEnd + final.endtext.length;
-            const textOffset = textStart - textEnd;
+            result.startInFile = parentNode.originalStart + indent;
+            result.endInFile = result.startInFile;
+            result.finalText = final.starttext + inBetweenText + final.endtext;
+
+            const proseStart = parentNode.prosemirrorStart + indent + final.proseOffset/2;
+            const proseEnd = proseStart + result.finalText.length;
+            const proseOffset = result.finalText.length + final.proseOffset;
+            const textStart = parentNode.originalStart + indent + final.starttext.length;
+            const textEnd = textStart + result.finalText.length;
+            const originalOffset = result.finalText.length + final.starttext.length + final.endtext.length;
             ///Update existing mapping
             tree.traverseDepthFirst((node: TreeNode) => {
-                if (node.prosemirrorStart > proseStart) {
+                if (node.prosemirrorStart > proseEnd ) {
+                    node.originalEnd += originalOffset; 
+                    node.originalStart += originalOffset;
                     node.prosemirrorStart += proseOffset;
                     node.prosemirrorEnd += proseOffset;
-                }
-                if (node.originalStart > textStart) {
-                    node.originalStart += textOffset;
-                    node.originalEnd += textOffset;
+                } else if (node.prosemirrorStart < proseStart && node.prosemirrorEnd > proseEnd) {
+                    node.originalEnd += originalOffset;
+                    node.prosemirrorEnd += proseOffset;
                 }
             });
-            
-            let fragmentNode = step.slice.content.firstChild;
-            const childNodes: TreeNode[] = [];
-            childNodes.push(node)
-            let index = 1;
-            while (fragmentNode) {
-                // Create a new TreeNode for the child
-                const childNode = new TreeNode(
-                    fragmentNode.type.name,
-                    node.originalStart + final.starttext.length,
-                    fragmentNode.textContent.length,
-                    "",
-                    node.prosemirrorStart + final.proseOffset,
-                    node.prosemirrorEnd + final.proseOffset,
-                    fragmentNode.textContent || ""
-                );
-                childNodes.push(childNode);
+            parentNode.addChild(new TreeNode(step.slice.content.firstChild!.type.name, textStart, textEnd, "", proseStart, proseEnd, inBetweenText));
+            // let fragmentNode = step.slice.content.firstChild;
+            // const childNodes: TreeNode[] = [];
+            // childNodes.push(node)
+            // let index = 1;
+            // while (fragmentNode) {
+            //     // Create a new TreeNode for the child
+            //     const childNode = new TreeNode(
+            //         fragmentNode.type.name,
+            //         node.originalStart + final.starttext.length,
+            //         fragmentNode.textContent.length,
+            //         "",
+            //         node.prosemirrorStart + final.proseOffset,
+            //         node.prosemirrorEnd + final.proseOffset,
+            //         fragmentNode.textContent || ""
+            //     );
+            //     childNodes.push(childNode);
 
-                childNodes[index - 1].addChild(childNode);
+            //     childNodes[index - 1].addChild(childNode);
 
-                index++;
+            //     index++;
 
-                fragmentNode = fragmentNode.content.firstChild;
-            }
-
+            //     fragmentNode = fragmentNode.content.firstChild;
+            // }
         }
         let newTree = new Tree;
         newTree = tree;

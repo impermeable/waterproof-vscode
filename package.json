@@ -415,6 +415,11 @@
             "type": "boolean",
             "default": true,
             "description": "When set to true, the Waterproof extension will update the `files.exclude` configuration option to ignore compiled Rocq files in the workspace (.vo, .vos, ...). This prevents them from showing up in the files window in VSCode."
+          },
+          "waterproof.LogDebugStatements": {
+            "type": "boolean",
+            "default": false,
+            "description": "When set to true, all `Debug` level statements will be logged to the console and the output window"
           }
         }
       },

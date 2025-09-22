@@ -27,7 +27,7 @@ export class TextUpdate {
         const targetCell: TreeNode | null = tree.findNodeByProsemirrorPosition(step.from)
         if (targetCell === null) throw new Error(" Target cell is not in mapping!!! ");
 
-        console.log(targetCell)
+        if (targetCell === tree.root) throw new Error(" Text can not be inserted into the root ");
 
         /** Check that the change is, indeed, happening within a stringcell */
         if (targetCell.prosemirrorEnd < step.from) throw new Error(" Step does not happen within cell ");
@@ -49,13 +49,15 @@ export class TextUpdate {
             finalText: text
         }
 
+        let originalProseStart = JSON.parse(JSON.stringify(targetCell.prosemirrorStart))
+        let originalProseEnd = JSON.parse(JSON.stringify(targetCell.prosemirrorEnd))
         tree.traverseDepthFirst((node: TreeNode) => {
-            if (node.prosemirrorStart >= targetCell.prosemirrorStart && node.prosemirrorEnd <= targetCell.prosemirrorEnd) {
+            if (node.prosemirrorStart >= originalProseStart && originalProseEnd <= targetCell.prosemirrorEnd) {
+                console.log("change happens in this branch")
+                console.log(node)
                 node.prosemirrorEnd += offset;
                 node.originalEnd += offset;
-                node.stringContent = text
-            }
-            if (node.prosemirrorEnd > targetCell.prosemirrorEnd) {
+            } else if (node.prosemirrorEnd > originalProseEnd) {
                 node.prosemirrorStart += offset;
                 node.prosemirrorEnd += offset;
                 node.originalStart += offset;

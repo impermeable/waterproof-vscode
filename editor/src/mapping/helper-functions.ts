@@ -3,10 +3,10 @@ import { OperationType } from "./types";
 
 
 /** This stores the characters that each 'starting' HTML tag represents in the orginal document */                                               
-const textStartHTML: Map<string, string> = new Map<string, string>([["coqblock", "```coq"],["coqcode", ""], ["coqdoc", "(** "], ["coqdown", ""], ["math-display", "$"], ["input-area","<input-area>"], ["markdown",""], ["math_display", "$"], ["input","<input-area>"],["text",""]]);
+const textStartHTML: Map<string, string> = new Map<string, string>([["code", "\n```coq\n"], ["math_display", "$$"], ["input-area","<input-area>"], ["markdown",""], ["input","<input-area>"],["text",""]]);
     
 /** This stores the characters that each 'ending' HTML tag represents the orginal document */
-const textEndHTML: Map<string, string> = new Map<string, string>([["coqblock", "```"],["coqcode", ""], ["coqdoc", "*)"], ["coqdown", ""], ["math-display", "$"], ["input-area","</input-area>"], ["markdown",""], ["hint", "</hint>"], ["math_display", "$"], ["input","</input-area>"],["text",""]]);
+const textEndHTML: Map<string, string> = new Map<string, string>([["code", "\n```\n"], ["input-area","</input-area>"], ["markdown",""], ["hint", "</hint>"], ["math_display", "$$"], ["input","</input-area>"],["text",""]]);
 
 
 //// We define helper functions used by the vscode mapping 

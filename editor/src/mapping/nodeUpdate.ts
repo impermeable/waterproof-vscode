@@ -80,19 +80,22 @@ export class NodeUpdate {
         /** Determine the resulting DocChange indices */
         const deletedNode = tree.findNodeByProsemirrorPosition(step.from+1);
         if (!deletedNode) throw new Error("We could not find the correct node");
-        result.startInFile = deletedNode.originalStart;
-        result.endInFile = deletedNode.originalEnd;
+        const tagStart = getStartHtmlTagText(deletedNode.type).length;
+        const tagEnd = getEndHtmlTagText(deletedNode.type).length;
+        result.startInFile = deletedNode.originalStart- tagStart;
+        result.endInFile = deletedNode.originalEnd + tagEnd;
 
         //// Update the mapping to reflect the new prosemirror state
 
         // The offsets that were deleted from the doc needed to update the mappings
+        
         const proseStart = deletedNode?.prosemirrorStart ?? 0;
         const proseEnd = deletedNode?.prosemirrorEnd ?? 0;
-        const proseOffset = proseStart - proseEnd;
-        const textStart = deletedNode?.originalStart ?? 0;
-        const textEnd = deletedNode?.originalEnd ?? 0;
-        const textOffset = textStart- textEnd;
-        // Update positions in the tree
+        const proseOffset = proseStart - proseEnd - 2;
+        
+        let originalOffset = proseEnd  - proseStart + tagEnd + tagStart;
+        originalOffset = -originalOffset;
+        
         tree.traverseDepthFirst((node: TreeNode) => {
             if (node.prosemirrorStart >= proseStart && node.prosemirrorEnd <= proseEnd) {
                 // Remove the node from the tree
@@ -106,13 +109,17 @@ export class NodeUpdate {
                     }
                 }
             }
-            if (node.prosemirrorStart > proseStart) {
+        });
+
+        tree.traverseDepthFirst(node => {
+            if (node.prosemirrorStart > proseEnd ) {
+                node.originalEnd += originalOffset; 
+                node.originalStart += originalOffset;
                 node.prosemirrorStart += proseOffset;
                 node.prosemirrorEnd += proseOffset;
-            }
-            if (node.originalStart > textStart) {
-                node.originalStart += textOffset;
-                node.originalEnd += textOffset;
+            } else if (node.prosemirrorStart < proseStart && node.prosemirrorEnd > proseEnd) {
+                node.originalEnd += originalOffset;
+                node.prosemirrorEnd += proseOffset;
             }
         });
         let newTree = new Tree;

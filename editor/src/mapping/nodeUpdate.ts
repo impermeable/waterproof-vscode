@@ -232,6 +232,8 @@ export class NodeUpdate {
 
     replaceAroundDelete(step: ReplaceAroundStep, tree: Tree): ParsedStep {
         console.log("IN REPLACE AROUND DELETE", step, tree);
+        
+        // TODO: Assuming we are always unwrapping a single node
 
         const nodeBeingUnwrapped = tree.findNodeByProsemirrorPosition(step.gapFrom + 1);
         if (!nodeBeingUnwrapped) throw new Error(" Could not find the node to be lifted in mapping ");
@@ -253,7 +255,6 @@ export class NodeUpdate {
         const unwrappedOuter = {from: nodeBeingUnwrapped.range.from, to: nodeBeingUnwrapped.range.to};
         const unwrappedInner = {from: nodeBeingUnwrapped.innerRange.from, to: nodeBeingUnwrapped.innerRange.to};
         
-        // TODO: Assuming we are always unwrapping a single node
 
         const [wrappedOpenTag, wrappedCloseTag] = this.nodeNameToTagPair(wrapperNode.type, wrapperNode.title);
         // const startsWithNewline = wrapperInner.from > wrappedOuter.from + wrappedOpenTag.length;
@@ -303,6 +304,12 @@ export class NodeUpdate {
     replaceAroundReplace(step: ReplaceAroundStep, tree: Tree): ParsedStep {
         console.log("IN REPLACE AROUND REPLACE", step, tree);
 
+        // Get the nodes before and after the node that we are wrapping.
+        const nodeBefore = tree.findNodeByProsemirrorPosition(step.from - 1);
+        const nodeAfter = tree.findNodeByProsemirrorPosition(step.to + 1);
+        const hasCodeBefore = nodeBefore !== null && nodeBefore.type === "code";
+        const hasCodeAfter = nodeAfter !== null && nodeAfter.type === "code";
+
         const wrappingNode = step.slice.content.firstChild;
         if (!wrappingNode)
             throw new Error(" ReplaceAroundStep replace has no wrapping node ");
@@ -343,12 +350,12 @@ export class NodeUpdate {
                 firstEdit: {
                     startInFile: nodeBeingWrapped.range.from,
                     endInFile: nodeBeingWrapped.range.from,
-                    finalText: openTag + (startsWithNewline ? "" : "\n")
+                    finalText: (hasCodeBefore ? "\n" : "") + openTag + (startsWithNewline ? "" : "\n")
                 },
                 secondEdit: {
                     startInFile: nodeBeingWrapped.range.to,
                     endInFile: nodeBeingWrapped.range.to,
-                    finalText:  (endsWithNewline ? "" : "\n") + closeTag
+                    finalText:  (endsWithNewline ? "" : "\n") + closeTag + (hasCodeAfter ? "\n" : "")
                 }
             };
 
@@ -361,6 +368,7 @@ export class NodeUpdate {
                 originalProsemirror.from + 1 - (startsWithNewline ? 0 : 1), originalProsemirror.to + 1,
                 nodeBeingWrapped.stringContent
             );
+            // copyNodeBeingWrapped.shiftOffsets((hasCodeBefore ? 1 : 0), 0);
             // Update the tree
             const wrappingNode = new TreeNode(
                 insertedNodeType, // node type
@@ -370,6 +378,13 @@ export class NodeUpdate {
                 originalProsemirror.from, originalProsemirror.to + 2, // Prosemirror positions
                 "" // String content
             );
+            // If we have added a newline before the tag then we should shift this node
+            wrappingNode.shiftOffsets((hasCodeBefore ? 1 : 0), 0);
+
+            // The surrounding code cells absorb the newline(s) that is(/are) added.
+            if (hasCodeAfter) nodeAfter.range.from -= 1;
+            if (hasCodeBefore) nodeBefore.range.to += 1;
+            
             // The wrapping node contains the updated copy of the node being wrapped
             wrappingNode.children = [copyNodeBeingWrapped];
             // Remove the node that is being wrapped.
@@ -379,6 +394,7 @@ export class NodeUpdate {
                 // Update everything after the inserted node
                 if (thisNode.range.from > originalOuter.to) {
                     thisNode.shiftOffsets(openTag.length + closeTag.length + (startsWithNewline ? 0 : 1) + (endsWithNewline ? 0 : 1), 2);
+                    thisNode.shiftOffsets((hasCodeBefore ? 1 : 0) + (hasCodeAfter ? 1 : 0));
                 }
             });
 

@@ -2,4 +2,3 @@
 export { TextDocMappingNew } from "./newmapping";
 export { Tree } from "./Tree";
 export { TreeNode } from "./Tree";
-export { NodeUpdate } from "./nodeUpdate";

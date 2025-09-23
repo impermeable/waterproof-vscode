@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
+import { ColorThemeKind, Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
@@ -262,7 +262,7 @@ export class ProseMirrorWebview extends EventEmitter {
 
     private themeUpdate() {
         // Get kind of active ColorTheme (dark or light)
-        const themeType = window.activeColorTheme.kind === 2 ? 'dark' : 'light';
+        const themeType = window.activeColorTheme.kind === ColorThemeKind.Dark ? 'dark' : 'light';
         this.postMessage({
             type: MessageType.themeUpdate,
             body: themeType
@@ -365,6 +365,8 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Handle a doc change sent from prosemirror */
     private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
+        // const e = new WorkspaceEdit();
+
         this._workspaceEditor.edit(e => {
             if ("firstEdit" in change) {
                 this.applyChangeToWorkspace(change.firstEdit, e);
@@ -373,6 +375,14 @@ export class ProseMirrorWebview extends EventEmitter {
                 this.applyChangeToWorkspace(change, e);
             }
         });
+            // workspace.applyEdit(e).then((val) => {
+            //     if (val) {
+            //         this.document.save();
+            //     } else {
+            //         WaterproofLogger.log("Failed to apply edit to workspace");
+            //     }
+            // }, 
+            // (reason) => console.log("REJECTED EDIT", reason));
 
         // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
         if (!this._teacherMode && this._enforceCorrectNonInputArea) {

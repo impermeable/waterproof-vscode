@@ -1,7 +1,7 @@
 export class TreeNode {
     type: string;
-    originalStart: number;
-    originalEnd: number;
+    innerRange: {to: number, from: number};
+    range: {to: number, from: number};
     title: string;
     prosemirrorStart: number;
     prosemirrorEnd: number;
@@ -10,16 +10,16 @@ export class TreeNode {
 
     constructor(
         type: string,
-        originalStart: number,
-        originalEnd: number,
+        innerRange: {to: number, from: number},
+        range: {to: number, from: number},
         title: string,
         prosemirrorStart: number,
         prosemirrorEnd: number,
         stringContent: string
     ) {
         this.type = type;
-        this.originalStart = originalStart;
-        this.originalEnd = originalEnd;
+        this.innerRange = innerRange;
+        this.range = range;
         this.title = title;
         this.prosemirrorStart = prosemirrorStart;
         this.prosemirrorEnd = prosemirrorEnd;
@@ -29,27 +29,43 @@ export class TreeNode {
 
     addChild(child: TreeNode): void {
         this.children.push(child);
+        // Sort children by originalStart to maintain order
+        this.children.sort((a, b) => a.innerRange.from - b.innerRange.from);
     }
 
     removeChild(child: TreeNode): void {
         this.children = this.children.filter(c => c != child);
     }
 
+    shiftCloseOffsets(offset: number, offsetProsemirror?: number): void {
+        this.prosemirrorEnd += offsetProsemirror !== undefined ? offsetProsemirror : offset;
+        this.innerRange.to += offset;
+        this.range.to += offset;
+    }
+
+    shiftOffsets(offset: number, offsetProsemirror?: number): void {
+        this.prosemirrorStart += offsetProsemirror !== undefined ? offsetProsemirror : offset;
+        this.prosemirrorEnd += offsetProsemirror !== undefined ? offsetProsemirror : offset;
+        this.innerRange.from += offset;
+        this.innerRange.to += offset;
+        this.range.from += offset;
+        this.range.to += offset;
+    }
 }
 
 export class Tree {
-    root: TreeNode | null;
+    root: TreeNode;
     
     constructor(
         type: string = "",
-        originalStart: number = 0,
-        originalEnd: number = 0,
+        innerRange: {from: number, to: number} = {from: 0, to: 0},
+        range: {from: number, to: number} = {from: 0, to: 0},
         title: string = "",
         prosemirrorStart: number = 0,
         prosemirrorEnd: number = 0,
         stringContent: string = ""
     ) {
-        this.root = new TreeNode(type, originalStart, originalEnd, title, prosemirrorStart, prosemirrorEnd, stringContent);
+        this.root = new TreeNode(type, innerRange, range, title, prosemirrorStart, prosemirrorEnd, stringContent);
     }
 
     traverseDepthFirst(callback: (node: TreeNode) => void, node: TreeNode | null = this.root): void {
@@ -82,7 +98,7 @@ export class Tree {
 
     findNodeByOriginalPosition(pos: number, node: TreeNode | null = this.root): TreeNode | null {
         if (!node) return null;
-        if (pos >= node.originalStart && pos <= node.originalEnd) {
+        if (pos >= node.innerRange.from && pos <= node.innerRange.to) {
             for (const child of node.children) {
                 const result = this.findNodeByOriginalPosition(pos, child);
                 if (result) return result;
@@ -104,4 +120,16 @@ export class Tree {
         return null;
     }
 
+    insertByPosition(newNode: TreeNode): boolean {
+        if (!this.root) return false;
+        
+        for (const rootNode of this.root.children) {
+            if (newNode.innerRange.from >= rootNode.innerRange.from && newNode.innerRange.to <= rootNode.innerRange.to) {
+                rootNode.addChild(newNode);
+                return true;
+            }
+        }
+        this.root.addChild(newNode);
+        return true;
+    }
 }

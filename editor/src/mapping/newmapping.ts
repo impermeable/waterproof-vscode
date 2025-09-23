@@ -1,32 +1,36 @@
 import { Tree, TreeNode } from "./Tree";
-import { Step, ReplaceStep, ReplaceAroundStep, typeguards } from "@impermeable/waterproof-editor";
+import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, WaterproofSchema, TagMap, WaterproofMapping } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
 import { Block, DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
 
-
-
 /**
  * This class is responsible for keeping track of the mapping between the prosemirror state and the vscode Text
  * Document model
  */
-export class TextDocMappingNew {
+export class TextDocMappingNew implements WaterproofMapping {
     /** This stores the String cells of the entire document */
     private tree: Tree;
     /** The version of the underlying textDocument */
     private _version: number;
+
+    private readonly nodeUpdate: NodeUpdate;
+    private readonly textUpdate: TextUpdate;
 
     /**
      * Constructs a prosemirror view vscode mapping for the inputted prosemirror html element
      *
      * @param inputBlocks a string containing the prosemirror content html element
      */
-    constructor(inputBlocks: Block[], versionNum: number) {
+    constructor(inputBlocks: Block[], versionNum: number, tMap: TagMap) {
+        this.textUpdate = new TextUpdate();
+        this.nodeUpdate = new NodeUpdate(tMap);
         this._version = versionNum;
         this.tree = new Tree();
         this.initialize(inputBlocks);
-        //console.log(inputBlocks)
+        console.log(inputBlocks);
+        console.log("MAPPED TREE", JSON.stringify(this.tree));
     }
 
     //// The getters of this class
@@ -49,14 +53,14 @@ export class TextDocMappingNew {
     public findPosition(index: number) {
         const correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(index);
         if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
-        return (index - correctNode.prosemirrorStart) + correctNode.originalStart;
+        return (index - correctNode.prosemirrorStart) + correctNode.innerRange.from;
     }
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
         const correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
         if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
-        return (index - correctNode.originalStart) + correctNode.prosemirrorStart;
+        return (index - correctNode.innerRange.from) + correctNode.prosemirrorStart;
     }
 
     private inStringCell(step: ReplaceStep | ReplaceAroundStep): boolean {
@@ -64,19 +68,19 @@ export class TextDocMappingNew {
         return correctNode !== null && step.to <= correctNode.prosemirrorEnd;
     }
 
-    public update(step: Step) : DocChange | WrappingDocChange {
-        console.log(step)
+    public update(step: Step, doc: Node) : DocChange | WrappingDocChange {
+        console.log("STEP IN UPDATE", step)
         if (!(step instanceof ReplaceStep || step instanceof ReplaceAroundStep)) 
             throw new Error("Step update (in textDocMapping) should not be called with a non document changing step");
 
         /** Check whether the edit is a text edit and occurs within a stringcell */ 
-        const isText: boolean = (step.slice.content.firstChild === null) ? this.inStringCell(step) : step.slice.content.firstChild.type.name === "text";
-
+        const parentNodeType = doc.resolve(step.from).parent.type;
+        const isText: boolean = parentNodeType === WaterproofSchema.nodes.markdown || parentNodeType === WaterproofSchema.nodes.code || parentNodeType === WaterproofSchema.nodes.math_display;
         let result : ParsedStep;
 
         /** Parse the step into a text document change */
-        if (step instanceof ReplaceStep && isText) result = TextUpdate.textUpdate(step, this);
-        else result = NodeUpdate.nodeUpdate(step, this.tree);
+        if (step instanceof ReplaceStep && isText) result = this.textUpdate.textUpdate(step, this);
+        else result = this.nodeUpdate.nodeUpdate(step, this);
 
         this.tree = result.newTree
         
@@ -114,8 +118,8 @@ export class TextDocMappingNew {
 
         const root = new TreeNode(
             "", // type
-            0, // originalStart
-            blocks.at(-1)!.range.to, // originalEnd
+            {from: 0, to: blocks.at(-1)!.range.to}, // originalStart
+            {from: 0, to: blocks.at(-1)!.range.to}, // originalEnd
             "", // title
             0, // prosemirrorStart
             0, // prosemirrorEnd
@@ -129,8 +133,8 @@ export class TextDocMappingNew {
 
                 const node = new TreeNode(
                     block.type,
-                    block.innerRange.from,
-                    block.innerRange.to,
+                    block.innerRange,
+                    block.range,
                     title,
                     0, // prosemirrorStart (to be calculated later)
                     0, // prosemirrorEnd (to be calculated later)
@@ -151,7 +155,7 @@ export class TextDocMappingNew {
 
         // Set the tree root after mapping
         this.tree.root = root;
-        console.log(this.tree)
+        console.log(this.tree);
         // Now compute the ProseMirror offsets after creating the tree structure
         this.computeProsemirrorOffsets(this.tree.root);
     }

@@ -3,13 +3,10 @@ import { ParsedStep, OperationType } from "./types";
 import { Tree, TreeNode } from "./Tree";
 import { DocChange, ReplaceStep } from "@impermeable/waterproof-editor";
 
-
-
-
 export class TextUpdate {
 
     /** This function is responsible for handling updates in prosemirror that happen exclusively as text edits and translating them to vscode text doc */
-    static textUpdate(step: ReplaceStep, mapping: TextDocMappingNew) : ParsedStep {
+    textUpdate(step: ReplaceStep, mapping: TextDocMappingNew) : ParsedStep {
         // Determine operation type
         let type: OperationType = OperationType.replace;
         if (step.from == step.to) type = OperationType.insert;
@@ -44,24 +41,25 @@ export class TextUpdate {
 
         /** The resulting document change to document model */
         const result: DocChange = {
-            startInFile: targetCell.originalStart + offsetBegin,
-            endInFile: targetCell.originalStart + offsetEnd,
+            startInFile: targetCell.innerRange.from + offsetBegin,
+            endInFile: targetCell.innerRange.from + offsetEnd,
             finalText: text
         }
 
-        let originalProseStart = JSON.parse(JSON.stringify(targetCell.prosemirrorStart))
-        let originalProseEnd = JSON.parse(JSON.stringify(targetCell.prosemirrorEnd))
+        const prosemirror = {start: targetCell.prosemirrorStart, end: targetCell.prosemirrorEnd };
         tree.traverseDepthFirst((node: TreeNode) => {
-            if (node.prosemirrorStart >= originalProseStart && originalProseEnd <= targetCell.prosemirrorEnd) {
-                console.log("change happens in this branch")
-                console.log(node)
+            if (node.prosemirrorStart >= prosemirror.start && prosemirror.end <= targetCell.prosemirrorEnd) {
                 node.prosemirrorEnd += offset;
-                node.originalEnd += offset;
-            } else if (node.prosemirrorEnd > originalProseEnd) {
+                node.innerRange.to += offset;
+                node.range.to += offset;
+                node.stringContent = text
+            } else if (node.prosemirrorEnd > prosemirror.end) {
                 node.prosemirrorStart += offset;
                 node.prosemirrorEnd += offset;
-                node.originalStart += offset;
-                node.originalEnd += offset;
+                node.innerRange.from += offset;
+                node.innerRange.to += offset;
+                node.range.from += offset;
+                node.range.to += offset;
             }
         });
 

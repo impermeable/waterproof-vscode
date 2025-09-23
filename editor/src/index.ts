@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, TagMap, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
@@ -9,7 +9,7 @@ import "@impermeable/waterproof-editor/styles.css"
 import { TextDocMappingNew } from "./mapping";
 // import { topLevelBlocksMV } from "./document-construction/construct-document";
 import { vFileParser } from "./document-construction/vFile";
-import { markdownParser } from "./document-construction/statemachine";
+// import { markdownParser } from "./document-construction/statemachine";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksMV } from "./document-construction/construct-document";
 
@@ -19,6 +19,19 @@ import { topLevelBlocksMV } from "./document-construction/construct-document";
  */
 interface VSCodeAPI {
 	postMessage: (message: Message) => void;
+}
+
+const tagMapMV: TagMap = {
+    markdownOpen: "",
+    markdownClose: "",
+    codeOpen: "```coq\n",
+    codeClose: "\n```",
+    hintOpen: (title: string) => `<hint title="${title}">`,
+    hintClose: "</hint>",
+    inputOpen: '<input-area>',
+    inputClose: "</input-area>",
+    mathOpen: "$$",
+    mathClose: "$$"
 }
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
@@ -58,7 +71,8 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
 		// documentConstructor: vFileParser,
-		mapping: TextDocMappingNew
+		mapping: TextDocMappingNew,
+		tagConfiguration: tagMapMV,
 	}
 
 	return cfg;

@@ -46,6 +46,7 @@ export class TextUpdate {
             finalText: text
         }
 
+        console.log("THIS IS A TEXTUPDATE")
         const prosemirror = {start: targetCell.prosemirrorStart, end: targetCell.prosemirrorEnd };
         tree.traverseDepthFirst((node: TreeNode) => {
             if (node.prosemirrorStart >= prosemirror.start && prosemirror.end <= targetCell.prosemirrorEnd) {

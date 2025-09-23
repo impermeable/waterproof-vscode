@@ -44,12 +44,16 @@ export class TreeNode {
     }
 
     shiftOffsets(offset: number, offsetProsemirror?: number): void {
+        console.log("test", offset)
         this.prosemirrorStart += offsetProsemirror !== undefined ? offsetProsemirror : offset;
         this.prosemirrorEnd += offsetProsemirror !== undefined ? offsetProsemirror : offset;
         this.innerRange.from += offset;
         this.innerRange.to += offset;
-        this.range.from += offset;
-        this.range.to += offset;
+    }
+
+    traverseDepthFirst(callback: (node: TreeNode) => void): void {
+        callback(this);
+        this.children.forEach(child => child.traverseDepthFirst(callback));
     }
 }
 

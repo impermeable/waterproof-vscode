@@ -5,6 +5,7 @@ import { Tree, TreeNode } from "./Tree";
 import { OperationType, ParsedStep } from "./types";
 import { DocChange } from "@impermeable/waterproof-editor";
 import { TextDocMappingNew } from "./newmapping";
+import { text } from "stream/consumers";
 
 function typeFromStep(step: ReplaceStep | ReplaceAroundStep): OperationType {
     if (step.from == step.to) return OperationType.insert;
@@ -194,19 +195,37 @@ export class NodeUpdate {
         } 
 
         // Calculate offsets for updating positions
-        const proseOffset = 2 + deletedNode.innerRange.to - deletedNode.innerRange.from;
+        let proseOffset = 0
+        if (deletedNode.children.length == 0) {
+            proseOffset = 2 + deletedNode.innerRange.to - deletedNode.innerRange.from;
+        } else {
+            deletedNode.traverseDepthFirst((thisNode: TreeNode) => {
+                if (thisNode.children.length == 0) {
+                    console.log("child", thisNode)
+                    proseOffset += 2 + thisNode.innerRange.to - thisNode.innerRange.from;
+                } else {
+                    console.log("parent", thisNode)
+                    proseOffset += 2
+                }
+            });
+        }
+        console.log("proseOffset", proseOffset)
+
         const textOffset = deletedNode.range.to - deletedNode.range.from;
 
+        console.log(tree)
         // Update positions of nodes after the deleted node
         tree.traverseDepthFirst((thisNode: TreeNode) => {
             // only shift nodes that come after the deleted node
-            if (thisNode.prosemirrorStart > deletedNode.prosemirrorEnd) {
+            if (thisNode.prosemirrorStart <= deletedNode.prosemirrorStart && thisNode.prosemirrorEnd >= deletedNode.prosemirrorEnd) {
+                console.log("innerNode:", thisNode)
+                thisNode.shiftCloseOffsets(-textOffset, -proseOffset)
+            } else if (thisNode.prosemirrorStart > deletedNode.prosemirrorEnd) {
+                console.log("afterNode:", thisNode)
                 thisNode.shiftOffsets(-textOffset, -proseOffset);
             }
         });
-
-        // Update the root node's closing position
-        tree.root.shiftCloseOffsets(-textOffset, -proseOffset);
+        console.log(tree)
 
         return { result: docChange, newTree: tree };
     }

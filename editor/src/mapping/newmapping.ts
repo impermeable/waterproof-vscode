@@ -1,5 +1,5 @@
 import { Tree, TreeNode } from "./Tree";
-import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, WaterproofSchema, TagMap, WaterproofMapping, MappingError } from "@impermeable/waterproof-editor";
+import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, TagMap, WaterproofMapping, MappingError, WaterproofSchema } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
@@ -52,14 +52,14 @@ export class TextDocMappingNew implements WaterproofMapping {
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
         const correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(index);
-        if (correctNode === null) throw new MappingError(" The vscode document model index could not be found ");
+        if (correctNode === null) throw new MappingError(" [findPosition] The vscode document model index could not be found ");
         return (index - correctNode.prosemirrorStart) + correctNode.innerRange.from;
     }
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
         const correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
-        if (correctNode === null) throw new MappingError(" The vscode document model index could not be found ");
+        if (correctNode === null) throw new MappingError(" [findInvPosition] The vscode document model index could not be found ");
         return (index - correctNode.innerRange.from) + correctNode.prosemirrorStart;
     }
 
@@ -68,27 +68,41 @@ export class TextDocMappingNew implements WaterproofMapping {
         return correctNode !== null && step.to <= correctNode.prosemirrorEnd;
     }
 
-    public update(step: Step, doc: Node) : DocChange | WrappingDocChange {
+    public update(step: Step, doc: Node): DocChange | WrappingDocChange {
         console.log("STEP IN UPDATE", step)
-        if (!(step instanceof ReplaceStep || step instanceof ReplaceAroundStep)) 
+        if (!(step instanceof ReplaceStep || step instanceof ReplaceAroundStep))
             throw new MappingError("Step update (in textDocMapping) should not be called with a non document changing step");
 
-        /** Check whether the edit is a text edit and occurs within a stringcell */ 
-        const parentNodeType = doc.resolve(step.from).parent.type;
-        const isText: boolean = parentNodeType === WaterproofSchema.nodes.markdown || parentNodeType === WaterproofSchema.nodes.code || parentNodeType === WaterproofSchema.nodes.math_display;
-        let result : ParsedStep;
+        /** Check whether the edit is a text edit */       
+        let isText: boolean;
+        if (step.slice.content.firstChild?.type === WaterproofSchema.nodes.text) {
+            // Short circuit when the content is a text node. This is the case for simple text insertions
+            // This is probably the most used path
+            isText = true;
+        } else {
+            // TODO: Figure out if this takes a lot of computation and whether we can do this more efficiently.
+            // A textual deletion has no content, but so do node deletions. We differentiate between them by
+            // checking what the parent node of the from position is. 
+            const parentNodeType = doc.resolve(step.from).parent.type;
+            isText = (step.slice.content.childCount === 0 &&
+                (parentNodeType === WaterproofSchema.nodes.markdown ||
+                    parentNodeType === WaterproofSchema.nodes.code ||
+                    parentNodeType === WaterproofSchema.nodes.math_display));
+        }
+
+        let result: ParsedStep;
 
         /** Parse the step into a text document change */
         if (step instanceof ReplaceStep && isText) result = this.textUpdate.textUpdate(step, this);
         else result = this.nodeUpdate.nodeUpdate(step, this);
 
         this.tree = result.newTree
-        
+
         if ('finalText' in result.result) {
-            if(this.checkDocChange(result.result)) this._version++;
+            if (this.checkDocChange(result.result)) this._version++;
         } else {
-            if(this.checkDocChange(result.result.firstEdit) || this.checkDocChange(result.result.secondEdit)) this._version++;
-        }      
+            if (this.checkDocChange(result.result.firstEdit) || this.checkDocChange(result.result.secondEdit)) this._version++;
+        }
 
         return result.result;
     }
@@ -97,7 +111,7 @@ export class TextDocMappingNew implements WaterproofMapping {
      * This checks if the doc change actually changed the document, since vscode
      * does not register empty changes 
      */
-    private checkDocChange(change: DocChange) : boolean {
+    private checkDocChange(change: DocChange): boolean {
         if (change.endInFile === change.startInFile && change.finalText.length == 0) return false;
         return true;
     }
@@ -118,8 +132,8 @@ export class TextDocMappingNew implements WaterproofMapping {
 
         const root = new TreeNode(
             "", // type
-            {from: 0, to: blocks.at(-1)!.range.to}, // originalStart
-            {from: 0, to: blocks.at(-1)!.range.to}, // originalEnd
+            { from: 0, to: blocks.at(-1)!.range.to }, // originalStart
+            { from: 0, to: blocks.at(-1)!.range.to }, // originalEnd
             "", // title
             0, // prosemirrorStart
             0, // prosemirrorEnd
@@ -182,7 +196,7 @@ export class TextDocMappingNew implements WaterproofMapping {
 
         // Add start tag and +1 for going one level deeper
         if (node !== this.tree.root) {
-            offset +=  1;
+            offset += 1;
         }
 
         // Record the ProseMirror start after entering this node

@@ -1,7 +1,7 @@
 import { TextDocMappingNew } from "./newmapping";
 import { ParsedStep, OperationType } from "./types";
 import { Tree, TreeNode } from "./Tree";
-import { DocChange, ReplaceStep } from "@impermeable/waterproof-editor";
+import { DocChange, ReplaceStep, TextUpdateError } from "@impermeable/waterproof-editor";
 
 export class TextUpdate {
 
@@ -14,20 +14,20 @@ export class TextUpdate {
 
 
         // If there is more than one node in the fragment of step, throw an error
-        if(step.slice.content.childCount > 1) throw new Error(" Text edit contained more text nodes than expected ");
+        if(step.slice.content.childCount > 1) throw new TextUpdateError(" Text edit contained more text nodes than expected ");
 
         // Check that the slice conforms to our assumptions
-        if (step.slice.openStart != 0 || step.slice.openEnd != 0) throw new Error(" We do not support partial slices for ReplaceSteps");
+        if (step.slice.openStart != 0 || step.slice.openEnd != 0) throw new TextUpdateError(" We do not support partial slices for ReplaceSteps");
 
         const tree = mapping.getMapping()
 
         const targetCell: TreeNode | null = tree.findNodeByProsemirrorPosition(step.from)
-        if (targetCell === null) throw new Error(" Target cell is not in mapping!!! ");
+        if (targetCell === null) throw new TextUpdateError(" Target cell is not in mapping!!! ");
 
-        if (targetCell === tree.root) throw new Error(" Text can not be inserted into the root ");
+        if (targetCell === tree.root) throw new TextUpdateError(" Text can not be inserted into the root ");
 
         /** Check that the change is, indeed, happening within a stringcell */
-        if (targetCell.prosemirrorEnd < step.from) throw new Error(" Step does not happen within cell ");
+        if (targetCell.prosemirrorEnd < step.from) throw new TextUpdateError(" Step does not happen within cell ");
 
         /** The offset within the correct stringCell for the step action */ 
         const offsetBegin = step.from - targetCell.prosemirrorStart;
@@ -77,7 +77,7 @@ function getTextOffset(type: OperationType, step: ReplaceStep) : number  {
     if (type == OperationType.delete) return step.from - step.to;
 
     /** Validate step if not a delete type */
-    if (step.slice.content.firstChild === null || step.slice.content.firstChild.text === undefined) throw new Error(" Invalid replace step " + step);
+    if (step.slice.content.firstChild === null || step.slice.content.firstChild.text === undefined) throw new TextUpdateError(" Invalid replace step " + step);
 
     if (type == OperationType.insert) return step.slice.content.firstChild.text?.length;
 

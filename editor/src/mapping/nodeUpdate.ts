@@ -1,11 +1,10 @@
 // Disabled because the ts-ignores later can't be made into ts-expect-error
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { ReplaceAroundStep, ReplaceStep, Node as PNode, WaterproofSchema, WrappingDocChange, TagMap } from "@impermeable/waterproof-editor";
+import { ReplaceAroundStep, ReplaceStep, Node as PNode, WaterproofSchema, WrappingDocChange, TagMap, NodeUpdateError } from "@impermeable/waterproof-editor";
 import { Tree, TreeNode } from "./Tree";
 import { OperationType, ParsedStep } from "./types";
 import { DocChange } from "@impermeable/waterproof-editor";
 import { TextDocMappingNew } from "./newmapping";
-import { text } from "stream/consumers";
 
 function typeFromStep(step: ReplaceStep | ReplaceAroundStep): OperationType {
     if (step.from == step.to) return OperationType.insert;
@@ -33,7 +32,7 @@ export class NodeUpdate {
             case "math_display":
                 return [this.tagMap.mathOpen, this.tagMap.mathClose];
             default:
-                throw new Error(`Unsupported node type: ${nodeName}`);
+                throw new NodeUpdateError(`Unsupported node type: ${nodeName}`);
         }
     }
 
@@ -47,7 +46,7 @@ export class NodeUpdate {
             case OperationType.delete:
                 return this.replaceDelete(step, mapping.getMapping());
             case OperationType.replace:
-                throw new Error(" We do not support ReplaceSteps that replace nodes with other nodes (textual replaces are handled in the textUpdate module) ");
+                throw new NodeUpdateError(" We do not support ReplaceSteps that replace nodes with other nodes (textual replaces are handled in the textUpdate module) ");
         }
     }
 
@@ -56,7 +55,7 @@ export class NodeUpdate {
         const type = typeFromStep(step);
         switch (type) {
             case OperationType.insert:
-                throw new Error(" ReplaceAroundSteps with 'insert' operation type are not yet supported ");
+                throw new NodeUpdateError(" ReplaceAroundSteps with 'insert' operation type are not yet supported ");
             case OperationType.delete:
                 // Delete when we are removing the tags around a node.
                 return this.replaceAroundDelete(step, mapping.getMapping());
@@ -87,7 +86,7 @@ export class NodeUpdate {
         // })
 
         const firstNode = step.slice.content.firstChild;
-        if (!firstNode) throw new Error(" No nodes in slice content ");
+        if (!firstNode) throw new NodeUpdateError(" No nodes in slice content ");
 
         // Get the nodes before and after the insertion point (if any)
         const nodeBefore = tree.findNodeByProsemirrorPosition(step.from - 1);
@@ -159,7 +158,7 @@ export class NodeUpdate {
             open = this.tagMap.mathOpen;
             close = this.tagMap.mathClose;
         } else {
-            throw new Error(`Unsupported node type: ${node.type.name}`);
+            throw new NodeUpdateError(`Unsupported node type: ${node.type.name}`);
         }
 
         if (includeStartNewline) open = "\n" + open;
@@ -174,7 +173,7 @@ export class NodeUpdate {
         // Find the node to delete at the given Prosemirror position
         const deletedNode = tree.findNodeByProsemirrorPosition(step.from + 1);
         if (!deletedNode) {
-            throw new Error("Could not find node to delete at the given position.");
+            throw new NodeUpdateError("Could not find node to delete at the given position.");
         }
 
 
@@ -236,7 +235,7 @@ export class NodeUpdate {
         // TODO: Assuming we are always unwrapping a single node
 
         const nodeBeingUnwrapped = tree.findNodeByProsemirrorPosition(step.gapFrom + 1);
-        if (!nodeBeingUnwrapped) throw new Error(" Could not find the node to be lifted in mapping ");
+        if (!nodeBeingUnwrapped) throw new NodeUpdateError(" Could not find the node to be lifted in mapping ");
         console.log("NODE BEING UNWRAPPED", nodeBeingUnwrapped);
 
         const nodeBeingUnwrapped2 = tree.findNodeByProsemirrorPosition(step.gapTo - 1);
@@ -247,7 +246,7 @@ export class NodeUpdate {
         console.log("NODE BEFORE", nodeBefore, "NODE AFTER", nodeAfter);
 
         const wrapperNode = tree.findNodeByProsemirrorPosition(step.from + 1);
-        if (!wrapperNode) throw new Error(" Could not find the wrapper node in mapping ");
+        if (!wrapperNode) throw new NodeUpdateError(" Could not find the wrapper node in mapping ");
         console.log("WRAPPER NODE", wrapperNode);
 
         const wrapperOuter = {from: wrapperNode.range.from, to: wrapperNode.range.to};
@@ -312,15 +311,15 @@ export class NodeUpdate {
 
         const wrappingNode = step.slice.content.firstChild;
         if (!wrappingNode)
-            throw new Error(" ReplaceAroundStep replace has no wrapping node ");
+            throw new NodeUpdateError(" ReplaceAroundStep replace has no wrapping node ");
 
         if (step.slice.content.childCount != 1) {
-            throw new Error(" We only support ReplaceAroundSteps with a single wrapping node ");
+            throw new NodeUpdateError(" We only support ReplaceAroundSteps with a single wrapping node ");
         }
 
         const insertedNodeType = wrappingNode.type.name;
         if (insertedNodeType !== "hint" && insertedNodeType !== "input")
-            throw new Error(" We only support wrapping in hints or inputs ");
+            throw new NodeUpdateError(" We only support wrapping in hints or inputs ");
 
     
         const title: string = insertedNodeType === "hint" ? wrappingNode.attrs.title : "";
@@ -328,7 +327,7 @@ export class NodeUpdate {
 
         // Find the node being wrapped
         const nodeBeingWrapped = tree.findNodeByProsemirrorPosition(step.gapFrom + 1);
-        if (!nodeBeingWrapped) throw new Error(" Could not find node in mapping ");
+        if (!nodeBeingWrapped) throw new NodeUpdateError(" Could not find node in mapping ");
         console.log("NODE", nodeBeingWrapped);
 
         const originalOuter = {from: nodeBeingWrapped.range.from, to: nodeBeingWrapped.range.to};

@@ -1,5 +1,5 @@
 import { Tree, TreeNode } from "./Tree";
-import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, WaterproofSchema, TagMap, WaterproofMapping } from "@impermeable/waterproof-editor";
+import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, WaterproofSchema, TagMap, WaterproofMapping, MappingError } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
@@ -52,14 +52,14 @@ export class TextDocMappingNew implements WaterproofMapping {
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
         const correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(index);
-        if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
+        if (correctNode === null) throw new MappingError(" The vscode document model index could not be found ");
         return (index - correctNode.prosemirrorStart) + correctNode.innerRange.from;
     }
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
         const correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
-        if (correctNode === null) throw new Error(" The vscode document model index could not be found ");
+        if (correctNode === null) throw new MappingError(" The vscode document model index could not be found ");
         return (index - correctNode.innerRange.from) + correctNode.prosemirrorStart;
     }
 
@@ -71,7 +71,7 @@ export class TextDocMappingNew implements WaterproofMapping {
     public update(step: Step, doc: Node) : DocChange | WrappingDocChange {
         console.log("STEP IN UPDATE", step)
         if (!(step instanceof ReplaceStep || step instanceof ReplaceAroundStep)) 
-            throw new Error("Step update (in textDocMapping) should not be called with a non document changing step");
+            throw new MappingError("Step update (in textDocMapping) should not be called with a non document changing step");
 
         /** Check whether the edit is a text edit and occurs within a stringcell */ 
         const parentNodeType = doc.resolve(step.from).parent.type;

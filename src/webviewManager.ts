@@ -5,6 +5,7 @@ import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
 import { ProseMirrorWebview } from "./pm-editor/pmWebview";
 import { CoqWebview, WebviewEvents, WebviewState } from "./webviews/coqWebview";
+import { WaterproofLogger } from "./helpers";
 
 export enum WebviewManagerEvents {
     editorReady     = "ready",
@@ -259,7 +260,8 @@ export class WebviewManager extends EventEmitter {
                 }
                 break; }
             case MessageType.applyStepError:
-                { const mes = "File frozen due to corruption. Re-open the file. Error: " + message.body;
+                { const mes = "The editor encountered an error in applying an edit (see log for details): " + message.body;
+                WaterproofLogger.log(message.body);
                 window.showErrorMessage(mes);
                 break; }
             case MessageType.command:

@@ -564,6 +564,18 @@
         "symbolPanelCategory": 2
     },
     {
+        "label": "\\circ",
+        "type": "symbol",
+        "apply": "∘",
+        "symbolPanelCategory": 99
+    },
+    {
+        "label": "\\compose",
+        "type": "symbol",
+        "apply": "∘",
+        "symbolPanelCategory": 2
+    },
+    {
         "label": "\\^1",
         "type": "symbol",
         "apply": "¹",

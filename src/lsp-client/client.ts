@@ -103,6 +103,11 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.DetailedErrorsMode))) {
                     this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
                 }
+
+                // When the LogDebugStatements setting changes we update the logDebug boolean in the WaterproofLogger class.
+                if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.LogDebugStatements))) {
+                    wpl.logDebug = WaterproofConfigHelper.get(WaterproofSetting.LogDebugStatements);
+                }
             }));
 
             // send diagnostics to editor (for squiggly lines)

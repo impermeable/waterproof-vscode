@@ -4,7 +4,7 @@ import { CoqLspClient } from "./clientTypes";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { GetStateAtPosParams, getStateAtPosReq, GoalsParams, goalsReq, RunParams, runReq } from "./petanque";
 
-export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<string>> {
+export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<string> & {proofFinished: boolean}> {
     const document = client.activeDocument;
 
     if (!document) {
@@ -25,16 +25,28 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
     }
 
     // TODO: Catch possible errors here!
-    const stateRes = await client.sendRequest(getStateAtPosReq, params);
-    const r: RunParams = { st: stateRes.st, tac: command };
-    const runRes = await client.sendRequest(runReq, r);
-    const g: GoalsParams = { st: runRes.st };
-    const goalsRes = await client.sendRequest(goalsReq, g);
+    try {
+        const stateRes = await client.sendRequest(getStateAtPosReq, params);
+        const r: RunParams = { st: stateRes.st, tac: command };
+        const runRes = await client.sendRequest(runReq, r);
+        const g: GoalsParams = { st: runRes.st };
+        const goalsRes = await client.sendRequest(goalsReq, g);
 
-    return {
-        messages: runRes.feedback.map((val) => { return { level: val[0], text: val[1] } }),
-        position: new Position(0, 0),
-        textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
-        goals: goalsRes
+        return {
+            messages: runRes.feedback.map((val) => { return { level: val[0], text: val[1] } }),
+            position: new Position(0, 0),
+            proofFinished: runRes.proof_finished,
+            textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
+            goals: goalsRes
+        };
+    } catch(err: unknown) {
+        return { 
+            messages: [], 
+            proofFinished: false, 
+            position: new Position(0, 0),
+            textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
+            goals: undefined,
+            error: (err as Error).message
+        };
     }
 }

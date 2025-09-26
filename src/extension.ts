@@ -7,7 +7,8 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri} from "vscode";
+    Uri,
+    Range} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -31,10 +32,7 @@ import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
 
-
-export function activate(_context: ExtensionContext): void {
-    commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
-}
+import { convertToString } from "../lib/types";
 
 /**
  * Main extension class
@@ -266,6 +264,96 @@ export class Waterproof implements Disposable {
             WaterproofConfigHelper.update(WaterproofSetting.ShowLineNumbersInEditor, updated);
             window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
+    }
+
+    public async currentGoals(): Promise<{goal: string, hypotheses: string[]} | undefined> {
+         if (!this.client.activeDocument || !this.client.activeCursorPosition) {
+            window.showErrorMessage("No active document or cursor position.");
+            return;
+        }
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
+        // set a message to show in the goal components, roughly the same as when the user uses Help.
+
+        const params = this.client.createGoalsRequestParameters(document, position);
+        const goalResponse = await this.client.requestGoals(params);
+        console.log("Goal response received from LSP: ", goalResponse); 
+        // wpl.log(`Received goals response from server for ProofBuddy help, ${JSON.stringify(response)}`);
+        if (goalResponse.goals === undefined) return; 
+        if (goalResponse.goals.goals.length > 1) {
+            const newResponse = {
+                ...goalResponse,
+                messages: [{range: null, level: 4, text: ["Pp_string", "ProofBuddy help is only available when there is a single goal. Please focus on a single goal and try again. You may need to use a bullet point or a curly brace."]}]
+            }
+            //@ts-expect-error ;ldkafjsdf
+            for (const g of this.goalsComponents) g.updateGoals(newResponse);
+            return;
+        }
+        if (goalResponse.goals.goals.length === 0) {
+            const newResponse = {
+                ...goalResponse,
+                messages: [{range: null, level: 4, text: ["Pp_string", "There are no goals to provide help for."]}]
+            }
+            //@ts-expect-error ;ldkafjsdf
+            for (const g of this.goalsComponents) g.updateGoals(newResponse);
+            return;
+        }
+        const goalString = convertToString(goalResponse.goals.goals[0].ty);
+        
+        // TODO Include hypotheses?
+        const hyps = goalResponse.goals.goals[0].hyps.map(h => convertToString(h.names[0]) + " : " + convertToString(h.ty));
+
+        return {goal: goalString, hypotheses: hyps};
+    }
+
+    public currentDocument(): TextDocument | undefined {
+        return this.client.activeDocument;
+    }
+
+    public async helpOutput(): Promise<string | undefined> {
+        const wpHelpResponse = await executeCommand(this.client, "Help.");
+            
+        //@ts-expect-error ;ldkafjsdf
+        const wpHelpOutput = wpHelpResponse.messages.map(m => convertToString(m.text)).join("\n");
+        return wpHelpOutput;
+    }
+
+    public proofContext(contextWindow = 1000): { lemma: string, soFar: string, context: string} | undefined {
+
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) {
+            window.showErrorMessage("No active document or cursor position.");
+            return;
+        }
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
+        // need only upper half.
+        const split = document.getText(new Range(new Position(0,0), position));
+        const context = split.slice(Math.max(0, split.length - contextWindow));
+
+        // execute regex match
+        // eslint-disable-next-line no-useless-escape
+        const regex = /(?:Lemma|Theorem|Proposition|Corollary)\s+(\w+)\s+:\s*([^\.]+)\./g;
+        const matches = split.matchAll(regex);
+
+        // find the last match
+        const last = matches.toArray().pop();
+        const lemma = last ? last[2] : "";
+        
+        // Get the index of where lemma starts
+        const idx = last ? last.index || 0 : 0;
+
+        const soFar = split.slice(idx);
+
+        return {lemma, soFar, context};
+    }
+
+    public async tryProof(steps: string): Promise<{error?: string, finished: boolean, remainingGoals?: string[]}> {
+        const execResponse = await executeCommand(this.client, steps);
+        return {
+            finished: execResponse.proofFinished,
+            remainingGoals: execResponse.goals?.goals.map(g => g.ty),
+            error: execResponse.error
+        };
     }
 
     /**

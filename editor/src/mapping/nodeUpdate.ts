@@ -1,6 +1,6 @@
 // Disabled because the ts-ignores later can't be made into ts-expect-error
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { ReplaceAroundStep, ReplaceStep, Node as PNode, WaterproofSchema, WrappingDocChange, TagMap, NodeUpdateError } from "@impermeable/waterproof-editor";
+import { ReplaceAroundStep, ReplaceStep, Node as PNode, WaterproofSchema, WrappingDocChange, NodeUpdateError, TagConfiguration, Serializers } from "@impermeable/waterproof-editor";
 import { Tree, TreeNode } from "./Tree";
 import { OperationType, ParsedStep } from "./types";
 import { DocChange } from "@impermeable/waterproof-editor";
@@ -16,21 +16,23 @@ function typeFromStep(step: ReplaceStep | ReplaceAroundStep): OperationType {
 }
 
 export class NodeUpdate {
-    constructor (private tagMap: TagMap) {} 
+    constructor (private tagConf: TagConfiguration, private serializers: Serializers) {} 
 
 
     nodeNameToTagPair(nodeName: string, title: string = ""): [string, string] {
         switch (nodeName) {
             case "markdown":
-                return [this.tagMap.markdownOpen, this.tagMap.markdownClose];
+                return [this.tagConf.markdown.openTag, this.tagConf.markdown.closeTag];
             case "code":
-                return [this.tagMap.codeOpen, this.tagMap.codeClose];
+                return [this.tagConf.code.openTag, this.tagConf.code.closeTag];
             case "hint":
-                return [this.tagMap.hintOpen(title), this.tagMap.hintClose];
+                return [this.tagConf.hint.openTag(title), this.tagConf.hint.closeTag];
             case "input":
-                return [this.tagMap.inputOpen, this.tagMap.inputClose];
+                return [this.tagConf.input.openTag, this.tagConf.input.closeTag];
             case "math_display":
-                return [this.tagMap.mathOpen, this.tagMap.mathClose];
+                return [this.tagConf.math.openTag, this.tagConf.math.closeTag];
+            case "newline":
+                return ["", ""];
             default:
                 throw new NodeUpdateError(`Unsupported node type: ${nodeName}`);
         }
@@ -88,81 +90,192 @@ export class NodeUpdate {
         const firstNode = step.slice.content.firstChild;
         if (!firstNode) throw new NodeUpdateError(" No nodes in slice content ");
 
-        // Get the nodes before and after the insertion point (if any)
-        const nodeBefore = tree.findNodeByProsemirrorPosition(step.from - 1);
-        const nodeAfter = tree.findNodeByProsemirrorPosition(step.to + 1);
-        
-        const insertedNodeType = step.slice.content.firstChild.type.name;
-        const newlineBefore = (nodeBefore !== null && insertedNodeType == "code");
-        const newlineAfter = (nodeAfter !== null && nodeAfter.type !== "code" && insertedNodeType == "code");
-        const {open, close, content, title} = this.serializeNode(step.slice.content.firstChild, newlineBefore, newlineAfter);
-        
-        const docChange: DocChange = {
-            startInFile: nodeBefore !== null ? nodeBefore.range.to: 0,
-            endInFile: nodeBefore !== null ? nodeBefore.range.to: 0,
-            finalText: open + content + close
-        }
-        
-        const nodeToInsert = new TreeNode(
-            insertedNodeType, // node type
-            // FIXME: Why -1 here?
-            { from: docChange.startInFile + open.length - 1, to: docChange.startInFile + open.length + title.length + content.length }, // Document (inner range) positions
-            { from: docChange.startInFile, to: docChange.startInFile + open.length + title.length + content.length + close.length }, // Document (full range) positions
-            // docChange.startInFile + open.length, docChange.startInFile + open.length + title.length + content.length, // Document (inner range) positions
-            title, // Title
-            (nodeBefore !== null ? nodeBefore.prosemirrorEnd : 0) + 1, (nodeBefore !== null ? nodeBefore.prosemirrorEnd : 0) + content.length + 2, // Prosemirror positions
-            content // String content
-        );
+        const nodeInTree = tree.findNodeByProsemirrorPosition(step.from + 1);
+        // console.log("POS", nodeInTree);
+        if (!nodeInTree) throw new NodeUpdateError(" Could not find position to insert node in mapping ");
+        const parent = tree.findParent(nodeInTree);
+        if (!parent) throw new NodeUpdateError(" Could not find parent of insertion position in mapping ");
 
-        const prosemirrorOffset = 2 + content.length;
-        const originalOffset = open.length + close.length + content.length + title.length;
-        // now we need to update the tree
-        tree.traverseDepthFirst((node: TreeNode) => {
-            // Every node after the inserted node needs to be shifted
-            if (node.prosemirrorStart >= nodeToInsert.prosemirrorEnd) {
-                node.shiftOffsets(originalOffset, prosemirrorOffset);
-            }
+
+        // this.serializeNode2(step.slice.content.)
+        let serialized = "";
+        step.slice.content.forEach(node => {
+            const output = this.serializeNode2(node, nodeInTree.range.from, nodeInTree.prosemirrorStart);
+            parent.addChild(output.treeNode);
+            serialized += output.serialized;
+            console.log("OUTPUT", output);
         });
+        // this.serializeNode2();
+        console.log(serialized);
 
-        tree.insertByPosition(nodeToInsert);
 
-        tree.root.shiftCloseOffsets(originalOffset, prosemirrorOffset);
+        const docChange: DocChange = {
+            startInFile: nodeInTree.range.from,
+            endInFile: nodeInTree.range.from,
+            finalText: serialized
+        };
 
-        return { result: docChange, newTree: tree };
+        // parent.addChild()
+
+        return {result: docChange, newTree: tree};
+
+        // throw new Error("DKLJ:FSLKFJ");
+
+        // const insertedNodeType = step.slice.content.firstChild.type.name;
+
+        // const {open, close, content, title} = this.serializeNode(step.slice.content.firstChild);
+        
+        // const docChange: DocChange = {
+        //     startInFile: nodeBefore !== null ? nodeBefore.range.to: 0,
+        //     endInFile: nodeBefore !== null ? nodeBefore.range.to: 0,
+        //     finalText: open + content + close
+        // }
+        
+        // const nodeToInsert = new TreeNode(
+        //     insertedNodeType, // node type
+        //     // FIXME: Why -1 here?
+        //     { from: docChange.startInFile + open.length - 1, to: docChange.startInFile + open.length + title.length + content.length }, // Document (inner range) positions
+        //     { from: docChange.startInFile, to: docChange.startInFile + open.length + title.length + content.length + close.length }, // Document (full range) positions
+        //     // docChange.startInFile + open.length, docChange.startInFile + open.length + title.length + content.length, // Document (inner range) positions
+        //     title, // Title
+        //     (nodeBefore !== null ? nodeBefore.prosemirrorEnd : 0) + 1, (nodeBefore !== null ? nodeBefore.prosemirrorEnd : 0) + content.length + 2, // Prosemirror positions
+        //     content // String content
+        // );
+
+        // const prosemirrorOffset = 2 + content.length;
+        // const originalOffset = open.length + close.length + content.length + title.length;
+        // // now we need to update the tree
+        // tree.traverseDepthFirst((node: TreeNode) => {
+        //     // Every node after the inserted node needs to be shifted
+        //     if (node.prosemirrorStart >= nodeToInsert.prosemirrorEnd) {
+        //         node.shiftOffsets(originalOffset, prosemirrorOffset);
+        //     }
+        // });
+
+        // tree.insertByPosition(nodeToInsert);
+
+        // tree.root.shiftCloseOffsets(originalOffset, prosemirrorOffset);
+
+        // return { result: docChange, newTree: tree };
+    }
+
+    // serializeAndGenerateTree(...nodes: PNode[]): { serialized: string, treeNodes: TreeNode[], totalOriginalOffset: number, totalProsemirrorOffset: number } {
+        
+    // }
+
+
+    serializeNode2(node: PNode, offsetOriginal: number, offsetProse: number): {serialized: string, treeNode: TreeNode, proseShift: number, originalShift: number} {
+        // console.log()
+        let serialized: string = "";
+        let proseShift = 0;
+        let originalShift = 0;
+        const [openTag, closeTag] = this.nodeNameToTagPair(node.type.name, node.attrs.title ? node.attrs.title : "");
+        // const treeNode = new TreeNode(node.type.name, {from: offsetOriginal + openTag.length, to: openTag.length}, {from: 0, to: 0}, node.attrs.title ? node.attrs.title : "", 0, 0, "");
+
+        // We fill inner.to and range.to in later, after we know the full serialized length (A)
+        const treeNode = new TreeNode(node.type.name, {from: offsetOriginal + openTag.length, to: 0}, {from: offsetOriginal, to: 0}, node.attrs.title ? node.attrs.title : "", offsetProse + 1, 0, "");
+
+        if (node.type == WaterproofSchema.nodes.markdown) {
+            const serializerOutput = this.serializers.markdown(node.textContent);
+            serialized = serialized.concat(serializerOutput);
+            proseShift += 2 + node.textContent.length;
+            originalShift += serializerOutput.length;
+        } else if (node.type == WaterproofSchema.nodes.code) {
+            const serializerOutput = this.serializers.code(node.textContent);
+            serialized = serialized.concat(serializerOutput);
+            proseShift += 2 + node.textContent.length;
+            originalShift += serializerOutput.length;
+        } else if (node.type == WaterproofSchema.nodes.hint) {
+            const title = node.attrs.title;
+            // Has child content
+            const textContent: string[] = [];
+            proseShift += 1; // to move past the opening tag
+            node.forEach(child => {
+                const output = this.serializeNode2(child, offsetOriginal + proseShift, offsetProse + proseShift);
+                treeNode.children.push(output.treeNode);
+                if (child.type == WaterproofSchema.nodes.newline) {
+                    proseShift += 1;
+                } else {
+                    proseShift += output.proseShift;
+                    originalShift += output.originalShift;
+                }
+                textContent.push(output.serialized);
+            });
+            serialized += this.serializers.hint(textContent.join(""), title);
+        } else if (node.type == WaterproofSchema.nodes.input) {
+            // Has child content
+            const textContent: string[] = [];
+            proseShift += 1; // to move past the opening tag
+            node.forEach(child => {
+                const output = this.serializeNode2(child, offsetOriginal + proseShift, offsetProse + proseShift);
+                treeNode.children.push(output.treeNode);
+                if (child.type == WaterproofSchema.nodes.newline) {
+                    proseShift += 1;
+                } else {
+                    proseShift += output.proseShift;
+                    originalShift += output.originalShift;
+                }
+                textContent.push(output.serialized);
+            });
+            serialized += this.serializers.input(textContent.join(""));
+        } else if (node.type == WaterproofSchema.nodes.math_display) {
+            const serializerOutput = this.serializers.math(node.textContent);
+            serialized += serializerOutput;
+            proseShift += 2 + node.textContent.length;
+            originalShift += serializerOutput.length;
+        } else if (node.type == WaterproofSchema.nodes.newline) {
+            serialized += "\n";
+            proseShift += 1;
+            originalShift += 1;
+        } else {  
+            throw new NodeUpdateError(`Unsupported node type: ${node.type.name}`);
+        }
+
+        treeNode.stringContent = serialized.substring(openTag.length, serialized.length - closeTag.length);
+
+        // As said in (A) we know fill in inner.to and range.to
+        treeNode.innerRange.to = offsetOriginal + serialized.length - closeTag.length;
+        treeNode.range.to = offsetOriginal + serialized.length;
+        treeNode.prosemirrorEnd = offsetProse + proseShift - 1;
+
+
+        return {serialized, treeNode, proseShift, originalShift};
     }
 
     serializeNode(
         node: PNode,
-        includeStartNewline: boolean = false,
-        includeEndNewline: boolean = false
     ): { open: string, close: string, content: string, title: string } {
         let open = "";
         let close = "";
-        const content = node.textContent;
+        let content = node.textContent;
         let title = "";
 
         if (node.type == WaterproofSchema.nodes.markdown) {
-            open = this.tagMap.markdownOpen;
-            close = this.tagMap.markdownClose;
+            open = this.tagConf.markdown.openTag;
+            close = this.tagConf.markdown.closeTag;
         } else if (node.type == WaterproofSchema.nodes.code) {
-            open = this.tagMap.codeOpen;
-            close = this.tagMap.codeClose;
+            open = this.tagConf.code.openTag;
+            close = this.tagConf.code.closeTag;
         } else if (node.type == WaterproofSchema.nodes.hint) {
             title = node.attrs.title;
-            open = this.tagMap.hintOpen(title);
-            close = this.tagMap.hintClose;
+            open = this.tagConf.hint.openTag(title);
+            close = this.tagConf.hint.closeTag;
         } else if (node.type == WaterproofSchema.nodes.input) {
-            open = this.tagMap.inputOpen;
-            close = this.tagMap.inputClose;
+            open = this.tagConf.input.openTag;
+            close = this.tagConf.input.closeTag;
         } else if (node.type == WaterproofSchema.nodes.math_display) {
-            open = this.tagMap.mathOpen;
-            close = this.tagMap.mathClose;
+            open = this.tagConf.math.openTag;
+            close = this.tagConf.math.closeTag;
+        } else if (node.type == WaterproofSchema.nodes.newline) {
+            open = "";
+            close = "";
+            content = "\n";
         } else {
             throw new NodeUpdateError(`Unsupported node type: ${node.type.name}`);
         }
 
-        if (includeStartNewline) open = "\n" + open;
-        if (includeEndNewline) close = close + "\n";
+        // if (includeStartNewline) open = "\n" + open;
+        // if (includeEndNewline) close = close + "\n";
 
         return { open, close, content, title };
     }
@@ -340,8 +453,8 @@ export class NodeUpdate {
         // In the case of code blocks we have to be careful to preserve the newlines
 
         if (isCode) {
-            const codeOpen = this.tagMap.codeOpen;
-            const codeClose = this.tagMap.codeClose;
+            const codeOpen = this.tagConf.codeOpen;
+            const codeClose = this.tagConf.codeClose;
             const startsWithNewline = originalInner.from > originalOuter.from + codeOpen.length;
             const endsWithNewline = originalOuter.to > originalInner.to + codeClose.length;
 

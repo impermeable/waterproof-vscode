@@ -123,7 +123,7 @@ test("Parse Coq blocks #1", () => {
     const document = "# Example\n```coq\nLemma trivial.\n```";
     const blocks = extractCoqBlocks(document);
 
-    expect(blocks.length).toBe(1);
+    expect(blocks.length).toBe(2);
     expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
     expect(blocks[0].stringContent).toBe("Lemma trivial.");
 

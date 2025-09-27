@@ -1,10 +1,10 @@
-import { InputAreaBlock, HintBlock, MathDisplayBlock, CodeBlock } from "@impermeable/waterproof-editor";
+import { InputAreaBlock, HintBlock, MathDisplayBlock, CodeBlock, NewlineBlock } from "@impermeable/waterproof-editor";
 import { createInputAndHintInnerBlocks } from "./inner-blocks";
 
 
 const regexes = {
     // coq: /```coq\n([\s\S]*?)\n```/g,
-    coq: /(\r\n|\n)?^```coq(\r\n|\n)([^]*?)(\r\n|\n)?^```$(\r\n|\n)?/gm,
+    coq: /(\n)?^```coq\n([^]*?)\n?^```$(\n)?/gm,
     math_display: /\$\$([\s\S]*?)\$\$/g,
     input_area: /<input-area>([\s\S]*?)<\/input-area>/g,
     input_areaV: /\(\* begin input \*\)\n([\s\S]*?)\n\(\* end input \*\)/gm,
@@ -91,38 +91,41 @@ const coqCloseLength = "\n```".length;
  *
  * Uses regexes to search for ```coq and ``` markers.
  */
-export function extractCoqBlocks(inputDocument: string, parentOffset: number = 0) {
+export function extractCoqBlocks(inputDocument: string, parentOffset: number = 0): Array<CodeBlock | NewlineBlock> {
     const coq_code = Array.from(inputDocument.matchAll(regexes.coq));
-    const coqBlocks = coq_code.map((coq) => {
+
+    const blocks = coq_code.flatMap((coq) => {
         if (coq.index === undefined) throw new Error("Index of coq is undefined");
+        
+        // - coq[0] the match;
+        // - coq[1] capture group 1, newline before the ```coq (if any);
+        // - coq[2] ..., the content of the coq block;
+        // - coq[3] ..., newline after the ``` (if any).
+        // console.log(`==========\nprePreWhite: '${coq[1] == "\n"}'\nprePostWhite: '${coq[2] == "\n"}'\ncontent: '${coq[3]}'\npostPreWhite: '${coq[4] == "\n"}'\npostPostWhite: '${coq[5] == "\n"}'\n==========\n`)
+        const content = coq[2];
+        const newlineBefore = coq[1] == "\n";
+        const newlineAfter = coq[3] == "\n";
 
-        const startsWithNewLine = coq[1] === "\n";
-        const endsWithNewLine = coq[5] === "\n";
-        const newLineOffsetStart = startsWithNewLine ? 1 : 0;
-        const newLineOffsetEnd = endsWithNewLine ? 1 : 0;
-
-        // Range of the whole coq block including the ```coq and ``` markers.
-        const range = { from: coq.index + parentOffset, to: coq.index + coq[0].length + parentOffset };
+        // Range of the whole coq block including the ```coq and ``` markers, but without the newlines before/after if any.
+        const range = { from: coq.index + parentOffset + (newlineBefore ? 1 : 0), to: coq.index + parentOffset + (newlineBefore ? 1 : 0) + coq[2].length + coqOpenLength + coqCloseLength };
 
         // Range of the inner content of the coq block, excluding the ```coq and ``` markers.
-        const innerRange = {from: range.from + newLineOffsetStart + coqOpenLength, to: range.to - coqCloseLength - newLineOffsetEnd };
-        // TODO: Documentation for this: 
-        // - coq[0] the match;
-        // - coq[1] capture group 1, prePreWhite;
-        // - coq[2] ..., prePostWhite;
-        // - coq[3] ..., the content of the coq block;
-        // - coq[4] ..., postPreWhite;
-        // - coq[5] ..., postPostWhite;
-        // console.log(`==========\nprePreWhite: '${coq[1] == "\n"}'\nprePostWhite: '${coq[2] == "\n"}'\ncontent: '${coq[3]}'\npostPreWhite: '${coq[4] == "\n"}'\npostPostWhite: '${coq[5] == "\n"}'\n==========\n`)
-        const content = coq[3];
-        const prePreWhite = coq[1] == "\n" ? "newLine" : "";
-        const prePostWhite = coq[2] == "\n" ? "newLine" : "";
-        const postPreWhite = coq[4] == "\n" ? "newLine" : "";
-        const postPostWhite = coq[5] == "\n" ? "newLine" : "";
+        const innerRange = {from: range.from + coqOpenLength, to: range.to - coqCloseLength };
 
-        return new CodeBlock(content, prePreWhite, prePostWhite, postPreWhite, postPostWhite, range, innerRange);
+        const coqBlock = new CodeBlock(content, range, innerRange);
+
+        if (newlineBefore && !newlineAfter) {
+            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}), coqBlock];
+        } else if (!newlineBefore && newlineAfter) {
+            return [coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1})];
+        } else if (newlineBefore && newlineAfter) {
+            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}), coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1})];
+        } else {
+            return [coqBlock];
+        }
     });
-    return coqBlocks;
+
+    return blocks;
 }
 
 // Regex for extracting the math display blocks from the coqdoc comments.

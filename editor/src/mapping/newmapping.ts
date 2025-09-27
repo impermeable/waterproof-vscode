@@ -1,5 +1,5 @@
 import { Tree, TreeNode } from "./Tree";
-import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, TagMap, WaterproofMapping, MappingError, WaterproofSchema } from "@impermeable/waterproof-editor";
+import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, TagConfiguration, WaterproofMapping, MappingError, WaterproofSchema, Serializers } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
@@ -23,9 +23,9 @@ export class TextDocMappingNew implements WaterproofMapping {
      *
      * @param inputBlocks a string containing the prosemirror content html element
      */
-    constructor(inputBlocks: Block[], versionNum: number, tMap: TagMap) {
+    constructor(inputBlocks: Block[], versionNum: number, tMap: TagConfiguration, serializers: Serializers) {
         this.textUpdate = new TextUpdate();
-        this.nodeUpdate = new NodeUpdate(tMap);
+        this.nodeUpdate = new NodeUpdate(tMap, serializers);
         this._version = versionNum;
         this.tree = new Tree();
         this.initialize(inputBlocks);
@@ -190,9 +190,14 @@ export class TextDocMappingNew implements WaterproofMapping {
         level: number = 0
     ): number {
         if (!node) return currentOffset;
-
-
+        
         let offset = currentOffset;
+
+        if (node.type === "newline") {
+            node.prosemirrorStart = offset + 1;
+            node.prosemirrorEnd = offset + 2;
+            return offset;
+        }
 
         // Add start tag and +1 for going one level deeper
         if (node !== this.tree.root) {

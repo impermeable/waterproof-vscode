@@ -49,6 +49,8 @@ export class TreeNode {
         this.prosemirrorEnd += offsetProsemirror !== undefined ? offsetProsemirror : offset;
         this.innerRange.from += offset;
         this.innerRange.to += offset;
+        this.range.from += offset;
+        this.range.to += offset;
     }
 
     traverseDepthFirst(callback: (node: TreeNode) => void): void {
@@ -72,14 +74,12 @@ export class Tree {
         this.root = new TreeNode(type, innerRange, range, title, prosemirrorStart, prosemirrorEnd, stringContent);
     }
 
-    traverseDepthFirst(callback: (node: TreeNode) => void, node: TreeNode | null = this.root): void {
-        if (!node) return;
+    traverseDepthFirst(callback: (node: TreeNode) => void, node: TreeNode = this.root): void {
         callback(node);
         node.children.forEach(child => this.traverseDepthFirst(callback, child));
     }
 
     traverseBreadthFirst(callback: (node: TreeNode) => void): void {
-        if (!this.root) return;
         const queue: TreeNode[] = [this.root];
         while (queue.length > 0) {
             const node = queue.shift();
@@ -89,6 +89,20 @@ export class Tree {
             }
         }
     }
+
+    // Finds the highest (closest to root) node that contains the given prosemirror position
+    findHighestContainingNode(pos: number, node: TreeNode = this.root): TreeNode {
+        if (pos < node.prosemirrorStart || pos > node.prosemirrorEnd) {
+            throw new Error("Position out of bounds");
+        }
+        for (const child of node.children) {
+            if (pos >= child.prosemirrorStart && pos <= child.prosemirrorEnd) {
+                return this.findHighestContainingNode(pos, child);
+            }
+        }
+        return node;
+    }
+
 
     findParent(target: TreeNode, node: TreeNode | null = this.root, parent: TreeNode | null = null): TreeNode | null {
         if (!node) return null;

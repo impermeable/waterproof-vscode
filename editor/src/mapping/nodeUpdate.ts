@@ -1,5 +1,3 @@
-// Disabled because the ts-ignores later can't be made into ts-expect-error
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { ReplaceAroundStep, ReplaceStep, Node as PNode, WaterproofSchema, WrappingDocChange, NodeUpdateError, TagConfiguration, Serializers } from "@impermeable/waterproof-editor";
 import { Tree, TreeNode } from "./Tree";
 import { OperationType, ParsedStep } from "./types";
@@ -31,8 +29,6 @@ export class NodeUpdate {
                 return [this.tagConf.input.openTag, this.tagConf.input.closeTag];
             case "math_display":
                 return [this.tagConf.math.openTag, this.tagConf.math.closeTag];
-            case "newline":
-                return ["", ""];
             default:
                 throw new NodeUpdateError(`Unsupported node type: ${nodeName}`);
         }
@@ -82,87 +78,148 @@ export class NodeUpdate {
     }
 
     replaceInsert(step: ReplaceStep, tree: Tree): ParsedStep {
-        // // TOO General
-        // step.slice.content.descendants((node) => {
-        //     inBetweenText += serializeNode(node);
-        // })
-
         const firstNode = step.slice.content.firstChild;
         if (!firstNode) throw new NodeUpdateError(" No nodes in slice content ");
 
+        // TODO: The plus 1 does not work when the insert is at the end of some block
+        console.log("BLABLABLA", tree.findHighestContainingNode(step.from));
         const nodeInTree = tree.findNodeByProsemirrorPosition(step.from + 1);
-        // console.log("POS", nodeInTree);
+        console.log("nodeInTree", JSON.stringify(nodeInTree));
         if (!nodeInTree) throw new NodeUpdateError(" Could not find position to insert node in mapping ");
         const parent = tree.findParent(nodeInTree);
         if (!parent) throw new NodeUpdateError(" Could not find parent of insertion position in mapping ");
 
-
-        // this.serializeNode2(step.slice.content.)
+        
+        // let offsetOriginal = nodeInTree.range.to;
+        let offsetProse = nodeInTree.prosemirrorEnd;
+        let offsetOriginal = step.from;
+        console.log("OffsetProse", offsetProse, "OffsetOriginal", offsetOriginal, "Step.from", step.from, "Step.to", step.to);
+        const nodes: TreeNode[] = [];
         let serialized = "";
         step.slice.content.forEach(node => {
-            const output = this.serializeNode2(node, nodeInTree.range.from, nodeInTree.prosemirrorStart);
-            parent.addChild(output.treeNode);
-            serialized += output.serialized;
-            console.log("OUTPUT", output);
+            const output = this.serializeToText(node);
+            // console.log("OUTPUT", output);
+            console.log("node", node.type.name);
+            console.log("output", output);
+            serialized += output;
+            const builtNode = this.buildTreeFromNode(node, offsetOriginal, offsetProse);
+            nodes.push(builtNode);
+            offsetOriginal += output.length;
+            offsetProse += node.nodeSize + (builtNode.innerRange.to - builtNode.innerRange.from);
         });
-        // this.serializeNode2();
-        console.log(serialized);
-
-
+        console.log("SERIALIZED BY TEXT SERIALIZE\n", serialized);
+        console.log("NODES BY BUILD TREE\n", nodes);
+        
+        
+        
         const docChange: DocChange = {
-            startInFile: nodeInTree.range.from,
-            endInFile: nodeInTree.range.from,
+            startInFile: nodeInTree.range.to,
+            endInFile: nodeInTree.range.to,
             finalText: serialized
         };
 
-        // parent.addChild()
+        const proseOffset = step.slice.content.size;
+        const textOffset = serialized.length;
 
-        return {result: docChange, newTree: tree};
+        // now we need to update the tree
+        tree.traverseDepthFirst((thisNode: TreeNode) => {
+            if (thisNode.prosemirrorStart >= nodeInTree.prosemirrorEnd) {
+                thisNode.shiftOffsets(textOffset, proseOffset);
+            }
+        });
 
-        // throw new Error("DKLJ:FSLKFJ");
-
-        // const insertedNodeType = step.slice.content.firstChild.type.name;
-
-        // const {open, close, content, title} = this.serializeNode(step.slice.content.firstChild);
+        // We add the nodes later so that updating in the step before does not affect the positions of the nodes we are adding
+        nodes.forEach(n => parent.addChild(n));
         
-        // const docChange: DocChange = {
-        //     startInFile: nodeBefore !== null ? nodeBefore.range.to: 0,
-        //     endInFile: nodeBefore !== null ? nodeBefore.range.to: 0,
-        //     finalText: open + content + close
-        // }
-        
-        // const nodeToInsert = new TreeNode(
-        //     insertedNodeType, // node type
-        //     // FIXME: Why -1 here?
-        //     { from: docChange.startInFile + open.length - 1, to: docChange.startInFile + open.length + title.length + content.length }, // Document (inner range) positions
-        //     { from: docChange.startInFile, to: docChange.startInFile + open.length + title.length + content.length + close.length }, // Document (full range) positions
-        //     // docChange.startInFile + open.length, docChange.startInFile + open.length + title.length + content.length, // Document (inner range) positions
-        //     title, // Title
-        //     (nodeBefore !== null ? nodeBefore.prosemirrorEnd : 0) + 1, (nodeBefore !== null ? nodeBefore.prosemirrorEnd : 0) + content.length + 2, // Prosemirror positions
-        //     content // String content
-        // );
+        tree.root.shiftCloseOffsets(textOffset, proseOffset);
 
-        // const prosemirrorOffset = 2 + content.length;
-        // const originalOffset = open.length + close.length + content.length + title.length;
-        // // now we need to update the tree
-        // tree.traverseDepthFirst((node: TreeNode) => {
-        //     // Every node after the inserted node needs to be shifted
-        //     if (node.prosemirrorStart >= nodeToInsert.prosemirrorEnd) {
-        //         node.shiftOffsets(originalOffset, prosemirrorOffset);
-        //     }
-        // });
-
-        // tree.insertByPosition(nodeToInsert);
-
-        // tree.root.shiftCloseOffsets(originalOffset, prosemirrorOffset);
-
-        // return { result: docChange, newTree: tree };
+        return { result: docChange, newTree: tree };
     }
 
-    // serializeAndGenerateTree(...nodes: PNode[]): { serialized: string, treeNodes: TreeNode[], totalOriginalOffset: number, totalProsemirrorOffset: number } {
-        
-    // }
+    serializeToText(node: PNode): string {
+        let serialized: string = "";
+        if (node.type == WaterproofSchema.nodes.markdown) {
+            const serializerOutput = this.serializers.markdown(node.textContent);
+            serialized = serializerOutput;
+        } else if (node.type == WaterproofSchema.nodes.code) {
+            const serializerOutput = this.serializers.code(node.textContent);
+            serialized = serializerOutput;
+        } else if (node.type == WaterproofSchema.nodes.hint) {
+            const title = node.attrs.title;
+            // Has child content
+            const textContent: string[] = [];
+            node.forEach(child => {
+                const output = this.serializeToText(child);
+                textContent.push(output);
+            });
+            serialized = this.serializers.hint(textContent.join(""), title);
+        } else if (node.type == WaterproofSchema.nodes.input) {
+            // Has child content
+            const textContent: string[] = [];
+            node.forEach(child => {
+                const output = this.serializeToText(child);
+                textContent.push(output);
+            });
+            serialized = this.serializers.input(textContent.join(""));
+        } else if (node.type == WaterproofSchema.nodes.math_display) {
+            const serializerOutput = this.serializers.math(node.textContent);
+            serialized += serializerOutput;
+        } else if (node.type == WaterproofSchema.nodes.newline) {
+            serialized = "\n";
+        } else {  
+            throw new NodeUpdateError(`Unsupported node type encountered when serializing node: '${node.type.name}'`);
+        }
 
+        return serialized;
+    }
+
+    buildTreeFromNode(node: PNode, startOrig: number, startProse: number): TreeNode {
+
+        // Shortcut for newline nodes
+        if (node.type == WaterproofSchema.nodes.newline) {
+            return new TreeNode(
+                "newline",
+                {from: startOrig, to: startOrig + 1},
+                {from: startOrig, to: startOrig + 1},
+                "",
+                startProse, startProse + node.nodeSize,
+                ""
+            );
+        }
+
+        const [openTagForNode, closeTagForNode] = this.nodeNameToTagPair(node.type.name, node.attrs.title ? node.attrs.title : "");
+
+        const treeNode = new TreeNode(
+            node.type.name, // node type
+            {from: startOrig + openTagForNode.length, to: 0}, // inner range
+            {from: startOrig, to: 0}, // full range
+            node.attrs.title ? node.attrs.title : "", // title
+            startProse, 0, // prosemirror start, end
+            ""
+        );
+
+        const serialized = this.serializeToText(node);
+
+        let childOffsetOriginal = startOrig + openTagForNode.length;
+        let childOffsetProse = startProse + 1; // +1 for the opening tag
+
+        node.forEach(child => {
+            const childTreeNode = this.buildTreeFromNode(child, childOffsetOriginal, childOffsetProse);
+            treeNode.children.push(childTreeNode);
+            
+            // Update the offsets for the next child
+            const serializedChild = this.serializeToText(child);
+            childOffsetOriginal += serializedChild.length;
+            childOffsetProse += child.nodeSize;
+        });
+
+        // Now fill in the to positions for innerRange and range
+        treeNode.innerRange.to = childOffsetOriginal;
+        treeNode.range.to = childOffsetOriginal + closeTagForNode.length;
+        treeNode.prosemirrorEnd = childOffsetProse - 1;
+        treeNode.stringContent = serialized.substring(openTagForNode.length, serialized.length - closeTagForNode.length);
+        return treeNode;
+    }
 
     serializeNode2(node: PNode, offsetOriginal: number, offsetProse: number): {serialized: string, treeNode: TreeNode, proseShift: number, originalShift: number} {
         // console.log()
@@ -233,7 +290,7 @@ export class NodeUpdate {
 
         treeNode.stringContent = serialized.substring(openTag.length, serialized.length - closeTag.length);
 
-        // As said in (A) we know fill in inner.to and range.to
+        // As said in (A) we now fill in inner.to and range.to
         treeNode.innerRange.to = offsetOriginal + serialized.length - closeTag.length;
         treeNode.range.to = offsetOriginal + serialized.length;
         treeNode.prosemirrorEnd = offsetProse + proseShift - 1;
@@ -447,8 +504,8 @@ export class NodeUpdate {
         // In the case of code blocks we have to be careful to preserve the newlines
 
         if (isCode) {
-            const codeOpen = this.tagConf.codeOpen;
-            const codeClose = this.tagConf.codeClose;
+            const codeOpen = this.tagConf.code.openTag;
+            const codeClose = this.tagConf.code.closeTag;
             const startsWithNewline = originalInner.from > originalOuter.from + codeOpen.length;
             const endsWithNewline = originalOuter.to > originalInner.to + codeClose.length;
 

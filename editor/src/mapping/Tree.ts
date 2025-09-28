@@ -124,6 +124,29 @@ export class Tree {
         return null;
     }
 
+    findNodeByProsePos(pos: number, node: TreeNode | null = this.root): TreeNode | null {
+        if (!node) return null;
+        if (pos < node.prosemirrorStart || pos > node.prosemirrorEnd) return null;
+
+        // Binary search among children
+        let left = 0;
+        let right = node.children.length - 1;
+        while (left <= right) {
+            const mid = Math.floor((left + right) / 2);
+            const child = node.children[mid];
+            if (pos < child.prosemirrorStart) {
+                right = mid - 1;
+            } else if (pos > child.prosemirrorEnd) {
+                left = mid + 1;
+            } else {
+                // Found a child that contains pos, recurse
+                return this.findNodeByProsePos(pos, child);
+            }
+        }
+        // If no child contains pos, return current node
+        return node;
+    }
+
     insertByPosition(newNode: TreeNode): boolean {
         if (!this.root) return false;
         

@@ -280,64 +280,58 @@ export class NodeUpdate {
         return { open, close, content, title };
     }
 
-    replaceDelete(step: ReplaceStep, tree: Tree): ParsedStep {
-        // TODO: Assumes that we are deleting a single node.
+    /**
+     * Handles ReplaceSteps that delete content.
+     * @param step The ReplaceStep for which we determined that it is deletion of one or more nodes.
+     * @param tree The input tree
+     * @returns A ParsedStep containing the resulting DocChange and the updated tree.
+     */
+    replaceDelete(step: ReplaceStep, tree: Tree): ParsedStep {       
+        // Find all nodes that are fully in the deleted range
+        const nodesToDelete: TreeNode[] = [];
+        let from = Number.POSITIVE_INFINITY;
+        let to = Number.NEGATIVE_INFINITY;
+        tree.traverseDepthFirst((node: TreeNode) => {
+            if (node.prosemirrorStart >= step.from && node.prosemirrorEnd <= step.to) {
+                nodesToDelete.push(node);
 
-        // Find the node to delete at the given Prosemirror position
-        const deletedNode = tree.findNodeByProsemirrorPosition(step.from + 1);
-        if (!deletedNode) {
-            throw new NodeUpdateError("Could not find node to delete at the given position.");
-        }
+                if (node.range.from < from) from = node.range.from;
+                if (node.range.to > to) to = node.range.to;
 
-
-        console.log("Deleting node", deletedNode);
-
-
-        // Compute the document change: remove the node's text from the file
-        const docChange: DocChange = {
-            startInFile: deletedNode.range.from,
-            endInFile: deletedNode.range.to,
-            finalText: ""
-        };
-
-        // Remove the node from the tree
-        const parent = tree.findParent(deletedNode);
-        if (parent) {
-            parent.removeChild(deletedNode);
-        } 
-
-        // Calculate offsets for updating positions
-        let proseOffset = 0
-        if (deletedNode.children.length == 0) {
-            proseOffset = 2 + deletedNode.innerRange.to - deletedNode.innerRange.from;
-        } else {
-            deletedNode.traverseDepthFirst((thisNode: TreeNode) => {
-                if (thisNode.children.length == 0) {
-                    console.log("child", thisNode)
-                    proseOffset += 2 + thisNode.innerRange.to - thisNode.innerRange.from;
-                } else {
-                    console.log("parent", thisNode)
-                    proseOffset += 2
+                // Remove from the tree immediately (saves an O(n) traversal over nodesToDelete later)
+                const parent = tree.findParent(node);
+                if (parent) {
+                    parent.removeChild(node);
                 }
-            });
-        }
-        console.log("proseOffset", proseOffset)
-
-        const textOffset = deletedNode.range.to - deletedNode.range.from;
-
-        console.log(tree)
-        // Update positions of nodes after the deleted node
-        tree.traverseDepthFirst((thisNode: TreeNode) => {
-            // only shift nodes that come after the deleted node
-            if (thisNode.prosemirrorStart <= deletedNode.prosemirrorStart && thisNode.prosemirrorEnd >= deletedNode.prosemirrorEnd) {
-                console.log("innerNode:", thisNode)
-                thisNode.shiftCloseOffsets(-textOffset, -proseOffset)
-            } else if (thisNode.prosemirrorStart > deletedNode.prosemirrorEnd) {
-                console.log("afterNode:", thisNode)
-                thisNode.shiftOffsets(-textOffset, -proseOffset);
             }
         });
-        console.log(tree)
+
+        console.log("NODES TO DELETE", nodesToDelete);
+
+        if (nodesToDelete.length == 0) {
+            throw new NodeUpdateError("Could not find any nodes to delete in the given step.");
+        }
+
+        // Create the docChange, the range to remove is from the start of the first node to the end of the last node
+        const docChange: DocChange = {
+            startInFile: from,
+            endInFile: to,
+            finalText: ""
+        };
+        
+        // The length of text removed from the original document
+        const originalRemovedLength = docChange.endInFile - docChange.startInFile;
+        // The total length (as prosemirror indexing) of the nodes removed
+        const proseRemovedLength = step.to - step.from;
+        
+        // Update positions of nodes after the deleted nodes
+        tree.traverseDepthFirst((thisNode: TreeNode) => {
+            // only shift nodes that come after the deleted nodes
+            if (thisNode.prosemirrorStart >= step.to) {
+                thisNode.shiftOffsets(-originalRemovedLength, -proseRemovedLength);
+            }
+        });
+        tree.root.shiftCloseOffsets(-originalRemovedLength, -proseRemovedLength);
 
         return { result: docChange, newTree: tree };
     }

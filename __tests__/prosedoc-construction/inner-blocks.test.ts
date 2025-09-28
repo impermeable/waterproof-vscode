@@ -1,4 +1,4 @@
-import { typeguards } from "waterproof-editor";
+import { typeguards } from "@impermeable/waterproof-editor";
 import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "../../editor/src/document-construction/inner-blocks";
 import { expect } from "@jest/globals";
 

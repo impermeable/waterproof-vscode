@@ -1,4 +1,4 @@
-import { DocChange, WrappingDocChange } from "waterproof-editor";
+import { DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
 import { Message, MessageType } from "../../shared";
 
 

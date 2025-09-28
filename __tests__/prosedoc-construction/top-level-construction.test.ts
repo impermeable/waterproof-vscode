@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-escape */
 // Disable due to latex code in sample data
-import { MarkdownBlock, typeguards } from "waterproof-editor";
+import { MarkdownBlock, typeguards } from "@impermeable/waterproof-editor";
 import { blocksFromMV, blocksFromV } from "../../editor/src/document-construction/construct-document";
 import { expect } from '@jest/globals';
 

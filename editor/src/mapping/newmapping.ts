@@ -194,8 +194,8 @@ export class TextDocMappingNew implements WaterproofMapping {
         let offset = currentOffset;
 
         if (node.type === "newline") {
-            node.prosemirrorStart = offset + 1;
-            node.prosemirrorEnd = offset + 2;
+            node.prosemirrorStart = offset;
+            node.prosemirrorEnd = offset + 1;
             return offset;
         }
 

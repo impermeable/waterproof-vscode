@@ -1,4 +1,4 @@
-import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
+import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
 
 
 enum VParserState {
@@ -10,6 +10,8 @@ enum VParserState {
 	Markdown,
 	/** Parsing math display ($$ ... $$) inside markdown */
 	MathDisplay,
+	/** Parse a newline after Markdown, Hints, InputAreas */
+	Newline,
 }
 
 enum VNestedState {
@@ -118,7 +120,6 @@ export function vFileParser(document: string): WaterproofDocument {
             const endsWithNewline = document[range.to - 1] === '\n';
 			const codeBlock = new CodeBlock(
 				document.slice(range.from + (startsWithNewline ? 1 : 0), range.to - (endsWithNewline ? 1 : 0)),
-				startsWithNewline ? "\n" : "\n", "\n", "", endsWithNewline ? "\n" : "",
 				range, range
 			);
 			pushBlock(codeBlock);
@@ -202,7 +203,12 @@ export function vFileParser(document: string): WaterproofDocument {
 					);
 					pushBlock(hintBlock);
 					i += hintCloseLength;
-					backToCode(true);
+
+					state = VParserState.Newline;
+					setRangeStart();
+					setInnerRangeStart();
+					innerBlocks = [];
+
 					hintTitle = "";
 					continue;
 				} else if (nested === VNestedState.Input && closesInputBlock()) {
@@ -217,7 +223,12 @@ export function vFileParser(document: string): WaterproofDocument {
 					);
 					pushBlock(inputBlock);
 					i += inputCloseLength;
-					backToCode(true);
+
+					state = VParserState.Newline;
+					setRangeStart();
+					setInnerRangeStart();
+					innerBlocks = [];
+
 					continue;
 				} else {
 					i++;
@@ -235,12 +246,25 @@ export function vFileParser(document: string): WaterproofDocument {
 				} else if (closesMarkdownBlock()) {
 					closeMarkdown();
 					i += markdownCloseLength;
-					backToCode();
+					state = VParserState.Newline;
+					setRangeStart();
+					setInnerRangeStart();
 					continue;
 				} else {
 					i++;
 					continue;
 				}
+			}
+			case VParserState.Newline: {
+				if (document[i] === '\n') {
+					i++;
+					// create a newline block
+					const range = { from: getRangeStart(), to: i };
+					const newlineBlock = new NewlineBlock(range, range);
+					pushBlock(newlineBlock);
+				}
+				backToCode();
+				continue;
 			}
 			case VParserState.MathDisplay: {
 				if (closesMathBlock()) {

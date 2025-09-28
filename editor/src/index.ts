@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, markdownConfiguration, markdownSerializers, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, markdown, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
@@ -20,19 +20,6 @@ import { topLevelBlocksMV } from "./document-construction/construct-document";
 interface VSCodeAPI {
 	postMessage: (message: Message) => void;
 }
-
-// const tagMapMV: TagMap = {
-//     markdownOpen: "",
-//     markdownClose: "",
-//     codeOpen: "```coq\n",
-//     codeClose: "\n```",
-//     hintOpen: (title: string) => `<hint title="${title}">`,
-//     hintClose: "</hint>",
-//     inputOpen: '<input-area>',
-//     inputClose: "</input-area>",
-//     mathOpen: "$$",
-//     mathClose: "$$"
-// }
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
@@ -68,12 +55,12 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		},
 		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
 		documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : vFileParser,
+		// documentConstructor: format === FileFormat.MarkdownV ? doc => markdownParser(doc, "coq") : vFileParser,
 		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
-		// documentConstructor: vFileParser,
 		mapping: TextDocMappingNew,
-		tagConfiguration: markdownConfiguration("coq"),
-		serializers: markdownSerializers("coq")
+		tagConfiguration: markdown.configuration("coq"),
+		serializers: markdown.serializers("coq")
 	}
 
 	return cfg;
@@ -163,6 +150,7 @@ window.onload = () => {
 				break;
 		}
 	});
+	
 	let timeoutHandle: number | undefined;
 	window.addEventListener('scroll', (_event) => {
 		if (timeoutHandle === undefined) {

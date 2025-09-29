@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, markdown, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, markdown, TagConfiguration, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
@@ -20,6 +20,39 @@ import { topLevelBlocksMV } from "./document-construction/construct-document";
 interface VSCodeAPI {
 	postMessage: (message: Message) => void;
 }
+
+const tagConfigurationV: TagConfiguration = {
+	code: {
+		openTag: "", closeTag: "",
+		openRequiresNewline: false, closeRequiresNewline: false
+	},
+	hint: {
+		openTag: (title) => `(* begin details : ${title} *)\n`,
+		closeTag: "\n(* end details *)",
+		openRequiresNewline: true,
+		closeRequiresNewline: true,
+	},
+	input: {
+		openTag: "(* begin input *)\n",
+		closeTag: "\n(* end input *)",
+		openRequiresNewline: true,
+		closeRequiresNewline: true,
+	},
+	markdown: {
+		openTag: "(** ",
+		closeTag: " *)",
+		openRequiresNewline: true,
+		closeRequiresNewline: true
+	},
+	math: {
+		openTag: "$", closeTag: "$",
+		openRequiresNewline: false, closeRequiresNewline: false,
+	}
+}
+
+// const serializersV: Serializers = {
+// 	code: (content) => 
+// }
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
@@ -59,8 +92,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
 		mapping: TextDocMappingNew,
-		tagConfiguration: markdown.configuration("coq"),
-		serializers: markdown.serializers("coq")
+		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq") : tagConfigurationV,
 	}
 
 	return cfg;
@@ -84,6 +116,9 @@ window.onload = () => {
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
 	const cfg = createConfiguration(format, codeAPI);
 	const editor = new WaterproofEditor(editorElement, cfg);
+
+	//@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.
+	window.editorInstance = editor;
 
 	// Register event listener for communication between extension and editor
 	window.addEventListener("message", (event: MessageEvent<Message>) => {

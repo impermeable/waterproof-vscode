@@ -1,4 +1,4 @@
-import { ReplaceAroundStep, ReplaceStep, Node as PNode, WaterproofSchema, WrappingDocChange, NodeUpdateError, TagConfiguration, Serializers } from "@impermeable/waterproof-editor";
+import { ReplaceAroundStep, ReplaceStep, Node as PNode, WaterproofSchema, WrappingDocChange, NodeUpdateError, TagConfiguration, DocumentSerializer } from "@impermeable/waterproof-editor";
 import { Tree, TreeNode } from "./Tree";
 import { OperationType, ParsedStep } from "./types";
 import { DocChange } from "@impermeable/waterproof-editor";
@@ -14,7 +14,7 @@ function typeFromStep(step: ReplaceStep | ReplaceAroundStep): OperationType {
 }
 
 export class NodeUpdate {
-    constructor (private tagConf: TagConfiguration, private serializers: Serializers) {} 
+    constructor (private tagConf: TagConfiguration, private serializer: DocumentSerializer) {} 
 
 
     nodeNameToTagPair(nodeName: string, title: string = ""): [string, string] {
@@ -97,7 +97,7 @@ export class NodeUpdate {
         const nodes: TreeNode[] = [];
         let serialized = "";
         step.slice.content.forEach(node => {
-            const output = this.serializeToText(node);
+            const output = this.serializer.serializeNode(node);
             // console.log("OUTPUT", output);
             console.log("node", node.type.name);
             console.log("output", output);
@@ -136,42 +136,7 @@ export class NodeUpdate {
         return { result: docChange, newTree: tree };
     }
 
-    serializeToText(node: PNode): string {
-        let serialized: string = "";
-        if (node.type == WaterproofSchema.nodes.markdown) {
-            const serializerOutput = this.serializers.markdown(node.textContent);
-            serialized = serializerOutput;
-        } else if (node.type == WaterproofSchema.nodes.code) {
-            const serializerOutput = this.serializers.code(node.textContent);
-            serialized = serializerOutput;
-        } else if (node.type == WaterproofSchema.nodes.hint) {
-            const title = node.attrs.title;
-            // Has child content
-            const textContent: string[] = [];
-            node.forEach(child => {
-                const output = this.serializeToText(child);
-                textContent.push(output);
-            });
-            serialized = this.serializers.hint(textContent.join(""), title);
-        } else if (node.type == WaterproofSchema.nodes.input) {
-            // Has child content
-            const textContent: string[] = [];
-            node.forEach(child => {
-                const output = this.serializeToText(child);
-                textContent.push(output);
-            });
-            serialized = this.serializers.input(textContent.join(""));
-        } else if (node.type == WaterproofSchema.nodes.math_display) {
-            const serializerOutput = this.serializers.math(node.textContent);
-            serialized += serializerOutput;
-        } else if (node.type == WaterproofSchema.nodes.newline) {
-            serialized = "\n";
-        } else {  
-            throw new NodeUpdateError(`Unsupported node type encountered when serializing node: '${node.type.name}'`);
-        }
-
-        return serialized;
-    }
+    
 
     buildTreeFromNode(node: PNode, startOrig: number, startProse: number): TreeNode {
 
@@ -198,7 +163,7 @@ export class NodeUpdate {
             ""
         );
 
-        const serialized = this.serializeToText(node);
+        const serialized = this.serializer.serializeNode(node);
 
         let childOffsetOriginal = startOrig + openTagForNode.length;
         let childOffsetProse = startProse + 1; // +1 for the opening tag
@@ -208,7 +173,7 @@ export class NodeUpdate {
             treeNode.children.push(childTreeNode);
             
             // Update the offsets for the next child
-            const serializedChild = this.serializeToText(child);
+            const serializedChild = this.serializer.serializeNode(child);
             childOffsetOriginal += serializedChild.length;
             childOffsetProse += child.nodeSize;
         });
@@ -219,122 +184,6 @@ export class NodeUpdate {
         treeNode.prosemirrorEnd = childOffsetProse - 1;
         treeNode.stringContent = serialized.substring(openTagForNode.length, serialized.length - closeTagForNode.length);
         return treeNode;
-    }
-
-    serializeNode2(node: PNode, offsetOriginal: number, offsetProse: number): {serialized: string, treeNode: TreeNode, proseShift: number, originalShift: number} {
-        // console.log()
-        let serialized: string = "";
-        let proseShift = 0;
-        let originalShift = 0;
-        const [openTag, closeTag] = this.nodeNameToTagPair(node.type.name, node.attrs.title ? node.attrs.title : "");
-        // const treeNode = new TreeNode(node.type.name, {from: offsetOriginal + openTag.length, to: openTag.length}, {from: 0, to: 0}, node.attrs.title ? node.attrs.title : "", 0, 0, "");
-
-        // We fill inner.to and range.to in later, after we know the full serialized length (A)
-        const treeNode = new TreeNode(node.type.name, {from: offsetOriginal + openTag.length, to: 0}, {from: offsetOriginal, to: 0}, node.attrs.title ? node.attrs.title : "", offsetProse + 1, 0, "");
-
-        if (node.type == WaterproofSchema.nodes.markdown) {
-            const serializerOutput = this.serializers.markdown(node.textContent);
-            serialized = serialized.concat(serializerOutput);
-            proseShift += 2 + node.textContent.length;
-            originalShift += serializerOutput.length;
-        } else if (node.type == WaterproofSchema.nodes.code) {
-            const serializerOutput = this.serializers.code(node.textContent);
-            serialized = serialized.concat(serializerOutput);
-            proseShift += 2 + node.textContent.length;
-            originalShift += serializerOutput.length;
-        } else if (node.type == WaterproofSchema.nodes.hint) {
-            const title = node.attrs.title;
-            // Has child content
-            const textContent: string[] = [];
-            proseShift += 1; // to move past the opening tag
-            node.forEach(child => {
-                const output = this.serializeNode2(child, offsetOriginal + proseShift, offsetProse + proseShift);
-                treeNode.children.push(output.treeNode);
-                if (child.type == WaterproofSchema.nodes.newline) {
-                    proseShift += 1;
-                } else {
-                    proseShift += output.proseShift;
-                    originalShift += output.originalShift;
-                }
-                textContent.push(output.serialized);
-            });
-            serialized += this.serializers.hint(textContent.join(""), title);
-        } else if (node.type == WaterproofSchema.nodes.input) {
-            // Has child content
-            const textContent: string[] = [];
-            proseShift += 1; // to move past the opening tag
-            node.forEach(child => {
-                const output = this.serializeNode2(child, offsetOriginal + proseShift, offsetProse + proseShift);
-                treeNode.children.push(output.treeNode);
-                if (child.type == WaterproofSchema.nodes.newline) {
-                    proseShift += 1;
-                } else {
-                    proseShift += output.proseShift;
-                    originalShift += output.originalShift;
-                }
-                textContent.push(output.serialized);
-            });
-            serialized += this.serializers.input(textContent.join(""));
-        } else if (node.type == WaterproofSchema.nodes.math_display) {
-            const serializerOutput = this.serializers.math(node.textContent);
-            serialized += serializerOutput;
-            proseShift += 2 + node.textContent.length;
-            originalShift += serializerOutput.length;
-        } else if (node.type == WaterproofSchema.nodes.newline) {
-            serialized += "\n";
-            proseShift += 1;
-            originalShift += 1;
-        } else {  
-            throw new NodeUpdateError(`Unsupported node type: ${node.type.name}`);
-        }
-
-        treeNode.stringContent = serialized.substring(openTag.length, serialized.length - closeTag.length);
-
-        // As said in (A) we now fill in inner.to and range.to
-        treeNode.innerRange.to = offsetOriginal + serialized.length - closeTag.length;
-        treeNode.range.to = offsetOriginal + serialized.length;
-        treeNode.prosemirrorEnd = offsetProse + proseShift - 1;
-
-
-        return {serialized, treeNode, proseShift, originalShift};
-    }
-
-    serializeNode(
-        node: PNode,
-    ): { open: string, close: string, content: string, title: string } {
-        let open = "";
-        let close = "";
-        let content = node.textContent;
-        let title = "";
-
-        if (node.type == WaterproofSchema.nodes.markdown) {
-            open = this.tagConf.markdown.openTag;
-            close = this.tagConf.markdown.closeTag;
-        } else if (node.type == WaterproofSchema.nodes.code) {
-            open = this.tagConf.code.openTag;
-            close = this.tagConf.code.closeTag;
-        } else if (node.type == WaterproofSchema.nodes.hint) {
-            title = node.attrs.title;
-            open = this.tagConf.hint.openTag(title);
-            close = this.tagConf.hint.closeTag;
-        } else if (node.type == WaterproofSchema.nodes.input) {
-            open = this.tagConf.input.openTag;
-            close = this.tagConf.input.closeTag;
-        } else if (node.type == WaterproofSchema.nodes.math_display) {
-            open = this.tagConf.math.openTag;
-            close = this.tagConf.math.closeTag;
-        } else if (node.type == WaterproofSchema.nodes.newline) {
-            open = "";
-            close = "";
-            content = "\n";
-        } else {
-            throw new NodeUpdateError(`Unsupported node type: ${node.type.name}`);
-        }
-
-        // if (includeStartNewline) open = "\n" + open;
-        // if (includeEndNewline) close = close + "\n";
-
-        return { open, close, content, title };
     }
 
     /**

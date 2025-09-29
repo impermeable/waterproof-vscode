@@ -1,5 +1,5 @@
 import { Tree, TreeNode } from "./Tree";
-import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, TagConfiguration, WaterproofMapping, MappingError, WaterproofSchema, Serializers } from "@impermeable/waterproof-editor";
+import { Step, ReplaceStep, ReplaceAroundStep, typeguards, Node, TagConfiguration, WaterproofMapping, MappingError, WaterproofSchema, DocumentSerializer } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "./textUpdate";
 import { NodeUpdate } from "./nodeUpdate";
 import { ParsedStep } from "./types";
@@ -23,12 +23,12 @@ export class TextDocMappingNew implements WaterproofMapping {
      *
      * @param inputBlocks a string containing the prosemirror content html element
      */
-    constructor(inputBlocks: Block[], versionNum: number, tMap: TagConfiguration, serializers: Serializers) {
+    constructor(inputBlocks: Block[], versionNum: number, tMap: TagConfiguration, serializer: DocumentSerializer) {
         this.textUpdate = new TextUpdate();
-        this.nodeUpdate = new NodeUpdate(tMap, serializers);
+        this.nodeUpdate = new NodeUpdate(tMap, serializer);
         this._version = versionNum;
         this.tree = new Tree();
-        this.initialize(inputBlocks);
+        this.initTree(inputBlocks);
         console.log(inputBlocks);
         console.log("MAPPED TREE", JSON.stringify(this.tree));
     }
@@ -118,16 +118,12 @@ export class TextDocMappingNew implements WaterproofMapping {
 
     //// The methods used to manage the mapping
 
-    /**
-     * Initializes the mapping according to the inputted HTML content element
-     *
-     * @param inputBlocks the structure representing the inputted HTML content
-     */
-    private initialize(inputBlocks: Block[]): void {
-        this.mapToTree(inputBlocks);
-    }
 
-    private mapToTree(blocks: Block[]): void {
+    /**
+     * Initializes the mapping given the input document in the form of a Block array.
+     * @param blocks 
+     */
+    private initTree(blocks: Block[]): void {
         // Create a root node with dummy values
 
         const root = new TreeNode(

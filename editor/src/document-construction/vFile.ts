@@ -116,10 +116,8 @@ export function vFileParser(document: string): WaterproofDocument {
 	function closeCode() {
 		if (i > getRangeStart()) {
 			const range = { from: getRangeStart(), to: i };
-            const startsWithNewline = document[range.from] === '\n';
-            const endsWithNewline = document[range.to - 1] === '\n';
 			const codeBlock = new CodeBlock(
-				document.slice(range.from + (startsWithNewline ? 1 : 0), range.to - (endsWithNewline ? 1 : 0)),
+				document.slice(range.from, range.to),
 				range, range
 			);
 			pushBlock(codeBlock);
@@ -197,7 +195,7 @@ export function vFileParser(document: string): WaterproofDocument {
 					const innerRange = { from: getInnerRangeStart(), to: i };
 					const hintBlock = new HintBlock(
 						document.slice(innerRange.from, innerRange.to),
-						hintTitle.trim(),
+						hintTitle,
 						range, innerRange,
 						innerBlocks
 					);
@@ -231,7 +229,23 @@ export function vFileParser(document: string): WaterproofDocument {
 
 					continue;
 				} else {
-					i++;
+					if (document[i] === '\n') {
+						i++;
+						if (opensHintBlock() || opensInputBlock() || opensMarkdownBlock()) {
+							i--;
+							closeCode();
+							// create a newline block
+							const range = { from: i, to: i + 1 };
+							const newlineBlock = new NewlineBlock(range, range);
+							pushBlock(newlineBlock);
+							i++;
+							setRangeStart();
+							setInnerRangeStart();
+							continue;
+						}
+					} else {
+						i++;
+					}
 					continue;
 				}
 			}

@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, markdown, TagConfiguration, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, markdown, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
@@ -12,6 +12,7 @@ import { vFileParser } from "./document-construction/vFile";
 // import { markdownParser } from "./document-construction/statemachine";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksMV } from "./document-construction/construct-document";
+import { tagConfigurationV } from "./vFileConfiguration";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -20,39 +21,6 @@ import { topLevelBlocksMV } from "./document-construction/construct-document";
 interface VSCodeAPI {
 	postMessage: (message: Message) => void;
 }
-
-const tagConfigurationV: TagConfiguration = {
-	code: {
-		openTag: "", closeTag: "",
-		openRequiresNewline: false, closeRequiresNewline: false
-	},
-	hint: {
-		openTag: (title) => `(* begin details : ${title} *)\n`,
-		closeTag: "\n(* end details *)",
-		openRequiresNewline: true,
-		closeRequiresNewline: true,
-	},
-	input: {
-		openTag: "(* begin input *)\n",
-		closeTag: "\n(* end input *)",
-		openRequiresNewline: true,
-		closeRequiresNewline: true,
-	},
-	markdown: {
-		openTag: "(** ",
-		closeTag: " *)",
-		openRequiresNewline: true,
-		closeRequiresNewline: true
-	},
-	math: {
-		openTag: "$", closeTag: "$",
-		openRequiresNewline: false, closeRequiresNewline: false,
-	}
-}
-
-// const serializersV: Serializers = {
-// 	code: (content) => 
-// }
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object

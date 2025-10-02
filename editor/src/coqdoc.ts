@@ -28,17 +28,16 @@ export function translateCoqDoc(coqdoc: string) {
      * Replace headers according to
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#sections
      * 
-     * 
-     * I hate this. The order here matters so go from more * to less. 
+     * The order here matters so go from more * to less. 
      */
     // Replace all H4 headers inside the coqdoc comment with markdown header.
-    commentInside = commentInside.replaceAll(/(?<![.A-Za-z\d(]+)\*{4}\s+([^\n\r]+)/g, "#### $1");
+    commentInside = commentInside.replaceAll(/^\*{4}\s+([^\n\r]+)/gm, "#### $1");
     // Replace all H3 headers inside the coqdoc comment with markdown header.
-    commentInside = commentInside.replaceAll(/(?<![.A-Za-z\d(]+)\*{3}\s+([^\n\r]+)/g, "### $1");
+    commentInside = commentInside.replaceAll(/^\*{3}\s+([^\n\r]+)/gm, "### $1");
     // Replace all H2 headers inside the coqdoc comment with markdown header.
-    commentInside = commentInside.replaceAll(/(?<![.A-Za-z\d(]+)\*{2}\s+([^\n\r]+)/g, "## $1");
+    commentInside = commentInside.replaceAll(/^\*{2}\s+([^\n\r]+)/gm, "## $1");
     // Replace all H1 headers inside the coqdoc comment with markdown header.
-    commentInside = commentInside.replaceAll(/(?<![.A-Za-z\d(]+)\*{1}\s+([^\n\r]+)/g, "# $1");
+    commentInside = commentInside.replaceAll(/^\*{1}\s+([^\n\r]+)/gm, "# $1");
 
     // List (-)
     const listMatchesPlaceHolder = Array.from(commentInside.matchAll(/( {2})-/g));
@@ -68,7 +67,7 @@ export function translateCoqDoc(coqdoc: string) {
      * Replace quoted coq according to: 
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#coq-material-inside-documentation
      */
-    commentInside = commentInside.replaceAll(/\[([\s\S]+)\]/g, `\`$1\``);
+    commentInside = commentInside.replaceAll(/\[([^\]]+)\]/g, `\`$1\``);
 
     // Try to apply every pretty printing rule.
     ppTable.forEach((value: string, key: string) => {

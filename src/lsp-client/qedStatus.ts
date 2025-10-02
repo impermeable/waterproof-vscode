@@ -30,13 +30,14 @@ export function getInputAreas(document: TextDocument): Range[] | undefined {
     const closeOffsets = findOccurrences("</input-area>", content);
     if (!isValid(openOffsets, closeOffsets)) return undefined;
 
-    // map offsets to ranges
-    const inputAreas: Range[] = [];
+    // We know the length of this array in advance
+    const inputAreas: Range[] = new Array(openOffsets.length);
     for (let i = 0; i < openOffsets.length; i++) {
-        inputAreas.push(new Range(
+        // Convert the open and close positions to ranges
+        inputAreas[i] = new Range(
             document.positionAt(openOffsets[i]),
             document.positionAt(closeOffsets[i]),
-        ));
+        );
     }
     return inputAreas;
 }

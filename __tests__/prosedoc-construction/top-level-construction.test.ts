@@ -2,7 +2,7 @@
 // Disable due to latex code in sample data
 
 import { BlockRange, MarkdownBlock, typeguards } from "@impermeable/waterproof-editor";
-import { topLevelBlocksMV } from "../../editor/src/document-construction/construct-document"
+import { topLevelBlocksMV, topLevelBlocksLean } from "../../editor/src/document-construction/construct-document"
 
 const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">
@@ -25,6 +25,23 @@ Random Markdown list:
     1. Item 3
     2. Item 0
     3. $1 + 1$
+`;
+
+const inputDocumentLean = `def test := 3
+/-!
+# Markdown Header
+$$2 + 3 = 4$$
+This is *italicized*
+-/
+
+/- begin details : example hint -/
+import Mathlib.CategoryTheory.Functor.Basic
+/- end details -/
+
+def hello :=
+/- begin input -/
+    "Hello, World!"
+/- end input -/
 `;
 
 
@@ -52,7 +69,7 @@ test("Parse top level blocks (MV)", () => {
     expect(blocks[5].stringContent).toBe(" \int_0^2 x dx ");
 
     expect(typeguards.isNewlineBlock(blocks[6])).toBe(true);
-    
+
     expect(typeguards.isCodeBlock(blocks[7])).toBe(true);
     expect(blocks[7].stringContent).toBe("Compute 1 + 1.");
 
@@ -73,7 +90,7 @@ Compute 3 + 3.
     const [md, nl, code] = blocks;
 
     expect(typeguards.isMarkdownBlock(md)).toBe(true);
-    expect(md.stringContent).toBe("Test");    
+    expect(md.stringContent).toBe("Test");
     expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 4 });
     expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 4 });
 
@@ -98,7 +115,7 @@ Proof. auto. Qed.
     const blocks = topLevelBlocksMV(input);
     expect(blocks.length).toBe(1);
     const [ia] = blocks;
-    
+
     expect(typeguards.isInputAreaBlock(ia)).toBe(true);
     expect(ia.stringContent).toBe("$$a^2 + b^2 = c^2$$\n```coq\nLemma trivial : True.\nProof. auto. Qed.\n```\n");
     expect(ia.range).toStrictEqual<BlockRange>({ from: 0, to: input.length });
@@ -140,7 +157,7 @@ Goal True.
 
     expect(blocks.length).toBe(2);
     const [md, ia] = blocks;
-    
+
     expect(typeguards.isMarkdownBlock(md)).toBe(true);
     expect(md.stringContent).toBe("# Header");
     expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 8 });
@@ -151,9 +168,35 @@ Goal True.
     expect(ia.range).toStrictEqual<BlockRange>({ from: 8, to: input.length });
     expect(ia.innerRange).toStrictEqual<BlockRange>({ from: 8 + "<input-area>".length, to: input.length - "</input-area>".length });
     expect(ia.innerBlocks).toBeDefined();
-    
-    
+
+
     expect(ia.innerBlocks?.length).toBe(5);
 
 
 });
+
+test("Parse top level blocks (Lean)", () => {
+    const blocks = topLevelBlocksLean(inputDocumentLean);
+    expect(blocks.length).toBe(6);
+
+    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
+    expect(blocks[0].stringContent).toBe("def test := 3\n")
+
+    expect(typeguards.isMarkdownBlock(blocks[1])).toBe(true);
+    expect(blocks[1].stringContent).toBe("# Markdown Header\n");
+
+    expect(typeguards.isMathDisplayBlock(blocks[2])).toBe(true);
+    expect(blocks[2].stringContent).toBe("2 + 3 = 4\n");
+
+    expect(typeguards.isMarkdownBlock(blocks[3])).toBe(true);
+    expect(blocks[3].stringContent).toBe("This is *italicized*\n");
+
+    expect(typeguards.isHintBlock(blocks[4])).toBe(true);
+    expect(blocks[4].stringContent).toBe("import Mathlib.CategoryTheory.Functor.Basic");
+
+    expect(typeguards.isCodeBlock(blocks[5])).toBe(true);
+    expect(blocks[5].stringContent).toBe("def hello :=\n")
+
+    expect(typeguards.isInputAreaBlock).toBe(true);
+    expect(blocks[5].stringContent).toBe("    \"Hello, World!\"");
+})

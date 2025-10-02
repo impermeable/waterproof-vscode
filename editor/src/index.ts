@@ -11,8 +11,9 @@ import { TextDocMappingNew } from "./mapping";
 import { vFileParser } from "./document-construction/vFile";
 // import { markdownParser } from "./document-construction/statemachine";
 import { coqdocToMarkdown } from "./coqdoc";
-import { topLevelBlocksMV } from "./document-construction/construct-document";
+import { topLevelBlocksLean, topLevelBlocksMV } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
+import { tagConfigurationLean } from "./leanFileConfiguration";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -55,12 +56,15 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 
 		},
 		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
-		documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : vFileParser,
+		documentConstructor:
+			format === FileFormat.MarkdownV ? topLevelBlocksMV
+			                                : (format === FileFormat.RegularV) ? vFileParser : topLevelBlocksLean,
 		// documentConstructor: format === FileFormat.MarkdownV ? doc => markdownParser(doc, "coq") : vFileParser,
-		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
-		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
+		toMarkdown: (format === FileFormat.MarkdownV || format === FileFormat.Lean) ? defaultToMarkdown : coqdocToMarkdown,
+		markdownName: (format === FileFormat.MarkdownV || format === FileFormat.Lean) ? "Markdown" : "coqdoc",
 		mapping: TextDocMappingNew,
-		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq") : tagConfigurationV,
+		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq")
+		                                                  : (format === FileFormat.RegularV) ? tagConfigurationV : tagConfigurationLean,
 	}
 
 	return cfg;
@@ -79,7 +83,7 @@ window.onload = () => {
 		throw Error("Could not acquire the vscode api.");
 		// TODO: maybe sent some sort of test message?
 	}
-	const format = document.body.getAttribute("format") === "markdownv" ? FileFormat.MarkdownV : FileFormat.RegularV;
+	const format = document.body.getAttribute("format") as FileFormat;
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
 	const cfg = createConfiguration(format, codeAPI);

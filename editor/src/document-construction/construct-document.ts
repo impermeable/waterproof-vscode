@@ -1,9 +1,9 @@
-import { Block, HintBlock, InputAreaBlock, MarkdownBlock, utils } from "@impermeable/waterproof-editor";
+import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, utils, WaterproofDocument } from "@impermeable/waterproof-editor";
 import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks } from "./block-extraction";
 
 // 0A. Extract the top level blocks from the input document.
-export function topLevelBlocksMV(inputDocument: string): Block[] {
-    // There are five different 'top level' blocks, 
+export function topLevelBlocksMV(inputDocument: string): WaterproofDocument {
+    // There are five different 'top level' blocks,
     // - hint
     // - input_area
     // - math_display
@@ -39,3 +39,62 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
     return allBlocks;
 }
 
+export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
+    // NOTE: this is a temporary implementation that is going to be refactored or rewritten
+
+    // find all block comments
+    const tags: RegExpExecArray[] = Array.from(inputDocument.matchAll(/(?:\r\n|\n)?\/-!?\s*([\s\S]*?)\s*-\/\r?\n/g))
+    const blocks: Block[] = [];
+
+    let currentBlock: RegExpExecArray|null = null;
+    let innerBlocks: Block[] = [];
+
+    let prevEnd = 0;
+
+    // go over all tags
+    tags.forEach((tag: RegExpExecArray) => {
+        // add a code block with the preceding text
+        const range = { from: prevEnd, to: tag.index };
+        const innerRange = range;
+        const content = inputDocument.substring(innerRange.from, innerRange.to);
+        if (currentBlock)
+            innerBlocks.push(new CodeBlock(content, range, innerRange));
+        else
+            blocks.push(new CodeBlock(content, range, innerRange));
+
+        if (tag[1] === "end") {
+            // TODO: throw an error
+            if (currentBlock === null) return;  // not in a block, ignore
+
+            const range = { from: currentBlock.index, to: tag.index + tag[0].length }
+            const innerRange = { from: currentBlock.index + currentBlock[0].length, to: tag.index };
+            const content = inputDocument.substring(innerRange.from, innerRange.to);
+            if (currentBlock[1].match(/^begin input$/)) {
+                blocks.push(new InputAreaBlock(content, range, innerRange, innerBlocks));
+                innerBlocks = [];
+                prevEnd = tag.index + tag[0].length;
+                currentBlock = null;
+            } else if (currentBlock[1].match(/^begin details : /)) {
+                const title = currentBlock[1].match(/^begin details : ([\s\S]*)/)[1];
+                blocks.push(new HintBlock(content, title, range, innerRange, innerBlocks));
+                innerBlocks = [];
+                prevEnd = tag.index + tag[0].length;
+                currentBlock = null;
+            }
+        }
+
+        const isMarkdown = tag[0].match(/^\/-!/);
+        if (isMarkdown) {
+            const content = tag[1];
+            const range = { from: tag.index, to: tag.index + tag[0].length };
+            const innerRange = { from: range.from + '/-!'.length, to: range.to - '-/'.length };
+            blocks.push(new MarkdownBlock(content, range, innerRange));
+            prevEnd = tag.index + tag[0].length;
+        } else if (tag[1].match(/^begin (?:input|details : [\s\S]*?)$/)) {
+            currentBlock = tag;
+            prevEnd = tag.index + tag[0].length;
+        }
+    })
+
+    return blocks.filter(block => block.range.from != block.range.to);
+}

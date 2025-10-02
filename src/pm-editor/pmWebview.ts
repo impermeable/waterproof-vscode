@@ -83,7 +83,7 @@ export class ProseMirrorWebview extends EventEmitter {
             this.redoHandler.bind(this));
 
         const fileName = WaterproofFileUtil.getBasename(doc.uri)
-        
+
         if (isIllegalFileName(fileName)) {
             const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "-", "(", ")". Please rename the file.`
             window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
@@ -98,17 +98,17 @@ export class ProseMirrorWebview extends EventEmitter {
         });
         this._cachedMessages = new Map();
         this._document = doc;
-        
+
         this._nonInputRegions = getNonInputRegions(doc.getText());
-        
+
         this._teacherMode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
         this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(WaterproofSetting.EnforceCorrectNonInputArea);
         this._lastCorrectDocString = doc.getText();
-        
+
         const format = getFormatFromExtension(doc);
         if (format === undefined) {
             // FIXME: We should never encounter this, as the extension is only activated for .v and .mv files?
-            WaterproofLogger.log("Aborting creation of Waterproof editor. Encountered a file with extension different from .mv or .v!");
+            WaterproofLogger.log("Aborting creation of Waterproof editor. Encountered a file with extension different from .mv, .v, or .lean!");
             return;
         }
         this._format = format;
@@ -246,7 +246,7 @@ export class ProseMirrorWebview extends EventEmitter {
             <meta charset="utf-8">
             <script defer src="${scriptUri}" nonce="${nonce}"></script><link href="${styleUri}" rel="stylesheet">
         </head>
-        <body format="${this._format === FileFormat.MarkdownV ? "markdownv" : "regularv"}">
+        <body format="${this._format}">
             <article>
                 <!-- The div underneath stores the editor -->
                 <div id="editor" spellcheck="false">
@@ -381,7 +381,7 @@ export class ProseMirrorWebview extends EventEmitter {
             //     } else {
             //         WaterproofLogger.log("Failed to apply edit to workspace");
             //     }
-            // }, 
+            // },
             // (reason) => console.log("REJECTED EDIT", reason));
 
         // If we are in teacher mode or we don't want to check for non input region correctness we skip it.

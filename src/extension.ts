@@ -409,7 +409,7 @@ export class Waterproof implements Disposable {
         );
 
         const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "rocqmarkdown" }, { language: "rocq" }],  // both .mv and .v files
+            documentSelector: [{ language: "rocqmarkdown" }, { language: "rocq" }, { language: "lean4" }],  // .mv, .v, and .lean files
             outputChannelName: "Waterproof LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
             initializationOptions: serverOptions,

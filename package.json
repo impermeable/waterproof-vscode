@@ -65,7 +65,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v}"
+            "filenamePattern": "*.{mv,v,lean}"
           }
         ]
       }
@@ -82,6 +82,12 @@
         "id": "rocqmarkdown",
         "extensions": [
           ".mv"
+        ]
+      },
+      {
+        "id": "lean4",
+        "extensions": [
+          ".lean"
         ]
       }
     ],

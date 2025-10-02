@@ -6,20 +6,20 @@ const ppTable: Map<string, string> = new Map();
  * https://coq.inria.fr/refman/using/tools/coqdoc.html#pretty-printing  
  */
 function populatePPTable() {
+    ppTable.set("<->",  "↔");
     ppTable.set("->",   "→");
     ppTable.set("<-",   "←");
     ppTable.set("<=",   "≤");
     ppTable.set(">=",   "≥");
     ppTable.set("=>",   "⇒");
     ppTable.set("<>",   "≠");
-    ppTable.set("<->",  "↔");
     ppTable.set("\\/",  "∨");
     ppTable.set("/\\",  "∧");
     ppTable.set("|-",   "⊢");
     ppTable.set("~",    "¬");
 }
 
-function translateCoqDoc(coqdoc: string) {
+export function translateCoqDoc(coqdoc: string) {
     populatePPTable();
 
     let commentInside = coqdoc;

@@ -1,11 +1,22 @@
 export class TreeNode {
+    /** The type of this node, should be in the WaterproofSchema schema */
     type: string;
+    /** The inner range of the node, that is, the range of the content */
     innerRange: {to: number, from: number};
+    /** The outer range of the node, that is, the range of the content including possible tags */
     range: {to: number, from: number};
+    /** The title of a node, only relevant for hint nodes */
     title: string;
+    /** The computed start position in ProseMirror, this is the prosemirror position at which the content starts. 
+     * Thus, for nodes with content this includes a +1 due to stepping in to the node. 
+     * For newlines, there is no content, so the start points directly before the newline.
+     */
     prosemirrorStart: number;
+    /** The computed end position in ProseMirror */
     prosemirrorEnd: number;
+    /** The string content of the node */
     stringContent: string;
+    /** Potential children of this tree node */
     children: TreeNode[];
 
     constructor(

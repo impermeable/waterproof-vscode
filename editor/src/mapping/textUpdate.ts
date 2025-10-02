@@ -46,15 +46,18 @@ export class TextUpdate {
             finalText: text
         }
 
-        console.log("THIS IS A TEXTUPDATE")
-        const prosemirror = {start: targetCell.prosemirrorStart, end: targetCell.prosemirrorEnd };
+        const target = {start: targetCell.prosemirrorStart, end: targetCell.prosemirrorEnd };
         tree.traverseDepthFirst((node: TreeNode) => {
-            if (node.prosemirrorStart >= prosemirror.start && prosemirror.end <= targetCell.prosemirrorEnd) {
+            if (node.prosemirrorStart >= target.start && target.end <= node.prosemirrorEnd) {
+                // This node is either the node we are making the text update in or a parent node
+                // We only have to update the closing ranges
                 node.prosemirrorEnd += offset;
                 node.innerRange.to += offset;
                 node.range.to += offset;
                 node.stringContent = text
-            } else if (node.prosemirrorEnd > prosemirror.end) {
+            } else if (node.prosemirrorEnd > target.end) {
+                // This node is fully after the node in which we made the text update
+                // We update all the ranges
                 node.prosemirrorStart += offset;
                 node.prosemirrorEnd += offset;
                 node.innerRange.from += offset;
@@ -68,10 +71,8 @@ export class TextUpdate {
         newTree = tree;
         return {result, newTree};
     }
-
-
-
 }
+
 /** This gets the offset in the vscode document that is being added (then >0) or removed (then <0) */
 function getTextOffset(type: OperationType, step: ReplaceStep) : number  {
     if (type == OperationType.delete) return step.from - step.to;

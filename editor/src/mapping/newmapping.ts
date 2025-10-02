@@ -128,12 +128,11 @@ export class TextDocMappingNew implements WaterproofMapping {
 
         const root = new TreeNode(
             "", // type
-            { from: 0, to: blocks.at(-1)!.range.to }, // originalStart
-            { from: 0, to: blocks.at(-1)!.range.to }, // originalEnd
+            { from: 0, to: blocks.at(-1)!.range.to }, // innerRange
+            { from: 0, to: blocks.at(-1)!.range.to }, // range
             "", // title
             0, // prosemirrorStart
             0, // prosemirrorEnd
-            "" // stringContent
         );
 
         function buildSubtree(blocks: Block[]): TreeNode[] {
@@ -148,7 +147,6 @@ export class TextDocMappingNew implements WaterproofMapping {
                     title,
                     0, // prosemirrorStart (to be calculated later)
                     0, // prosemirrorEnd (to be calculated later)
-                    block.stringContent // always keep the stringContent
                 );
 
                 if (block.innerBlocks && block.innerBlocks.length > 0) {
@@ -185,18 +183,26 @@ export class TextDocMappingNew implements WaterproofMapping {
         currentOffset: number = 0,
         level: number = 0
     ): number {
+        // INVARIANT:
+        // At the start of this function `offset` points exactly before the tag of `node` and at the end of the function `offset` points right after the tag. 
+        // That is, if we are processing some document that looks like this: <md>Test</md> where the <md> and </md> denote the boundaries of the markdown node.
+        // We ensure that at the start of processing this node `offset` is at the position marked with A and at the end of the function `offset` is at
+        // the position marked with B. The prosemirror start and end of the markdown are at C and D, respectively: A<md>CTestD</md>B.
+        
         if (!node) return currentOffset;
         
         let offset = currentOffset;
 
+        // We handle the newline separately as this node has a size of just 1.
         if (node.type === "newline") {
             node.prosemirrorStart = offset;
-            node.prosemirrorEnd = offset + 1;
-            return offset;
+            node.prosemirrorEnd = offset;
+            return offset + 1; 
+            // return offset;
         }
 
-        // Add start tag and +1 for going one level deeper
         if (node !== this.tree.root) {
+            // Add start tag and +1 for going one level deeper (entering the node)
             offset += 1;
         }
 
@@ -204,27 +210,23 @@ export class TextDocMappingNew implements WaterproofMapping {
         node.prosemirrorStart = offset;
 
         if (node.children.length === 0) {
-            // Leaf: add stringContent + end tag + +1 for exiting level
-            offset += node.stringContent.length;
+            // Leaf: add length of content + end tag + +1 for exiting level
+            offset += (node.innerRange.to - node.innerRange.from);
         } else {
             // Non-leaf: handle children and end tag
             for (let i = 0; i < node.children.length; i++) {
-                if (i > 0) {
-                    offset += 1; // +1 between siblings
-                }
                 offset = this.computeProsemirrorOffsets(
                     node.children[i],
                     offset,
                     level + 1
                 );
             }
-            // After all children: add end tag
-            offset += 1;
         }
 
+        // Record the ProseMirror end offset after all child nodes have been processed.
         node.prosemirrorEnd = offset;
-
-        return offset;
+        // To satisfy the invariant we add one to the offset to move outside of the current node again.
+        return offset + 1;
     }
 
 }

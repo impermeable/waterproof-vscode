@@ -54,7 +54,6 @@ export class TextUpdate {
                 node.prosemirrorEnd += offset;
                 node.innerRange.to += offset;
                 node.range.to += offset;
-                node.stringContent = text
             } else if (node.prosemirrorEnd > target.end) {
                 // This node is fully after the node in which we made the text update
                 // We update all the ranges

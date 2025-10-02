@@ -110,8 +110,6 @@ export class NodeUpdate {
         console.log("SERIALIZED BY TEXT SERIALIZE\n", serialized);
         console.log("NODES BY BUILD TREE\n", nodes);
         
-        
-        
         const docChange: DocChange = {
             startInFile: nodeInTree.range.to,
             endInFile: nodeInTree.range.to,
@@ -148,7 +146,6 @@ export class NodeUpdate {
                 {from: startOrig, to: startOrig + 1},
                 "",
                 startProse, startProse + node.nodeSize,
-                ""
             );
         }
 
@@ -160,10 +157,8 @@ export class NodeUpdate {
             {from: startOrig, to: 0}, // full range
             node.attrs.title ? node.attrs.title : "", // title
             startProse, 0, // prosemirror start, end
-            ""
         );
 
-        const serialized = this.serializer.serializeNode(node);
 
         let childOffsetOriginal = startOrig + openTagForNode.length;
         let childOffsetProse = startProse + 1; // +1 for the opening tag
@@ -182,7 +177,6 @@ export class NodeUpdate {
         treeNode.innerRange.to = childOffsetOriginal;
         treeNode.range.to = childOffsetOriginal + closeTagForNode.length;
         treeNode.prosemirrorEnd = childOffsetProse - 1;
-        treeNode.stringContent = serialized.substring(openTagForNode.length, serialized.length - closeTagForNode.length);
         return treeNode;
     }
 
@@ -294,7 +288,6 @@ export class NodeUpdate {
             { from: wrapperOuter.from, to: wrapperOuter.from + wrapperInner.to - wrapperInner.from },
             nodeBeingUnwrapped.title,
             nodeBeingUnwrapped.prosemirrorStart - 1, nodeBeingUnwrapped.prosemirrorEnd - 1,
-            nodeBeingUnwrapped.stringContent
         );
         // Update the tree
         // Remove the node that is being unwrapped.
@@ -378,7 +371,6 @@ export class NodeUpdate {
                 { from: originalOuter.from + openTag.length - (startsWithNewline ? 0 : 1), to: originalOuter.to + openTag.length - (startsWithNewline ? 0 : 1) + (endsWithNewline ? 0 : 1) },
                 nodeBeingWrapped.title,
                 originalProsemirror.from + 1 - (startsWithNewline ? 0 : 1), originalProsemirror.to + 1,
-                nodeBeingWrapped.stringContent
             );
             // copyNodeBeingWrapped.shiftOffsets((hasCodeBefore ? 1 : 0), 0);
             // Update the tree
@@ -388,7 +380,6 @@ export class NodeUpdate {
                 { from: originalOuter.from, to: originalOuter.to + openTag.length + closeTag.length + (startsWithNewline ? 0 : 1) + (endsWithNewline ? 0 : 1) }, // Document (full range) positions
                 title, // Title
                 originalProsemirror.from, originalProsemirror.to + 2, // Prosemirror positions
-                "" // String content
             );
             // If we have added a newline before the tag then we should shift this node
             wrappingNode.shiftOffsets((hasCodeBefore ? 1 : 0), 0);
@@ -435,8 +426,7 @@ export class NodeUpdate {
                 { from: originalInner.from + openTag.length, to: originalInner.to + openTag.length },
                 { from: originalOuter.from + openTag.length, to: originalOuter.to + openTag.length },
                 nodeBeingWrapped.title,
-                originalProsemirror.from + 1, originalProsemirror.to + 1,
-                nodeBeingWrapped.stringContent
+                originalProsemirror.from + 1, originalProsemirror.to + 1
             );
 
             // Update the tree
@@ -446,7 +436,6 @@ export class NodeUpdate {
                 { from: originalOuter.from, to: originalOuter.to + openTag.length + closeTag.length }, // Document (full range) positions
                 title, // Title
                 originalProsemirror.from, originalProsemirror.to + 2, // Prosemirror positions
-                "" // String content
             );
             // The wrapping node contains the updated copy of the node being wrapped
             wrappingNode.children = [copyNodeBeingWrapped];

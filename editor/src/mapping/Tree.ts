@@ -14,8 +14,6 @@ export class TreeNode {
     prosemirrorStart: number;
     /** The computed end position in ProseMirror */
     prosemirrorEnd: number;
-    /** The string content of the node */
-    stringContent: string;
     /** Potential children of this tree node */
     children: TreeNode[];
 
@@ -25,8 +23,7 @@ export class TreeNode {
         range: {to: number, from: number},
         title: string,
         prosemirrorStart: number,
-        prosemirrorEnd: number,
-        stringContent: string
+        prosemirrorEnd: number
     ) {
         this.type = type;
         this.innerRange = innerRange;
@@ -34,7 +31,6 @@ export class TreeNode {
         this.title = title;
         this.prosemirrorStart = prosemirrorStart;
         this.prosemirrorEnd = prosemirrorEnd;
-        this.stringContent = stringContent;
         this.children = [];
     }
 
@@ -80,9 +76,8 @@ export class Tree {
         title: string = "",
         prosemirrorStart: number = 0,
         prosemirrorEnd: number = 0,
-        stringContent: string = ""
     ) {
-        this.root = new TreeNode(type, innerRange, range, title, prosemirrorStart, prosemirrorEnd, stringContent);
+        this.root = new TreeNode(type, innerRange, range, title, prosemirrorStart, prosemirrorEnd);
     }
 
     traverseDepthFirst(callback: (node: TreeNode) => void, node: TreeNode = this.root): void {

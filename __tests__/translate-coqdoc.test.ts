@@ -1,4 +1,4 @@
-import { translateCoqDoc } from "../editor/src/coqdoc";
+import { coqdocToMarkdown, translateCoqDoc } from "../editor/src/coqdoc";
 
 /*
     This test file aims at testing the translate coqdoc functionality as defined in:
@@ -86,4 +86,8 @@ test("From indented list in Coqdoc comments, make markdown list", () => {
 
     expect(translateCoqDoc("- First item\n- Second item\n  - Indented item\n  - Second indented item\n- Third item"))
     .toBe(`- First item\n- Second item\n    - Indented item\n    - Second indented item\n- Third item`);
+});
+
+test("Replace % inside of coqdoc", () => {
+    expect(coqdocToMarkdown("%\\text{coqdoc in mathinline?!}%")).toBe("<math-inline>\\text{coqdoc in mathinline?!}</math-inline>");
 });

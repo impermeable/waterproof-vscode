@@ -2,21 +2,14 @@ import { ReplaceAroundStep, ReplaceStep, Node as PNode, WaterproofSchema, Wrappi
 import { Tree, TreeNode } from "./Tree";
 import { OperationType, ParsedStep } from "./types";
 import { DocChange } from "@impermeable/waterproof-editor";
-import { TextDocMappingNew } from "./newmapping";
-
-function typeFromStep(step: ReplaceStep | ReplaceAroundStep): OperationType {
-    if (step.from == step.to) return OperationType.insert;
-    if (step.slice.content.firstChild == null) {
-        return OperationType.delete;
-    } else {
-        return OperationType.replace;
-    }
-}
+import { Mapping } from "./newmapping";
+import { typeFromStep } from "./helper-functions";
 
 export class NodeUpdate {
+    // Store the tag configuration and serializer
     constructor (private tagConf: TagConfiguration, private serializer: DocumentSerializer) {} 
 
-
+    // Utility to get the opening and closing tag for a given node type
     nodeNameToTagPair(nodeName: string, title: string = ""): [string, string] {
         switch (nodeName) {
             case "markdown":
@@ -33,8 +26,25 @@ export class NodeUpdate {
                 throw new NodeUpdateError(`Unsupported node type: ${nodeName}`);
         }
     }
+    
+    // Handle a node update step
+    public nodeUpdate(step: ReplaceStep | ReplaceAroundStep, mapping: Mapping) : ParsedStep {
+        console.log("IN NODE UPDATE", step, mapping.getMapping());
 
-    doReplaceStep(step: ReplaceStep, mapping: TextDocMappingNew): ParsedStep {
+        let parsedStep;
+        if (step instanceof ReplaceStep) {
+            // The step is a ReplaceStep
+            parsedStep = this.doReplaceStep(step, mapping);
+        } else {
+            // The step is a ReplaceAroundStep (wrapping or unwrapping of nodes)
+            parsedStep = this.doReplaceAroundStep(step, mapping);
+        }
+
+        console.log("TREEEE", JSON.stringify(parsedStep.newTree));
+        return parsedStep;
+    }
+
+    doReplaceStep(step: ReplaceStep, mapping: Mapping): ParsedStep {
         // Determine operation type
         const type = typeFromStep(step);
         console.log("In doReplaceStep, operation type:", type);
@@ -48,12 +58,12 @@ export class NodeUpdate {
         }
     }
 
-    doReplaceAroundStep(step: ReplaceAroundStep, mapping: TextDocMappingNew): ParsedStep {
+    doReplaceAroundStep(step: ReplaceAroundStep, mapping: Mapping): ParsedStep {
         // Determine operation type
         const type = typeFromStep(step);
         switch (type) {
             case OperationType.insert:
-                throw new NodeUpdateError(" ReplaceAroundSteps with 'insert' operation type are not yet supported ");
+                throw new NodeUpdateError(" ReplaceAroundSteps with 'insert' operation type are not supported ");
             case OperationType.delete:
                 // Delete when we are removing the tags around a node.
                 return this.replaceAroundDelete(step, mapping.getMapping());
@@ -63,37 +73,28 @@ export class NodeUpdate {
         }
     }
 
-    public nodeUpdate(step: ReplaceStep | ReplaceAroundStep, mapping: TextDocMappingNew) : ParsedStep {
-        console.log("IN NODE UPDATE", step, mapping.getMapping());
-
-        let parsedStep;
-        if (step instanceof ReplaceStep) {
-            parsedStep = this.doReplaceStep(step, mapping);
-        } else {
-            parsedStep = this.doReplaceAroundStep(step, mapping);
+    // ReplaceInsert is used when we insert new nodes into the document
+    // Note: that these steps can be quite complex, as they can contain multiple (nested) nodes
+    //       for example undoing a node deletion 'reinserts' the deleted node(s)
+    replaceInsert(step: ReplaceStep, tree: Tree): ParsedStep {
+        // We start by checking that there is something to insert in the step
+        if (!step.slice.content.childCount) {
+            throw new NodeUpdateError(" ReplaceStep insert has no content ");
         }
 
-        console.log("TREEEE", JSON.stringify(parsedStep.newTree));
-        return parsedStep;
-    }
-
-    replaceInsert(step: ReplaceStep, tree: Tree): ParsedStep {
-        const firstNode = step.slice.content.firstChild;
-        if (!firstNode) throw new NodeUpdateError(" No nodes in slice content ");
-
-        // TODO: The plus 1 does not work when the insert is at the end of some block
-        console.log("BLABLABLA", tree.findHighestContainingNode(step.from));
-        const nodeInTree = tree.findNodeByProsemirrorPosition(step.from + 1);
-        console.log("nodeInTree", JSON.stringify(nodeInTree));
+        // We find the node in the tree that is at the position where we are inserting
+        const nodeInTree = tree.findNodeByProsePos(step.from);
         if (!nodeInTree) throw new NodeUpdateError(" Could not find position to insert node in mapping ");
         const parent = tree.findParent(nodeInTree);
         if (!parent) throw new NodeUpdateError(" Could not find parent of insertion position in mapping ");
 
-        
+        // range.to since we are inserting below the node at step.from
+        const documentPos = nodeInTree.range.to;
+
         // let offsetOriginal = nodeInTree.range.to;
-        let offsetProse = nodeInTree.prosemirrorEnd;
-        let offsetOriginal = step.from;
-        console.log("OffsetProse", offsetProse, "OffsetOriginal", offsetOriginal, "Step.from", step.from, "Step.to", step.to);
+        let offsetProse = nodeInTree.pmRange.to;
+        let offsetOriginal = nodeInTree.range.to;
+        
         const nodes: TreeNode[] = [];
         let serialized = "";
         step.slice.content.forEach(node => {
@@ -107,12 +108,10 @@ export class NodeUpdate {
             offsetOriginal += output.length;
             offsetProse += node.nodeSize + (builtNode.innerRange.to - builtNode.innerRange.from);
         });
-        console.log("SERIALIZED BY TEXT SERIALIZE\n", serialized);
-        console.log("NODES BY BUILD TREE\n", nodes);
         
         const docChange: DocChange = {
-            startInFile: nodeInTree.range.to,
-            endInFile: nodeInTree.range.to,
+            startInFile: documentPos,
+            endInFile: documentPos,
             finalText: serialized
         };
 
@@ -121,18 +120,81 @@ export class NodeUpdate {
 
         // now we need to update the tree
         tree.traverseDepthFirst((thisNode: TreeNode) => {
-            if (thisNode.prosemirrorStart >= nodeInTree.prosemirrorEnd) {
+            // Update all nodes that come fully after the insertion position
+            if (thisNode.pmRange.from >= nodeInTree.pmRange.to) {
                 thisNode.shiftOffsets(textOffset, proseOffset);
+            }
+
+            // The inserted nodes could be children of nodes already in the tree (at least of the root node,
+            // but possibly also of hint or input nodes)
+            if (thisNode.pmRange.from <= nodeInTree.pmRange.from && thisNode.pmRange.to >= nodeInTree.pmRange.to) {
+                thisNode.shiftCloseOffsets(textOffset, proseOffset);
             }
         });
 
-        // We add the nodes later so that updating in the step before does not affect the positions of the nodes we are adding
+        // Add the nodes to the parent node. We do this later so that updating in the step 
+        // before does not affect the positions of the nodes we are adding
         nodes.forEach(n => parent.addChild(n));
         
-        tree.root.shiftCloseOffsets(textOffset, proseOffset);
-
         return { result: docChange, newTree: tree };
     }
+
+    // replaceInsert(step: ReplaceStep, tree: Tree): ParsedStep {
+    //     const firstNode = step.slice.content.firstChild;
+    //     if (!firstNode) throw new NodeUpdateError(" No nodes in slice content ");
+
+    //     // TODO: The plus 1 does not work when the insert is at the end of some block
+    //     console.log("BLABLABLA", tree.findHighestContainingNode(step.from));
+    //     const nodeInTree = tree.findNodeByProsemirrorPosition(step.from + 1);
+    //     console.log("nodeInTree", JSON.stringify(nodeInTree));
+    //     if (!nodeInTree) throw new NodeUpdateError(" Could not find position to insert node in mapping ");
+    //     const parent = tree.findParent(nodeInTree);
+    //     if (!parent) throw new NodeUpdateError(" Could not find parent of insertion position in mapping ");
+
+        
+    //     // let offsetOriginal = nodeInTree.range.to;
+    //     let offsetProse = nodeInTree.prosemirrorEnd;
+    //     let offsetOriginal = step.from;
+    //     console.log("OffsetProse", offsetProse, "OffsetOriginal", offsetOriginal, "Step.from", step.from, "Step.to", step.to);
+    //     const nodes: TreeNode[] = [];
+    //     let serialized = "";
+    //     step.slice.content.forEach(node => {
+    //         const output = this.serializer.serializeNode(node);
+    //         // console.log("OUTPUT", output);
+    //         console.log("node", node.type.name);
+    //         console.log("output", output);
+    //         serialized += output;
+    //         const builtNode = this.buildTreeFromNode(node, offsetOriginal, offsetProse);
+    //         nodes.push(builtNode);
+    //         offsetOriginal += output.length;
+    //         offsetProse += node.nodeSize + (builtNode.innerRange.to - builtNode.innerRange.from);
+    //     });
+    //     console.log("SERIALIZED BY TEXT SERIALIZE\n", serialized);
+    //     console.log("NODES BY BUILD TREE\n", nodes);
+        
+    //     const docChange: DocChange = {
+    //         startInFile: nodeInTree.range.to,
+    //         endInFile: nodeInTree.range.to,
+    //         finalText: serialized
+    //     };
+
+    //     const proseOffset = step.slice.content.size;
+    //     const textOffset = serialized.length;
+
+    //     // now we need to update the tree
+    //     tree.traverseDepthFirst((thisNode: TreeNode) => {
+    //         if (thisNode.prosemirrorStart >= nodeInTree.prosemirrorEnd) {
+    //             thisNode.shiftOffsets(textOffset, proseOffset);
+    //         }
+    //     });
+
+    //     // We add the nodes later so that updating in the step before does not affect the positions of the nodes we are adding
+    //     nodes.forEach(n => parent.addChild(n));
+        
+    //     tree.root.shiftCloseOffsets(textOffset, proseOffset);
+
+    //     return { result: docChange, newTree: tree };
+    // }
 
     
 
@@ -145,7 +207,8 @@ export class NodeUpdate {
                 {from: startOrig, to: startOrig + 1},
                 {from: startOrig, to: startOrig + 1},
                 "",
-                startProse, startProse + node.nodeSize,
+                startProse, startProse,
+                {from: startProse, to: startProse + node.nodeSize}
             );
         }
 
@@ -157,6 +220,7 @@ export class NodeUpdate {
             {from: startOrig, to: 0}, // full range
             node.attrs.title ? node.attrs.title : "", // title
             startProse, 0, // prosemirror start, end
+            {from: startProse, to: 0}
         );
 
 
@@ -177,6 +241,7 @@ export class NodeUpdate {
         treeNode.innerRange.to = childOffsetOriginal;
         treeNode.range.to = childOffsetOriginal + closeTagForNode.length;
         treeNode.prosemirrorEnd = childOffsetProse - 1;
+        treeNode.pmRange.to = childOffsetProse;
         return treeNode;
     }
 
@@ -236,227 +301,167 @@ export class NodeUpdate {
         return { result: docChange, newTree: tree };
     }
 
+    // ReplaceAroundDelete is used when we unwrap nodes (remove the hint or input tags)
     replaceAroundDelete(step: ReplaceAroundStep, tree: Tree): ParsedStep {
-        console.log("IN REPLACE AROUND DELETE", step, tree);
-        
-        // TODO: Assuming we are always unwrapping a single node
+        const firstNodeBeingUnwrapped = tree.findNodeByProsePos(step.gapFrom);
+        const lastNodeBeingUnwrapped = tree.findNodeByProsePos(step.gapTo);
+        if (!firstNodeBeingUnwrapped || !lastNodeBeingUnwrapped) {
+            throw new NodeUpdateError(" Could not find first or last node to unwrap in mapping ");
+        }
 
-        const nodeBeingUnwrapped = tree.findNodeByProsemirrorPosition(step.gapFrom + 1);
-        if (!nodeBeingUnwrapped) throw new NodeUpdateError(" Could not find the node to be lifted in mapping ");
-        console.log("NODE BEING UNWRAPPED", nodeBeingUnwrapped);
+        // Get all nodes in the range (these are the nodes that will be unwrapped)
+        const nodesInRange = tree.nodesInProseRange(firstNodeBeingUnwrapped.pmRange.from, lastNodeBeingUnwrapped.pmRange.to);
 
-        const nodeBeingUnwrapped2 = tree.findNodeByProsemirrorPosition(step.gapTo - 1);
-        console.log("NODE BEING UNWRAPPED 2", nodeBeingUnwrapped2);
-
-        const nodeBefore = tree.findNodeByProsemirrorPosition(step.from - 1);
-        const nodeAfter = tree.findNodeByProsemirrorPosition(step.to + 1);
-        console.log("NODE BEFORE", nodeBefore, "NODE AFTER", nodeAfter);
-
-        const wrapperNode = tree.findNodeByProsemirrorPosition(step.from + 1);
-        if (!wrapperNode) throw new NodeUpdateError(" Could not find the wrapper node in mapping ");
-        console.log("WRAPPER NODE", wrapperNode);
-
-        const wrapperOuter = {from: wrapperNode.range.from, to: wrapperNode.range.to};
-        const wrapperInner = {from: wrapperNode.innerRange.from, to: wrapperNode.innerRange.to};
-        const unwrappedOuter = {from: nodeBeingUnwrapped.range.from, to: nodeBeingUnwrapped.range.to};
-        const unwrappedInner = {from: nodeBeingUnwrapped.innerRange.from, to: nodeBeingUnwrapped.innerRange.to};
-        
+        // The wrapperNode should be the parent of the nodes being unwrapped 
+        const wrapperNode = tree.findParent(firstNodeBeingUnwrapped);
+        if (!wrapperNode) throw new NodeUpdateError(" Could not find parent of nodes being unwrapped ");
 
         const [wrappedOpenTag, wrappedCloseTag] = this.nodeNameToTagPair(wrapperNode.type, wrapperNode.title);
-        // const startsWithNewline = wrapperInner.from > wrappedOuter.from + wrappedOpenTag.length;
-        // const endsWithNewline = wrappedOuter.to > wrappedInner.to + wrappedCloseTag.length;
 
+        // We remove the wrapper node from the tree
+        const wrapperParent = tree.findParent(wrapperNode);
+        if (!wrapperParent) throw new NodeUpdateError(" Could not find parent of wrapper node ");
+        wrapperParent.removeChild(wrapperNode);
+
+        // Create document change
         const docChange: WrappingDocChange = {
             firstEdit: {
-                startInFile: wrapperOuter.from,
-                endInFile: wrapperInner.from,
+                startInFile: wrapperNode.range.from,
+                endInFile: wrapperNode.innerRange.from,
                 finalText: ""
             },
             secondEdit: {
-                startInFile: wrapperInner.to,
-                endInFile: wrapperOuter.to,
+                startInFile: wrapperNode.innerRange.to,
+                endInFile: wrapperNode.range.to,
                 finalText: ""
             }
         };
 
-        // Create a copy of the node being unwrapped with updated ranges
-        const copyNodeBeingUnwrapped = new TreeNode(
-            nodeBeingUnwrapped.type,
-            // inner
-            { from: wrapperOuter.from + (unwrappedInner.from - unwrappedOuter.from), to: nodeBeingUnwrapped.innerRange.to - wrappedOpenTag.length },
-            // outer
-            { from: wrapperOuter.from, to: wrapperOuter.from + wrapperInner.to - wrapperInner.from },
-            nodeBeingUnwrapped.title,
-            nodeBeingUnwrapped.prosemirrorStart - 1, nodeBeingUnwrapped.prosemirrorEnd - 1,
-        );
-        // Update the tree
-        // Remove the node that is being unwrapped.
-        tree.root.removeChild(wrapperNode);
-        // Update the tree positions.
+        // First we update all nodes that come totally after the unwrapped node
         tree.traverseDepthFirst((thisNode: TreeNode) => {
-            // Update everything after the unwrapped node
-            if (thisNode.range.from >= wrapperOuter.to) {
-                thisNode.shiftOffsets(-wrappedOpenTag.length - wrappedCloseTag.length, -2);
+            if (thisNode.pmRange.from >= wrapperNode.pmRange.to) {
+                // The text positions shift by the length of the open and close tags that have just been removed
+                const textOffset = -wrappedOpenTag.length - wrappedCloseTag.length;
+                // The prosemirror positions shift by 2 (1 for the opening and 1 for the closing tag)
+                const proseOffset = -2;
+                thisNode.shiftOffsets(textOffset, proseOffset);
             }
         });
+
+        // Update the root node separately
         tree.root.shiftCloseOffsets(-wrappedOpenTag.length - wrappedCloseTag.length, -2);
 
-        tree.root.addChild(copyNodeBeingUnwrapped);
-
+        // Now we need to update the nodes that were children of the wrapper node
+        nodesInRange.forEach(n => {
+            // We update their positions
+            n.shiftOffsets(-wrappedOpenTag.length, -1);
+            // and add them to the parent of the wrapper node
+            wrapperParent.addChild(n);
+        });
+        
         return { result: docChange, newTree: tree };
     }
-
+    
     replaceAroundReplace(step: ReplaceAroundStep, tree: Tree): ParsedStep {
         console.log("IN REPLACE AROUND REPLACE", step, tree);
-
-        // Get the nodes before and after the node that we are wrapping.
-        const nodeBefore = tree.findNodeByProsemirrorPosition(step.from - 1);
-        const nodeAfter = tree.findNodeByProsemirrorPosition(step.to + 1);
-        const hasCodeBefore = nodeBefore !== null && nodeBefore.type === "code";
-        const hasCodeAfter = nodeAfter !== null && nodeAfter.type === "code";
-
+        
+        // We start by checking what kind of node we are wrapping with
         const wrappingNode = step.slice.content.firstChild;
-        if (!wrappingNode)
+        if (!wrappingNode) {
             throw new NodeUpdateError(" ReplaceAroundStep replace has no wrapping node ");
+        }
 
+        const pmSize = step.slice.size;
+        if (pmSize != 2) throw new NodeUpdateError(" Size of the slice is not equal to 2 ");
+        
         if (step.slice.content.childCount != 1) {
             throw new NodeUpdateError(" We only support ReplaceAroundSteps with a single wrapping node ");
         }
 
+        // Check that the wrapping node is of a supported type (hint or input)
         const insertedNodeType = wrappingNode.type.name;
-        if (insertedNodeType !== "hint" && insertedNodeType !== "input")
+        if (insertedNodeType !== "hint" && insertedNodeType !== "input") {
             throw new NodeUpdateError(" We only support wrapping in hints or inputs ");
+        }
 
-    
+        // If we are wrapping in a hint node we need to have a title attribute
         const title: string = insertedNodeType === "hint" ? wrappingNode.attrs.title : "";
+        // Get the tags for the wrapping node
         const [openTag, closeTag] = this.nodeNameToTagPair(insertedNodeType, title);
 
-        // Find the node being wrapped
-        const nodeBeingWrapped = tree.findNodeByProsemirrorPosition(step.gapFrom + 1);
-        if (!nodeBeingWrapped) throw new NodeUpdateError(" Could not find node in mapping ");
-        console.log("NODE", nodeBeingWrapped);
+        // The step includes a range of nodes that are wrapped. We use the mapping
+        // to find the node at gapFrom (the first one being wrapped) and the node
+        // at gapTo (the last one being wrapped).
+        const nodesBeingWrappedStart = tree.findNodeByProsePos(step.gapFrom);
+        const nodesBeingWrappedEnd = tree.findNodeByProsePos(step.gapTo);
+        // If one of the two doesn't exist we error
+        if (!nodesBeingWrappedStart || !nodesBeingWrappedEnd) throw new NodeUpdateError(" Could not find node in mapping ");
 
-        const originalOuter = {from: nodeBeingWrapped.range.from, to: nodeBeingWrapped.range.to};
-        const originalInner = {from: nodeBeingWrapped.innerRange.from, to: nodeBeingWrapped.innerRange.to};
-        const originalProsemirror = {from: nodeBeingWrapped.prosemirrorStart, to: nodeBeingWrapped.prosemirrorEnd};
-        
-        // const [openTagExisting, closeTagExisting] = nodeNameToTagPair(nodeBeingWrapped.type);
-        const isCode = nodeBeingWrapped.type === "code";
-
-        // In the case of code blocks we have to be careful to preserve the newlines
-
-        if (isCode) {
-            const codeOpen = this.tagConf.code.openTag;
-            const codeClose = this.tagConf.code.closeTag;
-            const startsWithNewline = originalInner.from > originalOuter.from + codeOpen.length;
-            const endsWithNewline = originalOuter.to > originalInner.to + codeClose.length;
-
-            const docChange: WrappingDocChange = {
-                firstEdit: {
-                    startInFile: nodeBeingWrapped.range.from,
-                    endInFile: nodeBeingWrapped.range.from,
-                    finalText: (hasCodeBefore ? "\n" : "") + openTag + (startsWithNewline ? "" : "\n")
-                },
-                secondEdit: {
-                    startInFile: nodeBeingWrapped.range.to,
-                    endInFile: nodeBeingWrapped.range.to,
-                    finalText:  (endsWithNewline ? "" : "\n") + closeTag + (hasCodeAfter ? "\n" : "")
-                }
-            };
-
-            // Create a copy of the node being wrapped with updated ranges
-            const copyNodeBeingWrapped = new TreeNode(
-                nodeBeingWrapped.type,
-                { from: originalInner.from + openTag.length + (startsWithNewline ? 0 : 1), to: originalInner.to + openTag.length + (startsWithNewline ? 0 : 1) },
-                { from: originalOuter.from + openTag.length - (startsWithNewline ? 0 : 1), to: originalOuter.to + openTag.length - (startsWithNewline ? 0 : 1) + (endsWithNewline ? 0 : 1) },
-                nodeBeingWrapped.title,
-                originalProsemirror.from + 1 - (startsWithNewline ? 0 : 1), originalProsemirror.to + 1,
-            );
-            // copyNodeBeingWrapped.shiftOffsets((hasCodeBefore ? 1 : 0), 0);
-            // Update the tree
-            const wrappingNode = new TreeNode(
-                insertedNodeType, // node type
-                { from: originalOuter.from + openTag.length, to: originalOuter.to + openTag.length + (endsWithNewline ? 0 : 1) + (startsWithNewline ? 0 : 1)}, // Document (inner range) positions
-                { from: originalOuter.from, to: originalOuter.to + openTag.length + closeTag.length + (startsWithNewline ? 0 : 1) + (endsWithNewline ? 0 : 1) }, // Document (full range) positions
-                title, // Title
-                originalProsemirror.from, originalProsemirror.to + 2, // Prosemirror positions
-            );
-            // If we have added a newline before the tag then we should shift this node
-            wrappingNode.shiftOffsets((hasCodeBefore ? 1 : 0), 0);
-
-            // The surrounding code cells absorb the newline(s) that is(/are) added.
-            if (hasCodeAfter) nodeAfter.range.from -= 1;
-            if (hasCodeBefore) nodeBefore.range.to += 1;
-            
-            // The wrapping node contains the updated copy of the node being wrapped
-            wrappingNode.children = [copyNodeBeingWrapped];
-            // Remove the node that is being wrapped.
-            tree.root.removeChild(nodeBeingWrapped);
-            // Update the tree positions.
-            tree.traverseDepthFirst((thisNode: TreeNode) => {
-                // Update everything after the inserted node
-                if (thisNode.range.from > originalOuter.to) {
-                    thisNode.shiftOffsets(openTag.length + closeTag.length + (startsWithNewline ? 0 : 1) + (endsWithNewline ? 0 : 1), 2);
-                    thisNode.shiftOffsets((hasCodeBefore ? 1 : 0) + (hasCodeAfter ? 1 : 0));
-                }
-            });
-
-            tree.root.shiftCloseOffsets(openTag.length + closeTag.length + (startsWithNewline ? 0 : 1) + (endsWithNewline ? 0 : 1), 2);
-
-            tree.root.addChild(wrappingNode);
-
-            return { result: docChange, newTree: tree };
-        } else {
-            const docChange: WrappingDocChange = {
-                firstEdit: {
-                    startInFile: nodeBeingWrapped.range.from,
-                    endInFile: nodeBeingWrapped.range.from,
-                    finalText: openTag
-                }, 
-                secondEdit: {
-                    startInFile: nodeBeingWrapped.range.to,
-                    endInFile: nodeBeingWrapped.range.to,
-                    finalText: closeTag 
-                }
+        // Generate the document change (this is a wrapping document change)
+        const docChange: WrappingDocChange = {
+            firstEdit: {
+                finalText: openTag,
+                startInFile: nodesBeingWrappedStart.range.from,
+                endInFile: nodesBeingWrappedStart.range.from,
+            }, 
+            secondEdit: {
+                finalText: closeTag,
+                startInFile: nodesBeingWrappedEnd.range.to,
+                endInFile: nodesBeingWrappedEnd.range.to
             }
+        };
 
-            // Create a copy of the node being wrapped with updated ranges
-            const copyNodeBeingWrapped = new TreeNode(
-                nodeBeingWrapped.type,
-                { from: originalInner.from + openTag.length, to: originalInner.to + openTag.length },
-                { from: originalOuter.from + openTag.length, to: originalOuter.to + openTag.length },
-                nodeBeingWrapped.title,
-                originalProsemirror.from + 1, originalProsemirror.to + 1
-            );
+        // We now update the tree
 
-            // Update the tree
-            const wrappingNode = new TreeNode(
-                insertedNodeType, // node type
-                { from: originalOuter.from + openTag.length, to: originalOuter.to + openTag.length }, // Document (inner range) positions
-                { from: originalOuter.from, to: originalOuter.to + openTag.length + closeTag.length }, // Document (full range) positions
-                title, // Title
-                originalProsemirror.from, originalProsemirror.to + 2, // Prosemirror positions
-            );
-            // The wrapping node contains the updated copy of the node being wrapped
-            wrappingNode.children = [copyNodeBeingWrapped];
-            
-            // Remove the node that is being wrapped.
-            tree.root.removeChild(nodeBeingWrapped);
-            
-            // Update the tree positions.
-            tree.traverseDepthFirst((thisNode: TreeNode) => {
-                // Update everything after the inserted node
-                if (thisNode.range.from > originalOuter.from) {
-                    thisNode.shiftOffsets(openTag.length + closeTag.length, 2);
-                }
-            });
+        const positions = {
+            startFrom: nodesBeingWrappedStart.range.from, 
+            startTo: nodesBeingWrappedStart.range.to,
+            endFrom: nodesBeingWrappedEnd.range.from,
+            endTo: nodesBeingWrappedEnd.range.to,
+            proseStart: nodesBeingWrappedStart.pmRange.from,
+            proseEnd: nodesBeingWrappedEnd.pmRange.to
+        };
+        
+        // Create the new wrapping node
+        const newNode = new TreeNode(
+            insertedNodeType,
+            {from: positions.startFrom + openTag.length, to: positions.endTo}, // inner range
+            {from: positions.startFrom, to: positions.endTo + closeTag.length}, // full range
+            title,
+            positions.proseStart + 1, positions.proseEnd + 1, // prosemirror start, end
+            {from: positions.proseStart, to: positions.proseEnd + 2} // pmRange
+        );
 
-            tree.root.shiftCloseOffsets(openTag.length + closeTag.length, 2);
-            // TODO: This assumes we are always wrapping at the root level.
-            tree.root.addChild(wrappingNode);
+        // We need to find the parent of the first node being wrapped
+        const parent = tree.findParent(nodesBeingWrappedStart);
+        if (!parent) throw new NodeUpdateError(" Could not find parent of nodes being wrapped ");
 
-            return { result: docChange, newTree: tree };
-        }
+        const nodesInRange = tree.nodesInProseRange(positions.proseStart, positions.proseEnd);
+        console.log("NODES IN RANGE", nodesInRange);
+
+        // Remove the nodes that are now children of the new wrapping node from their current parent
+        nodesInRange.forEach(n => {
+            parent.removeChild(n);
+        });
+        
+        // Finally we need to update all nodes that come after the inserted wrapping node
+        tree.traverseDepthFirst((thisNode: TreeNode) => {
+            if (thisNode.pmRange.from >= positions.proseEnd) {
+                thisNode.shiftOffsets(openTag.length + closeTag.length, 2);
+            }
+        });
+
+        // Now we need to insert the new wrapping node in the right place in the tree
+        parent.addChild(newNode);
+        
+        nodesInRange.forEach(n => {
+            newNode.addChild(n);
+            n.shiftOffsets(openTag.length, 1);
+        });
+
+        tree.root.shiftCloseOffsets(openTag.length + closeTag.length, 2);
+
+        return {result: docChange, newTree: tree};
     }
 
 }

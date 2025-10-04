@@ -1,18 +1,16 @@
-import { TextDocMappingNew } from "./newmapping";
+import { Mapping } from "./newmapping";
 import { ParsedStep, OperationType } from "./types";
 import { Tree, TreeNode } from "./Tree";
 import { DocChange, ReplaceStep, TextUpdateError } from "@impermeable/waterproof-editor";
+import { typeFromStep } from "./helper-functions";
 
 export class TextUpdate {
 
     /** This function is responsible for handling updates in prosemirror that happen exclusively as text edits and translating them to vscode text doc */
-    textUpdate(step: ReplaceStep, mapping: TextDocMappingNew) : ParsedStep {
+    textUpdate(step: ReplaceStep, mapping: Mapping) : ParsedStep {
         // Determine operation type
-        let type: OperationType = OperationType.replace;
-        if (step.from == step.to) type = OperationType.insert;
-        if (step.slice.content.firstChild === null) type = OperationType.delete;
-
-
+        const type = typeFromStep(step);
+        
         // If there is more than one node in the fragment of step, throw an error
         if(step.slice.content.childCount > 1) throw new TextUpdateError(" Text edit contained more text nodes than expected ");
 
@@ -51,18 +49,11 @@ export class TextUpdate {
             if (node.prosemirrorStart >= target.start && target.end <= node.prosemirrorEnd) {
                 // This node is either the node we are making the text update in or a parent node
                 // We only have to update the closing ranges
-                node.prosemirrorEnd += offset;
-                node.innerRange.to += offset;
-                node.range.to += offset;
+                node.shiftCloseOffsets(offset);
             } else if (node.prosemirrorEnd > target.end) {
                 // This node is fully after the node in which we made the text update
                 // We update all the ranges
-                node.prosemirrorStart += offset;
-                node.prosemirrorEnd += offset;
-                node.innerRange.from += offset;
-                node.innerRange.to += offset;
-                node.range.from += offset;
-                node.range.to += offset;
+                node.shiftOffsets(offset);
             }
         });
 

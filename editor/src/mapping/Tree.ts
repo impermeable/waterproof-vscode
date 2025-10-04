@@ -14,6 +14,7 @@ export class TreeNode {
     prosemirrorStart: number;
     /** The computed end position in ProseMirror */
     prosemirrorEnd: number;
+    pmRange: {from: number, to: number};
     /** Potential children of this tree node */
     children: TreeNode[];
 
@@ -23,7 +24,8 @@ export class TreeNode {
         range: {to: number, from: number},
         title: string,
         prosemirrorStart: number,
-        prosemirrorEnd: number
+        prosemirrorEnd: number,
+        pmRange: {to: number, from: number},
     ) {
         this.type = type;
         this.innerRange = innerRange;
@@ -31,6 +33,7 @@ export class TreeNode {
         this.title = title;
         this.prosemirrorStart = prosemirrorStart;
         this.prosemirrorEnd = prosemirrorEnd;
+        this.pmRange= pmRange;
         this.children = [];
     }
 
@@ -46,6 +49,7 @@ export class TreeNode {
 
     shiftCloseOffsets(offset: number, offsetProsemirror?: number): void {
         this.prosemirrorEnd += offsetProsemirror !== undefined ? offsetProsemirror : offset;
+        this.pmRange.to += offsetProsemirror !== undefined ? offsetProsemirror : offset;
         this.innerRange.to += offset;
         this.range.to += offset;
     }
@@ -54,6 +58,8 @@ export class TreeNode {
         console.log("test", offset)
         this.prosemirrorStart += offsetProsemirror !== undefined ? offsetProsemirror : offset;
         this.prosemirrorEnd += offsetProsemirror !== undefined ? offsetProsemirror : offset;
+        this.pmRange.from += offsetProsemirror !== undefined ? offsetProsemirror : offset;
+        this.pmRange.to += offsetProsemirror !== undefined ? offsetProsemirror : offset;
         this.innerRange.from += offset;
         this.innerRange.to += offset;
         this.range.from += offset;
@@ -76,8 +82,9 @@ export class Tree {
         title: string = "",
         prosemirrorStart: number = 0,
         prosemirrorEnd: number = 0,
+        pmRange: {from: number, to: number} = {from: 0, to: 0}
     ) {
-        this.root = new TreeNode(type, innerRange, range, title, prosemirrorStart, prosemirrorEnd);
+        this.root = new TreeNode(type, innerRange, range, title, prosemirrorStart, prosemirrorEnd, pmRange);
     }
 
     traverseDepthFirst(callback: (node: TreeNode) => void, node: TreeNode = this.root): void {
@@ -146,7 +153,7 @@ export class Tree {
 
     findNodeByProsePos(pos: number, node: TreeNode | null = this.root): TreeNode | null {
         if (!node) return null;
-        if (pos < node.prosemirrorStart || pos > node.prosemirrorEnd) return null;
+        if (pos < node.pmRange.from || pos > node.pmRange.to) return null;
 
         // Binary search among children
         let left = 0;
@@ -154,9 +161,9 @@ export class Tree {
         while (left <= right) {
             const mid = Math.floor((left + right) / 2);
             const child = node.children[mid];
-            if (pos < child.prosemirrorStart) {
+            if (pos < child.pmRange.from) {
                 right = mid - 1;
-            } else if (pos > child.prosemirrorEnd) {
+            } else if (pos > child.pmRange.to) {
                 left = mid + 1;
             } else {
                 // Found a child that contains pos, recurse
@@ -165,6 +172,17 @@ export class Tree {
         }
         // If no child contains pos, return current node
         return node;
+    }
+
+    nodesInProseRange(from: number, to: number, node: TreeNode | null = this.root): TreeNode[] {
+        const result: TreeNode[] = [];
+        if (!node) return result;
+        if (node.pmRange.to < from || node.pmRange.from > to) return result;
+        if (node.pmRange.from >= from && node.pmRange.to <= to) {
+            result.push(node);
+        }
+        result.push(...node.children.flatMap(child => this.nodesInProseRange(from, to, child)));
+        return result;
     }
 
     insertByPosition(newNode: TreeNode): boolean {

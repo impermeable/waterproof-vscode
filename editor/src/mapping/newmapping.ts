@@ -9,7 +9,7 @@ import { Block, DocChange, WrappingDocChange } from "@impermeable/waterproof-edi
  * This class is responsible for keeping track of the mapping between the prosemirror state and the vscode Text
  * Document model
  */
-export class TextDocMappingNew implements WaterproofMapping {
+export class Mapping implements WaterproofMapping {
     /** This stores the String cells of the entire document */
     private tree: Tree;
     /** The version of the underlying textDocument */
@@ -29,8 +29,8 @@ export class TextDocMappingNew implements WaterproofMapping {
         this._version = versionNum;
         this.tree = new Tree();
         this.initTree(inputBlocks);
-        console.log(inputBlocks);
-        console.log("MAPPED TREE", JSON.stringify(this.tree));
+        // console.log(inputBlocks);
+        // console.log("MAPPED TREE", JSON.stringify(this.tree));
     }
 
     //// The getters of this class
@@ -51,15 +51,15 @@ export class TextDocMappingNew implements WaterproofMapping {
 
     /** Returns the vscode document model index of prosemirror index */
     public findPosition(index: number) {
-        const correctNode: TreeNode | null = this.tree.findNodeByProsemirrorPosition(index);
-        if (correctNode === null) throw new MappingError(" [findPosition] The vscode document model index could not be found ");
-        return (index - correctNode.prosemirrorStart) + correctNode.innerRange.from;
+        const node = this.tree.findNodeByProsePos(index);
+        if (node === null) throw new MappingError(` [findPosition] The vscode document offset for prosemirror index (${index}) could not be found `);
+        return (index - node.prosemirrorStart) + node.innerRange.from;
     }
 
     /** Returns the prosemirror index of vscode document model index */
     public findInvPosition(index: number) {
         const correctNode: TreeNode | null = this.tree.findNodeByOriginalPosition(index);
-        if (correctNode === null) throw new MappingError(" [findInvPosition] The vscode document model index could not be found ");
+        if (correctNode === null) throw new MappingError(` [findInvPosition] The prosemirror index for position (${index}) could not be found `);
         return (index - correctNode.innerRange.from) + correctNode.prosemirrorStart;
     }
 
@@ -133,6 +133,7 @@ export class TextDocMappingNew implements WaterproofMapping {
             "", // title
             0, // prosemirrorStart
             0, // prosemirrorEnd
+            { from: 0, to: 0 }
         );
 
         function buildSubtree(blocks: Block[]): TreeNode[] {
@@ -147,6 +148,7 @@ export class TextDocMappingNew implements WaterproofMapping {
                     title,
                     0, // prosemirrorStart (to be calculated later)
                     0, // prosemirrorEnd (to be calculated later)
+                    {from: 0, to: 0}, // full prosemirror range (to be computed later)
                 );
 
                 if (block.innerBlocks && block.innerBlocks.length > 0) {
@@ -163,7 +165,7 @@ export class TextDocMappingNew implements WaterproofMapping {
 
         // Set the tree root after mapping
         this.tree.root = root;
-        console.log(this.tree);
+        // console.log(this.tree);
         // Now compute the ProseMirror offsets after creating the tree structure
         this.computeProsemirrorOffsets(this.tree.root);
     }
@@ -197,9 +199,13 @@ export class TextDocMappingNew implements WaterproofMapping {
         if (node.type === "newline") {
             node.prosemirrorStart = offset;
             node.prosemirrorEnd = offset;
+            node.pmRange.from = offset;
+            node.pmRange.to = offset + 1;
             return offset + 1; 
             // return offset;
         }
+
+        node.pmRange.from = offset;
 
         if (node !== this.tree.root) {
             // Add start tag and +1 for going one level deeper (entering the node)
@@ -226,7 +232,9 @@ export class TextDocMappingNew implements WaterproofMapping {
         // Record the ProseMirror end offset after all child nodes have been processed.
         node.prosemirrorEnd = offset;
         // To satisfy the invariant we add one to the offset to move outside of the current node again.
-        return offset + 1;
+        offset += 1;
+        node.pmRange.to = offset;
+        return offset;
     }
 
 }

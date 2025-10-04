@@ -1,4 +1,4 @@
 // Export the mapping
-export { TextDocMappingNew } from "./newmapping";
+export { Mapping } from "./newmapping";
 export { Tree } from "./Tree";
 export { TreeNode } from "./Tree";

@@ -56,18 +56,18 @@ export function translateCoqDoc(coqdoc: string) {
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#verbatim
      */
     commentInside = commentInside.replaceAll(/<<\s*?\n([\s\S]+?)\n>>\s*?/g, `\`\`\`\n$1\n\`\`\``);
-    
+
     /**
      * Replace "Preformatted vernacular" according to:
      * https://coq.inria.fr/doc/v8.12/refman/using/tools/coqdoc.html#coq-material-inside-documentation
      */
     commentInside = commentInside.replaceAll(/\[{2}\n([^]+)\n\]{2}/g, `\`\`\`\n$1\n\`\`\``);
-    
+
     /** 
      * Replace quoted coq according to: 
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#coq-material-inside-documentation
      */
-    commentInside = commentInside.replaceAll(/\[([^\]]+)\]/g, `\`$1\``);
+    commentInside = replaceCode(commentInside);
 
     // Try to apply every pretty printing rule.
     ppTable.forEach((value: string, key: string) => {
@@ -75,6 +75,40 @@ export function translateCoqDoc(coqdoc: string) {
     });
 
     return commentInside
+}
+
+function replaceCode(input: string): string {
+    let result = '';
+    let depth = 0;
+
+    for (const char of input) {
+        if (char === '[') {
+            if (depth === 0) {
+                result += "`";
+            } else {
+                result += char;
+            }
+            // Opening bracket, increase depth.
+            depth++;
+        } else if (char === ']') {
+            // Closing bracket, decrease depth.
+            depth--;
+            if (depth === 0) {
+                result += "`";
+            } else {
+                result += char;
+            }
+        } else {
+            result += char;
+        }
+    }
+
+    if (depth !== 0) {
+        // Unbalanced brackets in string, returning input
+        return input;
+    }
+
+    return result;
 }
 
 function toMathInline(input: string): string {

@@ -67,7 +67,15 @@ test("Expect default pretty-printing to be ordered correctly", () => {
 });
 
 test("Expect quoted coq to be replaced", () => {
+    expect(translateCoqDoc("[let id := 3] and [3 : nat]")).toBe("`let id := 3` and `3 : nat`");
+});
+
+test("Expect quoted coq to be replaced and behave nicely with nested square brackets", () => {
     expect(translateCoqDoc("[let id := fun [T : Type] (x : t) => x in id 0]")).toBe("`let id := fun [T : Type] (x : t) ⇒ x in id 0`");
+});
+
+test("Expect quoted coq to be replaced and behave nicely with nested square brackets 2", () => {
+    expect(translateCoqDoc("[let id := fun [T : Type] (x : t) => x in id 0] and [bool]")).toBe("`let id := fun [T : Type] (x : t) ⇒ x in id 0` and `bool`");
 });
 
 test("Expect preformatted vernacular to be replaced", () => {

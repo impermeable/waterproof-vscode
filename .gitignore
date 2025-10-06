@@ -12,4 +12,4 @@ __tests_output__/
 **/*.cache
 ExampleFiles/
 /cypress/screenshots/
-package-lock.json
+coverage/

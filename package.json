@@ -521,6 +521,7 @@
     "package": "npm run clean && npm run test-package",
     "package-pre-release": "npm run clean && npm run test-pre-release",
     "unit-tests": "npx jest",
+    "unit-tests-cov": "npx jest --coverage",
     "lezer-generator": "npx lezer-generator ./editor/src/waterproof-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/waterproof-editor/codeview/lang-pack/syntax.ts",
     "cypress-tests": "npx cypress run",
     "lint": "npx eslint .",

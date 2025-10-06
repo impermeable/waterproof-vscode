@@ -106,8 +106,13 @@ export class NodeUpdate {
             const builtNode = this.buildTreeFromNode(node, offsetOriginal, offsetProse);
             nodes.push(builtNode);
             offsetOriginal += output.length;
-            offsetProse += node.nodeSize + (builtNode.innerRange.to - builtNode.innerRange.from);
+            offsetProse += node.nodeSize;
         });
+
+        console.log("SERIALIZED BY TEXT SERIALIZE\n", serialized);
+        console.log("NODES BY BUILD TREE\n", nodes);
+
+        // throw new NodeUpdateError(" Insert not supported yet ");
         
         const docChange: DocChange = {
             startInFile: documentPos,
@@ -127,7 +132,7 @@ export class NodeUpdate {
 
             // The inserted nodes could be children of nodes already in the tree (at least of the root node,
             // but possibly also of hint or input nodes)
-            if (thisNode.pmRange.from <= nodeInTree.pmRange.from && thisNode.pmRange.to >= nodeInTree.pmRange.to) {
+            if (thisNode.pmRange.from < nodeInTree.pmRange.from && thisNode.pmRange.to > nodeInTree.pmRange.to) {
                 thisNode.shiftCloseOffsets(textOffset, proseOffset);
             }
         });
@@ -219,7 +224,7 @@ export class NodeUpdate {
             {from: startOrig + openTagForNode.length, to: 0}, // inner range
             {from: startOrig, to: 0}, // full range
             node.attrs.title ? node.attrs.title : "", // title
-            startProse, 0, // prosemirror start, end
+            startProse + 1, 0, // prosemirror start, end
             {from: startProse, to: 0}
         );
 
@@ -240,8 +245,8 @@ export class NodeUpdate {
         // Now fill in the to positions for innerRange and range
         treeNode.innerRange.to = childOffsetOriginal;
         treeNode.range.to = childOffsetOriginal + closeTagForNode.length;
-        treeNode.prosemirrorEnd = childOffsetProse - 1;
-        treeNode.pmRange.to = childOffsetProse;
+        treeNode.prosemirrorEnd = childOffsetProse;
+        treeNode.pmRange.to = childOffsetProse + 1;
         return treeNode;
     }
 

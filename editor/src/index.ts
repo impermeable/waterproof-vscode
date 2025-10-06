@@ -6,10 +6,7 @@ import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
 import "@impermeable/waterproof-editor/styles.css"
-import { Mapping } from "./mapping";
-// import { topLevelBlocksMV } from "./document-construction/construct-document";
 import { vFileParser } from "./document-construction/vFile";
-// import { markdownParser } from "./document-construction/statemachine";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksMV } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
@@ -59,7 +56,6 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		// documentConstructor: format === FileFormat.MarkdownV ? doc => markdownParser(doc, "coq") : vFileParser,
 		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
-		mapping: Mapping,
 		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq") : tagConfigurationV,
 	}
 

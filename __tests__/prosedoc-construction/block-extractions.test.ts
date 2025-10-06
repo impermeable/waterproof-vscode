@@ -123,17 +123,20 @@ test("Parse Coq blocks #1", () => {
     const document = "# Example\n```coq\nLemma trivial.\n```";
     const blocks = extractCoqBlocks(document);
 
+    // NOTE: Mind that we are using `extractCoqBlocks` here.
     expect(blocks.length).toBe(2);
-    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("Lemma trivial.");
+    const [nl, code] = blocks;
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(code.stringContent).toBe("Lemma trivial.");
 
     // Outer ranges
-    expect(blocks[0].range.from).toBe(9);
-    expect(blocks[0].range.to).toBe(document.length);
+    expect(code.range.from).toBe(10);
+    expect(code.range.to).toBe(document.length);
 
     // Inner ranges
-    expect(blocks[0].innerRange.from).toBe(17);
-    expect(blocks[0].innerRange.to).toBe(31);
+    expect(code.innerRange.from).toBe(17);
+    expect(code.innerRange.to).toBe(31);
 
 });
 
@@ -141,27 +144,30 @@ test("Parse Coq blocks #2", () => {
     const document = "```coq\nRequire Import ZArith.\n```\n# Example\n```coq\nLemma trivial.\n```";
     const blocks = extractCoqBlocks(document);
 
-    expect(blocks.length).toBe(2);
-    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
-    expect(typeguards.isCodeBlock(blocks[1])).toBe(true);
-    expect(blocks[0].stringContent).toBe("Require Import ZArith.");
-    expect(blocks[1].stringContent).toBe("Lemma trivial.");
+    expect(blocks.length).toBe(4);
+    const [code, nl, nl2, code2] = blocks;
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(typeguards.isCodeBlock(code2)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
+    expect(code.stringContent).toBe("Require Import ZArith.");
+    expect(code2.stringContent).toBe("Lemma trivial.");
 
     // Outer ranges first block
-    expect(blocks[0].range.from).toBe(0);
-    expect(blocks[0].range.to).toBe(34);
+    expect(code.range.from).toBe(0);
+    expect(code.range.to).toBe(33);
 
     // Inner ranges first block
-    expect(blocks[0].innerRange.from).toBe(7);
-    expect(blocks[0].innerRange.to).toBe(29);
+    expect(code.innerRange.from).toBe(7);
+    expect(code.innerRange.to).toBe(29);
 
     // Outer ranges second block
-    expect(blocks[1].range.from).toBe(43);
-    expect(blocks[1].range.to).toBe(document.length);
+    expect(code2.range.from).toBe(44);
+    expect(code2.range.to).toBe(document.length);
 
     // Inner ranges second block
-    expect(blocks[1].innerRange.from).toBe(51);
-    expect(blocks[1].innerRange.to).toBe(65);
+    expect(code2.innerRange.from).toBe(51);
+    expect(code2.innerRange.to).toBe(65);
 });
 
 

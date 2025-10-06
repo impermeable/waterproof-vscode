@@ -89,7 +89,7 @@ const coqCloseLength = "\n```".length;
 /**
  * Create coq blocks from document string.
  *
- * Uses regexes to search for ```coq and ``` markers.
+ * Uses regexes to search for ` ```coq ` and ` ```  ` markers.
  */
 export function extractCoqBlocks(inputDocument: string, parentOffset: number = 0): Array<CodeBlock | NewlineBlock> {
     const coq_code = Array.from(inputDocument.matchAll(regexes.coq));

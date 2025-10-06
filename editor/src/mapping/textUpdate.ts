@@ -44,18 +44,21 @@ export class TextUpdate {
             finalText: text
         }
 
-        const target = {start: targetCell.prosemirrorStart, end: targetCell.prosemirrorEnd };
+        const target = {prosemirrorStart: targetCell.prosemirrorStart, prosemirrorEnd: targetCell.prosemirrorEnd}
         tree.traverseDepthFirst((node: TreeNode) => {
-            if (node.prosemirrorStart >= target.start && target.end <= node.prosemirrorEnd) {
+            console.log("To be updated?", node)
+            if (node.prosemirrorStart <= target.prosemirrorStart && target.prosemirrorEnd <= node.prosemirrorEnd) {
                 // This node is either the node we are making the text update in or a parent node
                 // We only have to update the closing ranges
                 node.shiftCloseOffsets(offset);
-            } else if (node.prosemirrorEnd > target.end) {
+            } else if (node.prosemirrorStart > target.prosemirrorStart && node.prosemirrorEnd > target.prosemirrorEnd) {
                 // This node is fully after the node in which we made the text update
                 // We update all the ranges
                 node.shiftOffsets(offset);
             }
         });
+
+        console.log(tree)
 
         let newTree = new Tree;
         newTree = tree;

@@ -55,7 +55,6 @@ export class TreeNode {
     }
 
     shiftOffsets(offset: number, offsetProsemirror?: number): void {
-        console.log("test", offset)
         this.prosemirrorStart += offsetProsemirror !== undefined ? offsetProsemirror : offset;
         this.prosemirrorEnd += offsetProsemirror !== undefined ? offsetProsemirror : offset;
         this.pmRange.from += offsetProsemirror !== undefined ? offsetProsemirror : offset;

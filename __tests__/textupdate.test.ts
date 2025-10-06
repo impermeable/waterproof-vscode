@@ -1,4 +1,4 @@
-import { TextDocMappingNew } from "../editor/src/mapping";
+import { Mapping } from "../editor/src/mapping";
 import { topLevelBlocksMV } from "../editor/src/document-construction/construct-document";
 import { DocChange, DocumentSerializer, Fragment, markdown, ReplaceStep, Slice, WaterproofSchema } from "@impermeable/waterproof-editor";
 import { TextUpdate } from "../editor/src/mapping/textUpdate";
@@ -6,7 +6,7 @@ import { TextUpdate } from "../editor/src/mapping/textUpdate";
 
 function createDocAndMapping(doc: string) {
   const blocks = topLevelBlocksMV(doc);
-  const mapping = new TextDocMappingNew(blocks, 0, markdown.configuration("coq"), new DocumentSerializer(markdown.configuration("coq")));
+  const mapping = new Mapping(blocks, 0, markdown.configuration("coq"), new DocumentSerializer(markdown.configuration("coq")));
   return mapping;
 }
 
@@ -66,7 +66,6 @@ test("ReplaceStep delete — deletes part of a block", () => {
   const {newTree, result} = textUpdate.textUpdate(step, mapping);
 
   const md = newTree.root.children[0];
-  // expect(md.stringContent)
   // expect(md.innerRange.from).toBe(0);
   // expect(md.innerRange.to).toBe(6);
   // expect(md.range.from).toBe(0);
@@ -90,9 +89,7 @@ test("ReplaceStep replace - replaces part of a block", () => {
   const textUpdate = new TextUpdate();
   const {newTree, result} = textUpdate.textUpdate(step, mapping);
 
-  // console.log(parsedStep);
   const md = newTree.root.children[0];
-  // expect(md.stringContent).toBe("Hello there"); // TODO: This should be the case, but the stringContent is computed in the wrong way. We do not really use this atm anyway, should we still compute it?
   expect(md.innerRange.from).toBe(0);
   expect(md.innerRange.to).toBe(11);
   expect(md.range.from).toBe(0);

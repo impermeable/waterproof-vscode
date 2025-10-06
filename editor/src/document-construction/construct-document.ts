@@ -49,18 +49,21 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
     let currentBlock: RegExpExecArray|null = null;
     let innerBlocks: Block[] = [];
 
-    let prevEnd = 0;
-
-    // go over all tags
-    tags.forEach((tag: RegExpExecArray) => {
-        // add a code block with the preceding text
-        const range = { from: prevEnd, to: tag.index };
+    let pushCodeBlock = (from: number, to: number) => {
+        const range = { from: from, to: to };
         const innerRange = range;
         const content = inputDocument.substring(innerRange.from, innerRange.to);
         if (currentBlock)
             innerBlocks.push(new CodeBlock(content, range, innerRange));
         else
             blocks.push(new CodeBlock(content, range, innerRange));
+    };
+
+    // go over all tags
+    let prevEnd = 0;
+    tags.forEach((tag: RegExpExecArray) => {
+        // add a code block with the preceding text
+        pushCodeBlock(prevEnd, tag.index);
 
         if (tag[1] === "end") {
             // TODO: throw an error
@@ -95,6 +98,8 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
             prevEnd = tag.index + tag[0].length;
         }
     })
+    // add trailing code as a block
+    pushCodeBlock(prevEnd, inputDocument.length);
 
     return blocks.filter(block => block.range.from != block.range.to);
 }

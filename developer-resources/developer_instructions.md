@@ -39,6 +39,56 @@ Insert the following setting into your `.vscode/settings.json` to stop it from d
 }
 ```
 
+## Publishing the extension: regular release
+Make sure to run
+```
+git pull
+```
+and
+```
+git pull lfs
+```
+Run
+```
+npm ci
+```
+Make sure the version numbers are correct.
+In particular, because this is a regular version, make sure that the version number is of the form
+\*.EVEN.\*, see [here](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) for why.
+Run
+```
+npm run package
+```
+The extension is packaged as `test_out/extension.vsix`.
+This `.vsix` file can now be published on the vscode marketplace.
+
+Finally, tag the commit with the version number, and push the tag to the repository.
+
+## Publishing the extension: a pre-release
+Make sure to run
+```
+git pull
+```
+and
+```
+git pull lfs
+```
+Run
+```
+npm ci
+```
+Make sure the version numbers are correct.
+In particular, because this is a regular version, make sure that the version number is of the form
+\*.ODD.\*, see [here](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) for why.
+Run
+```
+npm run package-pre-release
+```
+The extension is packaged as `test_out/extension.vsix`.
+This `.vsix` file can now be published on the vscode marketplace.
+
+Finally, tag the commit with the version number, and push the tag to the repository.
+
 ### Running a debug version of the webextension
 TODO: Update instructions
 1. Obtain `coq-lsp_worker and front-end.zip` from the coq-lsp CI artifacts. (Latest build at the time of writing: https://github.com/ejgallego/coq-lsp/actions/runs/13566988935) (Build for 8.17 has serlib errors at this point in time).

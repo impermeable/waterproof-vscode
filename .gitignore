@@ -12,3 +12,4 @@ __tests_output__/
 **/*.cache
 ExampleFiles/
 /cypress/screenshots/
+coverage/

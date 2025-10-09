@@ -20,6 +20,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 # Disable shallow clone for sonar
 
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2
@@ -30,4 +32,8 @@ jobs:
       run: npm ci
 
     - name: Run Unit Tests
-      run: npm run unit-tests
+      run: npm run unit-tests-cov
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # pinned v6
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

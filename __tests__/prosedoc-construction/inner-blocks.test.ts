@@ -8,30 +8,35 @@ test("Inner input area (and hint) blocks", () => {
     
     const blocks = createInputAndHintInnerBlocks(inputAreaContent, {from: 0, to: 0});
 
-    expect(blocks.length).toBe(2);
-    expect(typeguards.isMathDisplayBlock(blocks[0])).toBe(true);
+    expect(blocks.length).toBe(3);
+    const [math, newline, code] = blocks;
+    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+    expect(typeguards.isNewlineBlock(newline)).toBe(true);
+    expect(typeguards.isCodeBlock(code)).toBe(true);
 
     // Math display content:
-    expect(blocks[0].stringContent).toBe("1028 + 23 = ?");
-    expect(blocks[0].range.from).toBe(0);
-    expect(blocks[0].range.to).toBe(17);
+    expect(math.stringContent).toBe("1028 + 23 = ?");
+    expect(math.range.from).toBe(0);
+    expect(math.range.to).toBe(17);
 
     // CoqBlock content:
-    expect(blocks[1].stringContent).toBe("Compute 1028 + 23.");
-    expect(blocks[1].range.from).toBe(17);
-    expect(blocks[1].range.to).toBe(inputAreaContent.length);
+    expect(code.stringContent).toBe("Compute 1028 + 23.");
+    expect(code.range.from).toBe(18);
+    expect(code.range.to).toBe(inputAreaContent.length);
 });
 
-test("Verify newlines are part of the coq tags", () => {
+test("Verify newlines before and after code are translated into newline nodes", () => {
     const document = "\n```coq\nLemma test\n```\n";
     const blocks = topLevelBlocksMV(document);
 
-    expect(blocks.length).toBe(1);
-    const [b] = blocks;
+    expect(blocks.length).toBe(3);
+    const [nl, b, nl2] = blocks;
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
     expect(typeguards.isCodeBlock(b)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
     expect(b.stringContent).toBe("Lemma test");
-    expect(b.range.from).toBe(0);
-    expect(b.range.to).toBe(document.length);
+    expect(b.range.from).toBe(1);
+    expect(b.range.to).toBe(document.length - 1);
 });
 
 test("Inner input area (and hint) blocks #2", () => {
@@ -39,8 +44,8 @@ test("Inner input area (and hint) blocks #2", () => {
     
     const offset = 10;
     const blocks = createInputAndHintInnerBlocks(inputAreaContent, {from: offset, to: 0});
-    expect(blocks.length).toBe(2);
-    const [b1, b2] = blocks;
+    expect(blocks.length).toBe(4);
+    const [b1, _nl, b2, _nl2] = blocks;
 
     expect(typeguards.isMathDisplayBlock(b1)).toBe(true);
     expect(b1.stringContent).toBe("1028 + 23 = ?");
@@ -51,8 +56,8 @@ test("Inner input area (and hint) blocks #2", () => {
 
     expect(typeguards.isCodeBlock(b2)).toBe(true);
     expect(b2.stringContent).toBe("Compute 1028 + 23.");
-    expect(b2.range.from).toBe(17 + offset);
-    expect(b2.range.to).toBe(48 + offset);
+    expect(b2.range.from).toBe(18 + offset);
+    expect(b2.range.to).toBe(47 + offset);
     expect(b2.innerRange.from).toBe(25 + offset);
     expect(b2.innerRange.to).toBe(43 + offset);
 });

@@ -2,7 +2,7 @@ import { Range } from "vscode";
 import { NotificationType, RequestType } from "vscode-languageclient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { CoqServerStatus, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { CoqFileProgressKind, SimpleProgressInfo } from "@impermeable/waterproof-editor";
 
 /**
@@ -14,6 +14,12 @@ export const goalRequestType = new RequestType<GoalRequest, GoalAnswer<PpString>
  * LSP notification regarding the progress on processing the document server side
  */
 export const fileProgressNotificationType = new NotificationType<CoqFileProgressParams>("$/coq/fileProgress");
+
+/**
+ * Notification type for the coq-lsp specific `serverStatus` notification. Returns a `CoqServerStatus` object that
+ * can be either Busy or Idle.
+ */
+export const serverStatusNotificationType = new NotificationType<CoqServerStatus>("$/coq/serverStatus");
 
 export interface CoqFileProgressProcessingInfo {
     /** Range for which the processing info was reported. */

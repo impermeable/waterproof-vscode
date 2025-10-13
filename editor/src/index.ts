@@ -57,6 +57,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
 		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq") : tagConfigurationV,
+		disableMarkdownFeatures: format === FileFormat.RegularV ? ["code"] : [],
 	}
 
 	return cfg;

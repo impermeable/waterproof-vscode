@@ -18,7 +18,7 @@ import { convertToSimple, fileProgressNotificationType, goalRequestType, serverS
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
-
+import { AbstractLspClient } from "./abstractLspClient";
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
 }
@@ -43,22 +43,23 @@ function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
  * @public
  */
 export function CoqLspClient<T extends ClientConstructor>(Base: T) {
-    return class extends Base implements ICoqLspClient {
+    const AbstractBase = AbstractLspClient(Base)
+    return class extends AbstractBase implements ICoqLspClient {
 
         /** The resources that must be released when this extension is disposed of */
-        readonly disposables: Disposable[] = [];
+        declare readonly disposables: Disposable[];
+        declare activeDocument: TextDocument | undefined;
+        declare activeCursorPosition: Position | undefined;
+        declare readonly sentenceManager: SentenceManager;
+        declare webviewManager: WebviewManager | undefined;
 
         detailedErrors: boolean = false;
 
-        activeDocument: TextDocument | undefined;
-        activeCursorPosition: Position | undefined;
 
-        readonly sentenceManager: SentenceManager;
         readonly fileProgressComponents: IFileProgressComponent[] = [];
 
         readonly lspOutputChannel: OutputChannel;
 
-        webviewManager: WebviewManager | undefined;
 
         // Whether we are using viewport based checking.
         readonly viewPortBasedChecking: boolean = !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking);
@@ -73,7 +74,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         constructor(...args: any[]) { 
             super(...args);
-            this.sentenceManager = new SentenceManager();
             wpl.debug("CoqLspClient constructor");
             // forward progress notifications to editor
             this.fileProgressComponents.push({
@@ -267,16 +267,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }));
 
             return this.start();
-        }
-
-        getBeginningOfCurrentSentence(): Position | undefined {
-            if (!this.activeCursorPosition) return undefined;
-            return this.sentenceManager.getBeginningOfSentence(this.activeCursorPosition);
-        }
-
-        getEndOfCurrentSentence(): Position | undefined {
-            if (!this.activeCursorPosition) return undefined;
-            return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);
         }
 
         createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest {

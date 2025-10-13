@@ -12,7 +12,6 @@ type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, Langu
 
 export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
     return class extends Base {
-        // Common properties (start with just a few)
         readonly disposables: Disposable[] = [];
         activeDocument: TextDocument | undefined;
         activeCursorPosition: Position | undefined;
@@ -24,7 +23,6 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
             this.sentenceManager = new SentenceManager();
         }
 
-        // Common methods (start with just a few simple ones)
         getBeginningOfCurrentSentence(): Position | undefined {
             if (!this.activeDocument || !this.activeCursorPosition) return undefined;
             return this.sentenceManager.getBeginningOfSentence(this.activeCursorPosition);

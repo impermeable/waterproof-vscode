@@ -7,7 +7,8 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri} from "vscode";
+    Uri
+} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -29,11 +30,18 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
-
+// Lean LSP
+import { activateLeanClient, deactivateLeanClient, restartLeanClient } from "./lsp-client/leanlspclient";
 
 
 export function activate(_context: ExtensionContext): void {
     commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
+    // Lean LSP
+    const context = (_context as unknown) as ExtensionContext;
+    activateLeanClient(context).catch(err => console.error("lean client activation failed:", err));
+    // register a simple restart command for convenience
+    const disposableRestart = commands.registerCommand("lean.restart", () => restartLeanClient(context));
+    context.subscriptions.push(disposableRestart);
 }
 
 /**
@@ -89,7 +97,7 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
             this.client.updateCompletions(document);
         });
-        this.webviewManager.on(WebviewManagerEvents.viewportHint, ({document, start, end}) => {
+        this.webviewManager.on(WebviewManagerEvents.viewportHint, ({ document, start, end }) => {
             this.client.sendViewportHint(document, start, end);
         });
 
@@ -111,7 +119,7 @@ export class Waterproof implements Disposable {
                 };
                 await waitForClient();
                 wpl.log("Client ready. Proceeding with focus event.");
-        	}
+            }
 
             wpl.log("Client state");
 
@@ -185,8 +193,8 @@ export class Waterproof implements Disposable {
 
         this.registerCommand("openTutorial", this.waterproofTutorialCommand);
 
-        this.registerCommand("pathSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.path");});
-        this.registerCommand("argsSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.args");});
+        this.registerCommand("pathSetting", () => { commands.executeCommand("workbench.action.openSettings", "waterproof.path"); });
+        this.registerCommand("argsSetting", () => { commands.executeCommand("workbench.action.openSettings", "waterproof.args"); });
         this.registerCommand("defaultPath", () => {
             let defaultValue: string | undefined;
             switch (process.platform) {
@@ -245,12 +253,12 @@ export class Waterproof implements Disposable {
                 case "sunos": cmnd = undefined; break;
                 // WINDOWS
                 case "win32":
-                    // If a waterproof installation is found in the default location it is first uninstalled.
-                    // The path is updated to the default location so if an installation is present in another directory it still will not be utilised
-                    // The installer is then downloaded, run and then removed.
+                // If a waterproof installation is found in the default location it is first uninstalled.
+                // The path is updated to the default location so if an installation is present in another directory it still will not be utilised
+                // The installer is then downloaded, run and then removed.
                 // eslint-disable-next-line no-fallthrough
-                case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && `
-                    + uninstallerLocation + ` && ` + windowsInstallationScript + ` ) ELSE (echo No previous installation found && ` +  windowsInstallationScript + ` )"`; break;
+                case "cygwin": cmnd = `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && `
+                    + uninstallerLocation + ` && ` + windowsInstallationScript + ` ) ELSE (echo No previous installation found && ` + windowsInstallationScript + ` )"`; break;
                 case "netbsd": cmnd = undefined; break;
             }
 
@@ -277,7 +285,7 @@ export class Waterproof implements Disposable {
             // Doing the require here to avoid issues with the import in the browser version
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { exec } = require("child_process");
-            exec(command, (err : unknown, _stdout: unknown, _stderr: unknown) => {
+            exec(command, (err: unknown, _stdout: unknown, _stderr: unknown) => {
                 if (err) {
                     // Simple fixed scripts are run, the user is able to stop these but they are not considered errors
                     // as the user has freedom to choose the steps and can rerun the command.
@@ -291,7 +299,7 @@ export class Waterproof implements Disposable {
     private async waterproofTutorialCommand(): Promise<void> {
         const hasWorkspaceOpen = workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length != 0;
         const defaultUri = hasWorkspaceOpen ? Utils.joinPath(workspace.workspaceFolders![0].uri, "waterproof_tutorial.mv") : Uri.parse("./waterproof_tutorial.mv");
-        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
+        window.showSaveDialog({ filters: { 'Waterproof': ["mv", "v"] }, title: "Waterproof Tutorial", defaultUri }).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in saving the Waterproof tutorial file");
                 return;
@@ -303,7 +311,7 @@ export class Waterproof implements Disposable {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
                         commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
-                    });                    
+                    });
                 }, (err) => {
                     window.showErrorMessage("Could not open Waterproof tutorial file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
@@ -320,7 +328,7 @@ export class Waterproof implements Disposable {
     private async newFileCommand(): Promise<void> {
         const hasWorkspaceOpen = workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length != 0;
         const defaultUri = hasWorkspaceOpen ? Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv") : Uri.parse("./new_waterproof_document.mv");
-        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document", defaultUri}).then((uri) => {
+        window.showSaveDialog({ filters: { 'Waterproof': ["mv", "v"] }, title: "New Waterproof Document", defaultUri }).then((uri) => {
             if (!uri) {
                 window.showErrorMessage("Something went wrong in creating a new waterproof document");
                 return;
@@ -332,7 +340,7 @@ export class Waterproof implements Disposable {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
                         commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
-                    });                    
+                    });
                 }, (err) => {
                     window.showErrorMessage("Could not create a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
@@ -388,7 +396,7 @@ export class Waterproof implements Disposable {
             const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
             const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
             const versionChecker = new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-            
+
             // Check whether we can find coq-lsp
             const foundServer = await versionChecker.prelaunchChecks();
             if (foundServer) {
@@ -508,4 +516,10 @@ export class Waterproof implements Disposable {
         }
     }
 
+}
+
+export async function deactivate(): Promise<void> {
+    // stop Lean server if running
+    await deactivateLeanClient();
+    return;
 }

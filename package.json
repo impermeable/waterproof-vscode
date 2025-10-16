@@ -35,7 +35,8 @@
   "activationEvents": [
     "onCommand:waterproof.toggle",
     "onLanguage:rocq",
-    "onLanguage:rocqmarkdown"
+    "onLanguage:rocqmarkdown",
+    "onLanguage:lean4"
   ],
   "contributes": {
     "themes": [
@@ -65,7 +66,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v,lean}"
+            "filenamePattern": "*.{mv,v}"
           }
         ]
       }
@@ -269,6 +270,16 @@
       }
     ],
     "configuration": [
+      {
+        "title": "Lean",
+        "properties": {
+          "lean.executablePath": {
+            "type": "string",
+            "default": "",
+            "description": "Path to the Lean executable used to start the language server (default: 'lean' on PATH)."
+          }
+        }
+      },
       {
         "title": "Editor Experience",
         "properties": {

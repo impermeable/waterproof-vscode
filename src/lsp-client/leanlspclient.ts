@@ -1,10 +1,52 @@
 import { ExtensionContext, workspace } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
+import { AbstractLspClient } from "./abstractLspClient";
 
-let leanClient: LanguageClient | undefined;
+type LC = new (...args: any[]) => any;
+const Mixed = AbstractLspClient((LanguageClient as unknown) as LC);
+
+
+export class LeanLspClient extends (Mixed as any) {
+    private readonly context: ExtensionContext;
+
+    constructor(context: ExtensionContext, clientOptions?: LanguageClientOptions) {
+        const cfg = workspace.getConfiguration("waterproof");
+        const lakePath = (cfg.get<string>("lean.lakePath") || "lake").trim() || "lake";
+        const serverArgs = cfg.get<string[]>("lean.serverArgs") || ["serve"];
+
+        const serverOptions: ServerOptions = ({ command: lakePath, args: serverArgs } as unknown) as ServerOptions;
+
+        const defaultClientOptions: LanguageClientOptions = {
+            documentSelector: [{ language: "lean4", scheme: "file" }, { language: "lean4", scheme: "untitled" }],
+            outputChannelName: "Lean LSP",
+            revealOutputChannelOn: 1
+        };
+        super("lean", "Lean Language Server", serverOptions, clientOptions || defaultClientOptions);
+
+        this.context = context;
+    }
+
+    // Implement required abstract methods from AbstractLspClient as minimal stubs.
+    requestGoals(params?: any): Promise<any> {
+        return Promise.reject(new Error("requestGoals not implemented for LeanLspClient"));
+    }
+
+    sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
+        // No viewport hint for Lean in this minimal client.
+        return Promise.resolve();
+    }
+
+    createGoalsRequestParameters(document: TextDocument, position: Position): any {
+        return { textDocument: { uri: document.uri.toString(), version: document.version }, position };
+    }
+
+
+    /// ---
+let leanClientInstance: LeanLspClient | undefined;
+
 
 export async function activateLeanClient(context: ExtensionContext): Promise<void> {
-    if (leanClient) return;
+    if (leanClientInstance) return;
 
     const cfg = workspace.getConfiguration("lean");
     const exe = (cfg.get<string>("executablePath") || "").trim() || "lean";
@@ -16,13 +58,12 @@ export async function activateLeanClient(context: ExtensionContext): Promise<voi
     const clientOptions: LanguageClientOptions = {
         documentSelector: [{ language: "lean", scheme: "file" }, { language: "lean", scheme: "untitled" }],
         outputChannelName: "Lean LSP",
-        // revealOutputChannelOn: RevealOutputChannelOn.Info is optional; numeric 1 corresponds to Info.
         revealOutputChannelOn: 1
     };
 
-    leanClient = new LanguageClient("lean", "Lean Language Server", serverOptions, clientOptions);
+    leanClientInstance = new LeanLspClient(context, clientOptions);
     try {
-        await leanClient.start();
+        await leanClientInstance.start();
         console.log("Lean LSP started");
     } catch (err) {
         console.error("Failed to start Lean LSP:", err);
@@ -30,10 +71,10 @@ export async function activateLeanClient(context: ExtensionContext): Promise<voi
 }
 
 export async function deactivateLeanClient(): Promise<void> {
-    if (!leanClient) return;
+    if (!leanClientInstance) return;
     try {
-        await leanClient.stop();
-        leanClient = undefined;
+        await leanClientInstance.stop();
+        leanClientInstance = undefined;
         console.log("Lean LSP stopped");
     } catch (err) {
         console.error("Error stopping Lean LSP:", err);

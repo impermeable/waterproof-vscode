@@ -18,14 +18,12 @@ import { convertToSimple, fileProgressNotificationType, goalRequestType, serverS
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
-import { AbstractLspClient } from "./abstractLspClient";
+import { AbstractLspClient, ClientConstructor } from "./abstractLspClient";
+
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
 }
 
-// Seems to be needed for the mixin class below
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
 
 function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
     switch (severity) {

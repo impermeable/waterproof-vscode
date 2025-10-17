@@ -1,7 +1,7 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration } from "vscode";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
 import { LanguageClient, LanguageClientOptions } from "vscode-languageclient/browser";
-import { CoqLspClient } from "./lsp-client/client";
+import { CoqLspClient } from "./lsp-client/coqClient";
 import { Waterproof } from "./extension";
 
 /**

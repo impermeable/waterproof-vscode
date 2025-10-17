@@ -7,8 +7,9 @@ import { IFileProgressComponent } from "../components";
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
 }
-
-type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
+// Seems to be needed for the mixin class below
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
 
 export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
     return class extends Base {

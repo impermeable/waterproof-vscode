@@ -1,7 +1,7 @@
 import { ExtensionContext } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 import { Waterproof } from "./extension";
-import { CoqLspClient } from "./lsp-client/client";
+import { CoqLspClient } from "./lsp-client/coqClient";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
 import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
 

@@ -2,8 +2,9 @@ import { ExtensionContext } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 import { Waterproof } from "./extension";
 import { CoqLspClient } from "./lsp-client/coqClient";
-import { CoqLspClientFactory } from "./lsp-client/clientTypes";
+import { CoqLspClientFactory, LeanLspClientFactory } from "./lsp-client/clientTypes";
 import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
+import { LeanLspClient } from "./lsp-client/leanlspclient";
 
 /**
  * This function is responsible for creating lsp clients with the extended
@@ -26,9 +27,15 @@ const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOp
     );
 };
 
+const leanClientFactory: LeanLspClientFactory = (context: ExtensionContext, clientOptions: LanguageClientOptions) => {
+    return new LeanLspClient(
+        context, 
+        clientOptions
+    );
+}
 
 export function activate(context: ExtensionContext): void {
-    const extension: Waterproof = new Waterproof(context, clientFactory);
+    const extension: Waterproof = new Waterproof(context, clientFactory, leanClientFactory);
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();

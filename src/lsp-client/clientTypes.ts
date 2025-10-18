@@ -5,6 +5,7 @@ import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
 import { WaterproofConfigHelper, WaterproofSetting } from "../helpers";
+import { LeanLspClient } from "./leanlspclient";
 
 /**
  * The following are types related to the language client and the
@@ -90,6 +91,15 @@ export type CoqLspClientFactory = (
     clientOptions: LanguageClientOptions,
     wsConfig: WorkspaceConfiguration
 ) => CoqLspClient;
+
+/**
+ * Type of file language client factory
+ */
+export type LeanLspClientFactory = (
+    context: ExtensionContext,
+    clientOptions: LanguageClientOptions,
+    wsConfig: WorkspaceConfiguration
+) => LeanLspClient;
 
 
 

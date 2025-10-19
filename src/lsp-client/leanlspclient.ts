@@ -1,6 +1,5 @@
 import { ExtensionContext, workspace, window, TextDocument, Position, OutputChannel, commands } from "vscode";
 import { Trace } from "vscode-languageclient/node";
-
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 import { AbstractLspClient } from "./abstractLspClient";
 
@@ -55,10 +54,7 @@ export class LeanLspClient extends (Mixed as any) {
     createGoalsRequestParameters(document: TextDocument, position: Position): any {
         return { textDocument: { uri: document.uri.toString(), version: document.version }, position };
     }
-
 }
-
-
 /// ---
 let leanClientInstance: LeanLspClient | undefined;
 // lightweight debug output channel 

@@ -13,7 +13,7 @@ import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languagecli
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
-import { CoqLspClient, CoqLspClientConfig, CoqLspClientFactory, CoqLspServerConfig } from "./lsp-client/clientTypes";
+import { CoqLspClient, CoqLspClientConfig, CoqLspClientFactory, CoqLspServerConfig, LeanLspClientFactory } from "./lsp-client/clientTypes";
 import { executeCommand } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
@@ -56,7 +56,10 @@ export class Waterproof implements Disposable {
     private readonly disposables: Disposable[] = [];
 
     /** The function that can create a new Coq LSP client */
-    private readonly clientFactory: CoqLspClientFactory;
+    private readonly coqClientFactory: CoqLspClientFactory;
+
+    /** The function that can create a new Coq LSP client */
+    private readonly leanClientFactory: LeanLspClientFactory;
 
     /** The manager for (communication between) webviews */
     public readonly webviewManager: WebviewManager;
@@ -85,13 +88,14 @@ export class Waterproof implements Disposable {
      *
      * @param context the extension context object
      */
-    constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory, private readonly _isWeb = false) {
+    constructor(context: ExtensionContext, coqClientFactory: CoqLspClientFactory, leanClientFactory: LeanLspClientFactory, private readonly _isWeb = false) {
         wpl.log("Waterproof initialized");
         checkConflictingExtensions();
         excludeCoqFileTypes();
 
         this.context = context;
-        this.clientFactory = clientFactory;
+        this.coqClientFactory = coqClientFactory;
+        this.leanClientFactory = leanClientFactory;
 
         this.webviewManager = new WebviewManager();
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
@@ -424,8 +428,8 @@ export class Waterproof implements Disposable {
             markdown: { isTrusted: true, supportHtml: true },
         };
 
-        wpl.log("Initializing client...");
-        this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
+        wpl.log("Initializing client..."); S
+        this.client = this.coqClientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
         return this.client.startWithHandlers(this.webviewManager).then(
             () => {
                 this.webviewManager.open("goals");

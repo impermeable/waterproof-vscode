@@ -197,6 +197,8 @@ export interface WpDiagnostic {
 // }
 
 type DiagnosticsData = {
-    sentenceRange ?: Range;
+    sentenceRange?: Range;
     // failedRequire ?: FailedRequire // TODO: Unsupported by us for now
 }
+
+export type ClientKind = 'rocq' | 'lean';

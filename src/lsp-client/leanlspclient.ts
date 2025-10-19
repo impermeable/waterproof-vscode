@@ -1,4 +1,6 @@
-import { ExtensionContext, workspace } from "vscode";
+import { ExtensionContext, workspace, window, TextDocument, Position, OutputChannel, commands } from "vscode";
+import { Trace } from "vscode-languageclient/node";
+
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 import { AbstractLspClient } from "./abstractLspClient";
 
@@ -14,16 +16,30 @@ export class LeanLspClient extends (Mixed as any) {
         const lakePath = (cfg.get<string>("lean.lakePath") || "lake").trim() || "lake";
         const serverArgs = cfg.get<string[]>("lean.serverArgs") || ["serve"];
 
-        const serverOptions: ServerOptions = ({ command: lakePath, args: serverArgs } as unknown) as ServerOptions;
+        const leanExe =
+            workspace.getConfiguration("lean").get<string>("executablePath")?.trim() || "lean";
+
+        const serverOptions: ServerOptions = {
+            command: leanExe,
+            args: ["--server"],
+            options: { env: process.env }
+        };
+
+        const lspTraceChannel = window.createOutputChannel("Lean LSP (Trace)");
+        lspTraceChannel.show(true);
 
         const defaultClientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "lean4", scheme: "file" }, { language: "lean4", scheme: "untitled" }],
+            documentSelector: [
+                { language: "lean4", scheme: "file" },
+                { language: "lean4", scheme: "untitled" }
+            ],
             outputChannelName: "Lean LSP",
+            traceOutputChannel: lspTraceChannel,
             revealOutputChannelOn: 1
         };
-        super("lean", "Lean Language Server", serverOptions, clientOptions || defaultClientOptions);
-
-        this.context = context;
+        super("lean", "Lean Language Server", serverOptions, clientOptions ?? defaultClientOptions);
+        (this as any).trace = Trace.Verbose;
+        (this as any).setTrace?.(Trace.Verbose);
     }
 
     // Implement required abstract methods from AbstractLspClient as minimal stubs.
@@ -40,33 +56,65 @@ export class LeanLspClient extends (Mixed as any) {
         return { textDocument: { uri: document.uri.toString(), version: document.version }, position };
     }
 
+}
 
-    /// ---
+
+/// ---
 let leanClientInstance: LeanLspClient | undefined;
+// lightweight debug output channel 
+const leanDebugOutput: OutputChannel = window.createOutputChannel("Lean LSP Debug");
 
 
 export async function activateLeanClient(context: ExtensionContext): Promise<void> {
     if (leanClientInstance) return;
 
-    const cfg = workspace.getConfiguration("lean");
-    const exe = (cfg.get<string>("executablePath") || "").trim() || "lean";
-    const command = exe;
-    const args = ["--server"];
+    leanDebugOutput.show(true);
+    leanDebugOutput.appendLine("[LeanLspClient] activateLeanClient()");
 
-    const serverOptions: ServerOptions = { command, args };
-
-    const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ language: "lean", scheme: "file" }, { language: "lean", scheme: "untitled" }],
-        outputChannelName: "Lean LSP",
-        revealOutputChannelOn: 1
-    };
-
-    leanClientInstance = new LeanLspClient(context, clientOptions);
     try {
+        leanClientInstance = new LeanLspClient(context, undefined);
+        context.subscriptions.push(leanDebugOutput);
+        (leanClientInstance as any).trace = Trace.Verbose;
+        (leanClientInstance as any).setTrace?.(Trace.Verbose);
+
+
+        leanDebugOutput.appendLine("[LeanLspClient] calling start()");
         await leanClientInstance.start();
-        console.log("Lean LSP started");
+        leanDebugOutput.appendLine("[LeanLspClient] start() resolved");
+
+        (leanClientInstance as any).onDidChangeState?.(({ newState }: any) => {
+            const name = newState === 2 ? "Running" : newState === 1 ? "Starting" : "Stopped";
+            leanDebugOutput.appendLine(`[LeanLspClient] state -> ${name} (${newState})`);
+        });
+
+        await new Promise<void>((resolve) => {
+
+            if ((leanClientInstance as any).state === 2) return resolve();
+
+            const disp = (leanClientInstance as any).onDidChangeState?.(({ newState }: any) => {
+                if (newState === 2) {
+                    disp?.dispose?.();
+                    resolve();
+                }
+            });
+
+            if (!disp) resolve();
+        });
+
+        leanDebugOutput.appendLine("[LeanLspClient] ready (state=Running)");
+
+        (leanClientInstance as any).onNotification("window/logMessage", (msg: any) => {
+            leanDebugOutput.appendLine(`[server window/logMessage] ${JSON.stringify(msg)}`);
+        });
+        (leanClientInstance as any).onNotification("textDocument/publishDiagnostics", (p: any) => {
+            leanDebugOutput.appendLine(`[diagnostics] ${JSON.stringify(p)}`);
+        });
+        (leanClientInstance as any).onNotification("$/progress", (p: any) => {
+            leanDebugOutput.appendLine(`[progress] ${JSON.stringify(p)}`);
+        });
+
     } catch (err) {
-        console.error("Failed to start Lean LSP:", err);
+        leanDebugOutput.appendLine(`[LeanLspClient] start failed: ${String(err)}`);
     }
 }
 
@@ -75,9 +123,9 @@ export async function deactivateLeanClient(): Promise<void> {
     try {
         await leanClientInstance.stop();
         leanClientInstance = undefined;
-        console.log("Lean LSP stopped");
+        leanDebugOutput.appendLine("[LeanLspClient] stopped");
     } catch (err) {
-        console.error("Error stopping Lean LSP:", err);
+        leanDebugOutput.appendLine(`[LeanLspClient] error stopping: ${String(err)}`);
     }
 }
 

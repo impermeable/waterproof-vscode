@@ -60,6 +60,9 @@ let leanClientInstance: LeanLspClient | undefined;
 // lightweight debug output channel 
 const leanDebugOutput: OutputChannel = window.createOutputChannel("Lean LSP Debug");
 
+export function getLeanInstance(): LeanLspClient | undefined {
+    return leanClientInstance;
+}
 
 export async function activateLeanClient(context: ExtensionContext): Promise<void> {
     if (leanClientInstance) return;

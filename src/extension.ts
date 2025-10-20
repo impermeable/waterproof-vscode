@@ -31,7 +31,8 @@ import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 // Lean LSP
-import { activateLeanClient, deactivateLeanClient, LeanLspClient, restartLeanClient } from "./lsp-client/leanlspclient";
+import { activateLeanClient, deactivateLeanClient, getLeanInstance, LeanLspClient, restartLeanClient } from "./lsp-client/leanlspclient";
+import { LspClientFactory } from "./mainNode";
 
 
 export function activate(_context: ExtensionContext): void {
@@ -55,11 +56,8 @@ export class Waterproof implements Disposable {
     /** The resources that must be released when this extension is disposed of */
     private readonly disposables: Disposable[] = [];
 
-    /** The function that can create a new Coq LSP client */
-    private readonly coqClientFactory: CoqLspClientFactory;
-
-    /** The function that can create a new Coq LSP client */
-    private readonly leanClientFactory: LeanLspClientFactory;
+    /** The function that can create a new Coq or Lean LSP client */
+    private readonly clientFactory: LspClientFactory;
 
     /** The manager for (communication between) webviews */
     public readonly webviewManager: WebviewManager;
@@ -90,15 +88,14 @@ export class Waterproof implements Disposable {
      *
      * @param context the extension context object
      */
-    constructor(context: ExtensionContext, coqClientFactory: CoqLspClientFactory, leanClientFactory: LeanLspClientFactory, private readonly _isWeb = false) {
+    constructor(context: ExtensionContext, clientFactory: LspClientFactory, private readonly _isWeb = false) {
         wpl.log("Waterproof initialized");
         checkConflictingExtensions();
         excludeCoqFileTypes();
 
         this.context = context;
-        this.coqClientFactory = coqClientFactory;
-        this.leanClientFactory = leanClientFactory;
-
+        this.clientFactory = clientFactory;
+        
         this.webviewManager = new WebviewManager();
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
             if (document.languageId == 'lean') {
@@ -118,7 +115,21 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
             wpl.log("Focus event received");
             if (document.languageId == 'lean') {
+                let leanInstance = getLeanInstance();
+                if (leanInstance === undefined) {
+                    // TODO: wait
+                } 
+                this.leanClient = <LeanLspClient> leanInstance;
 
+                // update active document
+                // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
+                if (this.leanClient.activeDocument?.uri.toString() !== document.uri.toString()) {
+                    this.leanClient.activeDocument = document;
+                    this.leanClient.activeCursorPosition = undefined;
+                    this.webviewManager.open("goals");
+                    for (const g of this.goalsComponents) g.updateGoals(undefined);
+
+                }
             } else {
                 // Wait for client to initialize
                 if (!this.coqClientRunning) {
@@ -449,7 +460,7 @@ export class Waterproof implements Disposable {
         };
 
         wpl.log("Initializing client...");
-        this.coqClient = this.coqClientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
+        this.coqClient = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
         return this.coqClient.startWithHandlers(this.webviewManager).then(
             () => {
                 this.webviewManager.open("goals");

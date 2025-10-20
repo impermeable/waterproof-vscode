@@ -57,11 +57,18 @@ export class LeanLspClient extends (Mixed as any) {
 }
 /// ---
 let leanClientInstance: LeanLspClient | undefined;
+
+let clientRunning: boolean = false;
+
 // lightweight debug output channel 
 const leanDebugOutput: OutputChannel = window.createOutputChannel("Lean LSP Debug");
 
 export function getLeanInstance(): LeanLspClient | undefined {
     return leanClientInstance;
+}
+
+export function isLeanClientRunning() : boolean {
+    return clientRunning;
 }
 
 export async function activateLeanClient(context: ExtensionContext): Promise<void> {
@@ -112,6 +119,7 @@ export async function activateLeanClient(context: ExtensionContext): Promise<voi
             leanDebugOutput.appendLine(`[progress] ${JSON.stringify(p)}`);
         });
 
+        clientRunning = true;
     } catch (err) {
         leanDebugOutput.appendLine(`[LeanLspClient] start failed: ${String(err)}`);
     }

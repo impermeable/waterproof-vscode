@@ -31,7 +31,7 @@ import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 // Lean LSP
-import { activateLeanClient, deactivateLeanClient, getLeanInstance, LeanLspClient, restartLeanClient } from "./lsp-client/leanlspclient";
+import { activateLeanClient, deactivateLeanClient, getLeanInstance, isLeanClientRunning, LeanLspClient, restartLeanClient } from "./lsp-client/leanlspclient";
 import { LspClientFactory } from "./mainNode";
 
 
@@ -115,11 +115,24 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
             wpl.log("Focus event received");
             if (document.languageId == 'lean') {
-                let leanInstance = getLeanInstance();
-                if (leanInstance === undefined) {
-                    // TODO: wait
+                
+                if (!isLeanClientRunning()) {
+                    console.warn("Focus event received before client is ready. Waiting...");
+                    const waitForClient = async (): Promise<void> => {
+                        return new Promise(resolve => {
+                            const interval = setInterval(() => {
+                                if (isLeanClientRunning()) {
+                                    clearInterval(interval);
+                                    resolve();
+                                }
+                            }, 100);
+                        });
+                    };
+                    await waitForClient();
+                    wpl.log("Lean Client ready. Proceeding with focus event.");
+                    
                 } 
-                this.leanClient = <LeanLspClient> leanInstance;
+                this.leanClient = <LeanLspClient> getLeanInstance();
 
                 // update active document
                 // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)

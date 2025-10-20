@@ -1,6 +1,6 @@
 import { Range, WorkspaceEdit, workspace } from "vscode";
 import { GoalAnswer, PpString, convertToString } from "../../lib/types";
-import { CoqLspClient } from "./clientTypes";
+import { AbstractLspClient, CoqLspClient } from "./clientTypes";
 
 /**
  * Utility function used to edit the active document. Note that this increments the document's
@@ -13,7 +13,7 @@ async function edit(f: (e: WorkspaceEdit) => void): Promise<void> {
     await workspace.applyEdit(e);  // TODO: what does boolean result mean?
 }
 
-export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<PpString>> {
+export async function executeCommand(client: AbstractLspClient, command: string): Promise<GoalAnswer<PpString>> {
     const documentUri = client.activeDocument?.uri;
     if (!documentUri) {
         throw new Error("Cannot execute command; there is no active document.");

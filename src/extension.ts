@@ -31,7 +31,7 @@ import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 // Lean LSP
-import { activateLeanClient, deactivateLeanClient, restartLeanClient } from "./lsp-client/leanlspclient";
+import { activateLeanClient, deactivateLeanClient, LeanLspClient, restartLeanClient } from "./lsp-client/leanlspclient";
 
 
 export function activate(_context: ExtensionContext): void {
@@ -68,7 +68,8 @@ export class Waterproof implements Disposable {
      * The client that communicates with the Coq LSP server.
      * It's created by the `initializeClient` function.
      */
-    public client!: CoqLspClient;
+    public coqClient!: CoqLspClient;
+    public leanClient!: LeanLspClient;
 
     /** The status bar item that indicates whether this extension is running */
     private readonly statusBar: IStatusComponent;
@@ -81,7 +82,8 @@ export class Waterproof implements Disposable {
 
     private sidePanelProvider: SidePanelProvider;
 
-    private clientRunning: boolean = false;
+    private coqClientRunning: boolean = false;
+    private leanClientRunning: boolean = false;
 
     /**
      * Constructs the extension lifecycle object.
@@ -99,56 +101,74 @@ export class Waterproof implements Disposable {
 
         this.webviewManager = new WebviewManager();
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
-            this.client.updateCompletions(document);
+            if (document.languageId == 'lean') {
+                this.leanClient.updateCompletions(document);
+            } else {
+                this.coqClient.updateCompletions(document);
+            }
         });
         this.webviewManager.on(WebviewManagerEvents.viewportHint, ({ document, start, end }) => {
-            this.client.sendViewportHint(document, start, end);
+            if (document.languageId == 'lean') {
+                this.leanClient.sendViewportHint(document, start, end);
+            } else {
+                this.coqClient.sendViewportHint(document, start, end);
+            }
         });
 
         this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
             wpl.log("Focus event received");
+            if (document.languageId == 'lean') {
 
-            // Wait for client to initialize
-            if (!this.clientRunning) {
-                console.warn("Focus event received before client is ready. Waiting...");
-                const waitForClient = async (): Promise<void> => {
-                    return new Promise(resolve => {
-                        const interval = setInterval(() => {
-                            if (this.clientRunning) {
-                                clearInterval(interval);
-                                resolve();
-                            }
-                        }, 100);
-                    });
-                };
-                await waitForClient();
-                wpl.log("Client ready. Proceeding with focus event.");
-            }
+            } else {
+                // Wait for client to initialize
+                if (!this.coqClientRunning) {
+                    console.warn("Focus event received before client is ready. Waiting...");
+                    const waitForClient = async (): Promise<void> => {
+                        return new Promise(resolve => {
+                            const interval = setInterval(() => {
+                                if (this.coqClientRunning) {
+                                    clearInterval(interval);
+                                    resolve();
+                                }
+                            }, 100);
+                        });
+                    };
+                    await waitForClient();
+                    wpl.log("Client ready. Proceeding with focus event.");
+                }
 
-            wpl.log("Client state");
+                wpl.log("Client state");
 
-            // update active document
-            // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
-            if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
-                this.client.activeDocument = document;
-                this.client.activeCursorPosition = undefined;
-                this.webviewManager.open("goals");
-                for (const g of this.goalsComponents) g.updateGoals(undefined);
+                // update active document
+                // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
+                if (this.coqClient.activeDocument?.uri.toString() !== document.uri.toString()) {
+                    this.coqClient.activeDocument = document;
+                    this.coqClient.activeCursorPosition = undefined;
+                    this.webviewManager.open("goals");
+                    for (const g of this.goalsComponents) g.updateGoals(undefined);
 
+                }
             }
 
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
-            // update active document and cursor
-            this.client.activeDocument = document;
-            this.client.activeCursorPosition = position;
-            this.updateGoals(document, position);  // TODO: error handling
+            if (document.languageId == 'lean') {
+                this.leanClient.activeDocument = document;
+                this.leanClient.activeCursorPosition = position;
+                this.updateGoalsLean(document, position);
+            } else {
+                // update active document and cursor
+                this.coqClient.activeDocument = document;
+                this.coqClient.activeCursorPosition = position;
+                this.updateGoalsCoq(document, position);  // TODO: error handling
+            }
         });
         this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
             if (command == "createHelp") {
                 source.setResults(["createHelp"]);
             } else {
-                executeCommand(this.client, command).then(
+                // TODO: ADD handling for commands for lean
+                executeCommand(this.coqClient, command).then(
                     results => {
                         source.setResults(results);
                     },
@@ -369,7 +389,7 @@ export class Waterproof implements Disposable {
      * Remove solutions from document and open save dialog for the solution-less file.
      */
     async exportExerciseSheet() {
-        const document = this.client.activeDocument;
+        const document = this.coqClient.activeDocument;
         if (document) {
             let content = document.getText();
             const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g;
@@ -411,7 +431,7 @@ export class Waterproof implements Disposable {
             }
         }
 
-        if (this.client?.isRunning()) {
+        if (this.coqClient?.isRunning()) {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
 
@@ -428,14 +448,14 @@ export class Waterproof implements Disposable {
             markdown: { isTrusted: true, supportHtml: true },
         };
 
-        wpl.log("Initializing client..."); S
-        this.client = this.coqClientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
-        return this.client.startWithHandlers(this.webviewManager).then(
+        wpl.log("Initializing client...");
+        this.coqClient = this.coqClientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
+        return this.coqClient.startWithHandlers(this.webviewManager).then(
             () => {
                 this.webviewManager.open("goals");
                 // show user that LSP is working
                 this.statusBar.update(true);
-                this.clientRunning = true;
+                this.coqClientRunning = true;
                 wpl.log("Client initialization complete.");
             },
             reason => {
@@ -461,7 +481,7 @@ export class Waterproof implements Disposable {
      * otherwise initialize it.
      */
     private toggleClient(): Promise<void> {
-        if (this.client?.isRunning()) {
+        if (this.coqClient?.isRunning()) {
             return this.stopClient();
         } else {
             return this.initializeClient();
@@ -472,10 +492,10 @@ export class Waterproof implements Disposable {
      * Disposes of the Coq LSP client.
      */
     private async stopClient(): Promise<void> {
-        if (this.client.isRunning()) {
+        if (this.coqClient.isRunning()) {
             for (const g of this.goalsComponents) g.disable();
-            await this.client.dispose(2000);
-            this.clientRunning = false;
+            await this.coqClient.dispose(2000);
+            this.coqClientRunning = false;
             this.statusBar.update(false);
         } else {
             return Promise.resolve();
@@ -486,15 +506,45 @@ export class Waterproof implements Disposable {
      * This function gets called on TextEditorSelectionChange events and it requests the goals
      * if needed
      */
-    private async updateGoals(document: TextDocument, position: Position): Promise<void> {
+    private async updateGoalsCoq(document: TextDocument, position: Position): Promise<void> {
         wpl.debug(`Updating goals for document: ${document.uri.toString()} at position: ${position.line}:${position.character}`);
-        if (!this.client.isRunning()) {
+        if (!this.coqClient.isRunning()) {
             wpl.debug("Client is not running, cannot update goals.");
             return;
         }
-        const params = this.client.createGoalsRequestParameters(document, position);
+        const params = this.coqClient.createGoalsRequestParameters(document, position);
         wpl.debug(`Requesting goals for components: ${this.goalsComponents}`);
-        this.client.requestGoals(params).then(
+        this.coqClient.requestGoals(params).then(
+            response => {
+                wpl.debug(`Received goals response: ${JSON.stringify(response)}`);
+                for (const g of this.goalsComponents) {
+                    wpl.debug(`Updating goals component: ${g.constructor.name}`);
+                    g.updateGoals(response)
+                }
+            },
+            reason => {
+                wpl.debug(`Failed for reason: ${reason}`);
+                for (const g of this.goalsComponents) {
+                    wpl.debug(`Failed to update goals component: ${g.constructor.name}`);
+                    g.failedGoals(reason);
+                }
+            }
+        );
+    }
+
+    /**
+     * This function gets called on TextEditorSelectionChange events and it requests the goals
+     * if needed
+     */
+    private async updateGoalsLean(document: TextDocument, position: Position): Promise<void> {
+        wpl.debug(`Updating goals for document: ${document.uri.toString()} at position: ${position.line}:${position.character}`);
+        if (!this.leanClient.isRunning()) {
+            wpl.debug("Client is not running, cannot update goals.");
+            return;
+        }
+        const params = this.leanClient.createGoalsRequestParameters(document, position);
+        wpl.debug(`Requesting goals for components: ${this.goalsComponents}`);
+        this.leanClient.requestGoals(params).then(
             response => {
                 wpl.debug(`Received goals response: ${JSON.stringify(response)}`);
                 for (const g of this.goalsComponents) {

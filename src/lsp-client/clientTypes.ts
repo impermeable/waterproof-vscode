@@ -78,10 +78,12 @@ export interface ICoqLspClient {
     updateCompletions(document: TextDocument): Promise<void>;
 }
 
+export type AbstractLspClient = BaseLanguageClient & ICoqLspClient;
+
 /**
  * Type of file language client
  */
-export type CoqLspClient = BaseLanguageClient & ICoqLspClient;
+export type CoqLspClient = AbstractLspClient;
 
 /**
  * Type of file language client factory

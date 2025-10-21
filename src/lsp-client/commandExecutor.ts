@@ -40,7 +40,7 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
             textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
             goals: goalsRes
         };
-    } catch (reason) {
-        return Promise.reject(reason);
+    } catch (error) {
+        throw new Error(`Error when trying to execute command '${command}': ${error}`);
     }
 }

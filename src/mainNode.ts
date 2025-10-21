@@ -22,8 +22,6 @@ export type LspClientFactory =
  */
 const clientFactory: LspClientFactory = (context, clientOptions, kind) => {
     if (kind === 'lean') {
-        const leanExe = workspace.getConfiguration('lean').get<string>('executablePath')?.trim() || 'lean';
-
         return new LeanLspClient(context, clientOptions);
     }
     const serverOptions: ServerOptions = {

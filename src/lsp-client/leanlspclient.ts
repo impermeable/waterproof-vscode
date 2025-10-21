@@ -11,16 +11,18 @@ export class LeanLspClient extends (Mixed as any) {
     private readonly context: ExtensionContext;
 
     constructor(context: ExtensionContext, clientOptions?: LanguageClientOptions) {
-        const cfg = workspace.getConfiguration("waterproof");
-        const lakePath = (cfg.get<string>("lean.lakePath") || "lake").trim() || "lake";
-        const serverArgs = cfg.get<string[]>("lean.serverArgs") || ["serve"];
 
-        const leanExe =
-            workspace.getConfiguration("lean").get<string>("executablePath")?.trim() || "lean";
+        const wpCfg = workspace.getConfiguration("waterproof");
+        const configuredLake = (wpCfg.get<string>("lean.lakePath") || "").trim();
+        const lakeArgs = wpCfg.get<string[]>("lean.lakeArgs") || ["serve"];
+        const legacyLean = workspace.getConfiguration("lean").get<string>("executablePath")?.trim() || "";
+
+        const serverCommand = configuredLake || legacyLean || "lean";
+        const serverArgs = configuredLake ? lakeArgs : ["--server"];
 
         const serverOptions: ServerOptions = {
-            command: leanExe,
-            args: ["--server"],
+            command: serverCommand,
+            args: serverArgs,
             options: { env: process.env }
         };
 
@@ -67,7 +69,7 @@ export function getLeanInstance(): LeanLspClient | undefined {
     return leanClientInstance;
 }
 
-export function isLeanClientRunning() : boolean {
+export function isLeanClientRunning(): boolean {
     return clientRunning;
 }
 

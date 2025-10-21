@@ -66,7 +66,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v}"
+            "filenamePattern": "*.{mv,v,lean}"
           }
         ]
       }
@@ -277,6 +277,21 @@
             "type": "string",
             "default": "",
             "description": "Path to the Lean executable used to start the language server (default: 'lean' on PATH)."
+          },
+          "lean.lakePath": {
+            "type": "string",
+            "default": "lake",
+            "description": "Path to the lake executable used to run the Lean server (default: 'lake' on PATH)."
+          },
+          "lean.lakeArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "serve"
+            ],
+            "description": "Arguments passed to lake to start the server (default: ['serve'])."
           }
         }
       },

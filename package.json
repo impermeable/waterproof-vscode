@@ -34,8 +34,8 @@
   },
   "activationEvents": [
     "onCommand:waterproof.toggle",
-    "onLanguage:rocq",
-    "onLanguage:rocqmarkdown"
+    "onLanguage:coq",
+    "onLanguage:markdown"
   ],
   "contributes": {
     "themes": [
@@ -72,14 +72,22 @@
     ],
     "languages": [
       {
-        "id": "rocq",
+        "id": "coq",
+	"aliases": [
+          "rocq",
+          "Coq",
+          "Gallina",
+          "gallina"
+        ],
         "extensions": [
-          ".v",
-          ".mv"
+          ".v"
         ]
       },
       {
-        "id": "rocqmarkdown",
+        "id": "markdown",
+	"aliases": [
+	  "Markdown"
+	],
         "extensions": [
           ".mv"
         ]

@@ -73,13 +73,21 @@
     "languages": [
       {
         "id": "coq",
+	"aliases": [
+          "rocq",
+          "Coq",
+          "Gallina",
+          "gallina"
+        ],
         "extensions": [
-          ".v",
-          ".mv"
+          ".v"
         ]
       },
       {
         "id": "markdown",
+	"aliases": [
+	  "Markdown"
+	],
         "extensions": [
           ".mv"
         ]

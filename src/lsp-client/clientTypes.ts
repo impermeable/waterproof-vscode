@@ -82,7 +82,7 @@ export interface ICoqLspClient {
 /**
  * Used across the extension to create a language client that implements the `ICoqLspClient` interface
  */
-export type CoqLspClient = BaseLanguageClient & ICoqLspClient;
+export type CoqLspClient = AbstractLspClient;
 
 /**
  * Type of file language client factory
@@ -208,6 +208,8 @@ export interface WpDiagnostic {
 // }
 
 type DiagnosticsData = {
-    sentenceRange ?: Range;
+    sentenceRange?: Range;
     // failedRequire ?: FailedRequire // TODO: Unsupported by us for now
 }
+
+export type ClientKind = 'rocq' | 'lean';

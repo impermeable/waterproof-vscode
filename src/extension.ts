@@ -68,7 +68,7 @@ export class Waterproof implements Disposable {
      */
     public coqClient!: CoqLspClient;
     public leanClient!: LeanLspClient;
-
+    public activeClient: string;
     /** The status bar item that indicates whether this extension is running */
     private readonly statusBar: IStatusComponent;
 
@@ -95,7 +95,7 @@ export class Waterproof implements Disposable {
 
         this.context = context;
         this.clientFactory = clientFactory;
-        
+        this.activeClient = 'none';
         this.webviewManager = new WebviewManager();
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
             if (document.languageId == 'lean') {
@@ -115,7 +115,7 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
             wpl.log("Focus event received");
             if (document.languageId == 'lean') {
-                
+
                 if (!isLeanClientRunning()) {
                     console.warn("Focus event received before client is ready. Waiting...");
                     const waitForClient = async (): Promise<void> => {
@@ -130,10 +130,10 @@ export class Waterproof implements Disposable {
                     };
                     await waitForClient();
                     wpl.log("Lean Client ready. Proceeding with focus event.");
-                    
-                } 
-                this.leanClient = <LeanLspClient> getLeanInstance();
 
+                }
+                this.leanClient = <LeanLspClient>getLeanInstance();
+                this.activeClient = 'lean';
                 // update active document
                 // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
                 if (this.leanClient.activeDocument?.uri.toString() !== document.uri.toString()) {
@@ -162,7 +162,7 @@ export class Waterproof implements Disposable {
                 }
 
                 wpl.log("Client state");
-
+                this.activeClient = 'coq';
                 // update active document
                 // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
                 if (this.coqClient.activeDocument?.uri.toString() !== document.uri.toString()) {
@@ -191,15 +191,25 @@ export class Waterproof implements Disposable {
             if (command == "createHelp") {
                 source.setResults(["createHelp"]);
             } else {
-                // TODO: ADD handling for commands for lean
-                executeCommand(this.coqClient, command).then(
-                    results => {
-                        source.setResults(results);
-                    },
-                    (error: Error) => {
-                        source.setResults(["Error: " + error.message]);  // (temp)
-                    }
-                );
+                if (this.activeClient == 'lean') {
+                    executeCommand(this.leanClient, command).then(
+                        results => {
+                            source.setResults(results);
+                        },
+                        (error: Error) => {
+                            source.setResults(["Error: " + error.message]);  // (temp)
+                        }
+                    );
+                } else {
+                    executeCommand(this.coqClient, command).then(
+                        results => {
+                            source.setResults(results);
+                        },
+                        (error: Error) => {
+                            source.setResults(["Error: " + error.message]);  // (temp)
+                        }
+                    );
+                }
             }
         });
 

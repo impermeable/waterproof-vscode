@@ -1,6 +1,7 @@
 import { ExtensionContext, Position, TextDocument, workspace } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 import { AbstractLspClient } from "./abstractLspClient";
+import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 
 type LC = new (...args: any[]) => any;
 const Mixed = AbstractLspClient((LanguageClient as unknown) as LC);
@@ -27,7 +28,7 @@ export class LeanLspClient extends (Mixed as any) {
     }
 
     // Implement required abstract methods from AbstractLspClient as minimal stubs.
-    requestGoals(params?: any): Promise<any> {
+    requestGoals(params?: GoalRequest | Position): Promise<GoalAnswer<PpString>> {
         return Promise.reject(new Error("requestGoals not implemented for LeanLspClient"));
     }
 
@@ -36,8 +37,19 @@ export class LeanLspClient extends (Mixed as any) {
         return Promise.resolve();
     }
 
-    createGoalsRequestParameters(document: TextDocument, position: Position): any {
+    createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest {
         return { textDocument: { uri: document.uri.toString(), version: document.version }, position };
+    }
+
+    // Implement other required methods from ICoqLspClient
+    async requestSymbols(document?: TextDocument): Promise<any[]> {
+        // Minimal implementation for Lean
+        return [];
+    }
+
+    async updateCompletions(document: TextDocument): Promise<void> {
+        // Minimal implementation for Lean
+        return Promise.resolve();
     }
 }
     /// ---

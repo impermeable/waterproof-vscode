@@ -36,7 +36,8 @@
     "onCommand:waterproof.toggle",
     "onLanguage:rocq",
     "onLanguage:rocqmarkdown",
-    "onLanguage:lean4"
+    "onLanguage:lean4",
+    "onLanguage:lean"
   ],
   "contributes": {
     "themes": [
@@ -66,7 +67,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v}"
+            "filenamePattern": "*.{mv,v,lean}"
           }
         ]
       }
@@ -277,6 +278,21 @@
             "type": "string",
             "default": "",
             "description": "Path to the Lean executable used to start the language server (default: 'lean' on PATH)."
+          },
+          "lean.lakePath": {
+            "type": "string",
+            "default": "lake",
+            "description": "Path to the lake executable used to run the Lean server (default: 'lake' on PATH)."
+          },
+          "lean.lakeArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "serve"
+            ],
+            "description": "Arguments passed to lake to start the server (default: ['serve'])."
           }
         }
       },
@@ -525,7 +541,7 @@
     "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"
   },
   "main": "./out/src/mainNode.js",
-  "browser": "/out/src/mainBrowser.js",
+  "browser": "./out/src/mainBrowser.js",
   "scripts": {
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
     "esbuild": "node esbuild.mjs",

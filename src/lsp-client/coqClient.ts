@@ -42,14 +42,7 @@ function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
  */
 export function CoqLspClient<T extends ClientConstructor>(Base: T) {
     const AbstractBase = AbstractLspClient(Base)
-    return class extends AbstractBase implements ICoqLspClient {
-
-        /** The resources that must be released when this extension is disposed of */
-        declare readonly disposables: Disposable[];
-        declare activeDocument: TextDocument | undefined;
-        declare activeCursorPosition: Position | undefined;
-        declare readonly sentenceManager: SentenceManager;
-        declare webviewManager: WebviewManager | undefined;
+    return class extends AbstractBase {
 
         detailedErrors: boolean = false;
 
@@ -264,7 +257,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     this.updateCompletions(event.document);
             }));
 
-            return this.start();
+            return super.startWithHandlers(webviewManager);
         }
 
         createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest {

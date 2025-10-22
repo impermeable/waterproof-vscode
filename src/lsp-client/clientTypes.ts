@@ -78,8 +78,9 @@ export interface ICoqLspClient {
     updateCompletions(document: TextDocument): Promise<void>;
 }
 
+
 /**
- * Type of file language client
+ * Used across the extension to create a language client that implements the `ICoqLspClient` interface
  */
 export type CoqLspClient = BaseLanguageClient & ICoqLspClient;
 

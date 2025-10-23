@@ -4,7 +4,7 @@
 apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.2.3+9.0
+opam install coq-lsp.0.2.4+9.0
 opam install coq-waterproof
 ```
 

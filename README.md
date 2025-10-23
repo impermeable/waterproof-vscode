@@ -34,7 +34,7 @@ In a terminal, execute the following lines
 apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.2.3+9.0
+opam install coq-lsp.0.2.4+9.0
 opam install coq-waterproof
 ```
 
@@ -65,7 +65,7 @@ Then execute
 ```
 opam init
 eval $(opam env)
-opam install coq-lsp.0.2.3+9.0
+opam install coq-lsp.0.2.4+9.0
 opam install coq-waterproof
 ```
 
@@ -74,7 +74,7 @@ For instance, if at some point the compilation fails because `pkgconf` does not 
 ```
 brew install pkgconf
 ```
-before you re-execute the command `opam install coq-lsp.0.2.3+9.0`.
+before you re-execute the command `opam install coq-lsp.0.2.4+9.0`.
 
 ## Manual installation on Windows with installer
 
@@ -129,7 +129,7 @@ Within a WSL distribution, execute the following lines:
 sudo apt-get install opam
 opam init
 eval $(opam env)
-opam install coq-lsp.0.2.3+9.0
+opam install coq-lsp.0.2.4+9.0
 opam install coq-waterproof
 ```
 

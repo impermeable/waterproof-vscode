@@ -70,6 +70,8 @@ export interface GoalRequest {
     textDocument: VersionedTextDocumentIdentifier;
     position: Position;
     pp_format?: "Pp" | "Str";
+    command?: string;
+    mode?: 'Prev' | 'After';
 }
 
 export type Pp =
@@ -83,6 +85,14 @@ export type Pp =
     | ["Pp_comment", string[]];
 
 export type PpString = Pp | string;
+
+export function ppStringIsPp(obj: PpString): obj is Pp {
+    return Array.isArray(obj);
+}
+
+export function isMessage(obj: Message<PpString> | PpString): obj is Message<PpString> {
+    return (typeof obj === "object" && "level" in obj);
+}
 
 /**
  * Quick and dirty utility function to convert a pretty-printing object into a plain string.

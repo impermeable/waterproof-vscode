@@ -7,13 +7,14 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri} from "vscode";
+    Uri,
+    Range} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
 import { CoqLspClient, CoqLspClientConfig, CoqLspClientFactory, CoqLspServerConfig } from "./lsp-client/clientTypes";
-import { executeCommand } from "./lsp-client/commandExecutor";
+import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
@@ -31,10 +32,8 @@ import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
 
-
-export function activate(_context: ExtensionContext): void {
-    commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
-}
+import { convertToString } from "../lib/types";
+import { Hypothesis } from "./api";
 
 /**
  * Main extension class
@@ -266,6 +265,87 @@ export class Waterproof implements Disposable {
             WaterproofConfigHelper.update(WaterproofSetting.ShowLineNumbersInEditor, updated);
             window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
+    }
+
+    /**
+     * Request the goals for the current document and cursor position. 
+     */
+    public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) { throw new Error("No active document or cursor position."); }
+        
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
+
+        const params = this.client.createGoalsRequestParameters(document, position);
+        const goalResponse = await this.client.requestGoals(params);
+
+        if (goalResponse.goals === undefined) {
+            throw new Error("Response contained no goals.");
+        }
+    
+        // Convert goals and hypotheses to strings
+        const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
+        // Note: only taking hypotheses from the first goal
+        const hyps = goalResponse.goals.goals[0].hyps.map(h => { return {name: convertToString(h.names[0]), content: convertToString(h.ty)}; });
+
+        return {currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1)};
+    }
+
+    /**
+     * Get the currently active document in the editor.
+     */
+    public currentDocument(): TextDocument {
+        if (!this.client.activeDocument) { throw new Error("No active document."); }
+        return this.client.activeDocument;
+    }
+
+    /**
+     * Executes the Help command at the cursor position and returns the output.
+     */
+    public async help(): Promise<Array<string>> {
+        // Execute command
+        const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
+        // Return the help messages. val[0] contains the levels, which we ignore.
+        return wpHelpResponse.feedback.map(val => val[1]);
+    }
+
+    public proofContext(): { lemma: string, soFar: string } {
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) {
+            throw new Error("No active document or cursor position.");
+        }
+
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
+        // need only upper half.
+        const split = document.getText(new Range(new Position(0,0), position));
+
+        // execute regex match
+        // eslint-disable-next-line no-useless-escape
+        const regex = /(?:Lemma|Theorem|Proposition|Corollary)\s+(\w+)\s+:\s*([^\.]+)\./g;
+        const matches = split.matchAll(regex);
+
+        // find the last match
+        const last = matches.toArray().pop();
+        const lemma = last ? last[2] : "";
+        
+        // Get the index of where lemma starts
+        const idx = last?.index ?? 0;
+
+        const soFar = split.slice(idx);
+
+        return { lemma, soFar };
+    }
+
+    /**
+     * Try a proof/step by executing the given commands/tactics.
+     * @param steps The proof steps to try
+     */
+    public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
+        const execResponse = await executeCommandFullOutput(this.client, steps);
+        return {
+            finished: execResponse.proof_finished,
+            remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
+        };
     }
 
     /**

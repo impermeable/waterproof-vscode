@@ -4,6 +4,7 @@ import { Waterproof } from "./extension";
 import { CoqLspClient } from "./lsp-client/client";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
 import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
+import { WaterproofAPI } from "./api";
 
 /**
  * This function is responsible for creating lsp clients with the extended
@@ -26,12 +27,21 @@ const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOp
     );
 };
 
-
-export function activate(context: ExtensionContext): void {
-    const extension: Waterproof = new Waterproof(context, clientFactory);
+export function activate(context: ExtensionContext): WaterproofAPI {
+ 
+    const extension = new Waterproof(context, clientFactory, false);
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();
+
+    // Expose the Waterproof API
+    return {
+        goals: extension.goals.bind(extension),
+        currentDocument: extension.currentDocument.bind(extension),
+        help: extension.help.bind(extension),
+        proofContext: extension.proofContext.bind(extension),
+        tryProof: extension.tryProof.bind(extension),
+    }
 }
 
 export function deactivate(): void {

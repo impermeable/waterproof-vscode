@@ -10,7 +10,16 @@
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceFolder}","--disable-extensions"],
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
+            "outFiles": ["${workspaceFolder}/out/**/*.js"],
+            "preLaunchTask": "${defaultBuildTask}"
+          },
+          {
+            "name": "Run Extension (Disable only coq-lsp)",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}", "--disable-extension=ejgallego.coq-lsp"],
             "outFiles": ["${workspaceFolder}/out/**/*.js"],
             "preLaunchTask": "${defaultBuildTask}"
           },

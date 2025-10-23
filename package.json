@@ -2,7 +2,7 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.9.21",
+  "version": "0.9.23",
   "requiredCoqLspVersion": ">=0.2.3",
   "requiredCoqWaterproofVersion": ">=3.0.0",
   "contributors": [
@@ -34,8 +34,8 @@
   },
   "activationEvents": [
     "onCommand:waterproof.toggle",
-    "onLanguage:rocq",
-    "onLanguage:rocqmarkdown"
+    "onLanguage:coq",
+    "onLanguage:markdown"
   ],
   "contributes": {
     "themes": [
@@ -72,14 +72,22 @@
     ],
     "languages": [
       {
-        "id": "rocq",
+        "id": "coq",
+	"aliases": [
+          "rocq",
+          "Coq",
+          "Gallina",
+          "gallina"
+        ],
         "extensions": [
-          ".v",
-          ".mv"
+          ".v"
         ]
       },
       {
-        "id": "rocqmarkdown",
+        "id": "markdown",
+	"aliases": [
+	  "Markdown"
+	],
         "extensions": [
           ".mv"
         ]
@@ -526,9 +534,12 @@
     "compile": "npm run esbuild",
     "watch": "npm run esbuild -- --watch",
     "test-package": "node_modules/.bin/vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
+    "test-pre-release": "node_modules/.bin/vsce package --pre-release --ignoreFile .vscodeignore -o test_out/extension.vsix",
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
     "package": "npm run clean && npm run test-package",
+    "package-pre-release": "npm run clean && npm run test-pre-release",
     "unit-tests": "npx jest",
+    "unit-tests-cov": "npx jest --coverage",
     "lezer-generator": "npx lezer-generator ./editor/src/waterproof-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/waterproof-editor/codeview/lang-pack/syntax.ts",
     "cypress-tests": "npx cypress run",
     "lint": "npx eslint .",

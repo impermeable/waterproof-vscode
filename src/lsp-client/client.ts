@@ -252,8 +252,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     });
                 } catch (reason) {
                     if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
-                    // FIXME: Do we want to throw here?
-                    throw reason;
+                    console.log("[computeInputAreaStatus] The catch block caught an error that we don't classify as 'cancelled by server':", reason);
                 }
             }, 250);
         }

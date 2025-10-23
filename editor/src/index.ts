@@ -8,7 +8,7 @@ import symbols from "../../completions/symbols.json";
 import "@impermeable/waterproof-editor/styles.css"
 import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
-import { topLevelBlocksLean, topLevelBlocksMV } from "./document-construction/construct-document";
+import { topLevelBlocksMV, topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 

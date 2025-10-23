@@ -2,7 +2,8 @@
 // Disable due to latex code in sample data
 
 import { BlockRange, MarkdownBlock, typeguards } from "@impermeable/waterproof-editor";
-import { topLevelBlocksMV, topLevelBlocksLean } from "../../editor/src/document-construction/construct-document"
+import { topLevelBlocksMV } from "../../editor/src/document-construction/construct-document";
+import { topLevelBlocksLean } from "../../editor/src/document-construction/lean";
 
 const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">
@@ -27,21 +28,19 @@ Random Markdown list:
     3. $1 + 1$
 `;
 
-const inputDocumentLean = `def test := 3
-/-!
-# Markdown Header
-$$2 + 3 = 4$$
-This is *italicized*
--/
-
-/- begin details : example hint -/
-import Mathlib.CategoryTheory.Functor.Basic
-/- end details -/
-
-def hello :=
-/- begin input -/
-    "Hello, World!"
-/- end input -/
+const inputDocumentLean = `# A Header
+\`\`\`lean
+def fortyTwo :=
+  30 +
+-- begin input
+  12
+-- end input
+\`\`\`
+## Markdown Content
+$$\`x^2 + y = z\`
+A list:
+  1. *Italicized* text
+  2. $\`y = z - x^2\`
 `;
 
 
@@ -179,24 +178,22 @@ test("Parse top level blocks (Lean)", () => {
     const blocks = topLevelBlocksLean(inputDocumentLean);
     expect(blocks.length).toBe(6);
 
-    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("def test := 3\n")
+    expect(typeguards.isMarkdownBlock(blocks[0])).toBe(true);
+    expect(blocks[0].stringContent).toBe("# A Header")
 
-    expect(typeguards.isMarkdownBlock(blocks[1])).toBe(true);
-    expect(blocks[1].stringContent).toBe("# Markdown Header\n");
+    expect(typeguards.isCodeBlock(blocks[1])).toBe(true);
+    expect(blocks[1].stringContent).toBe("def fortyTwo :=\n  30 +")
 
-    expect(typeguards.isMathDisplayBlock(blocks[2])).toBe(true);
-    expect(blocks[2].stringContent).toBe("2 + 3 = 4\n");
+    expect(typeguards.isInputAreaBlock(blocks[2])).toBe(true);
+    expect(blocks[2].stringContent).toBe("  12");
 
     expect(typeguards.isMarkdownBlock(blocks[3])).toBe(true);
-    expect(blocks[3].stringContent).toBe("This is *italicized*\n");
+    expect(blocks[3].stringContent).toBe("## Markdown Content\n");
 
-    expect(typeguards.isHintBlock(blocks[4])).toBe(true);
-    expect(blocks[4].stringContent).toBe("import Mathlib.CategoryTheory.Functor.Basic");
+    expect(typeguards.isMathDisplayBlock(blocks[4])).toBe(true);
+    expect(blocks[4].stringContent).toBe("x^2 + y = z");
 
-    expect(typeguards.isCodeBlock(blocks[5])).toBe(true);
-    expect(blocks[5].stringContent).toBe("def hello :=\n")
-
-    expect(typeguards.isInputAreaBlock).toBe(true);
-    expect(blocks[5].stringContent).toBe("    \"Hello, World!\"");
+    expect(typeguards.isMarkdownBlock(blocks[5])).toBe(true);
+    expect(blocks[5].stringContent)
+        .toBe("\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n");
 })

@@ -14,7 +14,7 @@ import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languagecli
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
 import { CoqLspClient, CoqLspClientConfig, CoqLspClientFactory, CoqLspServerConfig } from "./lsp-client/clientTypes";
-import { executeCommand } from "./lsp-client/commandExecutor";
+import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
@@ -33,6 +33,7 @@ import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } fr
 
 
 import { convertToString } from "../lib/types";
+import { Hypothesis } from "./api";
 
 /**
  * Main extension class
@@ -266,69 +267,57 @@ export class Waterproof implements Disposable {
         });
     }
 
-    public async currentGoals(): Promise<{goal: string, hypotheses: string[]} | undefined> {
-         if (!this.client.activeDocument || !this.client.activeCursorPosition) {
-            window.showErrorMessage("No active document or cursor position.");
-            return;
-        }
+    /**
+     * Request the goals for the current document and cursor position. 
+     */
+    public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) { throw new Error("No active document or cursor position."); }
+        
         const document = this.client.activeDocument;
         const position = this.client.activeCursorPosition;
-        // set a message to show in the goal components, roughly the same as when the user uses Help.
 
         const params = this.client.createGoalsRequestParameters(document, position);
         const goalResponse = await this.client.requestGoals(params);
-        console.log("Goal response received from LSP: ", goalResponse); 
-        // wpl.log(`Received goals response from server for ProofBuddy help, ${JSON.stringify(response)}`);
-        if (goalResponse.goals === undefined) return; 
-        if (goalResponse.goals.goals.length > 1) {
-            const newResponse = {
-                ...goalResponse,
-                messages: [{range: null, level: 4, text: ["Pp_string", "ProofBuddy help is only available when there is a single goal. Please focus on a single goal and try again. You may need to use a bullet point or a curly brace."]}]
-            }
-            //@ts-expect-error ;ldkafjsdf
-            for (const g of this.goalsComponents) g.updateGoals(newResponse);
-            return;
-        }
-        if (goalResponse.goals.goals.length === 0) {
-            const newResponse = {
-                ...goalResponse,
-                messages: [{range: null, level: 4, text: ["Pp_string", "There are no goals to provide help for."]}]
-            }
-            //@ts-expect-error ;ldkafjsdf
-            for (const g of this.goalsComponents) g.updateGoals(newResponse);
-            return;
-        }
-        const goalString = convertToString(goalResponse.goals.goals[0].ty);
-        
-        // TODO Include hypotheses?
-        const hyps = goalResponse.goals.goals[0].hyps.map(h => convertToString(h.names[0]) + " : " + convertToString(h.ty));
 
-        return {goal: goalString, hypotheses: hyps};
+        if (goalResponse.goals === undefined) {
+            throw new Error("Response contained no goals.");
+        }
+    
+        // Convert goals and hypotheses to strings
+        const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
+        // Note: only taking hypotheses from the first goal
+        const hyps = goalResponse.goals.goals[0].hyps.map(h => { return {name: convertToString(h.names[0]), content: convertToString(h.ty)}; });
+
+        return {currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1)};
     }
 
-    public currentDocument(): TextDocument | undefined {
+    /**
+     * Get the currently active document in the editor.
+     */
+    public currentDocument(): TextDocument {
+        if (!this.client.activeDocument) { throw new Error("No active document."); }
         return this.client.activeDocument;
     }
 
-    public async helpOutput(): Promise<string | undefined> {
-        const wpHelpResponse = await executeCommand(this.client, "Help.");
-            
-        //@ts-expect-error ;ldkafjsdf
-        const wpHelpOutput = wpHelpResponse.messages.map(m => convertToString(m.text)).join("\n");
-        return wpHelpOutput;
+    /**
+     * Executes the Help command at the cursor position and returns the output.
+     */
+    public async help(): Promise<Array<string>> {
+        // Execute command
+        const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
+        // Return the help messages. val[0] contains the levels, which we ignore.
+        return wpHelpResponse.feedback.map(val => val[1]);
     }
 
-    public proofContext(contextWindow = 1000): { lemma: string, soFar: string, context: string} | undefined {
-
+    public proofContext(): { lemma: string, soFar: string } {
         if (!this.client.activeDocument || !this.client.activeCursorPosition) {
-            window.showErrorMessage("No active document or cursor position.");
-            return;
+            throw new Error("No active document or cursor position.");
         }
+
         const document = this.client.activeDocument;
         const position = this.client.activeCursorPosition;
         // need only upper half.
         const split = document.getText(new Range(new Position(0,0), position));
-        const context = split.slice(Math.max(0, split.length - contextWindow));
 
         // execute regex match
         // eslint-disable-next-line no-useless-escape
@@ -340,19 +329,22 @@ export class Waterproof implements Disposable {
         const lemma = last ? last[2] : "";
         
         // Get the index of where lemma starts
-        const idx = last ? last.index || 0 : 0;
+        const idx = last?.index ?? 0;
 
         const soFar = split.slice(idx);
 
-        return {lemma, soFar, context};
+        return { lemma, soFar };
     }
 
-    public async tryProof(steps: string): Promise<{error?: string, finished: boolean, remainingGoals?: string[]}> {
-        const execResponse = await executeCommand(this.client, steps);
+    /**
+     * Try a proof/step by executing the given commands/tactics.
+     * @param steps The proof steps to try
+     */
+    public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
+        const execResponse = await executeCommandFullOutput(this.client, steps);
         return {
-            finished: execResponse.proofFinished,
-            remainingGoals: execResponse.goals?.goals.map(g => g.ty),
-            error: execResponse.error
+            finished: execResponse.proof_finished,
+            remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
         };
     }
 

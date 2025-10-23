@@ -1,9 +1,10 @@
-import { ExtensionContext, extensions, TextDocument } from "vscode";
+import { ExtensionContext } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 import { Waterproof } from "./extension";
 import { CoqLspClient } from "./lsp-client/client";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
-import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
+import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
+import { WaterproofAPI } from "./api";
 
 /**
  * This function is responsible for creating lsp clients with the extended
@@ -26,44 +27,18 @@ const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOp
     );
 };
 
-type WaterproofAPI = {
-    requestGoals: () => Promise<{goal: string, hypotheses: string[]} | undefined>;
-    currentDocument: () => TextDocument | undefined;
-    helpOutput: () => Promise<string | undefined>;
-    proofContext: () => { lemma: string, soFar: string, context: string} | undefined;
-    tryProof: (steps: string) => Promise<{error?: string, finished: boolean, remainingGoals?: string[]}>; 
-}
-
 export function activate(context: ExtensionContext): WaterproofAPI {
-
-
-
-    // We search for the Waterproof ProofBuddy extension
-    const proofBuddyId = "waterproof-tue.waterproof-lemmi";
-    const proofBuddyExtension = extensions.getExtension(proofBuddyId);
-    
+ 
     const extension = new Waterproof(context, clientFactory, false);
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();
 
-    if (proofBuddyExtension) {
-        if (!proofBuddyExtension.isActive) {
-            proofBuddyExtension.activate().then(() => {
-                wpl.log("River extension activated.");
-            });
-        } else {
-            wpl.log("River extension already active.");
-        }
-    }
-    else {
-        wpl.log("River extension not found... Continuing without it");
-    }
-
+    // Expose the Waterproof API
     return {
-        requestGoals: extension.currentGoals.bind(extension),
+        goals: extension.goals.bind(extension),
         currentDocument: extension.currentDocument.bind(extension),
-        helpOutput: extension.helpOutput.bind(extension),
+        help: extension.help.bind(extension),
         proofContext: extension.proofContext.bind(extension),
         tryProof: extension.tryProof.bind(extension),
     }

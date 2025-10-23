@@ -1,10 +1,10 @@
 import { Position } from "vscode";
-import { GoalAnswer } from "../../lib/types";
+import { GoalAnswer, GoalConfig } from "../../lib/types";
 import { CoqLspClient } from "./clientTypes";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
-import { GetStateAtPosParams, getStateAtPosReq, GoalsParams, goalsReq, RunParams, runReq } from "./petanque";
+import { GetStateAtPosParams, getStateAtPosReq, GoalsParams, goalsReq, Run_result, RunParams, runReq } from "./petanque";
 
-export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<string> & {proofFinished: boolean}> {
+async function executeCommandBase(client: CoqLspClient, command: string) {
     const document = client.activeDocument;
 
     if (!document) {
@@ -24,29 +24,43 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
         uri: document.uri.toString()
     }
 
-    // TODO: Catch possible errors here!
     try {
         const stateRes = await client.sendRequest(getStateAtPosReq, params);
-        const r: RunParams = { st: stateRes.st, tac: command };
-        const runRes = await client.sendRequest(runReq, r);
-        const g: GoalsParams = { st: runRes.st };
-        const goalsRes = await client.sendRequest(goalsReq, g);
+        // Create the RunParams object, st is the state to execute in, tac the command
+        // to execute.
+        const runParams: RunParams = { st: stateRes.st, tac: command };
+        const runRes = await client.sendRequest(runReq, runParams);
+        // The state on which to query the goals is the state *after* the command has been run.
+        const goalParams: GoalsParams = { st: runRes.st };
+        const goalsRes = await client.sendRequest(goalsReq, goalParams);
 
+        return {
+            goalsRes, runRes, document
+        };
+    } catch (error) {
+        throw new Error(`Error when trying to execute command '${command}': ${error}`);
+    }
+}
+
+export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<string>> {
+    try {
+        const { goalsRes, runRes, document } = await executeCommandBase(client, command);
         return {
             messages: runRes.feedback.map((val) => { return { level: val[0], text: val[1] } }),
             position: new Position(0, 0),
-            proofFinished: runRes.proof_finished,
             textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
             goals: goalsRes
         };
-    } catch(err: unknown) {
-        return { 
-            messages: [], 
-            proofFinished: false, 
-            position: new Position(0, 0),
-            textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
-            goals: undefined,
-            error: (err as Error).message
-        };
+    } catch (error) {
+        throw new Error(`Error when trying to execute command '${command}': ${error}`);
+    }
+}
+
+export async function executeCommandFullOutput(client: CoqLspClient, command: string): Promise<GoalConfig<string> & Run_result<number>> {
+    try {
+        const { goalsRes, runRes } = await executeCommandBase(client, command);
+        return { ...goalsRes, ...runRes };
+    } catch (error) {
+        throw new Error(`Error when trying to execute command '${command}': ${error}`);
     }
 }

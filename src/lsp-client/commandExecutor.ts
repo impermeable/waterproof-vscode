@@ -2,7 +2,7 @@ import { Position } from "vscode";
 import { GoalAnswer, GoalConfig } from "../../lib/types";
 import { CoqLspClient } from "./clientTypes";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
-import { GetStateAtPosParams, getStateAtPosReq, GoalsParams, goalsReq, Run_result, RunParams, runReq } from "./petanque";
+import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
 
 async function executeCommandBase(client: CoqLspClient, command: string) {
     const document = client.activeDocument;
@@ -31,7 +31,7 @@ async function executeCommandBase(client: CoqLspClient, command: string) {
         const runParams: RunParams = { st: stateRes.st, tac: command };
         const runRes = await client.sendRequest(runReq, runParams);
         // The state on which to query the goals is the state *after* the command has been run.
-        const goalParams: GoalsParams = { st: runRes.st };
+        const goalParams: GoalParams = { st: runRes.st };
         const goalsRes = await client.sendRequest(goalsReq, goalParams);
 
         return {
@@ -56,7 +56,7 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
     }
 }
 
-export async function executeCommandFullOutput(client: CoqLspClient, command: string): Promise<GoalConfig<string> & Run_result<number>> {
+export async function executeCommandFullOutput(client: CoqLspClient, command: string): Promise<GoalConfig<string> & RunResult<number>> {
     try {
         const { goalsRes, runRes } = await executeCommandBase(client, command);
         return { ...goalsRes, ...runRes };

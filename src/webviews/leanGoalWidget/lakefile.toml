@@ -1,0 +1,21 @@
+name = "waterproof-like-wdget"
+version = "0.1.0"
+defaultTargets = ["waterproof-like-wdget"]
+
+
+[[lean_lib]]
+name = "WaterproofLikeWdget"
+
+[[lean_exe]]
+name = "waterproof-like-wdget"
+root = "Main"
+
+[[require]]
+name = "proofwidgets"
+git = "https://github.com/leanprover-community/ProofWidgets4"
+rev = "21e6a0522cd2ae6cf88e9da99a1dd010408ab306"
+
+[[require]]
+name = "verbose"
+git = "https://github.com/PatrickMassot/verbose-lean4.git"
+rev = "master"

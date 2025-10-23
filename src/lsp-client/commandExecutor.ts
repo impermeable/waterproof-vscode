@@ -17,7 +17,7 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
         throw new Error("Cannot execute command; the document contains no Coq code.");
     }
 
-    const pos = { offset: document.offsetAt(commandPosition) - 1, line: commandPosition.line, character: commandPosition.character - 1 };
+    const pos = { line: commandPosition.line, character: commandPosition.character - 1 };
     const params: GetStateAtPosParams = {
         // Make sure that the position is **before** the dot, otherwise there is no node at the position.
         position: pos,

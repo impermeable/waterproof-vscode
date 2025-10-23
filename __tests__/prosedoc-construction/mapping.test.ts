@@ -1,4 +1,4 @@
-import { constructDocument, DocumentSerializer, Mapping } from "@impermeable/waterproof-editor";
+import { constructDocument, DefaultTagSerializer, Mapping } from "@impermeable/waterproof-editor";
 import { vFileParser } from "../../editor/src/document-construction/vFile";
 import { tagConfigurationV } from "../../editor/src/vFileConfiguration";
 
@@ -7,7 +7,7 @@ test("blockAt for sample .v file", () => {
 
     const blocks = vFileParser(doc);
 
-    const mapping = new Mapping(blocks, 0, tagConfigurationV, new DocumentSerializer(tagConfigurationV));
+    const mapping = new Mapping(blocks, 0, tagConfigurationV, new DefaultTagSerializer(tagConfigurationV));
     const proseDoc = constructDocument(blocks);
     const tree = mapping.getMapping();
 

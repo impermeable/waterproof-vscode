@@ -1,5 +1,5 @@
 
-import { BlockRange, DocumentSerializer, Mapping, typeguards } from "@impermeable/waterproof-editor";
+import { BlockRange, DefaultTagSerializer, Mapping, typeguards } from "@impermeable/waterproof-editor";
 import { vFileParser } from "../../editor/src/document-construction/vFile";
 import { tagConfigurationV } from "../../editor/src/vFileConfiguration";
 
@@ -107,7 +107,7 @@ test("vFile with input area", () => {
     expect(md2.stringContent).toBe("D");
 
     // We now generate the mapping and check its ranges
-    const mapping = new Mapping(blocks, 0, tagConfigurationV, new DocumentSerializer(tagConfigurationV)).getMapping();
+    const mapping = new Mapping(blocks, 0, tagConfigurationV, new DefaultTagSerializer(tagConfigurationV)).getMapping();
 
     expect(mapping.root.range).toStrictEqual<BlockRange>({ from: 0, to: doc.length });
     expect(mapping.root.innerRange).toStrictEqual<BlockRange>({ from: 0, to: doc.length });

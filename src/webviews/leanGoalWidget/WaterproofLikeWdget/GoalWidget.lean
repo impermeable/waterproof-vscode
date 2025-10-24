@@ -8,6 +8,6 @@ def presenter : ExprPresenter where
   layoutKind := .inline
   present e :=
     return <span>
-      <b  style={json% {color: "#569cd6"}}>We need to show:</b><br /><br />
-      <InteractiveCode fmt={← Lean.Widget.ppExprTagged e} />
+      <br /><b  style={json% {color: "#569cd6", fontSize: "16px"}}>We need to show:</b><br /><br />
+      <br /><InteractiveCode fmt={← Lean.Widget.ppExprTagged e} /><br />
     </span>

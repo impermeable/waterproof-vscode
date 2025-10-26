@@ -319,7 +319,7 @@ export class Waterproof implements Disposable {
         // need only upper half.
         const split = document.getText(new Range(new Position(0,0), position));
 
-        // execute regex match
+        // The regular expression below is used to find the current Lemma/Theorem that the student is proving.
         // eslint-disable-next-line no-useless-escape
         const regex = /(?:Lemma|Theorem|Proposition|Corollary)\s+(\w+)\s+:\s*([^\.]+)\./g;
         const matches = split.matchAll(regex);

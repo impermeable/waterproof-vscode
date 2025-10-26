@@ -93,9 +93,15 @@
       "example": "Lemma example_cases : \n  ∀ x : ℝ, ∀ y : ℝ,\n    Rmax(x,y) = x ∨ Rmax(x,y) = y.\nProof. \nTake x : ℝ. Take y : ℝ.\nEither (x < y) or (x ≥ y).\n- Case (x < y).\n  It suffices to show that (Rmax(x,y) = y).\n  We conclude that (Rmax(x,y) = y).\n- Case (x ≥ y).\n  It suffices to show that (Rmax(x,y) = x).\n  We conclude that (Rmax(x,y) = x).\nQed."
   },
   {
-      "name": "Expand the definition of (*name_kw*) in ((*statement*)).",
-      "description": "Expands the definition of the keyword (*name_kw*) in the statement (*statement*).",
-      "example": "Expand the definition of upper bound in (4 is an upper bound for [0, 3)).",
+      "name": "Expand (*name_kw*).",
+      "description": "Uses definitions and alternative characterizations of (*name_kw*) to reformulate relevant statements.",
+      "example": "Expand upper bound.",
+      "advanced": false
+  },
+  {
+      "name": "Expand All.",
+      "description": "Uses a number of definitions and alternative characterizations to reformulate relevant statements.",
+      "example": "Expand All.",
       "advanced": false
   },
   {

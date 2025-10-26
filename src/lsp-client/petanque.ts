@@ -16,7 +16,7 @@ export type RunResult<ResType> = {
 export type GetStateAtPosParams = { 
     uri : string
     opts ?: RunOpts;
-    position: {offset: number, character: number, line: number};
+    position: { character: number, line: number };
 }
 
 export type RunParams = {

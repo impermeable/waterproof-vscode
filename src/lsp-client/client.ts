@@ -139,10 +139,10 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }));
 
             this.disposables.push(languages.onDidChangeDiagnostics(e => {
-                // Check whether diagnostics changed for the active document
-                // @ts-expect-error Why does this not work?
-                if (this.activeDocument !== undefined && e.uris.some(uri => uri === this.activeDocument.uri)) {
-                    // TODO: See the one below
+                if (this.activeDocument === undefined) return;
+                // Comparing the uris (by doing uris.includes(this.activeDocument.uri)) does not seem to achieve
+                // the same result.
+                if (e.uris.map(uri => uri.path).includes(this.activeDocument.uri.path)) {
                     this.processDiagnostics();
                 }
             }));

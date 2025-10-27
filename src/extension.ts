@@ -338,9 +338,9 @@ export class Waterproof implements Disposable {
         // see: https://rocq-prover.org/doc/V9.0.0/refman/language/core/definitions.html#assertions-and-proofs
         // We match for one of the `thm_token` followed by `ident_decl` (of which we ignore the universe part (univ_decl))
         // up to one of {Qed, Admitted, Defined} followed by a dot.
-        // Note that the ident is allowed to contain unicode so this regex operators with the unicode flag enabled (/u).
+        // Note that the ident is allowed to contain unicode so this regex operates with the unicode flag enabled (/u).
         // \p{L} matches all the unicode symbols in the 'letter' category: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
-        const regex = /(?:Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+([A-Za-z_\p{L}][A-Za-z0-9_\p{L}']*)\s+[^]*?(?:Qed|Admitted|Defined)\./gu;
+        const regex = /(?:Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+([A-Za-z_\p{L}][A-Za-z0-9_\p{L}']*)\s+[^]*?(?:Qed|Admitted|Defined)\.\s/gu;
         const theProof = document.getText().matchAll(regex).find(v => {
             const start = v.index;
             const end = start + v[0].length;

@@ -1,10 +1,13 @@
 import { Position } from "vscode";
-import { GoalAnswer } from "../../lib/types";
+import { GoalAnswer, GoalConfig } from "../../lib/types";
 import { CoqLspClient } from "./clientTypes";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
-import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq } from "./petanque";
+import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
 
-export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<string>> {
+/**
+ * Base function for executing tactics/commands in a client.
+ */
+async function executeCommandBase(client: CoqLspClient, command: string) {
     const document = client.activeDocument;
 
     if (!document) {
@@ -35,11 +38,46 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
         const goalsRes = await client.sendRequest(goalsReq, goalParams);
 
         return {
+            goalsRes, runRes, document
+        };
+    } catch (error) {
+        throw new Error(`Error when trying to execute command '${command}': ${error}`);
+    }
+}
+
+/**
+ * Execute `command` using client `client` and return the output formatted as a valid `GoalAnswer<string>`.
+ * @param client The client to use when executing the command.
+ * @param command The command/tactic to execute. It is allowed to execute multiple tactics/commands by seperating them using `.`'s.
+ * @returns The output of executing `command` formatted as a valid `GoalAnswer<string>` object, this can be passed to any component that
+ * implement `IGoalsComponent`.
+ */
+export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<string>> {
+    try {
+        const { goalsRes, runRes, document } = await executeCommandBase(client, command);
+        // This should form a valid `GoalAnswer<string>`
+        return {
             messages: runRes.feedback.map((val) => { return { level: val[0], text: val[1] } }),
             position: new Position(0, 0),
             textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
             goals: goalsRes
         };
+    } catch (error) {
+        throw new Error(`Error when trying to execute command '${command}': ${error}`);
+    }
+}
+
+/**
+ * Execute `command` using client `client` and return the full output, that is, the goal after executing the command (`GoalConfig`, contains only goals information) and the result of 
+ * running the command (`RunResult`, this includes messages and whether the proof was finished running `command`)
+ * @param client The client to use when executing the command.
+ * @param command The command/tactic to execute. It is allowed to execute multiple tactics/commands by seperating them using `.`'s.
+ * @returns The full output of running `command` using `client`.
+ */
+export async function executeCommandFullOutput(client: CoqLspClient, command: string): Promise<GoalConfig<string> & RunResult<number>> {
+    try {
+        const { goalsRes, runRes } = await executeCommandBase(client, command);
+        return { ...goalsRes, ...runRes };
     } catch (error) {
         throw new Error(`Error when trying to execute command '${command}': ${error}`);
     }

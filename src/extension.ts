@@ -13,7 +13,7 @@ import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languagecli
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
 import { CoqLspClient, CoqLspClientConfig, CoqLspClientFactory, CoqLspServerConfig } from "./lsp-client/clientTypes";
-import { executeCommand } from "./lsp-client/commandExecutor";
+import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
@@ -31,10 +31,8 @@ import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
 
-
-export function activate(_context: ExtensionContext): void {
-    commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.setup`, false);
-}
+import { convertToString } from "../lib/types";
+import { Hypothesis } from "./api";
 
 /**
  * Main extension class
@@ -266,6 +264,124 @@ export class Waterproof implements Disposable {
             WaterproofConfigHelper.update(WaterproofSetting.ShowLineNumbersInEditor, updated);
             window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
+    }
+
+    /**
+     * Request the goals for the current document and cursor position. 
+     */
+    public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) { throw new Error("No active document or cursor position."); }
+        
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
+
+        const params = this.client.createGoalsRequestParameters(document, position);
+        const goalResponse = await this.client.requestGoals(params);
+
+        if (goalResponse.goals === undefined) {
+            throw new Error("Response contained no goals.");
+        }
+    
+        // Convert goals and hypotheses to strings
+        const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
+        // Note: only taking hypotheses from the first goal
+        const hyps = goalResponse.goals.goals[0].hyps.map(h => { return {name: convertToString(h.names[0]), content: convertToString(h.ty)}; });
+
+        return {currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1)};
+    }
+
+    /**
+     * Get the currently active document in the editor.
+     */
+    public currentDocument(): TextDocument {
+        if (!this.client.activeDocument) { throw new Error("No active document."); }
+        return this.client.activeDocument;
+    }
+
+    /**
+     * Executes the Help command at the cursor position and returns the output.
+     */
+    public async help(): Promise<Array<string>> {
+        // Execute command
+        const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
+        // Return the help messages. val[0] contains the levels, which we ignore.
+        return wpHelpResponse.feedback.map(val => val[1]);
+    }
+
+    /**
+     * Returns information about the current proof on a document level.
+     * This function will look at the current document to figure out what
+     * statement the user is currently proving.
+     * @param cursorMarker The marker string to insert to indicate where the user has placed there
+     * cursor in the current proof.
+     * @returns An object containing: 
+     * - `name`: The name of the provable statement.
+     * - `full`: The full statement that the user is working on from Theorem, Lemma, etc to Qed.
+     * - `withCursorMarker`: The same as `full` but contains the {@linkcode cursorMarker} at the point where
+     * the user has placed the cursor.
+     */
+    public proofContext(cursorMarker: string = "{!* CURSOR *!}"): {
+        name: string,
+        full: string
+        withCursorMarker: string
+    } {
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) {
+            throw new Error("No active document or cursor position.");
+        }
+
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
+
+        const pos = document.offsetAt(position);
+
+        // This regex is used to find the statement the user is trying to proof.
+        // see: https://rocq-prover.org/doc/V9.0.0/refman/language/core/definitions.html#assertions-and-proofs
+        // We match for one of the `thm_token` followed by `ident_decl` (of which we ignore the universe part (univ_decl))
+        // up to one of {Qed, Admitted, Defined} followed by a dot.
+        // Note that the ident is allowed to contain unicode so this regex operates with the unicode flag enabled (/u).
+        // \p{L} matches all the unicode symbols in the 'letter' category: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
+        const regex = /(?:Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+([A-Za-z_\p{L}][A-Za-z0-9_\p{L}']*)\s+[^]*?(?:Qed|Admitted|Defined)\.\s/gu;
+        const theProof = document.getText().matchAll(regex).find(v => {
+            const start = v.index;
+            const end = start + v[0].length;
+
+            return (pos >= start && pos <= end);
+        });
+
+        if (theProof === undefined) {
+            throw new Error("[proofContext] Could not find the proof the user is working on");
+        }
+
+        // Helper function to remove input-area tags, coq markers and extra whitespace from input string
+        const removeMarkersAndWhitespace = (input: string) => {
+            return input.replace(/<input-area>\s*```coq\s*/g, "")
+                .replace(/\s*```\s*<\/input-area>/g, "")
+                .replace(/```coq/g, "")
+                .replace(/```/g, "")
+                .replace(/\s+/g, " ");
+        }
+
+        const offsetIntoMatch = pos - theProof.index;
+        const text = theProof[0];
+
+        return {
+            full: removeMarkersAndWhitespace(text),
+            withCursorMarker: removeMarkersAndWhitespace(text.substring(0, offsetIntoMatch) + cursorMarker + text.substring(offsetIntoMatch)),
+            name: theProof[1]
+        }
+    }
+
+    /**
+     * Try a proof/step by executing the given commands/tactics.
+     * @param steps The proof steps to try. This can be a single tactic or command or multiple separated by the
+     * usual `.` and space.
+     */
+    public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
+        const execResponse = await executeCommandFullOutput(this.client, steps);
+        return {
+            finished: execResponse.proof_finished,
+            remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
+        };
     }
 
     /**

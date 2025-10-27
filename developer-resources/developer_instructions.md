@@ -78,7 +78,7 @@ Run
 npm ci
 ```
 Make sure the version numbers are correct.
-In particular, because this is a regular version, make sure that the version number is of the form
+In particular, because this is a pre-release version, make sure that the version number is of the form
 \*.ODD.\*, see [here](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) for why.
 Run
 ```

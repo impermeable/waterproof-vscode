@@ -253,22 +253,22 @@
         "boost": 2
     },
     {
-        "label": "Expand the definition of (*name_kw*).",
+        "label": "Expand (*name_kw*).",
         "type": "type",
         "detail": "tactic",
-        "template": "Expand the definition of ${infimum}.${}",
-        "description": "Expands the definition of the keyword (*name_kw*) in relevant statements in the proof, and gives suggestions on how to use them.",
-        "example": "Expand the definition of upper bound.",
+        "template": "Expand ${infimum}.${}",
+        "description": "Uses the definition and alternative characterizations of (*name_kw*) in relevant statements in the proof, and gives suggestions on how to use them.",
+        "example": "Expand infimum.",
         "advanced": false,
         "boost": 2
     },
     {
-        "label": "Expand the definition of (*name_kw*) in ((*expression*)).",
+        "label": "Expand All.",
         "type": "type",
         "detail": "tactic",
-        "template": "Expand the definition of ${infimum} in (${0 = 0}).${}",
-        "description": "Expands the definition of the keyword (*name_kw*) in the statement (*expression*).",
-        "example": "Expand the definition of upper bound in (4 is an upper bound for [0, 3).",
+        "template": "Expand All.${}",
+        "description": "Uses a number of definitions and alternative characterizations to reformulate relevant statements.",
+        "example": "Expand All.",
         "advanced": false,
         "boost": 1
     },

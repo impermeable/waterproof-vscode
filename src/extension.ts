@@ -7,8 +7,7 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri,
-    Range} from "vscode";
+    Uri} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -309,36 +308,73 @@ export class Waterproof implements Disposable {
         return wpHelpResponse.feedback.map(val => val[1]);
     }
 
-    public proofContext(): { lemma: string, soFar: string } {
+    /**
+     * Returns information about the current proof on a document level.
+     * This function will look at the current document to figure out what
+     * statement the user is currently proving.
+     * @param cursorMarker The marker string to insert to indicate where the user has placed there
+     * cursor in the current proof.
+     * @returns An object containing: 
+     * - `name`: The name of the provable statement.
+     * - `full`: The full statement that the user is working on from Theorem, Lemma, etc to Qed.
+     * - `withCursorMarker`: The same as `full` but contains the {@linkcode cursorMarker} at the point where
+     * the user has placed the cursor.
+     */
+    public proofContext(cursorMarker: string = "{!* CURSOR *!}"): {
+        name: string,
+        full: string
+        withCursorMarker: string
+    } {
         if (!this.client.activeDocument || !this.client.activeCursorPosition) {
             throw new Error("No active document or cursor position.");
         }
 
         const document = this.client.activeDocument;
         const position = this.client.activeCursorPosition;
-        // need only upper half.
-        const split = document.getText(new Range(new Position(0,0), position));
 
-        // The regular expression below is used to find the current Lemma/Theorem that the student is proving.
-        // eslint-disable-next-line no-useless-escape
-        const regex = /(?:Lemma|Theorem|Proposition|Corollary)\s+(\w+)\s+:\s*([^\.]+)\./g;
-        const matches = split.matchAll(regex);
+        const pos = document.offsetAt(position);
 
-        // find the last match
-        const last = matches.toArray().pop();
-        const lemma = last ? last[2] : "";
-        
-        // Get the index of where lemma starts
-        const idx = last?.index ?? 0;
+        // This regex is used to find the statement the user is trying to proof.
+        // see: https://rocq-prover.org/doc/V9.0.0/refman/language/core/definitions.html#assertions-and-proofs
+        // We match for one of the `thm_token` followed by `ident_decl` (of which we ignore the universe part (univ_decl))
+        // up to one of {Qed, Admitted, Defined} followed by a dot.
+        // Note that the ident is allowed to contain unicode so this regex operators with the unicode flag enabled (/u).
+        // \p{L} matches all the unicode symbols in the 'letter' category: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
+        const regex = /(?:Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+([A-Za-z_\p{L}][A-Za-z0-9_\p{L}']*)\s+[^]*?(?:Qed|Admitted|Defined)\./gu;
+        const theProof = document.getText().matchAll(regex).find(v => {
+            const start = v.index;
+            const end = start + v[0].length;
 
-        const soFar = split.slice(idx);
+            return (pos >= start && pos <= end);
+        });
 
-        return { lemma, soFar };
+        if (theProof === undefined) {
+            throw new Error("[proofContext] Could not find the proof the user is working on");
+        }
+
+        // Helper function to remove input-area tags, coq markers and extra whitespace from input string
+        const removeMarkersAndWhitespace = (input: string) => {
+            return input.replace(/<input-area>\s*```coq\s*/g, "")
+                .replace(/\s*```\s*<\/input-area>/g, "")
+                .replace(/```coq/g, "")
+                .replace(/```/g, "")
+                .replace(/\s+/g, " ");
+        }
+
+        const offsetIntoMatch = pos - theProof.index;
+        const text = theProof[0];
+
+        return {
+            full: removeMarkersAndWhitespace(text),
+            withCursorMarker: removeMarkersAndWhitespace(text.substring(0, offsetIntoMatch) + cursorMarker + text.substring(offsetIntoMatch)),
+            name: theProof[1]
+        }
     }
 
     /**
      * Try a proof/step by executing the given commands/tactics.
-     * @param steps The proof steps to try
+     * @param steps The proof steps to try. This can be a single tactic or command or multiple separated by the
+     * usual `.` and space.
      */
     public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
         const execResponse = await executeCommandFullOutput(this.client, steps);

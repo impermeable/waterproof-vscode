@@ -4,7 +4,11 @@ export type WaterproofAPI = {
     goals: () => Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}>;
     currentDocument: () => TextDocument;
     help: () => Promise<Array<string>>;
-    proofContext: () => { lemma: string, soFar: string };
+    proofContext: (cursorMarker: string) => { 
+        name: string,
+        full: string,
+        withCursorMarker: string
+    };
     tryProof: (steps: string) => Promise<{finished: boolean, remainingGoals: string[]}>; 
 }
 

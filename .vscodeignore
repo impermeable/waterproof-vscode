@@ -34,3 +34,4 @@ cypress.config.ts
 eslint.config.mjs
 cypress/
 vendor/
+completions/

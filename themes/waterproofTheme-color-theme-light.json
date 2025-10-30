@@ -116,16 +116,16 @@
         "list.errorForeground": "#bb616b",
         "list.warningForeground": "#c49a5a",
 
-        "listFilterWidget.background": "#ececec",
+        "listFilterWidget.background": "#f8f8f8",
         "listFilterWidget.outline": "#3d59a1",
         "listFilterWidget.noMatchesOutline": "#a6333f",
 
         "pickerGroup.foreground": "#a9b1d6",
         "pickerGroup.border": "#eceeff",
 
-        "scrollbarSlider.background": "#868bc415",
-        "scrollbarSlider.hoverBackground": "#868bc410",
-        "scrollbarSlider.activeBackground": "#868bc422",
+        "scrollbarSlider.background": "#2b39902a",
+        "scrollbarSlider.hoverBackground": "#1626917e",
+        "scrollbarSlider.activeBackground": "#484e8d57",
 
         "editorBracketHighlight.foreground1": "#698cd6",
         "editorBracketHighlight.foreground2": "#68b3de",

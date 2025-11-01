@@ -2,8 +2,8 @@
 
 Try to solve the exercises below by inspecting the examples. Not sure how to start? You can type **Ctrl + space** or **Command + space** to get a list of possible options.<hint title="📦 Import libraries (click to open/close)">
 ```coq
-Require Import Rbase.
-Require Import Rfunctions.
+From Stdlib Require Import Rbase.
+From Stdlib Require Import Rfunctions.
 
 Require Import Waterproof.Waterproof.
 Require Import Waterproof.Notations.Common.
@@ -116,8 +116,8 @@ Lemma example_choose :
     y < 3.
 Proof.
 Choose y := 2.
-* Indeed, y ∈ ℝ.
-* We conclude that y < 3.
+{ Indeed, y ∈ ℝ. } (* Note: there needs to be a space between '.' and '}' *)
+We conclude that y < 3.
 Qed.
 ```
 ### Try it yourself
@@ -147,8 +147,8 @@ Proof.
 Take a ∈ ℝ.
 Take b > 5.
 Choose c := b - a + 1.
-* Indeed, c ∈ ℝ.
-* We conclude that c > b - a.
+{ Indeed, c ∈ ℝ. }
+We conclude that c > b - a.
 Qed.
 ```
 ### Try it yourself
@@ -301,9 +301,9 @@ Proof.
 Take x ∈ ℝ.
 Assume that ∀ ε > 0, x < ε as (i).
 Use ε := 1/2 in (i).
-* Indeed, 1 / 2 > 0.
-* It holds that  x < 1 / 2.
-  We conclude that x + 1/2 < 1.
+{ Indeed, 1 / 2 > 0. }
+It holds that  x < 1 / 2.
+We conclude that x + 1/2 < 1.
 Qed.
 ```
 ### Try it yourself
@@ -533,12 +533,29 @@ Proof.
 Qed.
 ```
 ## 17. Expand definitions
-By writing `Expand square.` you get suggestions on how to use the definition of _square_ in your proof.
+
+We will now explain how to use definitions.
 
 ### Example
+
+Here's, as an example, the definition of the square function.
 ```coq
 Definition square (x : ℝ) := x^2.
 ```
+<hint title="🔧 Technical details (click to open/close)">
+```coq
+Waterproof Register Expand "square";
+  for square;
+  as "Definition square".
+```
+</hint>
+
+By writing `Expand square.` you get suggestions on how to use the definition of _square_ in your proof.
+Alternatively, you can just write `Expand All.` and you get suggestions for all definitions that
+Waterproof knows about.
+
+After writing one of these, you can click on the button `replace` to replace the line
+`Expand square.` or `Expand All.` with one of the suggested statements.
 
 ```coq
 Lemma example_expand :
@@ -546,6 +563,8 @@ Lemma example_expand :
 Proof.
 Take x ∈ (ℝ).
 Expand square.
+  (* Remove the above line in your own code! *)
+Expand All.
   (* Remove the above line in your own code! *)
 We need to show that x^2 ≥ 0.
 We conclude that x^2 ≥ 0.

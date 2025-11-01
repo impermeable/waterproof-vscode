@@ -533,7 +533,7 @@ Proof.
 Qed.
 ```
 ## 17. Expand definitions
-By writing `Expand the definition of square.` you get suggestions on how to use the definition of _square_ in your proof.
+By writing `Expand square.` you get suggestions on how to use the definition of _square_ in your proof.
 
 ### Example
 ```coq
@@ -545,7 +545,7 @@ Lemma example_expand :
   ∀ x ∈ ℝ, square x ≥ 0.
 Proof.
 Take x ∈ (ℝ).
-Expand the definition of square.
+Expand square.
   (* Remove the above line in your own code! *)
 We need to show that x^2 ≥ 0.
 We conclude that x^2 ≥ 0.

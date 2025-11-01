@@ -320,37 +320,44 @@ export class Waterproof implements Disposable {
      * - `withCursorMarker`: The same as `full` but contains the {@linkcode cursorMarker} at the point where
      * the user has placed the cursor.
      */
-    public proofContext(cursorMarker: string = "{!* CURSOR *!}"): {
+    public async proofContext(cursorMarker: string = "{!* CURSOR *!}"): Promise<{
         name: string,
         full: string
         withCursorMarker: string
-    } {
+    }> {
         if (!this.client.activeDocument || !this.client.activeCursorPosition) {
             throw new Error("No active document or cursor position.");
         }
 
         const document = this.client.activeDocument;
         const position = this.client.activeCursorPosition;
+        const posAsOffset = document.offsetAt(position);
 
-        const pos = document.offsetAt(position);
+        // Regex to find the end of the proof the user is working on.
+        const endRegex = /(?:Qed|Admitted|Defined)\.\s/;
+        // We request the document symbols with the goal of finding the lemma the user is working on. 
+        const symbols = await this.client.requestSymbols();
+        const firstBefore = symbols.filter(s => {
+            const sPos = new Position(s.range.start.line, s.range.start.character);
+            return sPos.isBefore(position);
+        }).at(-1);
 
-        // This regex is used to find the statement the user is trying to proof.
-        // see: https://rocq-prover.org/doc/V9.0.0/refman/language/core/definitions.html#assertions-and-proofs
-        // We match for one of the `thm_token` followed by `ident_decl` (of which we ignore the universe part (univ_decl))
-        // up to one of {Qed, Admitted, Defined} followed by a dot.
-        // Note that the ident is allowed to contain unicode so this regex operates with the unicode flag enabled (/u).
-        // \p{L} matches all the unicode symbols in the 'letter' category: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
-        const regex = /(?:Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+([A-Za-z_\p{L}][A-Za-z0-9_\p{L}']*)\s+[^]*?(?:Qed|Admitted|Defined)\.\s/gu;
-        const theProof = document.getText().matchAll(regex).find(v => {
-            const start = v.index;
-            const end = start + v[0].length;
-
-            return (pos >= start && pos <= end);
-        });
-
-        if (theProof === undefined) {
-            throw new Error("[proofContext] Could not find the proof the user is working on");
+        if (firstBefore === undefined) {
+            throw new Error("Could not find lemma before cursor.");
         }
+        // Compute the offset into the document where the proof starts (will be the position before Lemma)
+        const startProof = document.offsetAt(new Position(firstBefore.range.start.line, firstBefore.range.start.character));
+
+        // Get the part of the text of the document starting at the lemma statement.
+        const docText = document.getText().substring(startProof);
+        const proofClose = docText.match(endRegex);
+
+        if (proofClose === null) {
+            throw new Error("Could not find end of proof.");
+        }
+
+        // Get the text of the proof from the document, we need to add startProof to the index since the regex was run on a su
+        const theProof = docText.substring(0, proofClose.index! + proofClose[0].length);
 
         // Helper function to remove input-area tags, coq markers and extra whitespace from input string
         const removeMarkersAndWhitespace = (input: string) => {
@@ -361,13 +368,12 @@ export class Waterproof implements Disposable {
                 .replace(/\s+/g, " ");
         }
 
-        const offsetIntoMatch = pos - theProof.index;
-        const text = theProof[0];
+        const offsetIntoMatch = posAsOffset - startProof;
 
         return {
-            full: removeMarkersAndWhitespace(text),
-            withCursorMarker: removeMarkersAndWhitespace(text.substring(0, offsetIntoMatch) + cursorMarker + text.substring(offsetIntoMatch)),
-            name: theProof[1]
+            full: removeMarkersAndWhitespace(theProof),
+            withCursorMarker: removeMarkersAndWhitespace(theProof.substring(0, offsetIntoMatch) + cursorMarker + theProof.substring(offsetIntoMatch)),
+            name: firstBefore.name
         }
     }
 

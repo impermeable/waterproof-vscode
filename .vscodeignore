@@ -28,3 +28,10 @@ ExampleFiles/
 developer-resources/
 scripts/
 docs/
+__test_harness/
+sonar-project.properties
+cypress.config.ts
+eslint.config.mjs
+cypress/
+vendor/
+completions/

@@ -1,4 +1,4 @@
-import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, DiagnosticMessage, SimpleProgressParams, ServerStatus } from "@impermeable/waterproof-editor";
+import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, DiagnosticMessage, SimpleProgressParams, ServerStatus, ThemeStyle } from "@impermeable/waterproof-editor";
 import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 
@@ -45,7 +45,7 @@ export type Message =
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>
-    | MessageBase<MessageType.themeUpdate, "dark" | "light">
+    | MessageBase<MessageType.themeUpdate, ThemeStyle>
     | MessageBase<MessageType.viewportHint, { start: number, end: number }>;
 
 /**

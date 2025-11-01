@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: Move this to a types location.
 import { TextDocMappingMV, TextDocMappingV } from "./mapping";
 import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
@@ -75,7 +75,22 @@ window.onload = () => {
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
 	const cfg = createConfiguration(FileFormat.MarkdownV, codeAPI);
-	const editor = new WaterproofEditor(editorElement, cfg);
+	// Retrieve the current theme style from the attribute 'data-theme-kind'
+	// attached to the editor element. This allows us to set the initial theme kind
+	// rather than waiting for the themestyle message to arrive.
+	const themeStyle: ThemeStyle = (() => {
+		const value = editorElement.getAttribute("data-theme-kind");
+		if (value === null) {
+			throw Error("Could not get theme style from editor element");
+		}
+
+		switch (value) {
+			case "dark": return ThemeStyle.Dark;
+			case "light": return ThemeStyle.Light;
+			default: throw Error("Invalid theme encountered");
+		}
+	})();
+	const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
 
 	// Register event listener for communication between extension and editor
 	window.addEventListener("message", (event: MessageEvent<Message>) => {

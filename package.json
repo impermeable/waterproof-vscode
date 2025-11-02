@@ -4,8 +4,9 @@
   "description": "Waterproof for VSC",
   "version": "0.10.0",
   "requiredCoqLspVersion": ">=0.2.4",
-  "requiredCoqWaterproofVersion": ">=3.0.0",
+  "requiredCoqWaterproofVersion": ">=3.1.0",
   "defaultCoqLspPathWindows": "C:\\waterproof_dependencies\\opam\\wp-3.1.0+9.0\\bin\\coq-lsp.exe",
+  "installerDownloadLinkWindows": "https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v3.1.0%2B9.0-pre/Waterproof-dependencies-wp-3.1.0+9.0-pre-Windows-x86_64.exe",
   "contributors": [
     "Collin Harcarik <collin@plutode.com>",
     "Milo Goolkate <milo@goolkate.com>",
@@ -202,9 +203,9 @@
             "id": "download-installer-windows",
             "when": "isWindows && !hasRemoteServer",
             "title": "Downloading the Installer",
-            "description": "Download the installer using the button below\n[Download the installer](https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v3.0.0%2B9.0)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
+            "description": "Download the installer using the button below\n[Download the installer](https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v3.1.0%2B9.0-pre/Waterproof-dependencies-wp-3.1.0+9.0-pre-Windows-x86_64.exe)\nOr, if manual installation is preferred, follow the steps in the README for your platform.\n[README](https://github.com/impermeable/waterproof-vscode)",
             "completionEvents": [
-              "onLink:https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v3.0.0%2B9.0"
+              "onLink:https://github.com/impermeable/waterproof-dependencies-installer/releases/tag/v3.1.0%2B9.0-pre"
             ],
             "media": {
               "markdown": "walkthrough-data/initial-setup/download-installer-windows.md"

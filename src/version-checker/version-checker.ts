@@ -79,6 +79,8 @@ export class VersionChecker {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
         const ext = process.platform === "win32" ? ".exe" : "";
         const ocamlfindPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `ocamlfind${ext}`);
+        // If the user installed in a location different from the usual one, we need to set OCAMLFIND_CONF
+        // This file is created by the installer
         const findlib_conf = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `findlib.conf`);
         const needEnv = getPlatformHelper() === "windows" &&
             this._wpPath !== this._context.extension.packageJSON.defaultCoqLspPathWindows;
@@ -88,7 +90,7 @@ export class VersionChecker {
 
         try {
             const stdout = await this.exec(command, extra_env);
-            wpl.debug(`Waterproof version: ${stdout}`);
+            wpl.log(`Waterproof version: ${stdout}`);
             const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
             const versionCoqWaterproof = Version.fromString(wpVersion);
             const versionRequiredCoq = Version.fromString(reqCoqVersion);

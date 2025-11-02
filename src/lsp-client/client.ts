@@ -112,54 +112,22 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // send diagnostics to editor (for squiggly lines)
             this.middleware.handleDiagnostics = (uri, diagnostics_) => {
-                diagnosticsCollection.set(uri, diagnostics_);
-
                 // Note: Here we typecast diagnostics_ to WpDiagnostic[], the new type includes the custom data field 
-                //      added by coq-lsp required for the detailed error mode.
-                const diagnostics = (diagnostics_ as WpDiagnostic[]);
-                const document = this.activeDocument;
-                if (!document) return;
-
-                
-                const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
-                    if (this.detailedErrors) {
+                //      added by coq-lsp required for the line long error mode.
+                if (!this.detailedErrors) {
+                    const diagnostics = (diagnostics_ as WpDiagnostic[]);
+                    diagnosticsCollection.set(uri, diagnostics.map(d => {
+                        const start = d.data?.sentenceRange?.start ?? d.range.start;
+                        const end = d.data?.sentenceRange?.end ?? d.range.end;
                         return {
-                            message:        d.message,
-                            severity:       vscodeSeverityToWaterproof(d.severity),
-                            startOffset:    document.offsetAt(d.range.start),
-                            endOffset:      document.offsetAt(d.range.end)
+                            message: d.message,
+                            severity: d.severity,
+                            range: new Range(start, end),
                         };
-                    } else {
-                        if (d.data !== undefined && d.data.sentenceRange !== undefined) {
-                            // Compute line-long start and end positions
-                            const newStart = new Position(
-                                d.data.sentenceRange.start.line,
-                                d.data.sentenceRange.start.character
-                            );
-                            const newEnd = new Position(
-                                d.data.sentenceRange.end.line,
-                                d.data.sentenceRange.end.character
-                            );
-                            return {
-                                message:        d.message,
-                                severity:       vscodeSeverityToWaterproof(d.severity),
-                                startOffset:    document.offsetAt(newStart),
-                                endOffset:      document.offsetAt(newEnd)
-                            };
-                        } else {
-                            return {
-                                message:        d.message,
-                                severity:       vscodeSeverityToWaterproof(d.severity),
-                                startOffset:    document.offsetAt(d.range.start),
-                                endOffset:      document.offsetAt(d.range.end)
-                            };
-                        }
-                    }
-                });
-                this.webviewManager!.postAndCacheMessage(document, {
-                    type: MessageType.diagnostics,
-                    body: {positionedDiagnostics, version: document.version}
-                });
+                    }));
+                } else {
+                    diagnosticsCollection.set(uri, diagnostics_);
+                }
             };
 
             // call each file progress component when the server has processed a part
@@ -168,6 +136,15 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 params.processing.forEach(fp => { fp.range = this.protocol2CodeConverter.asRange(fp.range) });
                 // notify each component
                 this.fileProgressComponents.forEach(c => c.onProgress(params));
+            }));
+
+            this.disposables.push(languages.onDidChangeDiagnostics(e => {
+                if (this.activeDocument === undefined) return;
+                // Comparing the uris (by doing uris.includes(this.activeDocument.uri)) does not seem to achieve
+                // the same result.
+                if (e.uris.map(uri => uri.path).includes(this.activeDocument.uri.path)) {
+                    this.processDiagnostics();
+                }
             }));
 
             this.lspOutputChannel = window.createOutputChannel("Waterproof LSP Events (After Initialization)");
@@ -188,15 +165,38 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
                 if (params.status === "Idle") {
                     this.computeInputAreaStatus(document);
+                    // TODO: Maybe we should only process the diagnostics here?
+                    // I.e. do `this.processDiagnostics();` and not after every diagnostic change?
                 }
 
                 // Handle the server status notification
                 this.webviewManager!.postMessage(document.uri.toString(), {
-                    type: MessageType.serverStatus,
-                    body: CoqServerStatusToServerStatus(params)
-                }
-            );
+                        type: MessageType.serverStatus,
+                        body: CoqServerStatusToServerStatus(params)
+                    }
+                );
             }));
+        }
+
+        // Does this async do anything? 
+        async processDiagnostics() {
+            const document = this.activeDocument;
+            if (!document) return;
+
+            const diagnostics = languages.getDiagnostics(document.uri);
+
+            const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
+                    return {
+                        message:        d.message,
+                        severity:       vscodeSeverityToWaterproof(d.severity),
+                        startOffset:    document.offsetAt(d.range.start),
+                        endOffset:      document.offsetAt(d.range.end)
+                    };
+            });
+            this.webviewManager!.postAndCacheMessage(document, {
+                type: MessageType.diagnostics,
+                body: {positionedDiagnostics, version: document.version}
+            });
         }
 
         async onCheckingCompleted(): Promise<void> {

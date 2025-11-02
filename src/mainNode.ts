@@ -3,8 +3,9 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-lan
 import { Waterproof } from "./extension";
 import { CoqLspClient } from "./lsp-client/client";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
-import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
+import { getPlatformHelper, WaterproofConfigHelper, WaterproofFileUtil, WaterproofSetting } from "./helpers";
 import { WaterproofAPI } from "./api";
+import { existsSync } from "fs";
 
 /**
  * This function is responsible for creating lsp clients with the extended
@@ -15,9 +16,17 @@ import { WaterproofAPI } from "./api";
  * @returns an LSP client with the added functionality of `CoqFeatures`
  */
 const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOptions: LanguageClientOptions) => {
+    const wpPath = WaterproofConfigHelper.get(WaterproofSetting.Path);
+    const findlib_conf = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(wpPath), `findlib.conf`);
+    const needEnv = getPlatformHelper() === "windows" &&
+        wpPath !== context.extension.packageJSON.defaultCoqLspPathWindows &&
+        existsSync(findlib_conf);
+    const extra_env = needEnv ? { OCAMLFIND_CONF: findlib_conf } : {};
+
     const serverOptions: ServerOptions = {
         command: WaterproofConfigHelper.get(WaterproofSetting.Path),
         args: WaterproofConfigHelper.get(WaterproofSetting.Args),
+        options: { env: { ...process.env, ...extra_env } }
     };
     return new (CoqLspClient(LanguageClient))(
         "waterproof",
@@ -28,7 +37,7 @@ const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOp
 };
 
 export function activate(context: ExtensionContext): WaterproofAPI {
- 
+
     const extension = new Waterproof(context, clientFactory, false);
     context.subscriptions.push(extension);
     // start the lsp client

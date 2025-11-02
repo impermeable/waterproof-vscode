@@ -134,3 +134,19 @@ export class WaterproofConfigHelper {
 function config() {
     return workspace.getConfiguration("waterproof");
 }
+
+export const getPlatformHelper = () => {
+    switch (process.platform) {
+        case "aix": return "unknown";
+        case "android": return "unknown";
+        case "darwin": return "macos";
+        case "freebsd": return "unknown";
+        case "haiku": return "unknown";
+        case "linux": return "linux";
+        case "openbsd": return "unknown";
+        case "sunos": return "unknown";
+        case "win32": return "windows";
+        case "cygwin": return "windows";
+        case "netbsd": return "unknown";
+    }
+}

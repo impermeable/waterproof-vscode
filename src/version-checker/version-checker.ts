@@ -1,6 +1,7 @@
 import { ExtensionContext, Uri, commands, env, window } from "vscode";
 import { Version, VersionRequirement } from "./version";
-import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
+import { getPlatformHelper, WaterproofConfigHelper, WaterproofFileUtil, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
+import { existsSync } from "fs";
 
 export type VersionError = {
     reason: string;
@@ -83,7 +84,8 @@ export class VersionChecker {
         // This file is created by the installer
         const findlib_conf = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `findlib.conf`);
         const needEnv = getPlatformHelper() === "windows" &&
-            this._wpPath !== this._context.extension.packageJSON.defaultCoqLspPathWindows;
+            this._wpPath !== this._context.extension.packageJSON.defaultCoqLspPathWindows &&
+            existsSync(findlib_conf);
         const extra_env = needEnv ? { OCAMLFIND_CONF: findlib_conf } : {};
         wpl.debug(`ocamlfindPath: ${ocamlfindPath}`);
         const command = `${ocamlfindPath} query -format %v coq-waterproof.plugin`;
@@ -229,21 +231,5 @@ export class VersionChecker {
         } else if (value === AUTO_INSTALL){
             commands.executeCommand(`workbench.action.openWalkthrough`, `waterproof-tue.waterproof#waterproof.auto`, false);
         }
-    }
-}
-
-const getPlatformHelper = () => {
-    switch (process.platform) {
-        case "aix": return "unknown";
-        case "android": return "unknown";
-        case "darwin": return "macos";
-        case "freebsd": return "unknown";
-        case "haiku": return "unknown";
-        case "linux": return "linux";
-        case "openbsd": return "unknown";
-        case "sunos": return "unknown";
-        case "win32": return "windows";
-        case "cygwin": return "windows";
-        case "netbsd": return "unknown";
     }
 }

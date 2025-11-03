@@ -188,7 +188,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      */
     public revealPanel() {
         if (!this._panel?.visible) {
-            this._panel?.reveal(ViewColumn.Two);
+            this._panel?.reveal(ViewColumn.Two, true);
         }
     }
 

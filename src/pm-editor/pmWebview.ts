@@ -218,7 +218,14 @@ export class ProseMirrorWebview extends EventEmitter {
             }
             this.emit(WebviewEvents.dispose);
         }));
-
+        window.onDidChangeWindowState(e => {
+            WaterproofLogger.log(window.state.focused);
+            WaterproofLogger.log("Hello on did change window state yes yes");
+            if (e.focused && this._panel.visible && this._panel.active) {
+                WaterproofLogger.log("Editor was last focussed and we just alt-tabbed back.");
+                this._panel.reveal();
+            }
+        });
         this._disposables.push(this._panel.onDidChangeViewState((e) => {
             if (e.webviewPanel.active) {
                 this.syncWebview();

@@ -1,6 +1,6 @@
 import { ExtensionContext, Uri, commands, env, window } from "vscode";
 import { Version, VersionRequirement } from "./version";
-import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
+import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 
 export type VersionError = {
     reason: string;
@@ -83,7 +83,7 @@ export class VersionChecker {
         // This file is created by the installer
         const findlib_conf = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `findlib.conf`);
         const needEnv = getPlatformHelper() === "windows" &&
-            this._wpPath !== this._context.extension.packageJSON.defaultCoqLspPathWindows;
+            this._wpPath !== WaterproofPackageJSON.defaultCoqLspPathWindows(this._context);
         const extra_env = needEnv ? { OCAMLFIND_CONF: findlib_conf } : {};
         wpl.debug(`ocamlfindPath: ${ocamlfindPath}`);
         const command = `${ocamlfindPath} query -format %v coq-waterproof.plugin`;

@@ -28,7 +28,7 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
-import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
+import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
 
 import { convertToString } from "../lib/types";
@@ -199,8 +199,8 @@ export class Waterproof implements Disposable {
                 case "openbsd": defaultValue = undefined; break;
                 case "sunos": defaultValue = undefined; break;
                 // WINDOWS
-                case "win32": defaultValue = this.context.extension.packageJSON.defaultCoqLspPathWindows; break;
-                case "cygwin": defaultValue = this.context.extension.packageJSON.defaultCoqLspPathWindows; break;
+                case "win32": defaultValue = WaterproofPackageJSON.defaultCoqLspPathWindows(this.context); break;
+                case "cygwin": defaultValue = WaterproofPackageJSON.defaultCoqLspPathWindows(this.context); break;
                 case "netbsd": defaultValue = undefined; break;
             }
             if (defaultValue === undefined) {
@@ -223,14 +223,14 @@ export class Waterproof implements Disposable {
         this.registerCommand("autoInstall", async () => {
             commands.executeCommand(`waterproof.defaultPath`);
 
-            const downloadLink = this.context.extension.packageJSON.installerDownloadLinkWindows;
+            const downloadLink = WaterproofPackageJSON.installerDownloadLinkWindows(this.context);
 
             const windowsInstallationScript = `echo Begin Waterproof dependency software installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L ${downloadLink} && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
 
             // default location of the uninstaller
             const uninstallerLocation =
                 WaterproofFileUtil.join(
-                    WaterproofFileUtil.getDirectory(this.context.extension.packageJSON.defaultCoqLspPathWindows),
+                    WaterproofFileUtil.getDirectory(WaterproofPackageJSON.defaultCoqLspPathWindows(this.context)),
                     `Uninstall.exe`);
 
             await this.stopClient();
@@ -513,8 +513,8 @@ export class Waterproof implements Disposable {
             wpl.log(`${reason} Attempting to launch client...`);
         } else {
             // Run the version checker.
-            const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
-            const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
+            const requiredCoqLSPVersion = WaterproofPackageJSON.requiredCoqLspVersion(this.context);
+            const requiredCoqWaterproofVersion =  WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
             const versionChecker = new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
 
             // Check whether we can find coq-lsp
@@ -533,7 +533,7 @@ export class Waterproof implements Disposable {
 
         const serverOptions = CoqLspServerConfig.create(
             // TODO: Support +coqversion versions.
-            this.context.extension.packageJSON.requiredCoqLspVersion.slice(2)
+            WaterproofPackageJSON.requiredCoqLspVersion(this.context).slice(2)
         );
 
         const clientOptions: LanguageClientOptions = {

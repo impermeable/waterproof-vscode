@@ -9,6 +9,23 @@ Be sure to run `git lfs pull` to update the files tracked in lfs. (All these fil
 ## Installing dependencies
 Run `npm install` or `npm i` in the [root](./) folder of the repository.
 
+### Using a local version of `waterproof-editor`
+When working on the [`waterproof-editor`](https://github.com/impermeable/waterproof-editor/) project in conjunction with `waterproof-vscode`, it is often desired to 'link' your local version of `waterproof-editor` to this repository. Changes made in the editor project will then be automatically reflected here. This can be done by following the steps underneath:
+
+1. In the root directory of `waterproof-editor` run `npm link`.
+2. Run the watch tasks to continuously build the sources in `waterproof-editor`, that way manual building after making changes is not needed. The watch tasks can be executed with
+    ```
+    node esbuild.mjs --watch
+    ```
+    and
+    ```
+    npx tsc -b --watch
+    ```
+    Alternatively, when using VSCode/Codium, run the `watch` task by opening the command pallete, using the command `Tasks: Run Task` and selecting `watch`.
+3. In the root of this repository run `npm link @impermeable/waterproof-editor`, this will tell npm to use the 'linked version' of `waterproof-editor`. 
+
+**Note**: The link is removed when installing dependencies using `npm i` or `npm ci`. If desired, the link should be set up again following the steps above after running one of these commands. 
+
 ## Running the extension
 Press `F5` in vscode to run the extension.
 

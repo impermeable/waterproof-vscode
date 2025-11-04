@@ -18,6 +18,12 @@ The Waterproof vscode extension helps students learn how to write mathematical p
 
 Install this extension and follow the installation instructions that pop up.
 
+> ⚠ The installer will suggest an installation location. It is strongly recommended to **not** change this location. If you do change it, remember the installation folder. You will then need to set various Waterproof settings:
+  The coq-lsp path should be set to `C:\(your installation location)\bin\coq-lsp.exe`
+  The arguments for coq-lsp should be set to `--coqlib=C:\(your installation location)\lib\coq` and `--findlib_config=C:\(your installation location)\bin\findlib.conf`. After filling out the coq-lsp path, the arguments can be set automatically by running the command in vscode (`Ctrl+Shift+P`)
+  `Waterproof: Set language server arguments for Windows based on coq-lsp path `
+
+
 ---
 
 # Installation on other platforms and instructions for manual installation

@@ -134,6 +134,10 @@
         "title": "Waterproof: Automatically installs all required libraries."
       },
       {
+        "command": "waterproof.setArgsWindowsBasedOnCoqLspPath",
+        "title": "Waterproof: Set language server arguments for Windows based on coq-lsp path"
+      },
+      {
         "command": "waterproof.toggleInEditorLineNumbers",
         "title": "Toggle line numbers displayed in editor",
         "category": "Waterproof"

@@ -220,6 +220,15 @@ export class Waterproof implements Disposable {
             }
         });
 
+        this.registerCommand("setArgsWindowsBasedOnCoqLspPath", () => {
+            const coqLspPath = WaterproofConfigHelper.get(WaterproofSetting.Path);
+            if (coqLspPath !== "coq-lsp") {
+                const coqlib = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(coqLspPath), "..\\lib\\coq");
+                const findlib_config = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(coqLspPath), "findlib.conf");
+                WaterproofConfigHelper.update(WaterproofSetting.Args, [`--coqlib=${coqlib}`, `--findlib_config=${findlib_config}`], ConfigurationTarget.Global);
+            }
+        });
+
         this.registerCommand("autoInstall", async () => {
             commands.executeCommand(`waterproof.defaultPath`);
 

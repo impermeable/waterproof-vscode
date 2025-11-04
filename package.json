@@ -497,7 +497,7 @@
     "typescript-eslint": "^8.20.0"
   },
   "dependencies": {
-    "@impermeable/waterproof-editor": "^0.10.0",
+    "@impermeable/waterproof-editor": "0.11.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
     "@ocaml-wasm/4.12--num": "^1.4.0-0",
     "@ocaml-wasm/4.12--zarith": "^1.13.0-0",

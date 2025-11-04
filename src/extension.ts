@@ -200,7 +200,7 @@ export class Waterproof implements Disposable {
                 case "sunos": defaultValue = undefined; break;
                 // WINDOWS
                 case "win32": defaultValue = WaterproofPackageJSON.defaultCoqLspPathWindows(this.context); break;
-                case "cygwin": defaultValue = WaterproofPackageJSON.defaultCoqLspPathWindows(this.context); break;
+                case "cygwin": defaultValue = undefined; break;
                 case "netbsd": defaultValue = undefined; break;
             }
             if (defaultValue === undefined) {

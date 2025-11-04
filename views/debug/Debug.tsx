@@ -12,6 +12,7 @@ import { Message, MessageType } from "../../shared";
 // Dynamic import because the project uses CommonJS and the module is an ECMAScript module
 // Top level await is supported with other `module` options in tsconfig.json
 const VSCodeDivider = lazy(async () => {
+  //@ts-expect-error This module does exist but we have no type for the react part
   const { VSCodeDivider } = await import("@vscode/webview-ui-toolkit/react");
   return { default: VSCodeDivider };
 });

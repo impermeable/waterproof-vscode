@@ -1,6 +1,6 @@
 import { ExtensionContext, Uri, commands, env, window } from "vscode";
 import { Version, VersionRequirement } from "./version";
-import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
+import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 
 export type VersionError = {
     reason: string;
@@ -78,14 +78,19 @@ export class VersionChecker {
     public async checkWaterproofLib(): Promise<{ wpVersion: Version, requiredCoqVersion: Version } | VersionError> {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
         const ext = process.platform === "win32" ? ".exe" : "";
-
         const ocamlfindPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `ocamlfind${ext}`);
+        // If the user installed in a location different from the usual one, we need to set OCAMLFIND_CONF
+        // This file is created by the installer
+        const findlib_conf = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `findlib.conf`);
+        const needEnv = getPlatformHelper() === "windows" &&
+            this._wpPath !== WaterproofPackageJSON.defaultCoqLspPathWindows(this._context);
+        const extra_env = needEnv ? { OCAMLFIND_CONF: findlib_conf } : {};
         wpl.debug(`ocamlfindPath: ${ocamlfindPath}`);
         const command = `${ocamlfindPath} query -format %v coq-waterproof.plugin`;
 
         try {
-            const stdout = await this.exec(command);
-            wpl.debug(`Waterproof version: ${stdout}`);
+            const stdout = await this.exec(command, extra_env);
+            wpl.log(`Waterproof version: ${stdout}`);
             const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
             const versionCoqWaterproof = Version.fromString(wpVersion);
             const versionRequiredCoq = Version.fromString(reqCoqVersion);
@@ -117,13 +122,15 @@ export class VersionChecker {
     }
 
     /** Wrapper around shellIntegration  */
-    private async exec(command: string): Promise<string> {
+    private async exec(command: string, extra_env? : NodeJS.ProcessEnv): Promise<string> {
         wpl.log(`Running command: ${command}`)
         return new Promise((resolve, reject) => {
             // We use require here to avoid issues with the import statement in the browser context.
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { exec } = require("child_process");
-            exec(command, (err: { message: string; }, stdout: string, _stderr: unknown) => {
+            exec(command, {
+                env: { ...process.env, ...(extra_env ?? {}) }
+            }, (err: { message: string; }, stdout: string, _stderr: unknown) => {
                 if (err) {
                     reject({ reason: err.message });
                 } else {

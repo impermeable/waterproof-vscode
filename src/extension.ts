@@ -28,7 +28,7 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
-import { WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
+import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
 
 import { convertToString } from "../lib/types";
@@ -199,7 +199,7 @@ export class Waterproof implements Disposable {
                 case "openbsd": defaultValue = undefined; break;
                 case "sunos": defaultValue = undefined; break;
                 // WINDOWS
-                case "win32": defaultValue = "C:\\waterproof_dependencies\\opam\\wp-3.0.0+9.0\\bin\\coq-lsp.exe"; break;
+                case "win32": defaultValue = WaterproofPackageJSON.defaultCoqLspPathWindows(this.context); break;
                 case "cygwin": defaultValue = undefined; break;
                 case "netbsd": defaultValue = undefined; break;
             }
@@ -220,12 +220,27 @@ export class Waterproof implements Disposable {
             }
         });
 
+        this.registerCommand("setArgsWindowsBasedOnCoqLspPath", () => {
+            const coqLspPath = WaterproofConfigHelper.get(WaterproofSetting.Path);
+            if (coqLspPath !== "coq-lsp") {
+                const coqlib = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(coqLspPath), "..\\lib\\coq");
+                const findlib_config = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(coqLspPath), "findlib.conf");
+                WaterproofConfigHelper.update(WaterproofSetting.Args, [`--coqlib=${coqlib}`, `--findlib_config=${findlib_config}`], ConfigurationTarget.Global);
+            }
+        });
+
         this.registerCommand("autoInstall", async () => {
             commands.executeCommand(`waterproof.defaultPath`);
 
-            const windowsInstallationScript = `echo Begin Waterproof dependency software installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v3.0.0%2B9.0/Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
-            // TODO: this may need to be determined in a better way
-            const uninstallerLocation = `C:\\waterproof_dependencies\\opam\\wp-3.0.0+9.0\\Uninstall.exe`
+            const downloadLink = WaterproofPackageJSON.installerDownloadLinkWindows(this.context);
+
+            const windowsInstallationScript = `echo Begin Waterproof dependency software installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L ${downloadLink} && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
+
+            // default location of the uninstaller
+            const uninstallerLocation =
+                WaterproofFileUtil.join(
+                    WaterproofFileUtil.getDirectory(WaterproofPackageJSON.defaultCoqLspPathWindows(this.context)),
+                    `Uninstall.exe`);
 
             await this.stopClient();
 
@@ -267,11 +282,11 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Request the goals for the current document and cursor position. 
+     * Request the goals for the current document and cursor position.
      */
     public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
         if (!this.client.activeDocument || !this.client.activeCursorPosition) { throw new Error("No active document or cursor position."); }
-        
+
         const document = this.client.activeDocument;
         const position = this.client.activeCursorPosition;
 
@@ -281,7 +296,7 @@ export class Waterproof implements Disposable {
         if (goalResponse.goals === undefined) {
             throw new Error("Response contained no goals.");
         }
-    
+
         // Convert goals and hypotheses to strings
         const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
         // Note: only taking hypotheses from the first goal
@@ -314,7 +329,7 @@ export class Waterproof implements Disposable {
      * statement the user is currently proving.
      * @param cursorMarker The marker string to insert to indicate where the user has placed there
      * cursor in the current proof.
-     * @returns An object containing: 
+     * @returns An object containing:
      * - `name`: The name of the provable statement.
      * - `full`: The full statement that the user is working on from Theorem, Lemma, etc to Qed.
      * - `withCursorMarker`: The same as `full` but contains the {@linkcode cursorMarker} at the point where
@@ -335,7 +350,7 @@ export class Waterproof implements Disposable {
 
         // Regex to find the end of the proof the user is working on.
         const endRegex = /(?:Qed|Admitted|Defined)\.\s/;
-        // We request the document symbols with the goal of finding the lemma the user is working on. 
+        // We request the document symbols with the goal of finding the lemma the user is working on.
         const symbols = await this.client.requestSymbols();
         const firstBefore = symbols.filter(s => {
             const sPos = new Position(s.range.start.line, s.range.start.character);
@@ -425,7 +440,7 @@ export class Waterproof implements Disposable {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
                         commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
-                    });                    
+                    });
                 }, (err) => {
                     window.showErrorMessage("Could not open Waterproof tutorial file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
@@ -454,7 +469,7 @@ export class Waterproof implements Disposable {
                         // Open the file using the waterproof editor
                         // TODO: Hardcoded `coqEditor.coqEditor`.
                         commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
-                    });                    
+                    });
                 }, (err) => {
                     window.showErrorMessage("Could not create a new Waterproof file.");
                     console.error(`Could not read Waterproof tutorial file: ${err}`);
@@ -507,10 +522,10 @@ export class Waterproof implements Disposable {
             wpl.log(`${reason} Attempting to launch client...`);
         } else {
             // Run the version checker.
-            const requiredCoqLSPVersion = this.context.extension.packageJSON.requiredCoqLspVersion;
-            const requiredCoqWaterproofVersion = this.context.extension.packageJSON.requiredCoqWaterproofVersion;
+            const requiredCoqLSPVersion = WaterproofPackageJSON.requiredCoqLspVersion(this.context);
+            const requiredCoqWaterproofVersion =  WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
             const versionChecker = new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-            
+
             // Check whether we can find coq-lsp
             const foundServer = await versionChecker.prelaunchChecks();
             if (foundServer) {
@@ -527,7 +542,7 @@ export class Waterproof implements Disposable {
 
         const serverOptions = CoqLspServerConfig.create(
             // TODO: Support +coqversion versions.
-            this.context.extension.packageJSON.requiredCoqLspVersion.slice(2)
+            WaterproofPackageJSON.requiredCoqLspVersion(this.context).slice(2)
         );
 
         const clientOptions: LanguageClientOptions = {

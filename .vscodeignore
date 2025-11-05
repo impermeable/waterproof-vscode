@@ -6,6 +6,7 @@ editor/
 lib/
 node_modules/
 !node_modules/@ocaml-wasm/4.12--zarith/bin/dllzarith.wasm
+!node_modules/@ocaml-wasm/4.12--num/bin/dllnums.wasm
 !node_modules/@ocaml-wasm/4.12--janestreet-base/bin/dllbase_stubs.wasm
 !node_modules/@ocaml-wasm/4.12--janestreet-base/bin/dllbase_internalhash_types_stubs.wasm
 !node_modules/ocaml-wasm/bin/

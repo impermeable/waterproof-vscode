@@ -1,1 +1,1 @@
-manually edited wacoq_worker.js to remove controller-wasm from paths
+manually edited wacoq_worker.js to remove wasm-bin from paths: Changed wasm-bin to out and wasm-bin/node-modules to just node-modules

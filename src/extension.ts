@@ -19,6 +19,8 @@ import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
+import { GoalsHelpPanel } from "./webviews/goalviews/goalsHelpPanel";
+
 import { SidePanelProvider, addSidePanel } from "./webviews/sidePanel";
 import { Search } from "./webviews/standardviews/search";
 import { Help } from "./webviews/standardviews/help";

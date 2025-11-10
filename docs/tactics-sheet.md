@@ -385,20 +385,20 @@ Either x < y or x ≥ y.
 Qed.
 ```
 
-## `Expand the definition of (*name_kw*).`
+## `Expand (*name_kw*).`
 
-Expands the definition of the keyword (\*name_kw\*) in relevant statements in the proof, and gives suggestions on how to use them.
+Uses the definition and alternative characterizations of (\*name_kw\*) in relevant statements in the proof, and gives suggestions on how to use them.
 
 ```coq
-Expand the definition of upper bound.
+Expand infimum.
 ```
 
-## `Expand the definition of (*name_kw*) in ((*expression*)).`
+## `Expand All.`
 
-Expands the definition of the keyword (\*name_kw\*) in the statement (\*expression\*).
+Uses a number of definitions and alternative characterizations to reformulate relevant statements.
 
 ```coq
-Expand the definition of upper bound in (4 is an upper bound for [0, 3).
+Expand All.
 ```
 
 ## `We show both statements.`

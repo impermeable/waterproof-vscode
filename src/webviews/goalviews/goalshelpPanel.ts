@@ -2,6 +2,7 @@ import { Uri } from "vscode";
 import { GoalAnswer, PpString } from "../../../lib/types";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { WebviewEvents, WebviewState } from "../coqWebview";
+import { MessageType } from "../../../shared";
 import { GoalsBase } from "./goalsBase";
 import { IExecutor } from "../../components";
 
@@ -12,10 +13,20 @@ export class GoalsHelpPanel extends GoalsBase implements IExecutor{
   private previousGoal: GoalAnswer<PpString> | undefined;
 
   constructor(extensionUri: Uri, config: CoqLspClientConfig) {
-    super(extensionUri, config, "goals-help"); // new id
-    this.on(WebviewEvents.change, () => {
-      if (this.state === WebviewState.visible && this.previousGoal) {
-        this.updateGoals(this.previousGoal);
+    super(extensionUri, config, "goals-help", true); // new id
+    this.on(WebviewEvents.change, (_e) => {
+      switch (this.state) { // Check the state of the webview
+        // If the webview is visible
+        case WebviewState.visible:
+          if (this.previousGoal) {
+            this.updateGoals(this.previousGoal);
+          }
+          break;
+        // If the webview is closed
+        case WebviewState.closed:
+          // Get panel ready again
+          this.readyPanel()
+          break;
       }
     });
   }

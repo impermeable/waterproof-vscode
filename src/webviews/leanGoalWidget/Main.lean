@@ -1,7 +1,5 @@
 import WaterproofLikeWdget
 
-
-
 Example "Reflexivity of equality"
   Given:
   Assume:

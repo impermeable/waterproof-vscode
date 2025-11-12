@@ -7,8 +7,8 @@ type Text = { kind: 'Text', content: string } & TokenBase;
 type CodeOpen = { kind: 'CodeOpen' } & TokenBase;
 type CodeClose = { kind: 'CodeClose' } & TokenBase;
 type InputOpen = { kind: 'InputOpen' } & TokenBase;
-type InputClose = { kind: 'InputClose' } & TokenBase;
 type HintOpen = { kind: 'HintOpen', title: string } & TokenBase;
+type MultileanOpen = { kind: 'MultileanOpen' } & TokenBase;
 type Close = { kind: 'Close' } & TokenBase;
 type MathInline = { kind: 'MathInline', content: string } & TokenBase;
 type MathOpen = { kind: 'MathOpen' } & TokenBase;
@@ -20,14 +20,14 @@ type Token =
     | CodeOpen
     | CodeClose
     | InputOpen
-    | InputClose
     | HintOpen
+    | MultileanOpen
     | Close
     | MathInline
     | MathOpen
     | MathClose
 
-const tagRegex = /(?:\r?\n|^)(?:```lean|```|-- begin input|-- end input|:::hint "([\s\S]*?)"|\r?\n:::)(?:\r?\n|$)|\$`[\s\S]*?`|\$\$`|`/gm;
+const tagRegex = /(?:\r?\n|^)(?:```lean|```|:::input|:::hint "([\s\S]*?)"|:::multilean|:::)(?:\r?\n|$)|\$`[\s\S]*?`|\$\$`|`/gm;
 
 function handle(token: Token, blocks: Block[], tail: Token[]) {
     if (token.kind === 'Text') {
@@ -43,25 +43,18 @@ function handle(token: Token, blocks: Block[], tail: Token[]) {
         if (range.to - range.from > 1)
             blocks.push(new MarkdownBlock(token.content, range, range));
     } else if (token.kind === 'CodeOpen') {
-        let head = accept(['CodeClose', 'Text', 'InputOpen'], tail);
+        let head = accept(['CodeClose', 'Text'], tail);
 
         if (head.kind === 'Text') {
-            const close = accept(['CodeClose', 'InputOpen'], tail);
+            const close = accept('CodeClose', tail);
             const body = head as Text;
 
-            let stop = close.pos;
-            if (close.kind === 'CodeClose')
-                stop += close.length;
+            let stop = close.pos + close.length;
 
             const range = { from: token.pos, to: stop };
             const innerRange = { from: body.pos, to: close.pos };
 
             blocks.push(new CodeBlock(body.content, range, innerRange));
-
-            if (close.kind === 'InputOpen')
-                handle(close, blocks, tail);
-        } else if (head.kind === 'InputOpen') {
-            handle(head, blocks, tail);
         }
     } else if (token.kind === 'HintOpen') {
         const expected = ['Close', 'Text', 'MathInline', 'MathOpen', 'CodeOpen'];
@@ -78,25 +71,25 @@ function handle(token: Token, blocks: Block[], tail: Token[]) {
 
         blocks.push(new HintBlock(content, token.title, range, innerRange, innerBlocks));
     } else if (token.kind === 'InputOpen') {
-        const body = accept('Text', tail) as Text;
-        const close = accept('InputClose', tail);
-        const range = { from: token.pos, to: close.pos + close.length };
-        const innerRange = { from: body.pos, to: body.pos + body.length };
+        const expected = ['Close', 'Text', 'MathInline', 'MathOpen', 'CodeOpen'];
+        let head = accept(expected, tail);
+        const innerBlocks: Block[] = [];
+        while (head.kind !== 'Close') {
+            handle(head, innerBlocks, tail);
+            head = accept(expected, tail);
+        }
 
-        const child = new CodeBlock(body.content, innerRange, innerRange);
+        const range = { from: token.pos, to: head.pos + head.length };
+        const innerRange = { from: token.pos + token.length, to: head.pos };
+        const content = innerBlocks.map(c => c.stringContent).join('');
 
-        blocks.push(new InputAreaBlock(body.content, range, innerRange, [child]));
-        handle(close, blocks, tail);
-    } else if (token.kind === 'InputClose') {
-        const head = accept(['Text', 'CodeClose'], tail);
-        if (head.kind === 'Text') {
-            const body = head as Text;
-            const close = accept('CodeClose', tail);
-            const range = { from: body.pos, to: close.pos + close.length };
-            const innerRange = { from: body.pos, to: close.pos };
-
-            if (body.content)
-                blocks.push(new CodeBlock(body.content, range, innerRange));
+        blocks.push(new InputAreaBlock(content, range, innerRange, innerBlocks));
+    } else if (token.kind === 'MultileanOpen') {
+        // parse everything to the corresponding close
+        let head = accept(undefined, tail);
+        while (head.kind !== 'Close') {
+            handle(head, blocks, tail);
+            head = accept(undefined, tail);
         }
     } else if (token.kind === 'MathOpen') {
         const body = accept('Text', tail) as Text;
@@ -145,12 +138,12 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
             return { kind: 'CodeOpen', pos: pos, length: m[0].length };
         } else if (m[0].match(/^```$/m)) {
             return { kind: 'CodeClose', pos: pos, length: m[0].length };
-        } else if (m[0].match(/^-- begin input$/m)) {
+        } else if (m[0].match(/^:::input$/m)) {
             return { kind: 'InputOpen', pos: pos, length: m[0].length };
-        } else if (m[0].match(/^-- end input$/m)) {
-            return { kind: 'InputClose', pos: pos, length: m[0].length };
         } else if (m[0].match(/^:::hint /m)) {
             return { kind: 'HintOpen', title: m[1], pos: pos, length: m[0].length };
+        } else if (m[0].match(/^:::multilean$/m)) {
+            return { kind: 'MultileanOpen', pos: pos, length: m[0].length };
         } else if (m[0].match(/^:::$/m)) {
             return { kind: 'Close', pos: pos, length: m[0].length };
         } else if (m[0] === '$$`') {

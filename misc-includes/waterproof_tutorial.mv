@@ -50,7 +50,7 @@ Proof.
 ```
 <input-area>
 ```coq
-
+We conclude that 3=3.
 ```
 </input-area>
 ```coq

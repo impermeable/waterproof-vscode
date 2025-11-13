@@ -270,7 +270,9 @@ export class Waterproof implements Disposable {
     this.webviewManager.on(
       WebviewManagerEvents.cursorChange,
       (document: TextDocument, position: Position) => {
+        console.log("We got Lean File");
         if (document.languageId.startsWith("lean")) {
+          console.log("We got Lean File");
           this.leanClient.activeDocument = document;
           this.leanClient.activeCursorPosition = position;
           this.updateGoalsLean(document, position);
@@ -908,6 +910,7 @@ export class Waterproof implements Disposable {
     document: TextDocument,
     position: Position
   ): Promise<void> {
+    wpl.debug("Called update goals ");
     wpl.debug(
       `Updating goals for document: ${document.uri.toString()} at position: ${
         position.line

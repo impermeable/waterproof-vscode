@@ -98,14 +98,14 @@ export class Waterproof implements Disposable {
         this.activeClient = 'none';
         this.webviewManager = new WebviewManager();
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
-            if (document.languageId == 'lean') {
+            if (document.languageId.startsWith('lean')) {
                 this.leanClient.updateCompletions(document);
             } else {
                 this.coqClient.updateCompletions(document);
             }
         });
         this.webviewManager.on(WebviewManagerEvents.viewportHint, ({ document, start, end }) => {
-            if (document.languageId == 'lean') {
+            if (document.languageId.startsWith('lean')) {
                 this.leanClient.sendViewportHint(document, start, end);
             } else {
                 this.coqClient.sendViewportHint(document, start, end);
@@ -114,8 +114,8 @@ export class Waterproof implements Disposable {
 
         this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
             wpl.log("Focus event received");
-            if (document.languageId == 'lean') {
-
+            
+            if (document.languageId.startsWith('lean')) {
                 if (!isLeanClientRunning()) {
                     console.warn("Focus event received before client is ready. Waiting...");
                     const waitForClient = async (): Promise<void> => {
@@ -133,7 +133,7 @@ export class Waterproof implements Disposable {
 
                 }
                 this.leanClient = <LeanLspClient>getLeanInstance();
-                this.activeClient = 'lean';
+                this.activeClient = 'lean4';
                 // update active document
                 // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
                 if (this.leanClient.activeDocument?.uri.toString() !== document.uri.toString()) {
@@ -173,10 +173,10 @@ export class Waterproof implements Disposable {
 
                 }
             }
-
+            wpl.log(this.activeClient);
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
-            if (document.languageId == 'lean') {
+            if (document.languageId.startsWith('lean')) {
                 this.leanClient.activeDocument = document;
                 this.leanClient.activeCursorPosition = position;
                 this.updateGoalsLean(document, position);
@@ -191,7 +191,7 @@ export class Waterproof implements Disposable {
             if (command == "createHelp") {
                 source.setResults(["createHelp"]);
             } else {
-                if (this.activeClient == 'lean') {
+                if (this.activeClient.startsWith('lean')) {
                     executeCommand(this.leanClient, command).then(
                         results => {
                             source.setResults(results);

@@ -18,6 +18,8 @@ import { AbstractLspClient } from "./abstractLspClient";
 import { GoalAnswer, GoalConfig, GoalRequest, PpString } from "../../lib/types";
 import { WaterproofLogger as wpl } from "../helpers";
 import { version } from "os";
+import { WaterproofCompletion } from "@impermeable/waterproof-editor";
+import { MessageType } from "../../shared";
 
 type LC = new (...args: any[]) => any;
 const Mixed = AbstractLspClient(LanguageClient as unknown as LC);
@@ -176,8 +178,44 @@ export class LeanLspClient extends (Mixed as any) {
   }
 
   async updateCompletions(document: TextDocument): Promise<void> {
-    // Minimal implementation for Lean
-    return Promise.resolve();
+    if (!this.isRunning()) return;
+    if (!this.webviewManager?.has(document)) {
+      throw new Error(
+        "Cannot update completions; no ProseMirror webview is known for " +
+          document.uri.toString()
+      );
+    }
+    const pos = this.activeCursorPosition;
+    if (!pos) {
+      return;
+    }
+    const params = {
+      textDocument: { uri: document.uri.toString() },
+      position: pos,
+    };
+    const call = await this.sendRequest("textDocument/completion", params);
+    let items;
+    if (Array.isArray(call)) {
+      items = call;
+    } else if (call && Array.isArray(call.items)) {
+      items = call.items;
+    } else {
+      items = [];
+    }
+    const completions: WaterproofCompletion[] = items.map((ci: any) => {
+      const insertText = ci.textEdit?.newText ?? ci.insertText ?? ci.label;
+
+      return {
+        label: ci.label,
+        detail: (ci.detail ?? "") as string,
+        type: "variable",
+        template: insertText,
+      };
+    });
+    this.webviewManager!.postMessage(document.uri.toString(), {
+      type: MessageType.setAutocomplete,
+      body: completions,
+    });
   }
 }
 /// ---

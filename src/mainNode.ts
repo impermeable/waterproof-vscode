@@ -1,9 +1,16 @@
 import { ExtensionContext } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 import { Waterproof } from "./extension";
-import { CoqLspClient } from "./lsp-client/client";
+import { CoqLspClient } from "./lsp-client/coqClient";
+import { LeanLspClient } from "./lsp-client/leanlspclient";
 import { CoqLspClientFactory } from "./lsp-client/clientTypes";
 import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
+import { activateLeanClient, deactivateLeanClient, restartLeanClient }
+    from "./lsp-client/leanlspclient";
+
+export type LspClientFactory =
+    (context: ExtensionContext, clientOptions: LanguageClientOptions, kind: ClientKind) => any;
+
 
 /**
  * This function is responsible for creating lsp clients with the extended
@@ -13,7 +20,10 @@ import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
  * @param wsConfig the workspace configuration of Waterproof
  * @returns an LSP client with the added functionality of `CoqFeatures`
  */
-const clientFactory: CoqLspClientFactory = (context : ExtensionContext, clientOptions: LanguageClientOptions) => {
+const clientFactory: LspClientFactory = (context, clientOptions, kind) => {
+    if (kind === 'lean') {
+        return new LeanLspClient(context, clientOptions);
+    }
     const serverOptions: ServerOptions = {
         command: WaterproofConfigHelper.get(WaterproofSetting.Path),
         args: WaterproofConfigHelper.get(WaterproofSetting.Args),
@@ -32,6 +42,9 @@ export function activate(context: ExtensionContext): void {
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();
+    activateLeanClient(context).catch((err) => {
+        console.error("Failed to activate Lean LSP client:", err);
+    });
 }
 
 export function deactivate(): void {

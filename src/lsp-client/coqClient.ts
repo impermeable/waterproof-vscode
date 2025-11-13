@@ -18,14 +18,12 @@ import { convertToSimple, fileProgressNotificationType, goalRequestType, serverS
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
+import { AbstractLspClient, ClientConstructor } from "./abstractLspClient";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
 }
 
-// Seems to be needed for the mixin class below
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
 
 function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
     switch (severity) {
@@ -43,22 +41,16 @@ function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
  * @public
  */
 export function CoqLspClient<T extends ClientConstructor>(Base: T) {
-    return class extends Base implements ICoqLspClient {
-
-        /** The resources that must be released when this extension is disposed of */
-        readonly disposables: Disposable[] = [];
+    const AbstractBase = AbstractLspClient(Base)
+    return class extends AbstractBase {
 
         detailedErrors: boolean = false;
 
-        activeDocument: TextDocument | undefined;
-        activeCursorPosition: Position | undefined;
 
-        readonly sentenceManager: SentenceManager;
         readonly fileProgressComponents: IFileProgressComponent[] = [];
 
         readonly lspOutputChannel: OutputChannel;
 
-        webviewManager: WebviewManager | undefined;
 
         // Whether we are using viewport based checking.
         readonly viewPortBasedChecking: boolean = !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking);
@@ -73,7 +65,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         constructor(...args: any[]) { 
             super(...args);
-            this.sentenceManager = new SentenceManager();
             wpl.debug("CoqLspClient constructor");
             // forward progress notifications to editor
             this.fileProgressComponents.push({
@@ -266,17 +257,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     this.updateCompletions(event.document);
             }));
 
-            return this.start();
-        }
-
-        getBeginningOfCurrentSentence(): Position | undefined {
-            if (!this.activeCursorPosition) return undefined;
-            return this.sentenceManager.getBeginningOfSentence(this.activeCursorPosition);
-        }
-
-        getEndOfCurrentSentence(): Position | undefined {
-            if (!this.activeCursorPosition) return undefined;
-            return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);
+            return super.startWithHandlers(webviewManager);
         }
 
         createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest {

@@ -5,6 +5,7 @@ import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
 import { WaterproofConfigHelper, WaterproofSetting } from "../helpers";
+import { LeanLspClient } from "./leanlspclient";
 
 /**
  * The following are types related to the language client and the
@@ -77,10 +78,11 @@ export interface ICoqLspClient {
     updateCompletions(document: TextDocument): Promise<void>;
 }
 
+
 /**
- * Type of file language client
+ * Used across the extension to create a language client that implements the `ICoqLspClient` interface
  */
-export type CoqLspClient = BaseLanguageClient & ICoqLspClient;
+export type CoqLspClient = AbstractLspClient;
 
 /**
  * Type of file language client factory
@@ -90,6 +92,15 @@ export type CoqLspClientFactory = (
     clientOptions: LanguageClientOptions,
     wsConfig: WorkspaceConfiguration
 ) => CoqLspClient;
+
+/**
+ * Type of file language client factory
+ */
+export type LeanLspClientFactory = (
+    context: ExtensionContext,
+    clientOptions: LanguageClientOptions,
+    wsConfig: WorkspaceConfiguration
+) => LeanLspClient;
 
 
 
@@ -197,6 +208,8 @@ export interface WpDiagnostic {
 // }
 
 type DiagnosticsData = {
-    sentenceRange ?: Range;
+    sentenceRange?: Range;
     // failedRequire ?: FailedRequire // TODO: Unsupported by us for now
 }
+
+export type ClientKind = 'rocq' | 'lean';

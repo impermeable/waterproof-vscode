@@ -15,7 +15,7 @@ import {
   ServerOptions,
 } from "vscode-languageclient/node";
 import { AbstractLspClient } from "./abstractLspClient";
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { GoalAnswer, GoalConfig, GoalRequest, PpString } from "../../lib/types";
 import { WaterproofLogger as wpl } from "../helpers";
 import { version } from "os";
 
@@ -129,16 +129,31 @@ export class LeanLspClient extends (Mixed as any) {
     return this.sendRequest("$/lean/plainGoal", leanParams).then(
       (result: PlainGoalResult) => {
         wpl.debug("Lean plainGoal result: " + JSON.stringify(result));
+        let goalsConfig: GoalConfig<PpString> | undefined = undefined;
+        //we now do format conversion
+        if (result && result.goals && result.goals.length > 0) {
+          const mainGoals = result.goals.map(
+            (g) => ({
+              hyps: [],
+              ty: ["Pp_string", g] as PpString,
+            }) /* as Goal<PpString> */
+          );
+
+          goalsConfig = {
+            goals: mainGoals,
+            stack: [],
+            shelf: [],
+            given_up: [],
+            bullet: undefined,
+          };
+        }
+
         const ga: GoalAnswer<PpString> = {
-          // Use the request's textDocument/version where available.
-          textDocument: {
-            uri: goalRequest.textDocument.uri,
-            version: (goalRequest.textDocument as any).version ?? 0,
-          } as any,
+          textDocument: goalRequest.textDocument,
           position: goalRequest.position,
-          // Minimal conversion: put rendered text into messages as a Pp string.
-          messages: result ? [["Pp_string", result.rendered] as PpString] : [],
-          // leave goals/program/error undefined for now (could be enriched later)
+          messages: [],
+          goals: goalsConfig,
+          error: undefined,
         };
         return ga;
       }

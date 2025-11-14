@@ -96,7 +96,7 @@ Within vscode, go to the Extensions tab (Ctrl+Shift+X) and search for the instal
 Within the setting 'Waterproof: Path' enter the following line:
 
 ```
-C:\cygwin_wp\home\runneradmin\.opam\wp\bin\coq-lsp
+C:\waterproof_dependencies\opam\wp-3.1.0+9.0\bin\coq-lsp
 ```
 
 **Note:** This will only work if you have not changed the default installation for the dependencies.

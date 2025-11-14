@@ -31,8 +31,9 @@ import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
 
-import { convertToString } from "../lib/types";
+import { convertToString, GoalConfig } from "../lib/types";
 import { Hypothesis } from "./api";
+import { RunResult } from "./lsp-client/petanque";
 
 /**
  * Main extension class
@@ -321,6 +322,15 @@ export class Waterproof implements Disposable {
         const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
         // Return the help messages. val[0] contains the levels, which we ignore.
         return wpHelpResponse.feedback.map(val => val[1]);
+    }
+
+    /**
+     * Executes a command at the cursor position and returns the full output including messages,
+     * goals, goal stack, etc.
+     */
+    public async execCommand(cmd: string): Promise<GoalConfig<string> & RunResult<number>> {
+        // Execute command and return output
+        return await executeCommandFullOutput(this.client, cmd);
     }
 
     /**

@@ -11,7 +11,7 @@ import { qualifiedSettingName, WaterproofConfigHelper, WaterproofFileUtil, Water
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { FileFormat, Message, MessageType } from "../../shared";
-import { DocChange, HistoryChange, LineNumber, WrappingDocChange } from "@impermeable/waterproof-editor";
+import { DocChange, HistoryChange, LineNumber, ThemeStyle, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -207,9 +207,9 @@ export class ProseMirrorWebview extends EventEmitter {
         }));
 
         this._disposables.push(window.onDidChangeActiveColorTheme(() => {
+            // When the color theme changes we need to update the colors used for syntax highlighting
             this.themeUpdate();
         }));
-        this.themeUpdate(); // Update the theme when the webview is created
 
         this._disposables.push(this._panel.onDidDispose(() => {
             this._panel.dispose();
@@ -238,6 +238,17 @@ export class ProseMirrorWebview extends EventEmitter {
         // Get the nonce.
         const nonce = getNonce();
 
+        const themeKind: "dark" | "light" = (() => {
+            switch (window.activeColorTheme.kind) {
+                case ColorThemeKind.HighContrast:
+                case ColorThemeKind.Dark:
+                    return "dark";
+                case ColorThemeKind.HighContrastLight:
+                case ColorThemeKind.Light:
+                    return "light";
+            }
+        })();
+
         this._panel.webview.html = `
         <!doctype html>
         <html>
@@ -249,7 +260,7 @@ export class ProseMirrorWebview extends EventEmitter {
         <body format="${this._format === FileFormat.MarkdownV ? "markdownv" : "regularv"}">
             <article>
                 <!-- The div underneath stores the editor -->
-                <div id="editor" spellcheck="false">
+                <div id="editor" spellcheck="false" data-theme-kind="${themeKind}">
                 </div>
             </article>
             <div style="height: 50vh"></div>
@@ -262,7 +273,18 @@ export class ProseMirrorWebview extends EventEmitter {
 
     private themeUpdate() {
         // Get kind of active ColorTheme (dark or light)
-        const themeType = window.activeColorTheme.kind === ColorThemeKind.Dark ? 'dark' : 'light';
+        const themeType: ThemeStyle = (() => {
+            switch (window.activeColorTheme.kind) {
+                // TODO: For now HighContrast Light and Dark are
+                // considered "normal" Light and Dark respectively.
+                case ColorThemeKind.Dark:
+                case ColorThemeKind.HighContrast:
+                    return ThemeStyle.Dark;
+                case ColorThemeKind.Light:
+                case ColorThemeKind.HighContrastLight:
+                    return ThemeStyle.Light;
+            }
+        })();
         this.postMessage({
             type: MessageType.themeUpdate,
             body: themeType

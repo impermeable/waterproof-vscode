@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, markdown, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
@@ -80,7 +80,22 @@ window.onload = () => {
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
 	const cfg = createConfiguration(format, codeAPI);
-	const editor = new WaterproofEditor(editorElement, cfg);
+	// Retrieve the current theme style from the attribute 'data-theme-kind'
+	// attached to the editor element. This allows us to set the initial theme kind
+	// rather than waiting for the themestyle message to arrive.
+	const themeStyle: ThemeStyle = (() => {
+		const value = editorElement.getAttribute("data-theme-kind");
+		if (value === null) {
+			throw Error("Could not get theme style from editor element");
+		}
+
+		switch (value) {
+			case "dark": return ThemeStyle.Dark;
+			case "light": return ThemeStyle.Light;
+			default: throw Error("Invalid theme encountered");
+		}
+	})();
+	const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
 
 	//@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.
 	window.editorInstance = editor;

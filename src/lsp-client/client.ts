@@ -14,7 +14,7 @@ import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
-import { convertToSimple, fileProgressNotificationType, goalRequestType, serverStatusNotificationType } from "./requestTypes";
+import { convertToSimple, DocumentPerfDataParams, fileProgressNotificationType, goalRequestType, perfDataNotificationType, serverStatusNotificationType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
@@ -64,6 +64,8 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
         readonly viewPortBasedChecking: boolean = !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking);
         // The range of the current viewport.
         viewPortRange: Range | undefined = undefined;
+
+        perfData: DocumentPerfDataParams<Range> | undefined;
 
         /**
          * Initializes the client.
@@ -136,6 +138,10 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 params.processing.forEach(fp => { fp.range = this.protocol2CodeConverter.asRange(fp.range) });
                 // notify each component
                 this.fileProgressComponents.forEach(c => c.onProgress(params));
+            }));
+
+            this.disposables.push(this.onNotification(perfDataNotificationType, data => {
+                this.perfData = data;
             }));
 
             this.disposables.push(languages.onDidChangeDiagnostics(e => {

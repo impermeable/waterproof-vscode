@@ -15,6 +15,8 @@ export const goalRequestType = new RequestType<GoalRequest, GoalAnswer<PpString>
  */
 export const fileProgressNotificationType = new NotificationType<CoqFileProgressParams>("$/coq/fileProgress");
 
+export const perfDataNotificationType = new NotificationType<DocumentPerfDataParams<Range>>("$/coq/filePerfData");
+
 /**
  * Notification type for the coq-lsp specific `serverStatus` notification. Returns a `CoqServerStatus` object that
  * can be either Busy or Idle.
@@ -26,6 +28,28 @@ export interface CoqFileProgressProcessingInfo {
     range: Range;
     /** Kind of progress that was reported. */
     kind?: CoqFileProgressKind;
+}
+
+export type PerfInfo = {
+  // Original Execution Time (when not cached)
+  time: number;
+  // Difference in words allocated in the heap using `Gc.quick_stat`
+  memory: number;
+  // Whether the execution was cached
+  cache_hit: boolean;
+  // Caching overhead
+  time_hash: number;
+}
+
+export type SentencePerfParams<R> = {
+  range: R;
+  info: PerfInfo;
+}
+
+export type DocumentPerfDataParams<R> = {
+    textDocument: VersionedTextDocumentIdentifier;
+    summary: string;
+    timings: SentencePerfParams<R>[];
 }
 
 export interface CoqFileProgressParams {

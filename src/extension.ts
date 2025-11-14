@@ -7,7 +7,8 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri} from "vscode";
+    Uri,
+    Range} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -218,6 +219,46 @@ export class Waterproof implements Disposable {
                     console.error("Error in updating Waterproof.path setting:", e);
                 }
             }
+        });
+
+        this.registerCommand("dumpAllPerfData", () => {
+            console.log("DOCUMENT PERF DATA");
+            console.log(this.client.perfData);
+            console.log("=== JSON ===");
+            console.log(JSON.stringify(this.client.perfData));
+        });
+
+        this.registerCommand("dumpPerfDataAtPos", () => {
+            const { perfData } = this.client;
+            const { activeCursorPosition } = this.client;
+            if (perfData === undefined) {
+                window.showErrorMessage("There is no performance data yet");
+                return;
+            }
+
+            if (activeCursorPosition === undefined) {
+                window.showErrorMessage("There is no active cursor position");
+                return;
+            }
+
+            console.log("SUMMARY", perfData.summary);
+            console.log(activeCursorPosition);
+
+            const data = perfData.timings.filter(v => {
+                const s = new Position(v.range.start.line, v.range.start.character);
+                const e = new Position(v.range.end.line, v.range.end.character);
+                const r = new Range(s, e);
+                return r.contains(activeCursorPosition)
+            });
+
+            if (data.length === 0) {
+                window.showErrorMessage(`No performance data found for position Ln ${activeCursorPosition.line}, Col ${activeCursorPosition.character}`);
+                return;
+            }
+
+            console.log("PerfData at cursor position", data[0].info);
+            wpl.log("PerfData at cursor position" + JSON.stringify(data[0].info));
+            window.showInformationMessage(`Took: ${data[0].info.time}s`);
         });
 
         this.registerCommand("setArgsWindowsBasedOnCoqLspPath", () => {

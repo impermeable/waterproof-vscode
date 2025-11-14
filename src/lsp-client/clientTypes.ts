@@ -5,6 +5,7 @@ import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
 import { SentenceManager } from "./sentenceManager";
 import { WaterproofConfigHelper, WaterproofSetting } from "../helpers";
+import { DocumentPerfDataParams } from "./requestTypes";
 
 /**
  * The following are types related to the language client and the
@@ -44,6 +45,8 @@ export interface ICoqLspClient {
      * are known.
      */
     getEndOfCurrentSentence(): Position | undefined;
+
+    perfData: DocumentPerfDataParams<Range> | undefined;
 
     /**
      * Returns the beginning position of the currently selected sentence, i.e., the Coq sentence in the
@@ -132,6 +135,7 @@ export interface CoqLspServerConfig {
     pp_type: 0 | 1 | 2;
     send_diags_extra_data: boolean;
     check_only_on_request: boolean;
+    send_perf_data: boolean,
 }
 
 // TODO: Rewrite namespace to modern syntax
@@ -152,7 +156,8 @@ export namespace CoqLspServerConfig {
             max_errors: WaterproofConfigHelper.get(WaterproofSetting.MaxErrors),
             pp_type: WaterproofConfigHelper.get(WaterproofSetting.PpType),
             send_diags_extra_data: WaterproofConfigHelper.get(WaterproofSetting.SendDiagsExtraData),
-            check_only_on_request: !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking)
+            check_only_on_request: !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking),
+            send_perf_data: true,
         };
     }
 }

@@ -99,6 +99,16 @@
     ],
     "commands": [
       {
+        "command": "waterproof.dumpPerfDataAtPos",
+        "title": "Dump PerfData for position",
+        "category": "Waterproof"
+      },
+      {
+        "command": "waterproof.dumpAllPerfData",
+        "title": "Dump all PerfData",
+        "category": "Waterproof"
+      },
+      {
         "command": "waterproof.openTutorial",
         "category": "Waterproof",
         "title": "Open Tutorial"

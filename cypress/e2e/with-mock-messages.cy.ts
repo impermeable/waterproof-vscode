@@ -81,7 +81,6 @@ describe('TestingTest', () => {
                     "type": MessageType.init,
                     "body": {
                         "value": "<input-area>\n```coq\nCompute 3 + 3.\n```\n</input-area>",
-                        "format": "MarkdownV",
                         "version": 1
                     }
                 });

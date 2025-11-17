@@ -9,11 +9,11 @@ Cypress.Commands.add("nthInputArea", (n) => {
 });
 
 Cypress.Commands.add("code", () => {
-    cy.get('coqblock > .cm-editor > .cm-scroller > .cm-content')
+    cy.get('.ProseMirror > div.cm-editor > .cm-scroller > .cm-content')
 });
 
 Cypress.Commands.add("nthCode", (n) => {
-    cy.get('coqblock > .cm-editor > .cm-scroller > .cm-content').eq(n)
+    cy.get('.ProseMirror > div.cm-editor > .cm-scroller > .cm-content').eq(n)
 });
 
 // TODO: Fix this

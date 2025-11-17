@@ -12,8 +12,8 @@ export const tagConfigurationLean: TagConfiguration = {
 		closeRequiresNewline: true,
 	},
 	input: {
-		openTag: "-- begin input\n",
-		closeTag: "\n-- end input",
+		openTag: ":::input\n",
+		closeTag: "\n:::",
 		openRequiresNewline: true,
 		closeRequiresNewline: true,
 	},

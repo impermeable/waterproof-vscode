@@ -183,16 +183,16 @@ test("Parse top level blocks (Lean)", () => {
     expect(blocks.length).toBe(6);
 
     expect(typeguards.isMarkdownBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("# A Header")
+    expect(blocks[0].stringContent).toBe("# A Header\n")
 
     expect(typeguards.isCodeBlock(blocks[1])).toBe(true);
     expect(blocks[1].stringContent).toBe("def fortyTwo :=\n  30 +")
 
     expect(typeguards.isInputAreaBlock(blocks[2])).toBe(true);
-    expect(blocks[2].stringContent).toBe("  12");
+    expect(blocks[2].stringContent).toBe("```lean\n  12\n```");
 
     expect(typeguards.isMarkdownBlock(blocks[3])).toBe(true);
-    expect(blocks[3].stringContent).toBe("## Markdown Content\n");
+    expect(blocks[3].stringContent).toBe("\n## Markdown Content\n");
 
     expect(typeguards.isMathDisplayBlock(blocks[4])).toBe(true);
     expect(blocks[4].stringContent).toBe("x^2 + y = z");

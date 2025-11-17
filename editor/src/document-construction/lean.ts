@@ -1,16 +1,16 @@
 import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
 
-type TokenBase = { pos: number, length: number };
+type TokenBase = { from: number, to: number };
 
 type EOF = { kind: 'EOF' } & TokenBase;
-type Text = { kind: 'Text', content: string } & TokenBase;
+type Text = { kind: 'Text' } & TokenBase;
 type CodeOpen = { kind: 'CodeOpen' } & TokenBase;
 type CodeClose = { kind: 'CodeClose' } & TokenBase;
 type InputOpen = { kind: 'InputOpen' } & TokenBase;
 type HintOpen = { kind: 'HintOpen', title: string } & TokenBase;
 type MultileanOpen = { kind: 'MultileanOpen' } & TokenBase;
 type Close = { kind: 'Close' } & TokenBase;
-type MathInline = { kind: 'MathInline', content: string } & TokenBase;
+type MathInline = { kind: 'MathInline' } & TokenBase;
 type MathOpen = { kind: 'MathOpen' } & TokenBase;
 type MathClose = { kind: 'MathClose' } & TokenBase;
 
@@ -27,21 +27,21 @@ type Token =
     | MathOpen
     | MathClose
 
-const tagRegex = /(?:\r?\n|^)(?:```lean|```|:::input|:::hint "([\s\S]*?)"|:::multilean|:::)(?:\r?\n|$)|\$`[\s\S]*?`|\$\$`|`/gm;
+const tagRegex = /```lean\n|\n```(?!\S)|:::input\n|:::hint "([\s\S]*?)"\n|:::multilean\n|\n:::(?!\S)|\$`[\s\S]*?`|\$\$`|`/g;
 
-function handle(token: Token, blocks: Block[], tail: Token[]) {
+function handle(doc: string, token: Token, blocks: Block[], tail: Token[]) {
     if (token.kind === 'Text') {
-        let content = token.content;
+        let content = doc.substring(token.from, token.to);
 
         while (peek(tail)?.kind === 'MathInline' || peek(tail)?.kind === 'Text') {
             const math = accept(['MathInline', 'Text'], tail) as MathInline;
-            content += math.content;
+            content += doc.substring(math.from, math.to);
         }
 
-        const range = { from: token.pos, to: token.pos + content.length };
+        const range = { from: token.from, to: token.to };
 
         if (range.to - range.from > 1)
-            blocks.push(new MarkdownBlock(token.content, range, range));
+            blocks.push(new MarkdownBlock(content, range, range));
     } else if (token.kind === 'CodeOpen') {
         let head = accept(['CodeClose', 'Text'], tail);
 
@@ -49,25 +49,24 @@ function handle(token: Token, blocks: Block[], tail: Token[]) {
             const close = accept('CodeClose', tail);
             const body = head as Text;
 
-            let stop = close.pos + close.length;
+            const range = { from: token.from, to: close.to };
+            const innerRange = { from: body.from, to: body.to };
+            const content = doc.substring(body.from, body.to);
 
-            const range = { from: token.pos, to: stop };
-            const innerRange = { from: body.pos, to: close.pos };
-
-            blocks.push(new CodeBlock(body.content, range, innerRange));
+            blocks.push(new CodeBlock(content, range, innerRange));
         }
     } else if (token.kind === 'HintOpen') {
         const expected = ['Close', 'Text', 'MathInline', 'MathOpen', 'CodeOpen'];
         let head = accept(expected, tail);
         const innerBlocks: Block[] = [];
         while (head.kind !== 'Close') {
-            handle(head, innerBlocks, tail);
+            handle(doc, head, innerBlocks, tail);
             head = accept(expected, tail);
         }
 
-        const range = { from: token.pos, to: head.pos + head.length };
-        const innerRange = { from: token.pos + token.length, to: head.pos };
-        const content = innerBlocks.map(c => c.stringContent).join('');
+        const range = { from: token.from, to: head.to };
+        const innerRange = { from: token.to, to: head.from };
+        const content = doc.substring(innerRange.from, innerRange.to);
 
         blocks.push(new HintBlock(content, token.title, range, innerRange, innerBlocks));
     } else if (token.kind === 'InputOpen') {
@@ -75,29 +74,30 @@ function handle(token: Token, blocks: Block[], tail: Token[]) {
         let head = accept(expected, tail);
         const innerBlocks: Block[] = [];
         while (head.kind !== 'Close') {
-            handle(head, innerBlocks, tail);
+            handle(doc, head, innerBlocks, tail);
             head = accept(expected, tail);
         }
 
-        const range = { from: token.pos, to: head.pos + head.length };
-        const innerRange = { from: token.pos + token.length, to: head.pos };
-        const content = innerBlocks.map(c => c.stringContent).join('');
+        const range = { from: token.from, to: head.to };
+        const innerRange = { from: token.to, to: head.from };
+        const content = doc.substring(innerRange.from, innerRange.to);
 
         blocks.push(new InputAreaBlock(content, range, innerRange, innerBlocks));
     } else if (token.kind === 'MultileanOpen') {
         // parse everything to the corresponding close
         let head = accept(undefined, tail);
         while (head.kind !== 'Close') {
-            handle(head, blocks, tail);
+            handle(doc, head, blocks, tail);
             head = accept(undefined, tail);
         }
     } else if (token.kind === 'MathOpen') {
         const body = accept('Text', tail) as Text;
         const close = accept('MathClose', tail);
-        const range = { from: token.pos, to: close.pos + close.length };
-        const innerRange = { from: body.pos, to: body.pos + body.length };
+        const range = { from: token.from, to: close.to };
+        const innerRange = { from: token.to, to: close.from };
+        const content = doc.substring(body.from, body.to);
 
-        blocks.push(new MathDisplayBlock(body.content, range, innerRange));
+        blocks.push(new MathDisplayBlock(content, range, innerRange));
     } else if (token.kind === 'EOF') {
         return;
     } else {
@@ -135,42 +135,39 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
         const pos = m.index as number;
 
         if (m[0].match(/^```lean$/m)) {
-            return { kind: 'CodeOpen', pos: pos, length: m[0].length };
+            return { kind: 'CodeOpen', from: pos, to: pos + m[0].length };
         } else if (m[0].match(/^```$/m)) {
-            return { kind: 'CodeClose', pos: pos, length: m[0].length };
+            return { kind: 'CodeClose', from: pos, to: pos + m[0].length };
         } else if (m[0].match(/^:::input$/m)) {
-            return { kind: 'InputOpen', pos: pos, length: m[0].length };
+            return { kind: 'InputOpen', from: pos, to: pos + m[0].length };
         } else if (m[0].match(/^:::hint /m)) {
-            return { kind: 'HintOpen', title: m[1], pos: pos, length: m[0].length };
+            return { kind: 'HintOpen', title: m[1], from: pos, to: pos + m[0].length };
         } else if (m[0].match(/^:::multilean$/m)) {
-            return { kind: 'MultileanOpen', pos: pos, length: m[0].length };
+            return { kind: 'MultileanOpen', from: pos, to: pos + m[0].length };
         } else if (m[0].match(/^:::$/m)) {
-            return { kind: 'Close', pos: pos, length: m[0].length };
+            return { kind: 'Close', from: pos, to: pos + m[0].length };
         } else if (m[0] === '$$`') {
-            return { kind: 'MathOpen', pos: pos, length: m[0].length };
+            return { kind: 'MathOpen', from: pos, to: pos + m[0].length };
         } else if (m[0].match('$`.*`')) {
-            return { kind: 'MathInline', content: m[0], pos: pos, length: m[0].length };
+            return { kind: 'MathInline', from: pos, to: pos + m[0].length };
         } else if (m[0] === '`') {
-            return { kind: 'MathClose', pos: pos, length: m[0].length };
+            return { kind: 'MathClose', from: pos, to: pos + m[0].length };
         } else {
             return null;
         }
     }).filter(v => v !== null)
     // insert intermediate text tokens with the actual content
-    .concat([{ kind: 'EOF', pos: inputDocument.length, length: 0 }])
+    .concat([{ kind: 'EOF', from: inputDocument.length, to: inputDocument.length }])
     .reduce((acc: Token[], tok: Token, _i, _arr): Token[] => {
         const prev = acc.at(-1);
         if (!prev) {
-            const content = inputDocument.substring(0, tok.pos);
-            acc.push({ kind: 'Text', content: content, pos: tok.pos, length: content.length });
+            acc.push({ kind: 'Text', from: 0, to: tok.from });
             acc.push(tok);
             return acc;
         }
 
-        const content = inputDocument.substring(prev.pos + prev.length, tok.pos);
-
         if (prev.kind !== 'Text') {
-            acc.push({ kind: 'Text', content: content, pos: tok.pos, length: content.length });
+            acc.push({ kind: 'Text', from: prev.to, to: tok.from });
         }
         acc.push(tok);
         return acc;
@@ -179,7 +176,7 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
     const blocks: Block[] = [];
     while (tokens.length) {
         const token = tokens.shift() as Token;
-        handle(token, blocks, tokens);
+        handle(inputDocument, token, blocks, tokens);
     }
 
     return blocks.filter(b => b.range.from != b.range.to);

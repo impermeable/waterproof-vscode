@@ -20,6 +20,8 @@ import { WaterproofLogger as wpl } from "../helpers";
 import { version } from "os";
 import { WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
+import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest } from "vscode-languageclient";
+
 
 type LC = new (...args: any[]) => any;
 const Mixed = AbstractLspClient(LanguageClient as unknown as LC);
@@ -171,11 +173,24 @@ export class LeanLspClient extends (Mixed as any) {
     return Promise.resolve();
   }
 
-  // Implement other required methods from ICoqLspClient
-  async requestSymbols(document?: TextDocument): Promise<any[]> {
-    // Minimal implementation for Lean
-    return [];
-  }
+  // Implement other required methods from ILeanLspClient
+async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
+
+    document ??= this.activeDocument;
+    if (!document)
+        throw new Error("Cannot request symbols; there is no active document.");
+
+    const params: DocumentSymbolParams = {
+        textDocument: { uri: document.uri.toString() }
+    };
+
+    const response = await this.sendRequest(DocumentSymbolRequest.type, params);
+
+    if (!response) return [];
+
+    return response as DocumentSymbol[];
+}
+
 
   async updateCompletions(document: TextDocument): Promise<void> {
     if (!this.isRunning()) return;

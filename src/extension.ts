@@ -202,77 +202,23 @@ export class Waterproof implements Disposable {
             await waitForClient();
             wpl.log("Client ready. Proceeding with focus event.");
           }
-        this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
-            wpl.log("Focus event received");
-            
-            if (document.languageId.startsWith('lean')) {
-                if (!isLeanClientRunning()) {
-                    console.warn("Focus event received before client is ready. Waiting...");
-                    const waitForClient = async (): Promise<void> => {
-                        return new Promise(resolve => {
-                            const interval = setInterval(() => {
-                                if (isLeanClientRunning()) {
-                                    clearInterval(interval);
-                                    resolve();
-                                }
-                            }, 100);
-                        });
-                    };
-                    await waitForClient();
-                    wpl.log("Lean Client ready. Proceeding with focus event.");
-
-                }
-                this.leanClient = <LeanLspClient>getLeanInstance();
-                this.activeClient = 'lean4';
-                // update active document
-                // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
-                if (this.leanClient.activeDocument?.uri.toString() !== document.uri.toString()) {
-                    this.leanClient.activeDocument = document;
-                    this.leanClient.activeCursorPosition = undefined;
-                    this.webviewManager.open("goals");
-                    for (const g of this.goalsComponents) g.updateGoals(undefined);
-
-                }
-            } else {
-                // Wait for client to initialize
-                if (!this.coqClientRunning) {
-                    console.warn("Focus event received before client is ready. Waiting...");
-                    const waitForClient = async (): Promise<void> => {
-                        return new Promise(resolve => {
-                            const interval = setInterval(() => {
-                                if (this.coqClientRunning) {
-                                    clearInterval(interval);
-                                    resolve();
-                                }
-                            }, 100);
-                        });
-                    };
-                    await waitForClient();
-                    wpl.log("Client ready. Proceeding with focus event.");
-                }
-
           wpl.log("Client state");
-          this.activeClient = "coq";
+          this.activeClient = 'coq';
           // update active document
           // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
-          if (
-            this.coqClient.activeDocument?.uri.toString() !==
-            document.uri.toString()
-          ) {
+          if (this.coqClient.activeDocument?.uri.toString() !== document.uri.toString()) {
             this.coqClient.activeDocument = document;
             this.coqClient.activeCursorPosition = undefined;
             this.webviewManager.open("goals");
             for (const g of this.goalsComponents) g.updateGoals(undefined);
+
           }
         }
-      }
-    );
+      });
     this.webviewManager.on(
       WebviewManagerEvents.cursorChange,
       (document: TextDocument, position: Position) => {
-        console.log("We got Lean File");
-        if (document.languageId.startsWith("lean")) {
-          console.log("We got Lean File");
+        if (document.languageId.startsWith('lean')) {
           this.leanClient.activeDocument = document;
           this.leanClient.activeCursorPosition = position;
           this.updateGoalsLean(document, position);
@@ -280,88 +226,36 @@ export class Waterproof implements Disposable {
           // update active document and cursor
           this.coqClient.activeDocument = document;
           this.coqClient.activeCursorPosition = position;
-          this.updateGoalsCoq(document, position); // TODO: error handling
+          this.updateGoalsCoq(document, position);  // TODO: error handling
         }
-      }
-    );
+      });
     this.webviewManager.on(
       WebviewManagerEvents.command,
       (source: IExecutor, command: string) => {
         if (command == "createHelp") {
           source.setResults(["createHelp"]);
         } else {
-          if (this.activeClient == "lean") {
+          if (this.activeClient.startsWith('lean')) {
             executeCommand(this.leanClient, command).then(
-              (results) => {
+              results => {
                 source.setResults(results);
               },
               (error: Error) => {
-                source.setResults(["Error: " + error.message]); // (temp)
+                source.setResults(["Error: " + error.message]);  // (temp)
               }
             );
           } else {
             executeCommand(this.coqClient, command).then(
-              (results) => {
+              results => {
                 source.setResults(results);
               },
               (error: Error) => {
-                source.setResults(["Error: " + error.message]); // (temp)
+                source.setResults(["Error: " + error.message]);  // (temp)
               }
             );
           }
         }
-      }
-    );
-                wpl.log("Client state");
-                this.activeClient = 'coq';
-                // update active document
-                // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
-                if (this.coqClient.activeDocument?.uri.toString() !== document.uri.toString()) {
-                    this.coqClient.activeDocument = document;
-                    this.coqClient.activeCursorPosition = undefined;
-                    this.webviewManager.open("goals");
-                    for (const g of this.goalsComponents) g.updateGoals(undefined);
-
-                }
-            }
-        });
-        this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
-            if (document.languageId.startsWith('lean')) {
-                this.leanClient.activeDocument = document;
-                this.leanClient.activeCursorPosition = position;
-                this.updateGoalsLean(document, position);
-            } else {
-                // update active document and cursor
-                this.coqClient.activeDocument = document;
-                this.coqClient.activeCursorPosition = position;
-                this.updateGoalsCoq(document, position);  // TODO: error handling
-            }
-        });
-        this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
-            if (command == "createHelp") {
-                source.setResults(["createHelp"]);
-            } else {
-                if (this.activeClient.startsWith('lean')) {
-                    executeCommand(this.leanClient, command).then(
-                        results => {
-                            source.setResults(results);
-                        },
-                        (error: Error) => {
-                            source.setResults(["Error: " + error.message]);  // (temp)
-                        }
-                    );
-                } else {
-                    executeCommand(this.coqClient, command).then(
-                        results => {
-                            source.setResults(results);
-                        },
-                        (error: Error) => {
-                            source.setResults(["Error: " + error.message]);  // (temp)
-                        }
-                    );
-                }
-            }
-        });
+      });
 
     this.disposables.push(
       CoqEditorProvider.register(context, this.webviewManager)
@@ -491,7 +385,7 @@ export class Waterproof implements Disposable {
             setTimeout(() => {
               wpl.log(
                 "Waterproof Args setting changed to: " +
-                  WaterproofConfigHelper.get(WaterproofSetting.Path).toString()
+                WaterproofConfigHelper.get(WaterproofSetting.Path).toString()
               );
               window.showInformationMessage(
                 `Waterproof Path setting succesfully updated!`
@@ -582,8 +476,7 @@ export class Waterproof implements Disposable {
         updated
       );
       window.showInformationMessage(
-        `Waterproof: Line numbers in editor are now ${
-          updated ? "shown" : "hidden"
+        `Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"
         }.`
       );
     });
@@ -615,9 +508,9 @@ export class Waterproof implements Disposable {
       workspace.workspaceFolders.length != 0;
     const defaultUri = hasWorkspaceOpen
       ? Utils.joinPath(
-          workspace.workspaceFolders![0].uri,
-          "waterproof_tutorial.mv"
-        )
+        workspace.workspaceFolders![0].uri,
+        "waterproof_tutorial.mv"
+      )
       : Uri.parse("./waterproof_tutorial.mv");
     window
       .showSaveDialog({
@@ -669,9 +562,9 @@ export class Waterproof implements Disposable {
       workspace.workspaceFolders.length != 0;
     const defaultUri = hasWorkspaceOpen
       ? Utils.joinPath(
-          workspace.workspaceFolders![0].uri,
-          "new_waterproof_document.mv"
-        )
+        workspace.workspaceFolders![0].uri,
+        "new_waterproof_document.mv"
+      )
       : Uri.parse("./new_waterproof_document.mv");
     window
       .showSaveDialog({
@@ -871,8 +764,7 @@ export class Waterproof implements Disposable {
     position: Position
   ): Promise<void> {
     wpl.debug(
-      `Updating goals for document: ${document.uri.toString()} at position: ${
-        position.line
+      `Updating goals for document: ${document.uri.toString()} at position: ${position.line
       }:${position.character}`
     );
     if (!this.coqClient.isRunning()) {
@@ -912,8 +804,7 @@ export class Waterproof implements Disposable {
   ): Promise<void> {
     wpl.debug("Called update goals ");
     wpl.debug(
-      `Updating goals for document: ${document.uri.toString()} at position: ${
-        position.line
+      `Updating goals for document: ${document.uri.toString()} at position: ${position.line
       }:${position.character}`
     );
     if (!this.leanClient.isRunning()) {

@@ -516,6 +516,8 @@
   },
   "dependencies": {
     "@impermeable/waterproof-editor": "^0.10.0",
+    "@leanprover/infoview": "^0.10.0",
+    "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
     "@ocaml-wasm/4.12--num": "^1.4.0-0",
     "@ocaml-wasm/4.12--zarith": "^1.13.0-0",

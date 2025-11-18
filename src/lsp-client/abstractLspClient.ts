@@ -1,5 +1,5 @@
-import { Disposable, TextDocument, Position, Range, OutputChannel, DocumentSymbol } from "vscode";
-import { FeatureClient, Middleware, LanguageClientOptions } from "vscode-languageclient";
+import { Disposable, TextDocument, Position, Range, OutputChannel } from "vscode";
+import { FeatureClient, Middleware, LanguageClientOptions, DocumentSymbol,  } from "vscode-languageclient";
 import { SentenceManager } from "./sentenceManager";
 import { WebviewManager } from "../webviewManager";
 import { IFileProgressComponent } from "../components";

@@ -3,6 +3,7 @@ import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplay
 type TokenType =
     | 'EOF'
     | 'Text'
+    | 'Preamble'
     | 'CodeOpen'
     | 'CodeClose'
     | 'InputOpen'
@@ -16,6 +17,7 @@ type TokenType =
 type Token = { kind: TokenType, from: number, to: number, groups: string[] };
 
 const regexes: [RegExp, TokenType][] = [
+    [/^[\s\S]*#doc .*? =>\n/, 'Preamble'],
     [/```lean\n/, 'CodeOpen'],
     [/\n```(?!\S)/, 'CodeClose'],
     [/:::input\n/, 'InputOpen'],
@@ -33,7 +35,13 @@ const tokenRegex = new RegExp(regexes.map(([regex, tokType]) => {
 }).join('|'), flags);
 
 function handle(doc: string, token: Token, blocks: Block[], tail: Token[]) {
-    if (token.kind === 'Text') {
+    if (token.kind === 'Preamble') {
+        const range = { from: token.from, to: token.to };
+        const content = doc.substring(token.from, token.to);
+
+        const child = new CodeBlock(content, range, range);
+        blocks.push(new HintBlock(content, "Preamble", range, range, [child]));
+    } else if (token.kind === 'Text') {
         const start = token.from;
         let stop = token.to;
 

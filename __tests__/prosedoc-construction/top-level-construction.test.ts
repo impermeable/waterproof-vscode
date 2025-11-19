@@ -28,7 +28,9 @@ Random Markdown list:
     3. $1 + 1$
 `;
 
-const inputDocumentLean = `# A Header
+const inputDocumentLean = `import Some.Library
+#doc (Genre) "Title" =>
+# A Header
 ::::multilean
 \`\`\`lean
 def fortyTwo :=
@@ -180,24 +182,29 @@ Goal True.
 
 test("Parse top level blocks (Lean)", () => {
     const blocks = topLevelBlocksLean(inputDocumentLean);
-    expect(blocks.length).toBe(6);
+    expect(blocks.length).toBe(7);
 
-    expect(typeguards.isMarkdownBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("# A Header\n")
+    const [preamble, md1, code, input, md2, math, md3] = blocks;
 
-    expect(typeguards.isCodeBlock(blocks[1])).toBe(true);
-    expect(blocks[1].stringContent).toBe("def fortyTwo :=\n  30 +")
+    expect(typeguards.isHintBlock(preamble)).toBe(true);
+    expect(preamble.stringContent).toBe("import Some.Library\n#doc (Genre) \"Title\" =>\n");
 
-    expect(typeguards.isInputAreaBlock(blocks[2])).toBe(true);
-    expect(blocks[2].stringContent).toBe("```lean\n  12\n```");
+    expect(typeguards.isMarkdownBlock(md1)).toBe(true);
+    expect(md1.stringContent).toBe("# A Header\n")
 
-    expect(typeguards.isMarkdownBlock(blocks[3])).toBe(true);
-    expect(blocks[3].stringContent).toBe("\n## Markdown Content\n");
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(code.stringContent).toBe("def fortyTwo :=\n  30 +")
 
-    expect(typeguards.isMathDisplayBlock(blocks[4])).toBe(true);
-    expect(blocks[4].stringContent).toBe("x^2 + y = z");
+    expect(typeguards.isInputAreaBlock(input)).toBe(true);
+    expect(input.stringContent).toBe("```lean\n  12\n```");
 
-    expect(typeguards.isMarkdownBlock(blocks[5])).toBe(true);
-    expect(blocks[5].stringContent)
+    expect(typeguards.isMarkdownBlock(md2)).toBe(true);
+    expect(md2.stringContent).toBe("\n## Markdown Content\n");
+
+    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+    expect(math.stringContent).toBe("x^2 + y = z");
+
+    expect(typeguards.isMarkdownBlock(md3)).toBe(true);
+    expect(md3.stringContent)
         .toBe("\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n");
 })

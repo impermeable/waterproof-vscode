@@ -721,6 +721,45 @@ export class Waterproof implements Disposable {
     );
   }
 
+  async initializeLeanClient(): Promise<void> {
+    wpl.log("Start of initializeLeanClient");
+
+    if (this.leanClient?.isRunning && this.leanClient.isRunning()) {
+      return Promise.reject(
+        new Error("Cannot initialize Lean client; one is already running.")
+      );
+    }
+
+    const clientOptions: LanguageClientOptions = {
+      documentSelector: [{ language: "lean4" }],
+      outputChannelName: "Waterproof Lean LSP",
+      revealOutputChannelOn: RevealOutputChannelOn.Info,
+    };
+
+    wpl.log("Initializing Lean client via clientFactory...");
+    this.leanClient = this.clientFactory(
+      this.context,
+      clientOptions,
+      "lean"
+    ) as LeanLspClient;
+
+    return this.leanClient.startWithHandlers(this.webviewManager).then(
+      () => {
+        this.webviewManager.open("goals");
+        this.statusBar.update(true);
+        this.leanClientRunning = true;
+        wpl.log("Lean client initialization complete.");
+      },
+      (reason) => {
+        const message = String(reason);
+        wpl.log(`Error during Lean client initialization: ${message}`);
+        this.statusBar.failed(message);
+        throw reason;
+      }
+    );
+  }
+
+
   /**
    * Restarts the Coq LSP client.
    */

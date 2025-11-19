@@ -42,10 +42,11 @@ export function activate(context: ExtensionContext): void {
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();
-    activateLeanClient(context).catch((err) => {
+    extension.initializeLeanClient();
+  /*   activateLeanClient(context).catch((err) => {
         console.error("Failed to activate Lean LSP client:", err);
     });
-}
+*/} 
 
 export function deactivate(): void {
     // TODO: stop client

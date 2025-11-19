@@ -7,8 +7,9 @@ type TokenType =
     | 'CodeClose'
     | 'InputOpen'
     | 'HintOpen'
-    | 'MultileanOpen'
     | 'Close'
+    | 'MultileanOpen'
+    | 'OuterClose'
     | 'MathInline'
     | 'MathOpen'
     | 'MathClose'
@@ -19,8 +20,9 @@ const regexes: [RegExp, TokenType][] = [
     [/\n```(?!\S)/, 'CodeClose'],
     [/:::input\n/, 'InputOpen'],
     [/:::hint "([\s\S]*?)"\n/, 'HintOpen'],
-    [/:::multilean\n/, 'MultileanOpen'],
     [/\n:::(?!\S)/, 'Close'],
+    [/::::multilean\n/, 'MultileanOpen'],
+    [/\n::::(?!\S)/, 'OuterClose'],
     [/\$`[\s\S]*?`/, 'MathInline'],
     [/\$\$`/, 'MathOpen'],
     [/`/, 'MathClose'],
@@ -32,14 +34,17 @@ const tokenRegex = new RegExp(regexes.map(([regex, tokType]) => {
 
 function handle(doc: string, token: Token, blocks: Block[], tail: Token[]) {
     if (token.kind === 'Text') {
-        let content = doc.substring(token.from, token.to);
+        const start = token.from;
+        let stop = token.to;
 
+        // concatenate following inline math and text
         while (peek(tail)?.kind === 'MathInline' || peek(tail)?.kind === 'Text') {
-            const math = accept(['MathInline', 'Text'], tail);
-            content += doc.substring(math.from, math.to);
+            const chunk = accept(['MathInline', 'Text'], tail);
+            stop = chunk.to;
         }
 
-        const range = { from: token.from, to: token.to };
+        let content = doc.substring(start, stop);
+        const range = { from: start, to: stop };
 
         if (range.to - range.from > 1)
             blocks.push(new MarkdownBlock(content, range, range));
@@ -87,7 +92,7 @@ function handle(doc: string, token: Token, blocks: Block[], tail: Token[]) {
     } else if (token.kind === 'MultileanOpen') {
         // parse everything to the corresponding close
         let head = accept(undefined, tail);
-        while (head.kind !== 'Close') {
+        while (head.kind !== 'OuterClose') {
             handle(doc, head, blocks, tail);
             head = accept(undefined, tail);
         }

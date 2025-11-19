@@ -29,7 +29,7 @@ Random Markdown list:
 `;
 
 const inputDocumentLean = `# A Header
-:::multilean
+::::multilean
 \`\`\`lean
 def fortyTwo :=
   30 +
@@ -39,7 +39,7 @@ def fortyTwo :=
   12
 \`\`\`
 :::
-:::
+::::
 ## Markdown Content
 $$\`x^2 + y = z\`
 A list:

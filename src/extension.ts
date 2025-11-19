@@ -175,7 +175,7 @@ export class Waterproof implements Disposable {
           // update active document
           // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
           if (
-            this.leanClient.activeDocument?.uri.toString() !==
+            this.leanClient.activeDocument?.uri.toString() !=
             document.uri.toString()
           ) {
             this.leanClient.activeDocument = document;
@@ -206,7 +206,7 @@ export class Waterproof implements Disposable {
           this.activeClient = 'coq';
           // update active document
           // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
-          if (this.coqClient.activeDocument?.uri.toString() !== document.uri.toString()) {
+          if (this.coqClient.activeDocument?.uri.toString() != document.uri.toString()) {
             this.coqClient.activeDocument = document;
             this.coqClient.activeCursorPosition = undefined;
             this.webviewManager.open("goals");

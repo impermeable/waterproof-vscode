@@ -142,7 +142,7 @@ window.onload = () => {
 				break; }
 			case MessageType.diagnostics:
 				{ const diagnostics = msg.body;
-				editor.parseCoqDiagnostics(diagnostics);
+				editor.setActiveDiagnostics(diagnostics);
 				break; }
 			case MessageType.serverStatus:
 				{ const status = msg.body;

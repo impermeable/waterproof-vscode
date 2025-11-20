@@ -23,11 +23,11 @@ interface VSCodeAPI {
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
-		completions: tactics,
+		completions: format === FileFormat.Lean ? [] : tactics,
 		symbols: symbols,
 		api: {
 			executeHelp() {
-				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
+				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime() } });
 			},
 			executeCommand(command: string, time: number) {
 				codeAPI.postMessage({ type: MessageType.command, body: { command, time } });
@@ -55,12 +55,12 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
 		documentConstructor:
 			format === FileFormat.MarkdownV ? topLevelBlocksMV
-			                                : (format === FileFormat.RegularV) ? vFileParser : topLevelBlocksLean,
+				: (format === FileFormat.RegularV) ? vFileParser : topLevelBlocksLean,
 		// documentConstructor: format === FileFormat.MarkdownV ? doc => markdownParser(doc, "coq") : vFileParser,
 		toMarkdown: (format === FileFormat.MarkdownV || format === FileFormat.Lean) ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: (format === FileFormat.MarkdownV || format === FileFormat.Lean) ? "Markdown" : "coqdoc",
 		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq")
-		                                                  : (format === FileFormat.RegularV) ? tagConfigurationV : tagConfigurationLean,
+			: (format === FileFormat.RegularV) ? tagConfigurationV : tagConfigurationLean,
 		disableMarkdownFeatures: format === FileFormat.RegularV ? ["code"] : [],
 	}
 
@@ -108,35 +108,40 @@ window.onload = () => {
 	window.addEventListener("message", (event: MessageEvent<Message>) => {
 		const msg = event.data;
 
-		switch(msg.type) {
+		switch (msg.type) {
 			case MessageType.init:
 				editor.init(msg.body.value, msg.body.version);
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
 				{
-				const { symbolUnicode } = msg.body;
-				if (msg.body.type === "tactics") {
-					// `symbolUnicode` stores the tactic template.
-					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
-					const template = symbolUnicode;
-					editor.handleSnippet(template);
-				} else {
-					editor.insertSymbol(symbolUnicode);
+					const { symbolUnicode } = msg.body;
+					if (msg.body.type === "tactics") {
+						// `symbolUnicode` stores the tactic template.
+						if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
+						const template = symbolUnicode;
+						editor.handleSnippet(template);
+					} else {
+						editor.insertSymbol(symbolUnicode);
+					}
+					break;
 				}
-				break; }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
 				editor.handleCompletions(msg.body);
 				break;
 			case MessageType.qedStatus:
-				{ const statuses = msg.body;  // one status for each input area, in order
-				editor.updateQedStatus(statuses);
-				break; }
+				{
+					const statuses = msg.body;  // one status for each input area, in order
+					editor.updateQedStatus(statuses);
+					break;
+				}
 			case MessageType.setShowLineNumbers:
-				{ const show = msg.body;
-				editor.setShowLineNumbers(show);
-				break; }
+				{
+					const show = msg.body;
+					editor.setShowLineNumbers(show);
+					break;
+				}
 			case MessageType.setShowMenuItems:
 				{ const show = msg.body; editor.setShowMenuItems(show); break; }
 			case MessageType.editorHistoryChange:
@@ -149,17 +154,23 @@ window.onload = () => {
 				editor.updateLockingState(msg.body);
 				break;
 			case MessageType.progress:
-				{ const progressParams = msg.body;
-				editor.updateProgressBar(progressParams);
-				break; }
+				{
+					const progressParams = msg.body;
+					editor.updateProgressBar(progressParams);
+					break;
+				}
 			case MessageType.diagnostics:
-				{ const diagnostics = msg.body;
-				editor.parseCoqDiagnostics(diagnostics);
-				break; }
+				{
+					const diagnostics = msg.body;
+					editor.parseCoqDiagnostics(diagnostics);
+					break;
+				}
 			case MessageType.serverStatus:
-				{ const status = msg.body;
-				editor.updateServerStatus(status);
-				break; }
+				{
+					const status = msg.body;
+					editor.updateServerStatus(status);
+					break;
+				}
 			case MessageType.themeUpdate:
 				editor.updateNodeViewThemes(msg.body);
 				break;
@@ -181,5 +192,5 @@ window.onload = () => {
 	});
 
 	// Start the editor
-	codeAPI.postMessage({type: MessageType.ready});
+	codeAPI.postMessage({ type: MessageType.ready });
 };

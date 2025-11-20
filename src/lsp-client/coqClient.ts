@@ -59,7 +59,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
          */
         // Needed for the mixin class
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        constructor(...args: any[]) { 
+        constructor(...args: any[]) {
             super(...args);
             wpl.debug("CoqLspClient constructor");
             // forward progress notifications to editor
@@ -69,8 +69,8 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     const document = this.activeDocument;
                     if (!document) return;
                     const body: SimpleProgressParams = {
-                        numberOfLines:  document.lineCount,
-                        progress:       params.processing.map(convertToSimple)
+                        numberOfLines: document.lineCount,
+                        progress: params.processing.map(convertToSimple)
                     };
                     this.webviewManager!.postAndCacheMessage(
                         document,
@@ -82,7 +82,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             // deduce (end) positions of sentences from progress notifications
             this.fileProgressComponents.push(this.sentenceManager);
             const diagnosticsCollection = languages.createDiagnosticCollection("rocq");
-            
+
             // Set detailedErrors to the value of the `Waterproof.detailedErrorsMode` setting.
             this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
             // Update `detailedErrors` when the setting changes.
@@ -140,7 +140,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             this.disposables.push(this.onNotification(LogTraceNotification.type, params => {
                 // Print `params.message` to custom lsp output channel
                 this.lspOutputChannel.appendLine(params.message);
-                
+
                 if (params.message.includes("document fully checked")) {
                     this.onCheckingCompleted();
                 }
@@ -223,13 +223,13 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 // for each input area, check the proof status
                 try {
                     const statuses = await Promise.all(inputAreas.map(a => {
-                            if (this.viewPortBasedChecking && this.viewPortRange && a.intersection(this.viewPortRange) === undefined) {
-                                // This input area is outside of the range that has been checked and thus we can't determine its status
-                                return Promise.resolve(InputAreaStatus.NotInView);
-                            } else {
-                                return determineProofStatus(this, document, a);
-                            }
+                        if (this.viewPortBasedChecking && this.viewPortRange && a.intersection(this.viewPortRange) === undefined) {
+                            // This input area is outside of the range that has been checked and thus we can't determine its status
+                            return Promise.resolve(InputAreaStatus.NotInView);
+                        } else {
+                            return determineProofStatus(this, document, a);
                         }
+                    }
                     ));
 
                     // forward statuses to corresponding ProseMirror editor
@@ -249,9 +249,14 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // after every document change, request symbols and send completions to the editor
             this.disposables.push(workspace.onDidChangeTextDocument(event => {
-                if (webviewManager.has(event.document.uri.toString()))
+                // Only handle Rocq/Coq documents, not Lean
+                if ((event.document.languageId === 'rocq' || event.document.languageId === 'rocqmarkdown') &&
+                    webviewManager.has(event.document.uri.toString())) {
                     this.updateCompletions(event.document);
+                }
             }));
+
+
 
             return super.startWithHandlers(webviewManager);
         }
@@ -263,7 +268,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     document.version
                 ),
                 position: {
-                    line:      position.line,
+                    line: position.line,
                     character: position.character
                 }
             };
@@ -304,10 +309,10 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 return response as DocumentSymbol[];
             } else {
                 return (response as SymbolInformation[]).map(s => ({
-                    name:           s.name,
-                    kind:           s.kind,
-                    tags:           s.tags,
-                    range:          s.location.range,
+                    name: s.name,
+                    kind: s.kind,
+                    tags: s.tags,
+                    range: s.location.range,
                     selectionRange: s.location.range
                 }));
             }
@@ -324,7 +329,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
 
             const requestBody = {
-                'textDocument':  VersionedTextDocumentIdentifier.create(
+                'textDocument': VersionedTextDocumentIdentifier.create(
                     document.uri.toString(),
                     document.version
                 ),
@@ -337,15 +342,16 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                         line: endPos.line,
                         character: endPos.character
                     }
-                } 
+                }
             };
-            
+
             // Save the range for which the document has been checked
             this.viewPortRange = new Range(startPos, endPos);
             await this.sendNotification("coq/viewRange", requestBody);
         }
 
         async updateCompletions(document: TextDocument): Promise<void> {
+            console.log("rocq autocompletions called for:", document.uri.toString());
             if (!this.isRunning()) return;
             if (!this.webviewManager?.has(document)) {
                 throw new Error("Cannot update completions; no ProseMirror webview is known for " + document.uri.toString());
@@ -362,13 +368,14 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // convert symbols to completions
             const completions: WaterproofCompletion[] = symbols.map(s => ({
-                label:  s.name,
+                label: s.name,
                 detail: s.detail?.toLowerCase() ?? "",
-                type:   "variable",
+                type: "variable",
                 template: s.name
             }));
 
             // send completions to (all code blocks in) the document's editor (not cached!)
+            console.log("sending rocq autocompletions");
             this.webviewManager.postMessage(document.uri.toString(), {
                 type: MessageType.setAutocomplete,
                 body: completions
@@ -379,13 +386,13 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             this.fileProgressComponents.forEach(c => c.dispose());
             this.disposables.forEach(d => d.dispose());
             return super.dispose(timeout);
+        }
     }
-}
 
-function wasCanceledByServer(reason: unknown): boolean {
-    return !!reason
-        && typeof reason === "object"
-        && "message" in reason
-        && reason.message === "Request got old in server";  // or: code == -32802
-}
+    function wasCanceledByServer(reason: unknown): boolean {
+        return !!reason
+            && typeof reason === "object"
+            && "message" in reason
+            && reason.message === "Request got old in server";  // or: code == -32802
+    }
 }

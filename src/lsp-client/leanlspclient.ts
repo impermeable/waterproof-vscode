@@ -21,6 +21,7 @@ import { version } from "os";
 import { WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest } from "vscode-languageclient";
+import { WebviewManager } from "../webviewManager";
 
 
 type LC = new (...args: any[]) => any;
@@ -173,6 +174,33 @@ export class LeanLspClient extends (Mixed as any) {
     // No viewport hint for Lean in this minimal client.
     return Promise.resolve();
   }
+  async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
+    this.webviewManager = webviewManager;
+
+    // Set up document change listener for Lean files
+    this.disposables.push(workspace.onDidChangeTextDocument(event => {
+      if (event.document.languageId.startsWith('lean') &&
+        webviewManager.has(event.document.uri.toString())) {
+
+        // Get cursor position from the change event
+        if (event.contentChanges.length > 0) {
+          const change = event.contentChanges[0];
+          // The cursor is at the end of the change
+          const cursorPos = change.range.end;
+
+          // Update the active cursor position
+          this.activeCursorPosition = cursorPos;
+          this.activeDocument = event.document;
+        }
+
+        this.updateCompletions(event.document);
+      }
+    }));
+
+    return super.startWithHandlers(webviewManager);
+  }
+
+
 
   // Implement other required methods from ILeanLspClient
   async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
@@ -194,7 +222,11 @@ export class LeanLspClient extends (Mixed as any) {
 
 
   async updateCompletions(document: TextDocument): Promise<void> {
-    if (!this.isRunning()) return;
+    console.log("LEAN updateCompletions called for :", document.uri.toString(), "lang:", document.languageId);
+    if (!this.isRunning()) {
+      console.log("LEAN client not running")
+      return;
+    }
     if (!this.webviewManager?.has(document)) {
       throw new Error(
         "Cannot update completions; no ProseMirror webview is known for " +
@@ -228,6 +260,7 @@ export class LeanLspClient extends (Mixed as any) {
         template: insertText,
       };
     });
+    console.log("Lean sending autocompletions")
     this.webviewManager!.postMessage(document.uri.toString(), {
       type: MessageType.setAutocomplete,
       body: completions,

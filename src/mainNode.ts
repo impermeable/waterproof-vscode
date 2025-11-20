@@ -40,9 +40,9 @@ export function activate(context: ExtensionContext): WaterproofAPI {
     const extension = new Waterproof(context, clientFactory, false);
     context.subscriptions.push(extension);
     // start the lsp client
-    extension.initializeClient();
+    extension.initializeClient();    // Rocq client
 
-    extension.initializeLeanClient();
+    extension.initializeLeanClient();   // Lean client
   /*   activateLeanClient(context).catch((err) => {
         console.error("Failed to activate Lean LSP client:", err);
     });*/

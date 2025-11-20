@@ -64,16 +64,6 @@ export function activate(_context: ExtensionContext): void {
     `waterproof-tue.waterproof#waterproof.setup`,
     false
   );
-  // Lean LSP
-  const context = _context as unknown as ExtensionContext;
-  activateLeanClient(context).catch((err) =>
-    console.error("lean client activation failed:", err)
-  );
-  // register a simple restart command for convenience
-  const disposableRestart = commands.registerCommand("lean.restart", () =>
-    restartLeanClient(context)
-  );
-  context.subscriptions.push(disposableRestart);
 }
 
 /**
@@ -847,6 +837,43 @@ export class Waterproof implements Disposable {
         wpl.log(`Error during client initialization: ${message}`);
         this.statusBar.failed(message);
         throw reason; // keep chain rejected
+      }
+    );
+  }
+  async initializeLeanClient(): Promise<void> {
+    wpl.log("Start of initializeLeanClient");
+
+    if (this.leanClient?.isRunning()) {
+      return Promise.reject(
+        new Error("Cannot initialize Lean client; one is already running.")
+      );
+    }
+
+    const clientOptions: LanguageClientOptions = {
+      documentSelector: [
+        { language: "lean4", scheme: "file" },
+        { language: "lean4", scheme: "untitled" },
+      ],
+      outputChannelName: "Lean LSP",
+      revealOutputChannelOn: RevealOutputChannelOn.Info,
+    };
+
+    wpl.log("Initializing Lean client...");
+    this.leanClient = this.clientFactory(
+      this.context,
+      clientOptions,
+      'lean'
+    );
+
+    return this.leanClient.startWithHandlers(this.webviewManager).then(
+      () => {
+        this.leanClientRunning = true;
+        wpl.log("Lean client initialization complete.");
+      },
+      (reason) => {
+        const message = reason.toString();
+        wpl.log(`Error during Lean client initialization: ${message}`);
+        throw reason;
       }
     );
   }

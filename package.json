@@ -17,7 +17,7 @@
   ],
   "publisher": "waterproof-tue",
   "license": "LGPL-2.1-only",
-  "icon": "Waterproofdruppel128.png",
+  "icon": "resources/WaterproofIcon.png",
   "engines": {
     "vscode": "^1.73.0"
   },

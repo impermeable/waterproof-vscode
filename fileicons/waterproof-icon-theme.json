@@ -1,7 +1,7 @@
 {
     "iconDefinitions": {
         "_waterproof_sheet": {
-            "iconPath": "../resources/drop.png"
+            "iconPath": "../resources/WaterproofIcon.png"
         }
     },
     "fileExtensions": {

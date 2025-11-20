@@ -65,6 +65,7 @@ export class LeanLspClient extends (Mixed as any) {
       documentSelector: [
         { language: "lean4", scheme: "file" },
         { language: "lean4", scheme: "untitled" },
+        { language: "lean4", scheme: "vscode-local" },
       ],
       outputChannelName: "Lean LSP",
       traceOutputChannel: lspTraceChannel,
@@ -174,14 +175,14 @@ export class LeanLspClient extends (Mixed as any) {
   }
 
   // Implement other required methods from ILeanLspClient
-async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
+  async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
 
     document ??= this.activeDocument;
     if (!document)
-        throw new Error("Cannot request symbols; there is no active document.");
+      throw new Error("Cannot request symbols; there is no active document.");
 
     const params: DocumentSymbolParams = {
-        textDocument: { uri: document.uri.toString() }
+      textDocument: { uri: document.uri.toString() }
     };
 
     const response = await this.sendRequest(DocumentSymbolRequest.type, params);
@@ -189,7 +190,7 @@ async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
     if (!response) return [];
 
     return response as DocumentSymbol[];
-}
+  }
 
 
   async updateCompletions(document: TextDocument): Promise<void> {
@@ -197,7 +198,7 @@ async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
     if (!this.webviewManager?.has(document)) {
       throw new Error(
         "Cannot update completions; no ProseMirror webview is known for " +
-          document.uri.toString()
+        document.uri.toString()
       );
     }
     const pos = this.activeCursorPosition;

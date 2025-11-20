@@ -1,5 +1,5 @@
 import { Position, ExtensionContext, TextDocument, Uri, WorkspaceConfiguration, Range, DiagnosticRelatedInformation, DiagnosticSeverity, DiagnosticTag } from "vscode";
-import { BaseLanguageClient, DocumentSymbol, LanguageClientOptions } from "vscode-languageclient";
+import { FeatureClient, Middleware, DocumentSymbol, LanguageClientOptions } from "vscode-languageclient";
 
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
 import { WebviewManager } from "../webviewManager";
@@ -78,6 +78,7 @@ export interface ICoqLspClient {
     updateCompletions(document: TextDocument): Promise<void>;
 }
 
+export type AbstractLspClient = FeatureClient<Middleware, LanguageClientOptions> & ICoqLspClient;
 
 /**
  * Used across the extension to create a language client that implements the `ICoqLspClient` interface

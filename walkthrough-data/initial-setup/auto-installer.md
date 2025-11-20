@@ -1,7 +1,7 @@
 # Automatic Installer
 
 The Waterproof checker will also restart automatically, this might take a few seconds.
-(NOTE: The automatics installer only works on Windows systems, if you are on a Mac, please refer to the README on https://github.com/impermeable/waterproof-vscode)
+(NOTE: The automatic installer only works on Windows systems, if you are on a Mac, please refer to the README on https://github.com/impermeable/waterproof-vscode)
 
 **Starting the Installation**
 

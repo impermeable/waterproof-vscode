@@ -59,6 +59,7 @@ import { convertToString } from "../lib/types";
 import { Hypothesis } from "./api";
 
 export function activate(_context: ExtensionContext): void {
+
   commands.executeCommand(
     `workbench.action.openWalkthrough`,
     `waterproof-tue.waterproof#waterproof.setup`,
@@ -134,9 +135,20 @@ export class Waterproof implements Disposable {
     this.webviewManager.on(
       WebviewManagerEvents.viewportHint,
       ({ document, start, end }) => {
+        wpl.debug(`[EXTENSION] ViewportHint event received for ${document.uri.fsPath}: ${start}-${end}`);
         if (document.languageId.startsWith("lean")) {
+          if (!this.leanClient || !this.leanClient.isRunning()) {
+            wpl.debug("[EXTENSION] ViewportHint: Lean client not available, skipping");
+            return;
+          }
+          wpl.debug("[EXTENSION] ViewportHint: Calling leanClient.sendViewportHint");
           this.leanClient.sendViewportHint(document, start, end);
         } else {
+          if (!this.coqClient || !this.coqClient.isRunning()) {
+            wpl.debug("[EXTENSION] ViewportHint: Coq client not available, skipping");
+            return;
+          }
+          wpl.debug("[EXTENSION] ViewportHint: Calling coqClient.sendViewportHint");
           this.coqClient.sendViewportHint(document, start, end);
         }
       }
@@ -196,6 +208,116 @@ export class Waterproof implements Disposable {
             await waitForClient();
             wpl.log("Client ready. Proceeding with focus event.");
           }
+          this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
+            wpl.log("Focus event received");
+
+            if (document.languageId.startsWith('lean')) {
+              if (!isLeanClientRunning()) {
+                console.warn("Focus event received before client is ready. Waiting...");
+                const waitForClient = async (): Promise<void> => {
+                  return new Promise(resolve => {
+                    const interval = setInterval(() => {
+                      if (isLeanClientRunning()) {
+                        clearInterval(interval);
+                        resolve();
+                      }
+                    }, 100);
+                  });
+                };
+                await waitForClient();
+                wpl.log("Lean Client ready. Proceeding with focus event.");
+
+              }
+              this.leanClient = <LeanLspClient>getLeanInstance();
+              this.activeClient = 'lean4';
+              // update active document
+              // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
+              if (this.leanClient.activeDocument?.uri.toString() !== document.uri.toString()) {
+                this.leanClient.activeDocument = document;
+                this.leanClient.activeCursorPosition = undefined;
+                this.webviewManager.open("goals");
+                for (const g of this.goalsComponents) g.updateGoals(undefined);
+
+              }
+            } else {
+              // Wait for client to initialize
+              if (!this.coqClientRunning) {
+                console.warn("Focus event received before client is ready. Waiting...");
+                const waitForClient = async (): Promise<void> => {
+                  return new Promise(resolve => {
+                    const interval = setInterval(() => {
+                      if (this.coqClientRunning) {
+                        clearInterval(interval);
+                        resolve();
+                      }
+                    }, 100);
+                  });
+                };
+                await waitForClient();
+                wpl.log("Client ready. Proceeding with focus event.");
+              }
+
+              wpl.log("Client state");
+              this.activeClient = "coq";
+              // update active document
+              // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
+              if (
+                this.coqClient.activeDocument?.uri.toString() !==
+                document.uri.toString()
+              ) {
+                this.coqClient.activeDocument = document;
+                this.coqClient.activeCursorPosition = undefined;
+                this.webviewManager.open("goals");
+                for (const g of this.goalsComponents) g.updateGoals(undefined);
+              }
+            }
+          }
+          );
+          this.webviewManager.on(
+            WebviewManagerEvents.cursorChange,
+            (document: TextDocument, position: Position) => {
+              console.log("We got Lean File");
+              if (document.languageId.startsWith("lean")) {
+                console.log("We got Lean File");
+                this.leanClient.activeDocument = document;
+                this.leanClient.activeCursorPosition = position;
+                this.updateGoalsLean(document, position);
+              } else {
+                // update active document and cursor
+                this.coqClient.activeDocument = document;
+                this.coqClient.activeCursorPosition = position;
+                this.updateGoalsCoq(document, position); // TODO: error handling
+              }
+            }
+          );
+          this.webviewManager.on(
+            WebviewManagerEvents.command,
+            (source: IExecutor, command: string) => {
+              if (command == "createHelp") {
+                source.setResults(["createHelp"]);
+              } else {
+                if (this.activeClient == "lean") {
+                  executeCommand(this.leanClient, command).then(
+                    (results) => {
+                      source.setResults(results);
+                    },
+                    (error: Error) => {
+                      source.setResults(["Error: " + error.message]); // (temp)
+                    }
+                  );
+                } else {
+                  executeCommand(this.coqClient, command).then(
+                    (results) => {
+                      source.setResults(results);
+                    },
+                    (error: Error) => {
+                      source.setResults(["Error: " + error.message]); // (temp)
+                    }
+                  );
+                }
+              }
+            }
+          );
           wpl.log("Client state");
           this.activeClient = 'coq';
           // update active document
@@ -209,47 +331,43 @@ export class Waterproof implements Disposable {
           }
         }
       });
-    this.webviewManager.on(
-      WebviewManagerEvents.cursorChange,
-      (document: TextDocument, position: Position) => {
-        if (document.languageId.startsWith('lean')) {
-          this.leanClient.activeDocument = document;
-          this.leanClient.activeCursorPosition = position;
-          this.updateGoalsLean(document, position);
+    this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
+      if (document.languageId.startsWith('lean')) {
+        this.leanClient.activeDocument = document;
+        this.leanClient.activeCursorPosition = position;
+        this.updateGoalsLean(document, position);
+      } else {
+        // update active document and cursor
+        this.coqClient.activeDocument = document;
+        this.coqClient.activeCursorPosition = position;
+        this.updateGoalsCoq(document, position);  // TODO: error handling
+      }
+    });
+    this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
+      if (command == "createHelp") {
+        source.setResults(["createHelp"]);
+      } else {
+        if (this.activeClient.startsWith('lean')) {
+          executeCommand(this.leanClient, command).then(
+            results => {
+              source.setResults(results);
+            },
+            (error: Error) => {
+              source.setResults(["Error: " + error.message]);  // (temp)
+            }
+          );
         } else {
-          // update active document and cursor
-          this.coqClient.activeDocument = document;
-          this.coqClient.activeCursorPosition = position;
-          this.updateGoalsCoq(document, position);  // TODO: error handling
+          executeCommand(this.coqClient, command).then(
+            results => {
+              source.setResults(results);
+            },
+            (error: Error) => {
+              source.setResults(["Error: " + error.message]);  // (temp)
+            }
+          );
         }
-      });
-    this.webviewManager.on(
-      WebviewManagerEvents.command,
-      (source: IExecutor, command: string) => {
-        if (command == "createHelp") {
-          source.setResults(["createHelp"]);
-        } else {
-          if (this.activeClient.startsWith('lean')) {
-            executeCommand(this.leanClient, command).then(
-              results => {
-                source.setResults(results);
-              },
-              (error: Error) => {
-                source.setResults(["Error: " + error.message]);  // (temp)
-              }
-            );
-          } else {
-            executeCommand(this.coqClient, command).then(
-              results => {
-                source.setResults(results);
-              },
-              (error: Error) => {
-                source.setResults(["Error: " + error.message]);  // (temp)
-              }
-            );
-          }
-        }
-      });
+      }
+    });
 
     this.disposables.push(
       CoqEditorProvider.register(context, this.webviewManager)
@@ -998,38 +1116,47 @@ export class Waterproof implements Disposable {
     document: TextDocument,
     position: Position
   ): Promise<void> {
-    wpl.debug("Called update goals ");
-    wpl.debug(
-      `Updating goals for document: ${document.uri.toString()} at position: ${position.line
-      }:${position.character}`
-    );
-    if (!this.leanClient.isRunning()) {
-      wpl.debug("Client is not running, cannot update goals.");
+    wpl.debug("=== UPDATE GOALS LEAN ===");
+    wpl.debug(`Document: ${document.uri.fsPath}`);
+    wpl.debug(`Position: ${position.line}:${position.character}`);
+
+    if (!this.leanClient) {
+      wpl.debug("ERROR: leanClient is not initialized!");
       return;
     }
-    const params = this.leanClient.createGoalsRequestParameters(
-      document,
-      position
-    );
-    wpl.debug(`Requesting goals for components: ${this.goalsComponents}`);
+
+    if (!this.leanClient.isRunning()) {
+      wpl.debug("ERROR: Lean client is not running!");
+      return;
+    }
+
+    const params = this.leanClient.createGoalsRequestParameters(document, position);
+    //wpl.debug(`Request params: ${JSON.stringify(params)}`);
+    wpl.debug(`Number of goals components: ${this.goalsComponents.length}`);
+
     this.leanClient.requestGoals(params).then(
       (response) => {
-        wpl.debug(`Received goals response: ${JSON.stringify(response)}`);
+        wpl.debug("=== GOALS RESPONSE RECEIVED ===");
+        wpl.debug(`Response has goals?: ${response.goals ? "YES" : "NO"}`);
+        if (response.goals) {
+          wpl.debug(`Goals config goals count: ${response.goals.goals?.length || 0}`);
+        }
+        //wpl.debug(`Full response: ${JSON.stringify(response, null, 2)}`);
+
         for (const g of this.goalsComponents) {
           wpl.debug(`Updating goals component: ${g.constructor.name}`);
           g.updateGoals(response);
         }
+        wpl.debug("=== GOALS UPDATED ===");
       },
       (reason) => {
-        wpl.debug(`Failed for reason: ${reason}`);
+        wpl.debug(`ERROR: Failed to get goals - ${reason}`);
         for (const g of this.goalsComponents) {
-          wpl.debug(`Failed to update goals component: ${g.constructor.name}`);
           g.failedGoals(reason);
         }
       }
     );
   }
-
   dispose() {
     this.statusBar.dispose();
     this.stopClient();

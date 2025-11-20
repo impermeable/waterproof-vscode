@@ -4,6 +4,7 @@ import {
   window,
   TextDocument,
   Position,
+  Range,
   OutputChannel,
   commands,
   Uri,
@@ -13,6 +14,7 @@ import {
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
+  VersionedTextDocumentIdentifier,
 } from "vscode-languageclient/node";
 import { AbstractLspClient } from "./abstractLspClient";
 import { GoalAnswer, GoalConfig, GoalRequest, PpString } from "../../lib/types";
@@ -78,6 +80,7 @@ export class LeanLspClient extends (Mixed as any) {
       serverOptions,
       clientOptions ?? defaultClientOptions
     );
+    this.context = context;
     (this as any).trace = Trace.Verbose;
     (this as any).setTrace?.(Trace.Verbose);
   }
@@ -134,24 +137,59 @@ export class LeanLspClient extends (Mixed as any) {
     };
     return this.sendRequest("$/lean/plainGoal", leanParams).then(
       (result: PlainGoalResult) => {
-        wpl.debug("Lean plainGoal result: " + JSON.stringify(result));
-        let goalsConfig: GoalConfig<PpString> | undefined = undefined;
-        //we now do format conversion
-        if (result && result.goals && result.goals.length > 0) {
-          const mainGoals = result.goals.map(
-            (g) => ({
-              hyps: [],
-              ty: ["Pp_string", g] as PpString,
-            }) /* as Goal<PpString> */
-          );
+        wpl.debug("=== LEAN GOALS DEBUG ===");
+        wpl.debug("Full result object: " + JSON.stringify(result, null, 2));
+        wpl.debug("Result is null?: " + (result === null));
+        if (result) {
+          wpl.debug("result.rendered: " + result.rendered);
+          wpl.debug("result.goals: " + JSON.stringify(result.goals));
+          wpl.debug("result.goals length: " + (result.goals?.length || 0));
+        }
 
-          goalsConfig = {
-            goals: mainGoals,
-            stack: [],
-            shelf: [],
-            given_up: [],
-            bullet: undefined,
-          };
+        let goalsConfig: GoalConfig<PpString> | undefined = undefined;
+
+        // Try to parse goals - check both goals array and rendered string
+        if (result) {
+          // If goals array exists and has items, use it
+          if (result.goals && result.goals.length > 0) {
+            wpl.debug("Using goals array: " + result.goals.length + " goals");
+            const mainGoals = result.goals.map(
+              (g) => ({
+                hyps: [],
+                ty: ["Pp_string", g] as PpString,
+              })
+            );
+
+            goalsConfig = {
+              goals: mainGoals,
+              stack: [],
+              shelf: [],
+              given_up: [],
+              bullet: undefined,
+            };
+          }
+          // If no goals array but rendered exists, try using rendered
+          else if (result.rendered && result.rendered.trim().length > 0) {
+            wpl.debug("No goals array, but rendered exists. Using rendered string.");
+            wpl.debug("Rendered content: " + result.rendered);
+
+            const mainGoals = [{
+              hyps: [],
+              ty: ["Pp_string", result.rendered] as PpString,
+            }];
+
+            goalsConfig = {
+              goals: mainGoals,
+              stack: [],
+              shelf: [],
+              given_up: [],
+              bullet: undefined,
+            };
+          } else {
+            wpl.debug("No goals or rendered content found in result");
+          }
+        } else {
+          wpl.debug("Result is null - no goals available");
         }
 
         const ga: GoalAnswer<PpString> = {
@@ -161,18 +199,20 @@ export class LeanLspClient extends (Mixed as any) {
           goals: goalsConfig,
           error: undefined,
         };
+
+        wpl.debug("Final GoalAnswer goals?: " + (ga.goals ? "YES" : "NO"));
+        wpl.debug("=== END LEAN GOALS DEBUG ===");
+
         return ga;
       }
-    );
+    ).catch((error) => {
+      wpl.debug("ERROR in Lean goals request: " + error);
+      throw error;
+    });
   }
 
-  sendViewportHint(
-    document: TextDocument,
-    start: number,
-    end: number
-  ): Promise<void> {
-    // No viewport hint for Lean in this minimal client.
-    return Promise.resolve();
+  getViewportNotificationName(): string {
+    return "$/lean/viewRange";
   }
   async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
     this.webviewManager = webviewManager;

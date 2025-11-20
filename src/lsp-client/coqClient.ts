@@ -318,11 +318,17 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }
         }
 
+        getViewportNotificationName(): string {
+            return "coq/viewRange";
+        }
+
         async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
-            if (!this.isRunning()) return;
+            // Call parent implementation to send the notification
+            await super.sendViewportHint(document, start, end);
+
+            // Save the range for which the document has been checked (Coq-specific)
             const startPos = document.positionAt(start);
             let endPos = document.positionAt(end);
-            // Compute end of document position, use that if we're close
             const endOfDocument = document.positionAt(document.getText().length);
             if (endOfDocument.line - endPos.line < 20) {
                 endPos = endOfDocument;
@@ -347,7 +353,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // Save the range for which the document has been checked
             this.viewPortRange = new Range(startPos, endPos);
-            await this.sendNotification("coq/viewRange", requestBody);
         }
 
         async updateCompletions(document: TextDocument): Promise<void> {

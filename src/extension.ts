@@ -23,7 +23,7 @@ import {
   CoqLspServerConfig,
   LeanLspClientFactory,
 } from "./lsp-client/clientTypes";
-import { executeCommand } from "./lsp-client/commandExecutor";
+import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
@@ -41,7 +41,9 @@ import { Utils } from "vscode-uri";
 import {
   WaterproofConfigHelper,
   WaterproofSetting,
-  WaterproofLogger as wpl,
+  WaterproofLogger as wpl, 
+  WaterproofFileUtil, 
+  WaterproofPackageJSON
 } from "./helpers";
 // Lean LSP
 import {
@@ -53,6 +55,8 @@ import {
   restartLeanClient,
 } from "./lsp-client/leanlspclient";
 import { LspClientFactory } from "./mainNode";
+import { convertToString } from "../lib/types";
+import { Hypothesis } from "./api";
 
 export function activate(_context: ExtensionContext): void {
   commands.executeCommand(
@@ -358,7 +362,7 @@ export class Waterproof implements Disposable {
         // WINDOWS
         case "win32":
           defaultValue =
-            "C:\\waterproof_dependencies\\opam\\wp-3.0.0+9.0\\bin\\coq-lsp.exe";
+            WaterproofPackageJSON.defaultCoqLspPathWindows(this.context);
           break;
         case "cygwin":
           defaultValue = undefined;
@@ -398,12 +402,27 @@ export class Waterproof implements Disposable {
       }
     });
 
+    this.registerCommand("setArgsWindowsBasedOnCoqLspPath", () => {
+      const coqLspPath = WaterproofConfigHelper.get(WaterproofSetting.Path);
+      if (coqLspPath !== "coq-lsp") {
+        const coqlib = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(coqLspPath), "..\\lib\\coq");
+        const findlib_config = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(coqLspPath), "findlib.conf");
+        WaterproofConfigHelper.update(WaterproofSetting.Args, [`--coqlib=${coqlib}`, `--findlib_config=${findlib_config}`], ConfigurationTarget.Global);
+      }
+    });
+
     this.registerCommand("autoInstall", async () => {
       commands.executeCommand(`waterproof.defaultPath`);
 
-      const windowsInstallationScript = `echo Begin Waterproof dependency software installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L https://github.com/impermeable/waterproof-dependencies-installer/releases/download/v3.0.0%2B9.0/Waterproof-dependencies-wp-3.0.0+9.0-Windows-x86_64.exe && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`;
-      // TODO: this may need to be determined in a better way
-      const uninstallerLocation = `C:\\waterproof_dependencies\\opam\\wp-3.0.0+9.0\\Uninstall.exe`;
+            const downloadLink = WaterproofPackageJSON.installerDownloadLinkWindows(this.context);
+
+            const windowsInstallationScript = `echo Begin Waterproof dependency software installation && echo Downloading installer ... && curl -o Waterproof_Installer.exe -L ${downloadLink} && echo Installer Finished Downloading - Please wait for the Installer to execute, this can take up to a few minutes && Waterproof_Installer.exe && echo Required Files Installed && del Waterproof_Installer.exe && echo COMPLETE - The Waterproof checker will restart automatically a few seconds after this terminal is closed`
+
+            // default location of the uninstaller
+            const uninstallerLocation =
+                WaterproofFileUtil.join(
+                    WaterproofFileUtil.getDirectory(WaterproofPackageJSON.defaultCoqLspPathWindows(this.context)),
+                    `Uninstall.exe`);
 
       await this.stopClient();
 
@@ -467,20 +486,136 @@ export class Waterproof implements Disposable {
       }
     });
 
-    this.registerCommand("toggleInEditorLineNumbers", () => {
-      const updated = !WaterproofConfigHelper.get(
-        WaterproofSetting.ShowLineNumbersInEditor
-      );
-      WaterproofConfigHelper.update(
-        WaterproofSetting.ShowLineNumbersInEditor,
-        updated
-      );
-      window.showInformationMessage(
-        `Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"
-        }.`
-      );
-    });
-  }
+        this.registerCommand("toggleInEditorLineNumbers", () => {
+            const updated = !WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
+            WaterproofConfigHelper.update(WaterproofSetting.ShowLineNumbersInEditor, updated);
+            window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
+        });
+    }
+
+    /**
+     * Request the goals for the current document and cursor position.
+     */
+    public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) { throw new Error("No active document or cursor position."); }
+
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
+
+        const params = this.client.createGoalsRequestParameters(document, position);
+        const goalResponse = await this.client.requestGoals(params);
+
+        if (goalResponse.goals === undefined) {
+            throw new Error("Response contained no goals.");
+        }
+
+        // Convert goals and hypotheses to strings
+        const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
+        // Note: only taking hypotheses from the first goal
+        const hyps = goalResponse.goals.goals[0].hyps.map(h => { return {name: convertToString(h.names[0]), content: convertToString(h.ty)}; });
+
+        return {currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1)};
+    }
+
+    /**
+     * Get the currently active document in the editor.
+     */
+    public currentDocument(): TextDocument {
+        if (!this.client.activeDocument) { throw new Error("No active document."); }
+        return this.client.activeDocument;
+    }
+
+    /**
+     * Executes the Help command at the cursor position and returns the output.
+     */
+    public async help(): Promise<Array<string>> {
+        // Execute command
+        const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
+        // Return the help messages. val[0] contains the levels, which we ignore.
+        return wpHelpResponse.feedback.map(val => val[1]);
+    }
+
+    /**
+     * Returns information about the current proof on a document level.
+     * This function will look at the current document to figure out what
+     * statement the user is currently proving.
+     * @param cursorMarker The marker string to insert to indicate where the user has placed there
+     * cursor in the current proof.
+     * @returns An object containing:
+     * - `name`: The name of the provable statement.
+     * - `full`: The full statement that the user is working on from Theorem, Lemma, etc to Qed.
+     * - `withCursorMarker`: The same as `full` but contains the {@linkcode cursorMarker} at the point where
+     * the user has placed the cursor.
+     */
+    public async proofContext(cursorMarker: string = "{!* CURSOR *!}"): Promise<{
+        name: string,
+        full: string
+        withCursorMarker: string
+    }> {
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) {
+            throw new Error("No active document or cursor position.");
+        }
+
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
+        const posAsOffset = document.offsetAt(position);
+
+        // Regex to find the end of the proof the user is working on.
+        const endRegex = /(?:Qed|Admitted|Defined)\.\s/;
+        // We request the document symbols with the goal of finding the lemma the user is working on.
+        const symbols = await this.client.requestSymbols();
+        const firstBefore = symbols.filter(s => {
+            const sPos = new Position(s.range.start.line, s.range.start.character);
+            return sPos.isBefore(position);
+        }).at(-1);
+
+        if (firstBefore === undefined) {
+            throw new Error("Could not find lemma before cursor.");
+        }
+        // Compute the offset into the document where the proof starts (will be the position before Lemma)
+        const startProof = document.offsetAt(new Position(firstBefore.range.start.line, firstBefore.range.start.character));
+
+        // Get the part of the text of the document starting at the lemma statement.
+        const docText = document.getText().substring(startProof);
+        const proofClose = docText.match(endRegex);
+
+        if (proofClose === null) {
+            throw new Error("Could not find end of proof.");
+        }
+
+        // Get the text of the proof from the document, we need to add startProof to the index since the regex was run on a su
+        const theProof = docText.substring(0, proofClose.index! + proofClose[0].length);
+
+        // Helper function to remove input-area tags, coq markers and extra whitespace from input string
+        const removeMarkersAndWhitespace = (input: string) => {
+            return input.replace(/<input-area>\s*```coq\s*/g, "")
+                .replace(/\s*```\s*<\/input-area>/g, "")
+                .replace(/```coq/g, "")
+                .replace(/```/g, "")
+                .replace(/\s+/g, " ");
+        }
+
+        const offsetIntoMatch = posAsOffset - startProof;
+
+        return {
+            full: removeMarkersAndWhitespace(theProof),
+            withCursorMarker: removeMarkersAndWhitespace(theProof.substring(0, offsetIntoMatch) + cursorMarker + theProof.substring(offsetIntoMatch)),
+            name: firstBefore.name
+        }
+    }
+
+    /**
+     * Try a proof/step by executing the given commands/tactics.
+     * @param steps The proof steps to try. This can be a single tactic or command or multiple separated by the
+     * usual `.` and space.
+     */
+    public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
+        const execResponse = await executeCommandFullOutput(this.client, steps);
+        return {
+            finished: execResponse.proof_finished,
+            remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
+        };
+    }
 
   /**
    * Attempts to install all required libraries
@@ -652,32 +787,27 @@ export class Waterproof implements Disposable {
       WaterproofSetting.SkipLaunchChecks
     );
 
-    if (launchChecksDisabled || this._isWeb) {
-      const reason = launchChecksDisabled
-        ? "Launch checks disabled by user."
-        : "Web extension, skipping launch checks.";
-      wpl.log(`${reason} Attempting to launch client...`);
-    } else {
-      // Run the version checker.
-      const requiredCoqLSPVersion =
-        this.context.extension.packageJSON.requiredCoqLspVersion;
-      const requiredCoqWaterproofVersion =
-        this.context.extension.packageJSON.requiredCoqWaterproofVersion;
-      const versionChecker = new VersionChecker(
-        this.context,
-        requiredCoqLSPVersion,
-        requiredCoqWaterproofVersion
-      );
+        if (launchChecksDisabled || this._isWeb) {
+            const reason = launchChecksDisabled ? "Launch checks disabled by user." : "Web extension, skipping launch checks.";
+            wpl.log(`${reason} Attempting to launch client...`);
+        } else {
+            // Run the version checker.
+            const requiredCoqLSPVersion = 
+              WaterproofPackageJSON.requiredCoqLspVersion(this.context);
+            const requiredCoqWaterproofVersion =  
+              WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
+            const versionChecker = 
+              new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
 
-      // Check whether we can find coq-lsp
-      const foundServer = await versionChecker.prelaunchChecks();
-      if (foundServer) {
-        // Only run the version checker after we know that there is a valid coq-lsp server
-        versionChecker.run();
-      } else {
-        this.statusBar.failed("LSP not found");
-      }
-    }
+            // Check whether we can find coq-lsp
+            const foundServer = await versionChecker.prelaunchChecks();
+            if (foundServer) {
+                // Only run the version checker after we know that there is a valid coq-lsp server
+                versionChecker.run();
+            } else {
+                this.statusBar.failed("LSP not found");
+            }
+        }
 
     if (this.coqClient?.isRunning()) {
       return Promise.reject(
@@ -685,18 +815,18 @@ export class Waterproof implements Disposable {
       );
     }
 
-    const serverOptions = CoqLspServerConfig.create(
-      // TODO: Support +coqversion versions.
-      this.context.extension.packageJSON.requiredCoqLspVersion.slice(2)
-    );
+        const serverOptions = CoqLspServerConfig.create(
+            // TODO: Support +coqversion versions.
+            WaterproofPackageJSON.requiredCoqLspVersion(this.context).slice(2)
+        );
 
-    const clientOptions: LanguageClientOptions = {
-      documentSelector: [{ language: "rocqmarkdown" }, { language: "rocq" }],
-      outputChannelName: "Waterproof LSP Events (Initial)",
-      revealOutputChannelOn: RevealOutputChannelOn.Info,
-      initializationOptions: serverOptions,
-      markdown: { isTrusted: true, supportHtml: true },
-    };
+        const clientOptions: LanguageClientOptions = {
+            documentSelector: [{ language: "markdown" }, { language: "coq" }, { language: "lean4" }],  // .mv, .v, and .lean files
+            outputChannelName: "Waterproof LSP Events (Initial)",
+            revealOutputChannelOn: RevealOutputChannelOn.Info,
+            initializationOptions: serverOptions,
+            markdown: { isTrusted: true, supportHtml: true },
+        };
 
     wpl.log("Initializing client...");
     this.coqClient = this.clientFactory(

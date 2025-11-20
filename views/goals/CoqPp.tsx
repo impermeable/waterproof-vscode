@@ -15,7 +15,7 @@ export function CoqPp({
   //if the content is already of string format it can be easily displayed
   if (typeof content == "string") {
     if (inline) {
-      return <code style={{ whiteSpace: "pre" }}>{content}</code>;
+      return <p style={{ whiteSpace: "pre" }}>{content}</p>;
     } else {
       return <pre className="coqpp">{content}</pre>;
     }

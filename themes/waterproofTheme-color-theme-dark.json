@@ -114,16 +114,16 @@
         "list.errorForeground": "#bb616b",
         "list.warningForeground": "#c49a5a",
 
-        "listFilterWidget.background": "#202020",
-        "listFilterWidget.outline": "#202020",
+        "listFilterWidget.background": "#1C1C1C",
+        "listFilterWidget.outline": "#1C1C1C",
         "listFilterWidget.noMatchesOutline": "#a6333f",
 
         "pickerGroup.foreground": "#a9b1d6",
         "pickerGroup.border": "#121212",
 
-        "scrollbarSlider.background": "#868bc415",
-        "scrollbarSlider.hoverBackground": "#868bc410",
-        "scrollbarSlider.activeBackground": "#868bc422",
+        "scrollbarSlider.background": "#d3d6f83f",
+        "scrollbarSlider.hoverBackground": "#5a65e477",
+        "scrollbarSlider.activeBackground": "#545ec262",
 
         "editorBracketHighlight.foreground1": "#698cd6",
         "editorBracketHighlight.foreground2": "#68b3de",
@@ -141,7 +141,7 @@
         "editorBracketPairGuide.activeBackground6": "#c49a5a",
 
         "selection.background": "#11184d",
-        "editor.background": "#121212",
+        "editor.background": "#222222",
         "editor.foreground": "#ffffff",
         "editor.foldBackground": "#1111174a",
         "editorLink.activeForeground": "#8b8b8b",

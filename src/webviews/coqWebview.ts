@@ -127,22 +127,49 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             Uri.joinPath(this.extensionUri, "out", "views", this.name, "index.js")
         );
 
-        this._panel.webview.html = `
+        // TODO: avoid this branching, make it possible for subclasses to override create method
+        if (this.name == "infoview") {
+            const distBase = this._panel.webview.asWebviewUri(
+                Uri.joinPath(this.extensionUri, "node_modules", "@leanprover", "infoview", "dist")
+            );
+            const libPostfix = `.production.min.js`
+            this._panel.webview.html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8" />
+                <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+                <title>Infoview</title>
+                <link rel="stylesheet" href="${distBase}/index.css">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script
+                    data-importmap-leanprover-infoview="${distBase}/index${libPostfix}"
+                    data-importmap-react="${distBase}/react${libPostfix}"
+                    data-importmap-react-jsx-runtime="${distBase}/react-jsx-runtime${libPostfix}"
+                    data-importmap-react-dom="${distBase}/react-dom${libPostfix}"
+                    src="${scriptUri}"></script>
+            </body>
+            </html>`
+        } else {
+            this._panel.webview.html = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" type="text/css" href="${styleUri}">
-                <script src="${scriptUri}" type="module"></script>
-                <title>Coq's info panel</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" type="text/css" href="${styleUri}">
+            <script src="${scriptUri}" type="module"></script>
+            <title>Coq's info panel</title>
             </head>
             <body>
                 <div id="root"></div>
             </body>
             </html>
-        `;
+            `;
 
+        }
 
         this.disposables.push(this._panel.onDidDispose(() => {
             // Once the panel has been disposed (for example when the user has closed the panel), we close (in terms of state) it here.
@@ -204,7 +231,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      * Change the panel state to the ready state
      */
     public readyPanel() {
-        if(this._state != WebviewState.closed) return;
+        if (this._state != WebviewState.closed) return;
         this.changeState(WebviewState.ready);
     }
 
@@ -216,7 +243,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      * @param params body of message
      * @returns boolean on whether message was sent successfully
      */
-    public postMessage(msg: Message) : boolean {
+    public postMessage(msg: Message): boolean {
         if (this.state != WebviewState.visible) {
             this.changeState(WebviewState.visible);
         }

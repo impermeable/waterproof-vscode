@@ -53,6 +53,7 @@ import {
   restartLeanClient,
 } from "./lsp-client/leanlspclient";
 import { LspClientFactory } from "./mainNode";
+import { LeanInfoviewWebview } from "./webviews/infoview";
 
 export function activate(_context: ExtensionContext): void {
   commands.executeCommand(
@@ -263,13 +264,17 @@ export class Waterproof implements Disposable {
 
     // make relevant gui components
     this.statusBar = new CoqnitiveStatusBar();
+    const infoview = new LeanInfoviewWebview(this.context);
+
     const goalsPanel = new GoalsPanel(
       this.context.extensionUri,
       CoqLspClientConfig.create()
     );
     this.goalsComponents.push(goalsPanel);
     this.webviewManager.addToolWebview("goals", goalsPanel);
-    this.webviewManager.open("goals");
+    this.webviewManager.addToolWebview("infoview", infoview);
+    this.webviewManager.open("infoview");
+    // this.webviewManager.open("goals");
     this.webviewManager.addToolWebview(
       "symbols",
       new SymbolsPanel(this.context.extensionUri)

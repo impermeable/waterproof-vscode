@@ -139,6 +139,7 @@ window.onload = () => {
 			case MessageType.progress:
 				{ const progressParams = msg.body;
 				editor.updateProgressBar(progressParams);
+				editor.verifiedUpToLine(progressParams);
 				break; }
 			case MessageType.diagnostics:
 				{ const diagnostics = msg.body;

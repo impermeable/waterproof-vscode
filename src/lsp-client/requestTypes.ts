@@ -1,4 +1,4 @@
-import { Range } from "vscode";
+import { Range, TextDocument } from "vscode";
 import { NotificationType, RequestType } from "vscode-languageclient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
@@ -44,13 +44,19 @@ export interface CoqFileProgressParams {
  * `vscode.Range.start` (and `end`) is secretly a function, which isn't retained when sent as a
  * message.
  */
-export function convertToSimple(info: CoqFileProgressProcessingInfo): SimpleProgressInfo {
-    const r = info.range;
-    return {
-        range: {
-            start: { line: r.start.line, character: r.start.character },
-            end:   { line: r.end.line,   character: r.end.character   }
-        },
-        kind: info.kind
+export function convertToSimple(document: TextDocument) {
+    return (info: CoqFileProgressProcessingInfo): SimpleProgressInfo => {
+        const r = info.range;
+        return {
+            range: {
+                start: { line: r.start.line, character: r.start.character },
+                end:   { line: r.end.line,   character: r.end.character   }
+            },
+            offsetRange: {
+                start: document.offsetAt(r.start),
+                end: document.offsetAt(r.end)
+            },
+            kind: info.kind
+        }
     }
 }

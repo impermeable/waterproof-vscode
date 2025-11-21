@@ -83,7 +83,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     if (!document) return;
                     const body: SimpleProgressParams = {
                         numberOfLines:  document.lineCount,
-                        progress:       params.processing.map(convertToSimple)
+                        progress:       params.processing.map(convertToSimple(document))
                     };
                     this.webviewManager!.postAndCacheMessage(
                         document,
@@ -134,6 +134,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             this.disposables.push(this.onNotification(fileProgressNotificationType, params => {
                 // convert LSP range to VSC range
                 params.processing.forEach(fp => { fp.range = this.protocol2CodeConverter.asRange(fp.range) });
+                // params.processing.forEach(fp => { fp.range = new Range(new Position(fp.range.start.line + 1, fp.range.start.character + 1), new Position(fp.range.end.line + 1, fp.range.end.character + 1)) });
                 // notify each component
                 this.fileProgressComponents.forEach(c => c.onProgress(params));
             }));

@@ -2,7 +2,7 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "waterproofConfiguration": {
     "requiredCoqLspVersion": ">=0.2.4",
     "requiredCoqWaterproofVersion": ">=3.1.0",

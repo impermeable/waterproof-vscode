@@ -350,8 +350,14 @@
     {
         "label": "\\abs",
         "type": "symbol",
-        "apply": "∣",
+        "apply": "｜",
         "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\vert",
+        "type": "symbol",
+        "apply": "｜",
+        "symbolPanelCategory": 99
     },
     {
         "label": "\\intersection",

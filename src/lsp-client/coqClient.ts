@@ -249,9 +249,14 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // after every document change, request symbols and send completions to the editor
             this.disposables.push(workspace.onDidChangeTextDocument(event => {
-                if (webviewManager.has(event.document.uri.toString()))
+                // Only handle Rocq/Coq documents, not Lean
+                if ((event.document.languageId === 'rocq' || event.document.languageId === 'rocqmarkdown') &&
+                    webviewManager.has(event.document.uri.toString())) {
                     this.updateCompletions(event.document);
+                }
             }));
+
+
 
             return super.startWithHandlers(webviewManager);
         }
@@ -328,10 +333,30 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             if (endOfDocument.line - endPos.line < 20) {
                 endPos = endOfDocument;
             }
+
+            const requestBody = {
+                'textDocument': VersionedTextDocumentIdentifier.create(
+                    document.uri.toString(),
+                    document.version
+                ),
+                'range': {
+                    start: {
+                        line: startPos.line,
+                        character: startPos.character
+                    },
+                    end: {
+                        line: endPos.line,
+                        character: endPos.character
+                    }
+                }
+            };
+
+            // Save the range for which the document has been checked
             this.viewPortRange = new Range(startPos, endPos);
         }
 
         async updateCompletions(document: TextDocument): Promise<void> {
+            console.log("rocq autocompletions called for:", document.uri.toString());
             if (!this.isRunning()) return;
             if (!this.webviewManager?.has(document)) {
                 throw new Error("Cannot update completions; no ProseMirror webview is known for " + document.uri.toString());
@@ -355,6 +380,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }));
 
             // send completions to (all code blocks in) the document's editor (not cached!)
+            console.log("sending rocq autocompletions");
             this.webviewManager.postMessage(document.uri.toString(), {
                 type: MessageType.setAutocomplete,
                 body: completions

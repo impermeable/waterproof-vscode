@@ -40,11 +40,10 @@ const clientFactory: LspClientFactory = (context, clientOptions, kind) => {
 export function activate(context: ExtensionContext): void {
     const extension: Waterproof = new Waterproof(context, clientFactory);
     context.subscriptions.push(extension);
-    // start the lsp client
-    extension.initializeClient();
-    activateLeanClient(context).catch((err) => {
-        console.error("Failed to activate Lean LSP client:", err);
-    });
+
+    // Start both LSP clients
+    extension.initializeClient();      // Rocq client
+    extension.initializeLeanClient();  // Lean client
 }
 
 export function deactivate(): void {

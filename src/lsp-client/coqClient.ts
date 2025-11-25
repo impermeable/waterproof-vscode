@@ -20,10 +20,6 @@ import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, Waterp
 import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
 import { AbstractLspClient, ClientConstructor } from "./abstractLspClient";
 
-interface TimeoutDisposable extends Disposable {
-    dispose(timeout?: number): Promise<void>;
-}
-
 
 function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
     switch (severity) {

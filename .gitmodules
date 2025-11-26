@@ -1,0 +1,3 @@
+[submodule "lib/editor"]
+	path = lib/editor
+	url = https://github.com/impermeable/waterproof-editor

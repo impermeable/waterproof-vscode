@@ -3,7 +3,7 @@ import { NotificationType, RequestType } from "vscode-languageclient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
 import { CoqServerStatus, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
-import { CoqFileProgressKind, SimpleProgressInfo } from "@impermeable/waterproof-editor";
+import { CoqFileProgressKind, SimpleProgressParams } from "@impermeable/waterproof-editor";
 
 /**
  * LSP request to obtain the goals at a specific point in the doc.
@@ -14,6 +14,11 @@ export const goalRequestType = new RequestType<GoalRequest, GoalAnswer<PpString>
  * LSP notification regarding the progress on processing the document server side
  */
 export const fileProgressNotificationType = new NotificationType<CoqFileProgressParams>("$/coq/fileProgress");
+
+/**
+ * LSP notatification regarding the execution information of the current sentence.
+ */
+export const executionInformationNotificationType = new NotificationType<executionInformationParams>("$/coq/executionInformation");
 
 /**
  * Notification type for the coq-lsp specific `serverStatus` notification. Returns a `CoqServerStatus` object that
@@ -28,6 +33,11 @@ export interface CoqFileProgressProcessingInfo {
     kind?: CoqFileProgressKind;
 }
 
+export type executionInformationParams = {
+    textDocument: VersionedTextDocumentIdentifier;
+    range: Range;
+};
+
 export interface CoqFileProgressParams {
     /** The text document to which this progress notification applies. */
     textDocument: VersionedTextDocumentIdentifier;
@@ -39,15 +49,14 @@ export interface CoqFileProgressParams {
     processing: CoqFileProgressProcessingInfo[];
 }
 
-/**
- * Converts `CoqFileProgressProcessingInfo` into `SimpleProgressInfo`. This is necessary(?) because
- * `vscode.Range.start` (and `end`) is secretly a function, which isn't retained when sent as a
- * message.
- */
-export function convertToSimple(document: TextDocument) {
-    return (info: CoqFileProgressProcessingInfo): SimpleProgressInfo => {
-        const r = info.range;
-        return {
+/** TODO */
+export function convertToSimple(document: TextDocument, info: CoqFileProgressParams): SimpleProgressParams {
+    if (info.processing.length < 1) throw new Error("No processing info in CoqFileProgressParams object");
+    const p = info.processing[0];
+    const r = p.range;
+    return {
+        numberOfLines: document.lineCount,
+        progress: {
             range: {
                 start: { line: r.start.line, character: r.start.character },
                 end:   { line: r.end.line,   character: r.end.character   }
@@ -56,7 +65,7 @@ export function convertToSimple(document: TextDocument) {
                 start: document.offsetAt(r.start),
                 end: document.offsetAt(r.end)
             },
-            kind: info.kind
+            kind: p.kind
         }
     }
 }

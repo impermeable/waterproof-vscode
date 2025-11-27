@@ -138,12 +138,15 @@ window.onload = () => {
 				break;
 			case MessageType.progress:
 				{ const progressParams = msg.body;
-				editor.updateProgressBar(progressParams);
-				editor.verifiedUpToLine(progressParams);
+				editor.setDocumentProgress(progressParams);
 				break; }
 			case MessageType.diagnostics:
 				{ const diagnostics = msg.body;
 				editor.parseCoqDiagnostics(diagnostics);
+				break; }
+			case MessageType.executionInfo:
+				{ const range = msg.body;
+				editor.setBusyRange(range);
 				break; }
 			case MessageType.serverStatus:
 				{ const status = msg.body;

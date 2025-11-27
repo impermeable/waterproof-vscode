@@ -132,6 +132,7 @@ export interface CoqLspServerConfig {
     pp_type: 0 | 1 | 2;
     send_diags_extra_data: boolean;
     check_only_on_request: boolean;
+    send_execinfo: boolean;
 }
 
 // TODO: Rewrite namespace to modern syntax
@@ -152,7 +153,8 @@ export namespace CoqLspServerConfig {
             max_errors: WaterproofConfigHelper.get(WaterproofSetting.MaxErrors),
             pp_type: WaterproofConfigHelper.get(WaterproofSetting.PpType),
             send_diags_extra_data: WaterproofConfigHelper.get(WaterproofSetting.SendDiagsExtraData),
-            check_only_on_request: !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking)
+            check_only_on_request: !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking),
+            send_execinfo: WaterproofConfigHelper.get(WaterproofSetting.SendExecInfo),
         };
     }
 }

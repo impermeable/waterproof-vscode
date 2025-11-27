@@ -1,4 +1,4 @@
-import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, DiagnosticMessage, SimpleProgressParams, ServerStatus, ThemeStyle } from "@impermeable/waterproof-editor";
+import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, SimpleProgressParams, ServerStatus, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
 import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 
@@ -25,7 +25,7 @@ export type Message =
     | MessageBase<MessageType.applyStepError, string>
     | MessageBase<MessageType.command, { command: string, time?: number}>
     | MessageBase<MessageType.cursorChange, number>
-    | MessageBase<MessageType.diagnostics, DiagnosticMessage>
+    | MessageBase<MessageType.diagnostics, { positionedDiagnostics: Array<OffsetDiagnostic>, version: number }>
     | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
     | MessageBase<MessageType.editorHistoryChange, HistoryChange>
     | MessageBase<MessageType.editorReady>

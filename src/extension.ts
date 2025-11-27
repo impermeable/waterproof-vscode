@@ -495,13 +495,14 @@ export class Waterproof implements Disposable {
      * Request the goals for the current document and cursor position.
      */
     public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
-        if (!this.client.activeDocument || !this.client.activeCursorPosition) { throw new Error("No active document or cursor position."); }
+      if (this.activeClient == "lean4") {
+        if (!this.leanClient.activeDocument || !this.leanClient.activeCursorPosition) { throw new Error("No active document or cursor position."); }
 
-        const document = this.client.activeDocument;
-        const position = this.client.activeCursorPosition;
+        const document = this.leanClient.activeDocument;
+        const position = this.leanClient.activeCursorPosition;
 
-        const params = this.client.createGoalsRequestParameters(document, position);
-        const goalResponse = await this.client.requestGoals(params);
+        const params = this.leanClient.createGoalsRequestParameters(document, position);
+        const goalResponse = await this.leanClient.requestGoals(params);
 
         if (goalResponse.goals === undefined) {
             throw new Error("Response contained no goals.");
@@ -512,27 +513,55 @@ export class Waterproof implements Disposable {
         // Note: only taking hypotheses from the first goal
         const hyps = goalResponse.goals.goals[0].hyps.map(h => { return {name: convertToString(h.names[0]), content: convertToString(h.ty)}; });
 
+        
         return {currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1)};
+      } else {
+        if (!this.coqClient.activeDocument || !this.coqClient.activeCursorPosition) { throw new Error("No active document or cursor position."); }
+
+        const document = this.coqClient.activeDocument;
+        const position = this.coqClient.activeCursorPosition;
+
+        const params = this.coqClient.createGoalsRequestParameters(document, position);
+        const goalResponse = await this.coqClient.requestGoals(params);
+
+        if (goalResponse.goals === undefined) {
+            throw new Error("Response contained no goals.");
+        }
+
+        // Convert goals and hypotheses to strings
+        const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
+        // Note: only taking hypotheses from the first goal
+        const hyps = goalResponse.goals.goals[0].hyps.map(h => { return {name: convertToString(h.names[0]), content: convertToString(h.ty)}; });
+
+        
+        return {currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1)};
+      }
     }
 
-    /**
-     * Get the currently active document in the editor.
-     */
-    public currentDocument(): TextDocument {
-        if (!this.client.activeDocument) { throw new Error("No active document."); }
-        return this.client.activeDocument;
+  /**
+   * Get the currently active document in the editor.
+   */
+  public currentDocument(): TextDocument {
+    if (this.activeClient == "lean4") {
+      if (!this.leanClient.activeDocument) { throw new Error("No active document."); }
+      return this.leanClient.activeDocument;
+    } else {
+      if (!this.coqClient.activeDocument) { throw new Error("No active document."); }
+      return this.coqClient.activeDocument;
     }
+  }
 
     /**
      * Executes the Help command at the cursor position and returns the output.
      */
     public async help(): Promise<Array<string>> {
         // Execute command
-        const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
+        const wpHelpResponse = await executeCommandFullOutput(this.coqClient, "Help.");
         // Return the help messages. val[0] contains the levels, which we ignore.
         return wpHelpResponse.feedback.map(val => val[1]);
     }
 
+    // TODO: add lean client to proofContext
     /**
      * Returns information about the current proof on a document level.
      * This function will look at the current document to figure out what
@@ -550,18 +579,18 @@ export class Waterproof implements Disposable {
         full: string
         withCursorMarker: string
     }> {
-        if (!this.client.activeDocument || !this.client.activeCursorPosition) {
+        if (!this.coqClient.activeDocument || !this.coqClient.activeCursorPosition) {
             throw new Error("No active document or cursor position.");
         }
 
-        const document = this.client.activeDocument;
-        const position = this.client.activeCursorPosition;
+        const document = this.coqClient.activeDocument;
+        const position = this.coqClient.activeCursorPosition;
         const posAsOffset = document.offsetAt(position);
 
         // Regex to find the end of the proof the user is working on.
         const endRegex = /(?:Qed|Admitted|Defined)\.\s/;
         // We request the document symbols with the goal of finding the lemma the user is working on.
-        const symbols = await this.client.requestSymbols();
+        const symbols = await this.coqClient.requestSymbols();
         const firstBefore = symbols.filter(s => {
             const sPos = new Position(s.range.start.line, s.range.start.character);
             return sPos.isBefore(position);
@@ -602,13 +631,14 @@ export class Waterproof implements Disposable {
         }
     }
 
+    // TODO: add lean client
     /**
      * Try a proof/step by executing the given commands/tactics.
      * @param steps The proof steps to try. This can be a single tactic or command or multiple separated by the
      * usual `.` and space.
      */
     public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
-        const execResponse = await executeCommandFullOutput(this.client, steps);
+        const execResponse = await executeCommandFullOutput(this.coqClient, steps);
         return {
             finished: execResponse.proof_finished,
             remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
@@ -845,43 +875,6 @@ export class Waterproof implements Disposable {
         wpl.log(`Error during client initialization: ${message}`);
         this.statusBar.failed(message);
         throw reason; // keep chain rejected
-      }
-    );
-  }
-  async initializeLeanClient(): Promise<void> {
-    wpl.log("Start of initializeLeanClient");
-
-    if (this.leanClient?.isRunning()) {
-      return Promise.reject(
-        new Error("Cannot initialize Lean client; one is already running.")
-      );
-    }
-
-    const clientOptions: LanguageClientOptions = {
-      documentSelector: [
-        { language: "lean4", scheme: "file" },
-        { language: "lean4", scheme: "untitled" },
-      ],
-      outputChannelName: "Lean LSP",
-      revealOutputChannelOn: RevealOutputChannelOn.Info,
-    };
-
-    wpl.log("Initializing Lean client...");
-    this.leanClient = this.clientFactory(
-      this.context,
-      clientOptions,
-      'lean'
-    );
-
-    return this.leanClient.startWithHandlers(this.webviewManager).then(
-      () => {
-        this.leanClientRunning = true;
-        wpl.log("Lean client initialization complete.");
-      },
-      (reason) => {
-        const message = reason.toString();
-        wpl.log(`Error during Lean client initialization: ${message}`);
-        throw reason;
       }
     );
   }

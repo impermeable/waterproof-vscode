@@ -139,6 +139,9 @@ window.onload = () => {
 			case MessageType.progress:
 				{ const progressParams = msg.body;
 				editor.setDocumentProgress(progressParams);
+				if (progressParams.progress.offsetRange.start == progressParams.progress.offsetRange.end) {
+					editor.removeBusyIndicators();
+				}
 				break; }
 			case MessageType.diagnostics:
 				{ const diagnostics = msg.body;
@@ -146,7 +149,7 @@ window.onload = () => {
 				break; }
 			case MessageType.executionInfo:
 				{ const range = msg.body;
-				editor.setBusyRange(range);
+				editor.setBusyIndicator(range.from);
 				break; }
 			case MessageType.serverStatus:
 				{ const status = msg.body;

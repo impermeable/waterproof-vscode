@@ -1,5 +1,5 @@
 import { Disposable, TextDocument, Position, Range, OutputChannel } from "vscode";
-import { FeatureClient, Middleware, LanguageClientOptions, DocumentSymbol,  } from "vscode-languageclient";
+import { FeatureClient, Middleware, LanguageClientOptions, DocumentSymbol, VersionedTextDocumentIdentifier } from "vscode-languageclient";
 import { SentenceManager } from "./sentenceManager";
 import { WebviewManager } from "../webviewManager";
 import { IFileProgressComponent } from "../components";
@@ -59,8 +59,42 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
             throw new Error("requestGoals must be implemented by subclass");
         }
 
-        sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
-            throw new Error("sendViewportHint must be implemented by subclass");
+        /**
+         * Returns the notification method name for viewport hints.
+         * Subclasses must override this to provide the correct notification name.
+         */
+        abstract getViewportNotificationName(): string;
+
+        async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
+            if (!(this as any).isRunning()) return;
+            
+            const startPos = document.positionAt(start);
+            let endPos = document.positionAt(end);
+            
+            // Compute end of document position, use that if we're close
+            const endOfDocument = document.positionAt(document.getText().length);
+            if (endOfDocument.line - endPos.line < 20) {
+                endPos = endOfDocument;
+            }
+
+            const requestBody = {
+                textDocument: VersionedTextDocumentIdentifier.create(
+                    document.uri.toString(),
+                    document.version
+                ),
+                range: {
+                    start: {
+                        line: startPos.line,
+                        character: startPos.character
+                    },
+                    end: {
+                        line: endPos.line,
+                        character: endPos.character
+                    }
+                }
+            };
+            
+            await (this as any).sendNotification(this.getViewportNotificationName(), requestBody);
         }
 
         createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest {

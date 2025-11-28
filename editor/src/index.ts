@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, markdown, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
@@ -23,11 +23,11 @@ interface VSCodeAPI {
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
-		completions: tactics, 
+		completions: format === FileFormat.Lean ? [] : tactics,
 		symbols: symbols,
 		api: {
 			executeHelp() {
-				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
+				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime() } });
 			},
 			executeCommand(command: string, time: number) {
 				codeAPI.postMessage({ type: MessageType.command, body: { command, time } });
@@ -55,12 +55,13 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
 		documentConstructor:
 			format === FileFormat.MarkdownV ? topLevelBlocksMV
-			                                : (format === FileFormat.RegularV) ? vFileParser : topLevelBlocksLean,
+				: (format === FileFormat.RegularV) ? vFileParser : topLevelBlocksLean,
 		// documentConstructor: format === FileFormat.MarkdownV ? doc => markdownParser(doc, "coq") : vFileParser,
 		toMarkdown: (format === FileFormat.MarkdownV || format === FileFormat.Lean) ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: (format === FileFormat.MarkdownV || format === FileFormat.Lean) ? "Markdown" : "coqdoc",
 		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq")
-		                                                  : (format === FileFormat.RegularV) ? tagConfigurationV : tagConfigurationLean,
+			: (format === FileFormat.RegularV) ? tagConfigurationV : tagConfigurationLean,
+		disableMarkdownFeatures: format === FileFormat.RegularV ? ["code"] : [],
 	}
 
 	return cfg;
@@ -83,7 +84,22 @@ window.onload = () => {
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
 	const cfg = createConfiguration(format, codeAPI);
-	const editor = new WaterproofEditor(editorElement, cfg);
+	// Retrieve the current theme style from the attribute 'data-theme-kind'
+	// attached to the editor element. This allows us to set the initial theme kind
+	// rather than waiting for the themestyle message to arrive.
+	const themeStyle: ThemeStyle = (() => {
+		const value = editorElement.getAttribute("data-theme-kind");
+		if (value === null) {
+			throw Error("Could not get theme style from editor element");
+		}
+
+		switch (value) {
+			case "dark": return ThemeStyle.Dark;
+			case "light": return ThemeStyle.Light;
+			default: throw Error("Invalid theme encountered");
+		}
+	})();
+	const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
 
 	//@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.
 	window.editorInstance = editor;
@@ -92,35 +108,40 @@ window.onload = () => {
 	window.addEventListener("message", (event: MessageEvent<Message>) => {
 		const msg = event.data;
 
-		switch(msg.type) {
+		switch (msg.type) {
 			case MessageType.init:
 				editor.init(msg.body.value, msg.body.version);
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
 				{
-				const { symbolUnicode } = msg.body;
-				if (msg.body.type === "tactics") {
-					// `symbolUnicode` stores the tactic template.
-					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
-					const template = symbolUnicode;
-					editor.handleSnippet(template);
-				} else {
-					editor.insertSymbol(symbolUnicode);
+					const { symbolUnicode } = msg.body;
+					if (msg.body.type === "tactics") {
+						// `symbolUnicode` stores the tactic template.
+						if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
+						const template = symbolUnicode;
+						editor.handleSnippet(template);
+					} else {
+						editor.insertSymbol(symbolUnicode);
+					}
+					break;
 				}
-				break; }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
 				editor.handleCompletions(msg.body);
 				break;
 			case MessageType.qedStatus:
-				{ const statuses = msg.body;  // one status for each input area, in order
-				editor.updateQedStatus(statuses);
-				break; }
+				{
+					const statuses = msg.body;  // one status for each input area, in order
+					editor.updateQedStatus(statuses);
+					break;
+				}
 			case MessageType.setShowLineNumbers:
-				{ const show = msg.body;
-				editor.setShowLineNumbers(show);
-				break; }
+				{
+					const show = msg.body;
+					editor.setShowLineNumbers(show);
+					break;
+				}
 			case MessageType.setShowMenuItems:
 				{ const show = msg.body; editor.setShowMenuItems(show); break; }
 			case MessageType.editorHistoryChange:
@@ -133,17 +154,23 @@ window.onload = () => {
 				editor.updateLockingState(msg.body);
 				break;
 			case MessageType.progress:
-				{ const progressParams = msg.body;
-				editor.updateProgressBar(progressParams);
-				break; }
+				{
+					const progressParams = msg.body;
+					editor.updateProgressBar(progressParams);
+					break;
+				}
 			case MessageType.diagnostics:
-				{ const diagnostics = msg.body;
-				editor.parseCoqDiagnostics(diagnostics);
-				break; }
+				{
+					const diagnostics = msg.body;
+					editor.parseCoqDiagnostics(diagnostics);
+					break;
+				}
 			case MessageType.serverStatus:
-				{ const status = msg.body;
-				editor.updateServerStatus(status);
-				break; }
+				{
+					const status = msg.body;
+					editor.updateServerStatus(status);
+					break;
+				}
 			case MessageType.themeUpdate:
 				editor.updateNodeViewThemes(msg.body);
 				break;
@@ -153,7 +180,7 @@ window.onload = () => {
 				break;
 		}
 	});
-	
+
 	let timeoutHandle: number | undefined;
 	window.addEventListener('scroll', (_event) => {
 		if (timeoutHandle === undefined) {
@@ -165,5 +192,5 @@ window.onload = () => {
 	});
 
 	// Start the editor
-	codeAPI.postMessage({type: MessageType.ready});
+	codeAPI.postMessage({ type: MessageType.ready });
 };

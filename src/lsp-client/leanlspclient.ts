@@ -4,6 +4,7 @@ import {
   window,
   TextDocument,
   Position,
+  Range,
   OutputChannel,
   commands,
   Uri,
@@ -13,6 +14,7 @@ import {
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
+  VersionedTextDocumentIdentifier,
 } from "vscode-languageclient/node";
 import { AbstractLspClient } from "./abstractLspClient";
 import { GoalAnswer, GoalConfig, GoalRequest, PpString } from "../../lib/types";
@@ -21,6 +23,7 @@ import { version } from "os";
 import { WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest } from "vscode-languageclient";
+import { WebviewManager } from "../webviewManager";
 
 
 type LC = new (...args: any[]) => any;
@@ -65,6 +68,7 @@ export class LeanLspClient extends (Mixed as any) {
       documentSelector: [
         { language: "lean4", scheme: "file" },
         { language: "lean4", scheme: "untitled" },
+        { language: "lean4", scheme: "vscode-local" },
       ],
       outputChannelName: "Lean LSP",
       traceOutputChannel: lspTraceChannel,
@@ -76,6 +80,7 @@ export class LeanLspClient extends (Mixed as any) {
       serverOptions,
       clientOptions ?? defaultClientOptions
     );
+    this.context = context;
     (this as any).trace = Trace.Verbose;
     (this as any).setTrace?.(Trace.Verbose);
   }
@@ -132,24 +137,59 @@ export class LeanLspClient extends (Mixed as any) {
     };
     return this.sendRequest("$/lean/plainGoal", leanParams).then(
       (result: PlainGoalResult) => {
-        wpl.debug("Lean plainGoal result: " + JSON.stringify(result));
-        let goalsConfig: GoalConfig<PpString> | undefined = undefined;
-        //we now do format conversion
-        if (result && result.goals && result.goals.length > 0) {
-          const mainGoals = result.goals.map(
-            (g) => ({
-              hyps: [],
-              ty: ["Pp_string", g] as PpString,
-            }) /* as Goal<PpString> */
-          );
+        wpl.debug("=== LEAN GOALS DEBUG ===");
+        wpl.debug("Full result object: " + JSON.stringify(result, null, 2));
+        wpl.debug("Result is null?: " + (result === null));
+        if (result) {
+          wpl.debug("result.rendered: " + result.rendered);
+          wpl.debug("result.goals: " + JSON.stringify(result.goals));
+          wpl.debug("result.goals length: " + (result.goals?.length || 0));
+        }
 
-          goalsConfig = {
-            goals: mainGoals,
-            stack: [],
-            shelf: [],
-            given_up: [],
-            bullet: undefined,
-          };
+        let goalsConfig: GoalConfig<PpString> | undefined = undefined;
+
+        // Try to parse goals - check both goals array and rendered string
+        if (result) {
+          // If goals array exists and has items, use it
+          if (result.goals && result.goals.length > 0) {
+            wpl.debug("Using goals array: " + result.goals.length + " goals");
+            const mainGoals = result.goals.map(
+              (g) => ({
+                hyps: [],
+                ty: ["Pp_string", g] as PpString,
+              })
+            );
+
+            goalsConfig = {
+              goals: mainGoals,
+              stack: [],
+              shelf: [],
+              given_up: [],
+              bullet: undefined,
+            };
+          }
+          // If no goals array but rendered exists, try using rendered
+          else if (result.rendered && result.rendered.trim().length > 0) {
+            wpl.debug("No goals array, but rendered exists. Using rendered string.");
+            wpl.debug("Rendered content: " + result.rendered);
+
+            const mainGoals = [{
+              hyps: [],
+              ty: ["Pp_string", result.rendered] as PpString,
+            }];
+
+            goalsConfig = {
+              goals: mainGoals,
+              stack: [],
+              shelf: [],
+              given_up: [],
+              bullet: undefined,
+            };
+          } else {
+            wpl.debug("No goals or rendered content found in result");
+          }
+        } else {
+          wpl.debug("Result is null - no goals available");
         }
 
         const ga: GoalAnswer<PpString> = {
@@ -159,29 +199,58 @@ export class LeanLspClient extends (Mixed as any) {
           goals: goalsConfig,
           error: undefined,
         };
+
+        wpl.debug("Final GoalAnswer goals?: " + (ga.goals ? "YES" : "NO"));
+        wpl.debug("=== END LEAN GOALS DEBUG ===");
+
         return ga;
       }
-    );
+    ).catch((error) => {
+      wpl.debug("ERROR in Lean goals request: " + error);
+      throw error;
+    });
   }
 
-  sendViewportHint(
-    document: TextDocument,
-    start: number,
-    end: number
-  ): Promise<void> {
-    // No viewport hint for Lean in this minimal client.
-    return Promise.resolve();
+  getViewportNotificationName(): string {
+    return "$/lean/viewRange";
   }
+  async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
+    this.webviewManager = webviewManager;
+
+    // Set up document change listener for Lean files
+    this.disposables.push(workspace.onDidChangeTextDocument(event => {
+      if (event.document.languageId.startsWith('lean') &&
+        webviewManager.has(event.document.uri.toString())) {
+
+        // Get cursor position from the change event
+        if (event.contentChanges.length > 0) {
+          const change = event.contentChanges[0];
+          // The cursor is at the end of the change
+          const cursorPos = change.range.end;
+
+          // Update the active cursor position
+          this.activeCursorPosition = cursorPos;
+          this.activeDocument = event.document;
+        }
+
+        this.updateCompletions(event.document);
+      }
+    }));
+
+    return super.startWithHandlers(webviewManager);
+  }
+
+
 
   // Implement other required methods from ILeanLspClient
-async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
+  async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
 
     document ??= this.activeDocument;
     if (!document)
-        throw new Error("Cannot request symbols; there is no active document.");
+      throw new Error("Cannot request symbols; there is no active document.");
 
     const params: DocumentSymbolParams = {
-        textDocument: { uri: document.uri.toString() }
+      textDocument: { uri: document.uri.toString() }
     };
 
     const response = await this.sendRequest(DocumentSymbolRequest.type, params);
@@ -189,15 +258,19 @@ async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
     if (!response) return [];
 
     return response as DocumentSymbol[];
-}
+  }
 
 
   async updateCompletions(document: TextDocument): Promise<void> {
-    if (!this.isRunning()) return;
+    console.log("LEAN updateCompletions called for :", document.uri.toString(), "lang:", document.languageId);
+    if (!this.isRunning()) {
+      console.log("LEAN client not running")
+      return;
+    }
     if (!this.webviewManager?.has(document)) {
       throw new Error(
         "Cannot update completions; no ProseMirror webview is known for " +
-          document.uri.toString()
+        document.uri.toString()
       );
     }
     const pos = this.activeCursorPosition;
@@ -227,6 +300,7 @@ async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
         template: insertText,
       };
     });
+    console.log("Lean sending autocompletions")
     this.webviewManager!.postMessage(document.uri.toString(), {
       type: MessageType.setAutocomplete,
       body: completions,

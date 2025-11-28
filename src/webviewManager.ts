@@ -5,16 +5,16 @@ import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
 import { ProseMirrorWebview } from "./pm-editor/pmWebview";
 import { CoqWebview, WebviewEvents, WebviewState } from "./webviews/coqWebview";
-import { WaterproofLogger } from "./helpers";
+import { WaterproofLogger as wpl } from "./helpers";
 
 export enum WebviewManagerEvents {
-    editorReady     = "ready",
-    focus           = "focus",
-    cursorChange    = "cursorChange",
-    command         = "command",
-    updateButton    = "updateButton",
-    buttonClick     = "buttonClick",
-    viewportHint    = "viewportHint",
+    editorReady = "ready",
+    focus = "focus",
+    cursorChange = "cursorChange",
+    command = "command",
+    updateButton = "updateButton",
+    buttonClick = "buttonClick",
+    viewportHint = "viewportHint",
 }
 
 /**
@@ -25,7 +25,7 @@ class ActiveWebviews {
     private readonly _date;
 
     /** A store for the last active webviews */
-    private readonly _web: Map<number,string>;
+    private readonly _web: Map<number, string>;
 
     /** A double ended queue to allow for efficient timestamp manipulations */
     private readonly _queue;
@@ -166,13 +166,13 @@ export class WebviewManager extends EventEmitter {
         }
 
         // Open the panel if it is not already open
-        else if(panel?.isHidden) {
+        else if (panel?.isHidden) {
             this.emit(WebviewManagerEvents.buttonClick, { name: id });
             panel?.revealPanel();
         }
 
         // Open the panel if it is not hidden and not already open
-        else{
+        else {
             this.emit(WebviewManagerEvents.buttonClick, { name: id });
             panel?.readyPanel();
             panel?.activatePanel();
@@ -233,44 +233,51 @@ export class WebviewManager extends EventEmitter {
             // Scopes added to blocks to prevent accidental access of in-block const declarations
             case MessageType.response:
                 // Response type message, look to which promise this belongs.
-                { if (!message.requestId) {
-                    console.error("Received response message without a requestId!\nThe message:", message);
-                    return;
+                {
+                    if (!message.requestId) {
+                        console.error("Received response message without a requestId!\nThe message:", message);
+                        return;
+                    }
+                    const callback = this._callbacks.get(message.requestId);  // TODO: remove callback?
+                    callback?.(message.body);
+                    break;
                 }
-                const callback = this._callbacks.get(message.requestId);  // TODO: remove callback?
-                callback?.(message.body);
-                break; }
             case MessageType.editorReady:
                 this.emit(WebviewManagerEvents.editorReady, document);
                 break;
             case MessageType.cursorChange:
-                { const pos = document.positionAt(message.body);
-                this._lineStatus.update(pos);
-                // Update goals components
-                const webview = this._pmWebviews.get(document.uri.toString());
-                if (!webview) break;
-                if (webview.documentIsUpToDate) {
-                    this.emit(WebviewManagerEvents.cursorChange, document, pos);
-                } else {
-                    // Document is updating wait for completion
-                    const callback = () => {
+                {
+                    const pos = document.positionAt(message.body);
+                    this._lineStatus.update(pos);
+                    // Update goals components
+                    const webview = this._pmWebviews.get(document.uri.toString());
+                    if (!webview) break;
+                    if (webview.documentIsUpToDate) {
                         this.emit(WebviewManagerEvents.cursorChange, document, pos);
-                    };
-                    if(webview.listeners(WebviewEvents.finishUpdate).length == 0) webview.once(WebviewEvents.finishUpdate, callback);
+                    } else {
+                        // Document is updating wait for completion
+                        const callback = () => {
+                            this.emit(WebviewManagerEvents.cursorChange, document, pos);
+                        };
+                        if (webview.listeners(WebviewEvents.finishUpdate).length == 0) webview.once(WebviewEvents.finishUpdate, callback);
+                    }
+                    break;
                 }
-                break; }
             case MessageType.applyStepError:
-                { const mes = "The editor encountered an error in applying an edit (see log for details): " + message.body;
-                WaterproofLogger.log(message.body);
-                window.showErrorMessage(mes);
-                break; }
+                {
+                    const mes = "The editor encountered an error in applying an edit (see log for details): " + message.body;
+                    WaterproofLogger.log(message.body);
+                    window.showErrorMessage(mes);
+                    break;
+                }
             case MessageType.command:
                 // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
-                this.onToolsMessage("help", {type: MessageType.command, body: { command: "createHelp" }});
-                setTimeout(() => this.onToolsMessage("help", {type: MessageType.command, body: { command: "Help." }}), 250);
+                this.onToolsMessage("help", { type: MessageType.command, body: { command: "createHelp" } });
+                setTimeout(() => this.onToolsMessage("help", { type: MessageType.command, body: { command: "Help." } }), 250);
                 break;
             case MessageType.viewportHint:
-                this.emit(WebviewManagerEvents.viewportHint, {document, ...message.body});
+                wpl.debug(`[WEBVIEW] ViewportHint message received: start=${message.body.start}, end=${message.body.end}`);
+                this.emit(WebviewManagerEvents.viewportHint, { document, ...message.body });
                 break;
             default:
                 console.error(`Unrecognized message type ${message.type}, not handled by webview manager`);
@@ -287,9 +294,11 @@ export class WebviewManager extends EventEmitter {
     private onToolsMessage(id: string, msg: Message) {
         switch (msg.type) {
             case MessageType.insert:
-                { const id : string = this._active.find(msg.body.time)!;
-                this.postMessage(id, { type: MessageType.insert, body: msg.body });
-                break; }
+                {
+                    const id: string = this._active.find(msg.body.time)!;
+                    this.postMessage(id, { type: MessageType.insert, body: msg.body });
+                    break;
+                }
             case MessageType.command:
                 // FIXME: The `WebviewManagerEvents` are **not** typed.
                 this.emit(WebviewManagerEvents.command, this._toolWebviews.get(id), msg.body.command);

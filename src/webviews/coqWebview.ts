@@ -8,43 +8,28 @@ import {
 import { Disposable } from "vscode-languageclient";
 import { Message } from "../../shared";
 
-/**
- * Defines the states of the webview
- */
-
 export enum WebviewState {
-    /** Closed and can't be made visible (i.e., any interaction is ignored). */
     closed = "closedWebview",
-    /** Closed but can be made visible. */
     ready = "readyWebview",
-    /** Open but not visible. For example, it's a hidden editor tab. */
     open = "openWebview",
-    /** Open and visible. */
     visible = "visibleWebview",
-    /** Open and primary selected. Only used for communication, never set as actual state. */
     focus = "focusWebview",
 }
 
-/**
- * Events emitted by Webview
- */
 export enum WebviewEvents {
-    change = "changedState",  // Webview change notification
+    change = "changedState",
     message = "receivedMessage",
     dispose = "disposedView",
-    finishUpdate = "finishedUpdating", // Webviews in charge of doc changes
+    finishUpdate = "finishedUpdating",
 }
 
-/**
- * This is the abstract webview class: it has four states.
- * It's only for UI webviews, not the editor.
- */
 export abstract class CoqWebview extends EventEmitter implements Disposable {
-    private _panel: WebviewPanel | null = null;
-    private extensionUri: Uri;
-    private _state: WebviewState;
-    private name: string;
-    /** Whether the webview contains an input field. */
+    // CHANGED: private -> protected
+    protected _panel: WebviewPanel | null = null;
+    protected extensionUri: Uri;
+    protected _state: WebviewState;
+    protected name: string;
+    
     private readonly _supportInsert: boolean;
     private disposables: Disposable[] = [];
 
@@ -78,8 +63,9 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         }
     }
 
+    // CHANGED: protected visibility to allow override
     protected create() {
-        if (this.state != WebviewState.ready) return; // Error handling
+        if (this.state != WebviewState.ready) return;
 
         const webviewOpts = { enableScripts: true, enableFindWidget: false };
         if (this.name == "help") {
@@ -105,7 +91,6 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             );
         }
 
-
         this._panel.onDidChangeViewState((e) => {
             if(e.webviewPanel.active) this.emit(WebviewEvents.change, WebviewState.focus);
             if(e.webviewPanel.visible) {
@@ -127,7 +112,6 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             Uri.joinPath(this.extensionUri, "out", "views", this.name, "index.js")
         );
 
-        // TODO: avoid this branching, make it possible for subclasses to override create method
         if (this.name == "infoview") {
             const distBase = this._panel.webview.asWebviewUri(
                 Uri.joinPath(this.extensionUri, "node_modules", "@leanprover", "infoview", "dist")
@@ -168,41 +152,25 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             </body>
             </html>
             `;
-
         }
 
         this.disposables.push(this._panel.onDidDispose(() => {
-            // Once the panel has been disposed (for example when the user has closed the panel), we close (in terms of state) it here.
             this.closePanel();
         }));
     }
 
-    /**
-     * Closes the panel
-     */
     private closePanel() {
-        // Update the state to closed
         this.changeState(WebviewState.closed);
-        // Remove the webview panel instance
         this._panel = null;
     }
 
-    /**
-     * Helper function to allow for proper state transitions
-     *
-     * @param next next webviewstate
-     */
     private changeState(next: WebviewState) {
         if (next === this._state) return;
         const prev = this._state;
         this._state = next;
         this.emit(WebviewEvents.change, prev);
-
     }
 
-    /**
-     * Activate the panel if possible
-     */
     public activatePanel() {
         if (this.state == WebviewState.ready) {
             this.create();
@@ -210,39 +178,22 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         }
     }
 
-    /**
-     * Reveal the panel if possible
-     */
     public revealPanel() {
         if (!this._panel?.visible) {
             this._panel?.reveal(ViewColumn.Two);
         }
     }
 
-    /**
-     * Deactivate the panel
-     */
     public deactivatePanel() {
         this._panel?.dispose();
         this.closePanel();
     }
 
-    /**
-     * Change the panel state to the ready state
-     */
     public readyPanel() {
         if (this._state != WebviewState.closed) return;
         this.changeState(WebviewState.ready);
     }
 
-    /**
-     * Attempts to post a message to the webview, will result in a failure
-     * if the webview is not visible
-     *
-     * @param type type of message (as in ./shared/Messages.ts)
-     * @param params body of message
-     * @returns boolean on whether message was sent successfully
-     */
     public postMessage(msg: Message): boolean {
         if (this.state != WebviewState.visible) {
             this.changeState(WebviewState.visible);
@@ -250,5 +201,4 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         this._panel?.webview.postMessage(msg);
         return true;
     }
-
 }

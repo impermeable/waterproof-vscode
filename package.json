@@ -546,7 +546,9 @@
     "unit-tests": "npx jest",
     "unit-tests-cov": "npx jest --coverage",
     "lezer-generator": "npx lezer-generator ./editor/src/waterproof-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/waterproof-editor/codeview/lang-pack/syntax.ts",
-    "cypress-tests": "npx cypress run",
+    "test-server": " npx @vscode/test-web --coi --headless --extensionPath=test_out",
+    "cypress-tests": "npm run test-package && unzip test_out/extension.vsix -d test_out/ && npm run test-server && npx cypress run",
+
     "lint": "npx eslint .",
     "lint-fix": "npx eslint . --fix",
     "test": "npm run unit-tests && npm run cypress-tests"

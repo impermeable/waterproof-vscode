@@ -1,7 +1,6 @@
-import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
+import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
 
-type TokenType =
-    | 'EOF'
+type TokenKind =
     | 'Text'
     | 'Preamble'
     | 'CodeOpen'
@@ -14,124 +13,135 @@ type TokenType =
     | 'MathInline'
     | 'MathOpen'
     | 'MathClose'
-type Token = { kind: TokenType, from: number, to: number, groups: string[] };
+    | 'Newline'
+type Token = { kind: TokenKind, from: number, to: number, groups: string[], next?: Token, prev?: Token };
 
-const regexes: [RegExp, TokenType][] = [
+function isOneOf(token: Token | undefined, kinds: TokenKind[]): boolean {
+    if (!token) return false;
+    return kinds.includes(token.kind);
+}
+
+function expect(token: Token | undefined, kinds?: TokenKind[]): Token {
+    if (token === undefined) {
+        throw new Error('Expected a token but found nothing');
+    } else if (kinds !== undefined && !isOneOf(token, kinds)) {
+        throw new Error(`Expected one of [${kinds.join(', ')}] but found ${token?.kind}`);
+    }
+
+    return token;
+}
+
+const regexes: [RegExp, TokenKind][] = [
     [/^[\s\S]*#doc .*? =>\n/, 'Preamble'],
-    [/```lean\n/, 'CodeOpen'],
-    [/\n```(?!\S)/, 'CodeClose'],
-    [/:::input\n/, 'InputOpen'],
-    [/:::hint "([\s\S]*?)"\n/, 'HintOpen'],
-    [/\n:::(?!\S)/, 'Close'],
-    [/::::multilean\n/, 'MultileanOpen'],
-    [/\n::::(?!\S)/, 'OuterClose'],
+    [/(?<=\n)```lean\n/, 'CodeOpen'],
+    [/\n```(?=\n|$)/, 'CodeClose'],
+    [/(?<=\n):::input(?=\n)/, 'InputOpen'],
+    [/(?<=\n):::hint "([\s\S]*?)"(?=\n)/, 'HintOpen'],
+    [/(?<=\n):::(?=\n|$)/, 'Close'],
+    [/::::multilean(?=\n)/, 'MultileanOpen'],
+    [/\n::::(?=\n|$)/, 'OuterClose'],
     [/\$`[\s\S]*?`/, 'MathInline'],
     [/\$\$`/, 'MathOpen'],
     [/`/, 'MathClose'],
+    [/\n{1}?/, 'Newline'],
 ];
 const flags: string = 'g';
-const tokenRegex = new RegExp(regexes.map(([regex, tokType]) => {
-    return '(?<' + tokType + '>' + regex.source + ')'
+const tokenRegex = new RegExp(regexes.map(([regex, toKind]) => {
+    return '(?<' + toKind + '>' + regex.source + ')'
 }).join('|'), flags);
 
-function handle(doc: string, token: Token, blocks: Block[], tail: Token[]) {
+function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
+    const isSignificantNewline = (token: Token) =>
+        token.kind === 'Newline'
+        && (isOneOf(token.prev, ['Close', 'OuterClose'])
+            || isOneOf(token.next, ['CodeOpen', 'InputOpen', 'HintOpen', 'MultileanOpen']));
+
     if (token.kind === 'Preamble') {
         const range = { from: token.from, to: token.to };
         const content = doc.substring(token.from, token.to);
 
         const child = new CodeBlock(content, range, range);
         blocks.push(new HintBlock(content, "Preamble", range, range, [child]));
-    } else if (token.kind === 'Text') {
-        const start = token.from;
-        let stop = token.to;
 
-        // concatenate following inline math and text
-        while (peek(tail)?.kind === 'MathInline' || peek(tail)?.kind === 'Text') {
-            const chunk = accept(['MathInline', 'Text'], tail);
-            stop = chunk.to;
+        return token.next;
+    } else if (isSignificantNewline(token)) {
+        const range = { from: token.from, to: token.to };
+        blocks.push(new NewlineBlock(range, range));
+
+        return token.next;
+    } else if (token.kind === 'Text' || token.kind === 'Newline') {
+        // concatenate following inline math, text, and newlines
+        let head: Token = token;
+        while (head.next
+               && isOneOf(head.next, ['Text', 'Newline', 'MathInline'])
+               && !isSignificantNewline(head.next)) {
+            head = head.next as Token;
         }
 
-        let content = doc.substring(start, stop);
-        const range = { from: start, to: stop };
+        const range = { from: token.from, to: head.to };
+        let content = doc.substring(range.from, range.to);
 
         if (range.to - range.from > 1)
             blocks.push(new MarkdownBlock(content, range, range));
+
+        return head.next;
     } else if (token.kind === 'CodeOpen') {
-        let head = accept(['CodeClose', 'Text'], tail);
-
-        if (head.kind === 'Text') {
-            const close = accept(['CodeClose'], tail);
-
-            const range = { from: token.from, to: close.to };
-            const innerRange = { from: head.from, to: head.to };
-            const content = doc.substring(head.from, head.to);
-
-            blocks.push(new CodeBlock(content, range, innerRange));
-        }
-    } else if (token.kind === 'HintOpen') {
-        const expected: TokenType[] = ['Close', 'Text', 'MathInline', 'MathOpen', 'CodeOpen'];
-        let head = accept(expected, tail);
-        const innerBlocks: Block[] = [];
-        while (head.kind !== 'Close') {
-            handle(doc, head, innerBlocks, tail);
-            head = accept(expected, tail);
-        }
-
-        const range = { from: token.from, to: head.to };
-        const innerRange = { from: token.to, to: head.from };
-        const content = doc.substring(innerRange.from, innerRange.to);
-        const title = token.groups[1];
-
-        blocks.push(new HintBlock(content, title, range, innerRange, innerBlocks));
-    } else if (token.kind === 'InputOpen') {
-        const expected: TokenType[] = ['Close', 'Text', 'MathInline', 'MathOpen', 'CodeOpen'];
-        let head = accept(expected, tail);
-        const innerBlocks: Block[] = [];
-        while (head.kind !== 'Close') {
-            handle(doc, head, innerBlocks, tail);
-            head = accept(expected, tail);
+        let head = token;
+        while (head.kind !== 'CodeClose') {
+            head = expect(head.next, ['CodeClose', 'Text', 'Newline'])
         }
 
         const range = { from: token.from, to: head.to };
         const innerRange = { from: token.to, to: head.from };
         const content = doc.substring(innerRange.from, innerRange.to);
 
-        blocks.push(new InputAreaBlock(content, range, innerRange, innerBlocks));
+        blocks.push(new CodeBlock(content, range, innerRange));
+
+        return head.next;
+    } else if (token.kind === 'HintOpen' || token.kind === 'InputOpen') {
+        const expected: TokenKind[] = ['Close', 'Text', 'MathInline',
+                                       'MathOpen', 'CodeOpen', 'Newline'];
+        let head: Token = expect(token.next, expected);
+        const innerBlocks: Block[] = [];
+        while (head && head.kind !== 'Close') {
+            head = expect(handle(doc, head, innerBlocks));
+        }
+
+        const range = { from: token.from, to: head.to };
+        const innerRange = { from: token.to, to: head.from };
+        const content = doc.substring(innerRange.from, innerRange.to);
+
+        if (token.kind === 'HintOpen') {
+            const title = token.groups[1];
+            blocks.push(new HintBlock(content, title, range, innerRange, innerBlocks));
+        } else {
+            blocks.push(new InputAreaBlock(content, range, innerRange, innerBlocks));
+        }
+
+        return head.next;
     } else if (token.kind === 'MultileanOpen') {
         // parse everything to the corresponding close
-        let head = accept(undefined, tail);
+        let head = expect(token.next);
         while (head.kind !== 'OuterClose') {
-            handle(doc, head, blocks, tail);
-            head = accept(undefined, tail);
+            head = expect(handle(doc, head, blocks));
         }
+        return head.next;
     } else if (token.kind === 'MathOpen') {
-        const body = accept(['Text'], tail);
-        const close = accept(['MathClose'], tail);
-        const range = { from: token.from, to: close.to };
-        const innerRange = { from: token.to, to: close.from };
-        const content = doc.substring(body.from, body.to);
+        let head = token;
+        do {
+            head = expect(head.next, ['Text', 'Newline', 'MathClose']);
+        } while (head.kind != 'MathClose');
+
+        const range = { from: token.from, to: head.to };
+        const innerRange = { from: token.to, to: head.from };
+        const content = doc.substring(innerRange.from, innerRange.to);
 
         blocks.push(new MathDisplayBlock(content, range, innerRange));
-    } else if (token.kind === 'EOF') {
-        return;
+
+        return head.next;
     } else {
         throw Error(`Unexpected token ${token.kind}`);
     }
-}
-
-function accept(kinds: TokenType[] | undefined, tail: Token[]): Token {
-    const head = tail.shift();
-
-    if (head === undefined) {
-        throw new Error('Expected a token but found nothing');
-    } else if (!kinds?.includes(head.kind) && kinds !== undefined) {
-        throw new Error(`Expected one of [${kinds.join(', ')}] but found ${head?.kind}`);
-    }
-    else return head;
-}
-
-function peek(tail: Token[]): Token | undefined {
-    return tail.at(0);
 }
 
 export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
@@ -139,40 +149,38 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
         inputDocument.matchAll(tokenRegex)
     );
 
-    const tokens: Token[] = matches.map((m: RegExpMatchArray): Token | null => {
-        for (const [regex, tokType] of regexes) {
-            if (m[0].match(new RegExp('^' + regex.source + '$'))) {
-                return {
-                    kind: tokType,
+    let head: Token | undefined = undefined
+    let tail: Token | undefined = undefined;
+    for (const m of matches) {
+        const pos = m.index as number;
+        if (!tail && pos > 0) {
+            tail = { kind: 'Text', from: 0, to: pos, groups: [] };
+            head = tail;
+        } else if (tail && pos > tail.to + 1) {
+            tail.next = { kind: 'Text', from: tail.to, to: pos, groups: [], prev: tail };
+            tail = tail.next;
+        }
+
+        for (const [regex, toKind] of regexes) {
+            if (m.groups && m.groups[toKind]) {
+                const token = {
+                    kind: toKind,
                     from: m.index as number, to: m.index as number + m[0].length,
                     groups: Array.from(m),
+                    prev: tail,
                 };
+                if (tail) tail.next = token;
+                else {
+                    head = token;
+                }
+                tail = token;
             }
         }
-
-        return null;
-    }).filter(v => v !== null)
-    .concat([{ kind: 'EOF', from: inputDocument.length, to: inputDocument.length, groups: [] }])
-    // insert intermediate text tokens with the actual content
-    .reduce((acc: Token[], tok: Token, _i, _arr): Token[] => {
-        const prev = acc.at(-1);
-        if (!prev) {
-            acc.push({ kind: 'Text', from: 0, to: tok.from, groups: [] });
-            acc.push(tok);
-            return acc;
-        }
-
-        if (prev.kind !== 'Text') {
-            acc.push({ kind: 'Text', from: prev.to, to: tok.from, groups: [] });
-        }
-        acc.push(tok);
-        return acc;
-    }, []);
+    }
 
     const blocks: Block[] = [];
-    while (tokens.length) {
-        const token = tokens.shift() as Token;
-        handle(inputDocument, token, blocks, tokens);
+    while (head) {
+        head = handle(inputDocument, head, blocks);
     }
 
     return blocks.filter(b => b.range.from != b.range.to);

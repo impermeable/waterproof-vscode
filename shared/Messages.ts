@@ -46,6 +46,7 @@ export type Message =
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>
     | MessageBase<MessageType.themeUpdate, ThemeStyle>
+    | MessageBase<MessageType.infoviewRpc, {payload: any}>
     | MessageBase<MessageType.viewportHint, { start: number, end: number }>;
 
 /**
@@ -79,4 +80,5 @@ export const enum MessageType {
     themeUpdate,
     flash,
     viewportHint,
+    infoviewRpc
 }

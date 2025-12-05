@@ -68,28 +68,28 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         if (this.state != WebviewState.ready) return;
 
         const webviewOpts = { enableScripts: true, enableFindWidget: false };
-        if (this.name == "help") {
-            this._panel = window.createWebviewPanel(
-                this.name,
-                "Help",
-                { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts
-            );
-        } else if (this.name == "search") {
-            this._panel = window.createWebviewPanel(
-                this.name,
-                "Search",
-                { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts
-            );
-        } else {
-            this._panel = window.createWebviewPanel(
-                this.name,
-                this.name.charAt(0).toUpperCase() + this.name.slice(1),
-                { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts,
-            );
-        }
+        // if (this.name == "help") {
+        //     this._panel = window.createWebviewPanel(
+        //         this.name,
+        //         "Help",
+        //         { preserveFocus: true, viewColumn: ViewColumn.Two },
+        //         webviewOpts
+        //     );
+        // } else if (this.name == "search") {
+        //     this._panel = window.createWebviewPanel(
+        //         this.name,
+        //         "Search",
+        //         { preserveFocus: true, viewColumn: ViewColumn.Two },
+        //         webviewOpts
+        //     );
+        // } else {
+        this._panel = window.createWebviewPanel(
+            this.name,
+            this.name.charAt(0).toUpperCase() + this.name.slice(1),
+            { preserveFocus: true, viewColumn: ViewColumn.Two },
+            webviewOpts,
+        );
+        // }
 
         this._panel.onDidChangeViewState((e) => {
             if(e.webviewPanel.active) this.emit(WebviewEvents.change, WebviewState.focus);

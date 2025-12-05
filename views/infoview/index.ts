@@ -1,3 +1,4 @@
+import { Message, MessageType } from "../../shared"; 
 import type { EditorApi, InfoviewApi, InfoviewConfig, LeanPublishDiagnosticsParams } from '@leanprover/infoview'
 import { loadRenderInfoview } from '@leanprover/infoview/loader'
 import type { InitializeResult, Location } from 'vscode-languageserver-protocol'
@@ -21,7 +22,7 @@ function modifyState(f: (previousState: PersistentInfoviewState) => PersistentIn
     vscodeApi.setState(f(vscodeApi.getState() ?? {}))
 }
 
-const rpc = new Rpc((m: any) => vscodeApi.postMessage(m))
+const rpc = new Rpc((m: any) => vscodeApi.postMessage({ type: MessageType.infoviewRpc, body: m }))
 window.addEventListener('message', e => rpc.messageReceived(e.data))
 const editorApi: EditorApi = rpc.getApi()
 
@@ -90,6 +91,5 @@ if (div && script) {
             }
         }
     });
-    console.log("InfoView Loaded successfully!");
 
 }

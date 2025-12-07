@@ -415,6 +415,10 @@ export class Waterproof implements Disposable {
         };
     }
 
+    public cursorPosition(): Position | undefined {
+        return this.client.activeCursorPosition;
+    }
+
     /**
      * Attempts to install all required libraries
      * @returns A promise containing either the Version of coq-lsp we found or a VersionError containing an error message.

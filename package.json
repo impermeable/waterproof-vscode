@@ -527,9 +527,6 @@
     "vscode-languageserver-types": "3.17.5",
     "vscode-uri": "3.1.0"
   },
-  "dependenciesComments": {
-    "@codemirror/view": "Version 6.28.0 breaks ctrl+v for us, possibly due to switch to EditContext API"
-  },
   "main": "./out/src/mainNode.js",
   "browser": "/out/src/mainBrowser.js",
   "scripts": {

@@ -149,8 +149,7 @@ window.onload = () => {
 				editor.updateProgressBar(progressParams);
 				break; }
 			case MessageType.diagnostics:
-				{ const diagnostics = msg.body;
-				editor.parseCoqDiagnostics(diagnostics);
+				{ editor.setActiveDiagnostics(msg.body.positionedDiagnostics);
 				break; }
 			case MessageType.serverStatus:
 				{ const status = msg.body;

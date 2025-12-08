@@ -469,6 +469,7 @@
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@lezer/generator": "^1.2.3",
+    "@playwright/test": "^1.57.0",
     "@types/jest": "29.1.0",
     "@types/jquery": "^3.5.16",
     "@types/mocha": "^10.0.1",
@@ -548,7 +549,6 @@
     "lezer-generator": "npx lezer-generator ./editor/src/waterproof-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/waterproof-editor/codeview/lang-pack/syntax.ts",
     "test-server": " npx @vscode/test-web --coi --headless --extensionPath=test_out",
     "cypress-tests": "npm run test-package && unzip test_out/extension.vsix -d test_out/ && npm run test-server && npx cypress run",
-
     "lint": "npx eslint .",
     "lint-fix": "npx eslint . --fix",
     "test": "npm run unit-tests && npm run cypress-tests"

@@ -13,3 +13,10 @@ __tests_output__/
 ExampleFiles/
 /cypress/screenshots/
 coverage/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

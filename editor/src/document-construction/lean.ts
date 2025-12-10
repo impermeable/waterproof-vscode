@@ -77,7 +77,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         const content = doc.substring(token.from, token.to);
 
         const child = new CodeBlock(content, range, range);
-        blocks.push(new HintBlock(content, "Preamble", range, range, [child]));
+        blocks.push(new HintBlock(content, "🛠 Technical details", range, range, [child]));
 
         return token.next;
     } else if (isSignificantNewline(token)) {

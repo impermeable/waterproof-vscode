@@ -1,4 +1,4 @@
-import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
+import { Block, BlockRange, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
 
 type TokenKind =
     | 'Text'
@@ -14,22 +14,7 @@ type TokenKind =
     | 'MathOpen'
     | 'MathClose'
     | 'Newline'
-type Token = { kind: TokenKind, from: number, to: number, groups: string[], next?: Token, prev?: Token };
-
-function isOneOf(token: Token | undefined, kinds: TokenKind[]): boolean {
-    if (!token) return false;
-    return kinds.includes(token.kind);
-}
-
-function expect(token: Token | undefined, kinds?: TokenKind[]): Token {
-    if (token === undefined) {
-        throw new Error('Expected a token but found nothing');
-    } else if (kinds !== undefined && !isOneOf(token, kinds)) {
-        throw new Error(`Expected one of [${kinds.join(', ')}] but found ${token?.kind}`);
-    }
-
-    return token;
-}
+type Token = { kind: TokenKind, groups: string[], next?: Token, prev?: Token } & BlockRange;
 
 const regexes: [RegExp, TokenKind][] = [
     [/^[\s\S]*#doc .*? =>\n/, 'Preamble'],
@@ -50,6 +35,37 @@ const tokenRegex = new RegExp(regexes.map(([regex, toKind]) => {
     return '(?<' + toKind + '>' + regex.source + ')'
 }).join('|'), flags);
 
+
+/**
+ * Check if a token has one of given token kinds.
+ */
+function isOneOf(token: Token | undefined, kinds: TokenKind[]): boolean {
+    if (!token) return false;
+    return kinds.includes(token.kind);
+}
+
+/**
+ * Return token but fail if a token is undefined or not of one of given kinds.
+ */
+function expect(token: Token | undefined, kinds?: TokenKind[]): Token {
+    if (token === undefined) {
+        throw new Error('Expected a token but found nothing');
+    } else if (kinds !== undefined && !isOneOf(token, kinds)) {
+        throw new Error(`Expected one of [${kinds.join(', ')}] but found ${token?.kind}`);
+    }
+
+    return token;
+}
+
+/**
+ * Parse the given token in the context of the given document, creating new blocks.
+ *
+ * @param doc document string
+ * @param token token that needs to be parsed
+ * @param blocks list to append new blocks to
+ *
+ * @return the next unparsed token or undefined on EOF
+ */
 function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     const isSignificantNewline = (token: Token) =>
         token.kind === 'Newline'
@@ -79,7 +95,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         }
 
         const range = { from: token.from, to: head.to };
-        let content = doc.substring(range.from, range.to);
+        const content = doc.substring(range.from, range.to);
 
         if (range.to - range.from > 1)
             blocks.push(new MarkdownBlock(content, range, range));
@@ -144,7 +160,12 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     }
 }
 
-export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
+/**
+ * Split the input document into a linked list of tokens
+ * representing different tags or fragments in the document
+ * and return the first one.
+ */
+function tokenize(inputDocument: string): Token | undefined {
     const matches: RegExpMatchArray[] = Array.from(
         inputDocument.matchAll(tokenRegex)
     );
@@ -153,6 +174,7 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
     let tail: Token | undefined = undefined;
     for (const m of matches) {
         const pos = m.index as number;
+        // Create 'Text' tokens for fragments inbetween regex matches
         if (!tail && pos > 0) {
             tail = { kind: 'Text', from: 0, to: pos, groups: [] };
             head = tail;
@@ -161,7 +183,7 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
             tail = tail.next;
         }
 
-        for (const [regex, toKind] of regexes) {
+        for (const [_, toKind] of regexes) {
             if (m.groups && m.groups[toKind]) {
                 const token = {
                     kind: toKind,
@@ -177,6 +199,15 @@ export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
             }
         }
     }
+
+    return head;
+}
+
+/**
+ * Extract top-level blocks from a Lean-based document.
+ */
+export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
+    let head = tokenize(inputDocument);
 
     const blocks: Block[] = [];
     while (head) {

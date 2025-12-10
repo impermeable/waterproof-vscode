@@ -2,8 +2,7 @@
 // Disable due to latex code in sample data
 
 import { BlockRange, MarkdownBlock, typeguards } from "@impermeable/waterproof-editor";
-import { topLevelBlocksMV } from "../../editor/src/document-construction/construct-document";
-import { topLevelBlocksLean } from "../../editor/src/document-construction/lean";
+import { topLevelBlocksMV, topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
 
 const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">

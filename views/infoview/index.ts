@@ -24,7 +24,7 @@ function modifyState(f: (previousState: PersistentInfoviewState) => PersistentIn
 
 const rpc = new Rpc((m: any) => vscodeApi.postMessage({ type: MessageType.infoviewRpc, body: m }))
 window.addEventListener('message', e => rpc.messageReceived(e.data))
-const editorApi: EditorApi = rpc.getApi()
+const editorApi: EditorApi = rpc.getApi<EditorApi>()
 
 const div: HTMLElement | null = document.querySelector('#root')
 const script: HTMLOrSVGScriptElement | null = document.currentScript

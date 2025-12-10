@@ -2,6 +2,8 @@ import { Uri } from "vscode";
 import { GoalAnswer, PpString } from "../../../lib/types";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { CoqGoalsPanel } from "./coqGoalsPanel";
+import { Message } from "../../../shared";
+import { Disposable } from "vscode-languageclient";
 
 export type PanelMode = 'coq' | 'lean';
 
@@ -105,5 +107,14 @@ export class GoalsPanel extends CoqGoalsPanel {
         if (this.currentMode === 'coq') {
             super.updateGoals(goals);
         }
+    }
+
+    public onInfoviewMes(callback: (msg: any) => void): Disposable {
+        if(!this._panel) {
+            throw new Error("[Goals webview]: panel not created yet");
+        };
+        const d = this._panel.webview.onDidReceiveMessage(callback);
+        this.disposables.push(d);
+        return d;
     }
 }

@@ -70,7 +70,6 @@ export class WebviewManager extends EventEmitter {
 
     // ProseMirror webviews, stores the view based on Doc uri
     private readonly _pmWebviews: Map<string, ProseMirrorWebview> = new Map<string, ProseMirrorWebview>;
-
     // RequestId of request response
     private _requestId: number;
 
@@ -302,6 +301,9 @@ export class WebviewManager extends EventEmitter {
             case MessageType.command:
                 // FIXME: The `WebviewManagerEvents` are **not** typed.
                 this.emit(WebviewManagerEvents.command, this._toolWebviews.get(id), msg.body.command);
+                break;
+            // drop messages from infoview
+            case MessageType.infoviewRpc:
                 break;
             default:
                 console.error("The message type " + msg.type + " is not currently supported by webview manager");

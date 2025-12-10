@@ -31,7 +31,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     protected name: string;
     
     private readonly _supportInsert: boolean;
-    private disposables: Disposable[] = [];
+    protected disposables: Disposable[] = [];
 
     constructor(extensionUri: Uri, name: string, supportInsert: boolean = false) {
         super();

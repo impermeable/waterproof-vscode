@@ -226,7 +226,6 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(
             WebviewManagerEvents.cursorChange,
             async (document: TextDocument, position: Position) => {
-
                 if (document.languageId.startsWith('lean')) {
                     this.leanClient.activeDocument = document;
                     this.leanClient.activeCursorPosition = position;
@@ -246,11 +245,11 @@ export class Waterproof implements Disposable {
                         // this.updateGoalsLean(document, position);
 
                         // this.infoProvider?.sendPosition(document, position);
-                    } else {
-                        this.coqClient.activeDocument = document;
-                        this.coqClient.activeCursorPosition = position;
-                        this.updateGoalsCoq(document, position);
                     }
+                } else {
+                    this.coqClient.activeDocument = document;
+                    this.coqClient.activeCursorPosition = position;
+                    this.updateGoalsCoq(document, position);
                 }
             });
 

@@ -415,6 +415,10 @@ export class Waterproof implements Disposable {
         };
     }
 
+    /**
+     * Returns the cursor position known by the client.
+     * @returns The cursor position as stored in the client. `undefined` if there is none.
+     */
     public cursorPosition(): Position | undefined {
         return this.client.activeCursorPosition;
     }

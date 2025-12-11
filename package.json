@@ -495,7 +495,7 @@
     "typescript-eslint": "^8.20.0"
   },
   "dependencies": {
-    "@impermeable/waterproof-editor": "0.12.0",
+    "@impermeable/waterproof-editor": "0.13.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
     "@ocaml-wasm/4.12--num": "^1.4.0-0",
     "@ocaml-wasm/4.12--zarith": "^1.13.0-0",
@@ -546,6 +546,7 @@
     "cypress-tests": "npx cypress run",
     "lint": "npx eslint .",
     "lint-fix": "npx eslint . --fix",
-    "test": "npm run unit-tests && npm run cypress-tests"
+    "test": "npm run unit-tests && npm run cypress-tests",
+    "install-extension": "npm run test-package && code --install-extension test_out/extension.vsix --force"
   }
 }

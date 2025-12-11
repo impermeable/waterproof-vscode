@@ -183,12 +183,10 @@ export class InfoProvider implements Disposable {
             //     .update('messageOrder', config.messageOrder, ConfigurationTarget.Global)
         },
         sendClientRequest: async (uri: string, method: string, params: any): Promise<any> => {
-            // console.log(method)
             const client = this.client
             if (client) {
                 try {
                     const result = await client.sendRequest(method, params)
-                    console.log(result)
                     return result
                 } catch (ex: any) {
                     if (ex.code === RpcErrorCode.WorkerCrashed) {
@@ -373,13 +371,12 @@ export class InfoProvider implements Disposable {
             await api.serverRestarted(this.client.initializeResult);
             // await this.sendDiagnostics();
             // await this.sendProgress();
-            // await this.sendPosition(loc);
+            await this.sendPosition(loc);
         }
         this.isInitialized = true;
     }
 
     public async sendPosition(loc: Location) {
-        console.log(loc)
         await this.api?.changedCursorLocation(loc)
     }
 

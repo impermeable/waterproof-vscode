@@ -159,15 +159,14 @@ export class Waterproof implements Disposable {
                 if (document.languageId.startsWith("lean")) {
                     // CHANGED: Switch mode to Lean
                     goalsPanel.setMode('lean');
-
-                    if (!isLeanClientRunning()) {
+                    if (!this.leanClientRunning) {
                         console.warn(
                             "Focus event received before client is ready. Waiting..."
                         );
                         const waitForClient = async (): Promise<void> => {
                             return new Promise((resolve) => {
                                 const interval = setInterval(() => {
-                                    if (isLeanClientRunning()) {
+                                    if (this.leanClientRunning) {
                                         clearInterval(interval);
                                         resolve();
                                     }
@@ -177,18 +176,34 @@ export class Waterproof implements Disposable {
                         await waitForClient();
                         wpl.log("Lean Client ready. Proceeding with focus event.");
                     }
-                    this.leanClient = <LeanLspClient>getLeanInstance();
                     this.activeClient = "lean4";
-
                     if (
-                        this.leanClient.activeDocument?.uri.toString() !=
+                        this.leanClient.activeDocument?.uri.toString() !==
                         document.uri.toString()
                     ) {
                         this.leanClient.activeDocument = document;
                         this.leanClient.activeCursorPosition = undefined;
                         this.webviewManager.open("goals");
+                        if (this.infoProvider) {
+                            const loc: Location = {
+                                uri: document.uri.toString(),
+                                range: {
+                                    start: {
+                                        line: 0, character: 0
+                                    },
+                                    end: {
+                                        line: 0, character: 0
+                                    }
+                                }
+                            }
+
+                            if (!this.infoProvider.isInitialized) {
+                                await this.infoProvider.initInfoview(loc)
+                            } else {
+                                this.infoProvider.sendPosition(loc)
+                            }
+                        }
                         for (const g of this.goalsComponents) g.updateGoals(undefined);
-                        this.infoProvider?.sendPosition
                     }
                 } else {
                     // CHANGED: Switch mode to Coq
@@ -213,7 +228,6 @@ export class Waterproof implements Disposable {
                     }
                     wpl.log("Client state");
                     this.activeClient = 'coq';
-
                     if (this.coqClient.activeDocument?.uri.toString() !== document.uri.toString()) {
                         this.coqClient.activeDocument = document;
                         this.coqClient.activeCursorPosition = undefined;
@@ -237,14 +251,7 @@ export class Waterproof implements Disposable {
                                 end: { line: position.line, character: position.character },
                             },
                         };
-                        if (!this.infoProvider.isInitialized) {   
-                            await this.infoProvider.initInfoview(loc);
-                        } else {
-                            this.infoProvider.sendPosition(loc);
-                        }
-                        // this.updateGoalsLean(document, position);
-
-                        // this.infoProvider?.sendPosition(document, position);
+                        this.infoProvider?.sendPosition(loc);
                     }
                 } else {
                     this.coqClient.activeDocument = document;
@@ -856,10 +863,6 @@ export class Waterproof implements Disposable {
             }
         );
     }
-
-    //   this.infoProvider = new InfoProvider(this.webviewManager, this.leanClient);
-    // console.log(this.infoProvider !== undefined);
-    // this.webviewManager.setInfoviewHost(this.infoProvider);
 
     async initializeLeanClient(): Promise<void> {
         wpl.log("Start of initializeLeanClient");

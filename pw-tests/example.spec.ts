@@ -7,6 +7,18 @@ test('has title', async ({ page }) => {
   await expect(page).toHaveTitle(/VS Code/);
 });
 
+test('can open tutorial', async ({ page }) => {
+  await page.goto('http://localhost:3000/?enable-coi');
+
+  await page.keyboard.press('Control+Shift+P');
+  await page.keyboard.type('Waterproof: Open Tutorial');
+  await page.keyboard.press('Enter');
+
+  await expect(page).toHaveTitle(/VS Code/);
+  await expect(page.getByText("inspecting the examples")).toBeVisible();
+});
+
+
 test('can open tactics', async ({ page }) => {
   await page.goto('http://localhost:3000/?enable-coi');
 

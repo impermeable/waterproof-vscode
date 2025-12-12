@@ -17,18 +17,9 @@ import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType, serverStatusNotificationType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
-import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
-import { AbstractLspClient, ClientConstructor } from "./abstractLspClient";
+import { SimpleProgressParams, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
+import { AbstractLspClient, ClientConstructor, } from "./abstractLspClient";
 
-
-function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
-    switch (severity) {
-        case DiagnosticSeverity.Error: return Severity.Error;
-        case DiagnosticSeverity.Warning: return Severity.Warning;
-        case DiagnosticSeverity.Information: return Severity.Information;
-        case DiagnosticSeverity.Hint: return Severity.Hint;
-    }
-}
 
 /**
  * The following function allows for a Mixin i.e. we can add the interface
@@ -81,7 +72,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
 
             // deduce (end) positions of sentences from progress notifications
             this.fileProgressComponents.push(this.sentenceManager);
-            const diagnosticsCollection = languages.createDiagnosticCollection("rocq");
+            this.diagnosticsCollection = languages.createDiagnosticCollection("rocq");
 
             // Set detailedErrors to the value of the `Waterproof.detailedErrorsMode` setting.
             this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
@@ -103,7 +94,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 //      added by coq-lsp required for the line long error mode.
                 if (!this.detailedErrors) {
                     const diagnostics = (diagnostics_ as WpDiagnostic[]);
-                    diagnosticsCollection.set(uri, diagnostics.map(d => {
+                    this.diagnosticsCollection.set(uri, diagnostics.map(d => {
                         const start = d.data?.sentenceRange?.start ?? d.range.start;
                         const end = d.data?.sentenceRange?.end ?? d.range.end;
                         return {
@@ -113,7 +104,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                         };
                     }));
                 } else {
-                    diagnosticsCollection.set(uri, diagnostics_);
+                    this.diagnosticsCollection.set(uri, diagnostics_);
                 }
             };
 
@@ -165,26 +156,6 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             }));
         }
 
-        // Does this async do anything? 
-        async processDiagnostics() {
-            const document = this.activeDocument;
-            if (!document) return;
-
-            const diagnostics = languages.getDiagnostics(document.uri);
-
-            const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
-                    return {
-                        message:        d.message,
-                        severity:       vscodeSeverityToWaterproof(d.severity),
-                        startOffset:    document.offsetAt(d.range.start),
-                        endOffset:      document.offsetAt(d.range.end)
-                    };
-            });
-            this.webviewManager!.postAndCacheMessage(document, {
-                type: MessageType.diagnostics,
-                body: {positionedDiagnostics, version: document.version}
-            });
-        }
 
         async onCheckingCompleted(): Promise<void> {
             // ensure there is an active document

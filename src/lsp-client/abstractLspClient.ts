@@ -1,10 +1,12 @@
-import { Disposable, TextDocument, Position, Range, OutputChannel } from "vscode";
+import { Disposable, TextDocument, Position, Range, OutputChannel, DiagnosticSeverity, DiagnosticCollection, languages } from "vscode";
 import { FeatureClient, Middleware, LanguageClientOptions, DocumentSymbol, VersionedTextDocumentIdentifier } from "vscode-languageclient";
 import { SentenceManager } from "./sentenceManager";
 import { WebviewManager } from "../webviewManager";
 import { IFileProgressComponent } from "../components";
-import { ICoqLspClient } from "./clientTypes";
+import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
+import { OffsetDiagnostic, Severity } from "@impermeable/waterproof-editor";
+import { MessageType } from "../../shared";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -13,6 +15,15 @@ interface TimeoutDisposable extends Disposable {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
 
+export function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
+    switch (severity) {
+        case DiagnosticSeverity.Error: return Severity.Error;
+        case DiagnosticSeverity.Warning: return Severity.Warning;
+        case DiagnosticSeverity.Information: return Severity.Information;
+        case DiagnosticSeverity.Hint: return Severity.Hint;
+    }
+}
+
 export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
     return class extends Base implements ICoqLspClient {
         readonly disposables: Disposable[] = [];
@@ -20,10 +31,34 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
         activeCursorPosition: Position | undefined;
         readonly sentenceManager: SentenceManager;
         webviewManager: WebviewManager | undefined;
-
+        diagnosticsCollection: DiagnosticCollection;
         constructor(...args: any[]) {
             super(...args);
             this.sentenceManager = new SentenceManager();
+
+            // send diagnostics to editor (for squiggly lines)
+            this.middleware.handleDiagnostics = (uri, diagnostics_) => {
+
+                const diagnostics = (diagnostics_ as WpDiagnostic[]);
+                this.diagnosticsCollection.set(uri, diagnostics.map(d => {
+                    const start = d.data?.sentenceRange?.start ?? d.range.start;
+                    const end = d.data?.sentenceRange?.end ?? d.range.end;
+                    return {
+                        message: d.message,
+                        severity: d.severity,
+                        range: new Range(start, end),
+                    };
+                }));
+            };
+            
+            this.disposables.push(languages.onDidChangeDiagnostics(e => {
+                if (this.activeDocument === undefined) return;
+                // Comparing the uris (by doing uris.includes(this.activeDocument.uri)) does not seem to achieve
+                // the same result.
+                if (e.uris.map(uri => uri.path).includes(this.activeDocument.uri.path)) {
+                    this.processDiagnostics();
+                }
+            }));
         }
 
         getBeginningOfCurrentSentence(): Position | undefined {
@@ -67,10 +102,10 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
 
         async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
             if (!(this as any).isRunning()) return;
-            
+
             const startPos = document.positionAt(start);
             let endPos = document.positionAt(end);
-            
+
             // Compute end of document position, use that if we're close
             const endOfDocument = document.positionAt(document.getText().length);
             if (endOfDocument.line - endPos.line < 20) {
@@ -93,12 +128,32 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
                     }
                 }
             };
-            
+
             await (this as any).sendNotification(this.getViewportNotificationName(), requestBody);
         }
 
         createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest {
             throw new Error("createGoalsRequestParameters must be implemented by subclass");
+        }
+
+        async processDiagnostics() {
+            const document = this.activeDocument;
+            if (!document) return;
+
+            const diagnostics = languages.getDiagnostics(document.uri);
+
+            const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
+                return {
+                    message: d.message,
+                    severity: vscodeSeverityToWaterproof(d.severity),
+                    startOffset: document.offsetAt(d.range.start),
+                    endOffset: document.offsetAt(d.range.end)
+                };
+            });
+            this.webviewManager!.postAndCacheMessage(document, {
+                type: MessageType.diagnostics,
+                body: { positionedDiagnostics, version: document.version }
+            });
         }
     };
 }

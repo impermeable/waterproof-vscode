@@ -6,8 +6,7 @@ import {
   Position,
   Range,
   OutputChannel,
-  commands,
-  Uri,
+  languages,
 } from "vscode";
 import { Trace } from "vscode-languageclient/node";
 import {
@@ -19,12 +18,10 @@ import {
 import { AbstractLspClient } from "./abstractLspClient";
 import { GoalAnswer, GoalConfig, GoalRequest, PpString } from "../../lib/types";
 import { WaterproofLogger as wpl } from "../helpers";
-import { version } from "os";
 import { WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest } from "vscode-languageclient";
 import { WebviewManager } from "../webviewManager";
-
 
 type LC = new (...args: any[]) => any;
 const Mixed = AbstractLspClient(LanguageClient as unknown as LC);
@@ -38,7 +35,6 @@ type PlainGoalResult = PlainGoal | null;
 
 export class LeanLspClient extends (Mixed as any) {
   private readonly context: ExtensionContext;
-
   constructor(
     context: ExtensionContext,
     clientOptions?: LanguageClientOptions
@@ -52,6 +48,7 @@ export class LeanLspClient extends (Mixed as any) {
         .get<string>("executablePath")
         ?.trim() || "";
 
+    
     const serverCommand = configuredLake || legacyLean || "lean";
     const serverArgs = configuredLake ? lakeArgs : ["--server"];
 
@@ -81,6 +78,7 @@ export class LeanLspClient extends (Mixed as any) {
       clientOptions ?? defaultClientOptions
     );
     this.context = context;
+    this.diagnosticsCollection = languages.createDiagnosticCollection("lean4");
     (this as any).trace = Trace.Verbose;
     (this as any).setTrace?.(Trace.Verbose);
   }
@@ -306,6 +304,7 @@ export class LeanLspClient extends (Mixed as any) {
       body: completions,
     });
   }
+
 }
 /// ---
 let leanClientInstance: LeanLspClient | undefined;

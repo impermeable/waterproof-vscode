@@ -34,6 +34,7 @@ export enum WaterproofSetting {
     UpdateIgnores,
     ContinuousChecking,
     LogDebugStatements,
+    DebounceTime,
 }
 
 /**
@@ -63,6 +64,7 @@ export const WaterproofSettingMap: Record<WaterproofSetting, string> = {
     [WaterproofSetting.UpdateIgnores]: "updateIgnores",
     [WaterproofSetting.ContinuousChecking]: "ContinuousChecking",
     [WaterproofSetting.LogDebugStatements]: "LogDebugStatements",
+    [WaterproofSetting.DebounceTime]: "DebounceTime",
 };
 
 /**
@@ -92,6 +94,7 @@ type WaterproofSettingTypes = {
     [WaterproofSetting.UpdateIgnores]: boolean;
     [WaterproofSetting.ContinuousChecking]: boolean;
     [WaterproofSetting.LogDebugStatements]: boolean;
+    [WaterproofSetting.DebounceTime]: number; // milliseconds
 };
 
 /**

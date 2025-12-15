@@ -22,7 +22,6 @@ import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 
 import { SidePanelProvider, addSidePanel } from "./webviews/sidePanel";
 import { Search } from "./webviews/standardviews/search";
-import { Help } from "./webviews/standardviews/help";
 import { ExecutePanel } from "./webviews/standardviews/execute";
 import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";

@@ -18,7 +18,7 @@ const VSCodeDivider = lazy(async () => {
   const { VSCodeDivider } = await import("@vscode/webview-ui-toolkit/react");
   return { default: VSCodeDivider };
 });
-
+ 
 export function InfoPanel() {
   // visibility of the hypotheses in the goals panel
   
@@ -38,7 +38,7 @@ export function InfoPanel() {
       case MessageType.renderGoals:
           const goals = msg.body.goals;
           setGoals(goals); //setting the information
-          setIsLoading(false);
+          setGoalsLoading(false);
           setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None  
           break;
       case MessageType.setData:
@@ -71,12 +71,7 @@ export function InfoPanel() {
   if (!goals) {
     return <div>Place your cursor in the document to show the goals at that position.</div>
   }
-  const handleHelp = () => {
-    //Send the message indicating the help button was pressed
-    const msg: Message = { type: MessageType.command, body: {command: "Help.", time: date.getTime()} };
-    vscode.postMessage(msg);
-    setGoalsLoading(true);
-  };
+
   //The goal and message are displayed along with the error at the position (if it exists)
   //Components used: Goals, Messages, ErrorBrowser, Help button.
   return (

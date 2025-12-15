@@ -6,6 +6,7 @@ import { Box } from "./Box";
 import { CoqPp } from "./CoqPp";
 import { HypEl } from "../debug/Hypothesis"
 import { MessageType } from "../../shared";
+import vscode from "./vscode";
 
 import {
   Position,
@@ -13,7 +14,6 @@ import {
 } from "vscode-languageserver-types";
 import "../styles/goals.css";
 
-const vscode = acquireVsCodeApi();
 
 //type that contains Goal<PpString> and an ID for that goal
 type GoalP = { goal: Goal<PpString>; idx: number;};

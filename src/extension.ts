@@ -19,7 +19,6 @@ import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
-import { GoalsHelpPanel } from "./webviews/goalviews/goalsHelpPanel";
 
 import { SidePanelProvider, addSidePanel } from "./webviews/sidePanel";
 import { Search } from "./webviews/standardviews/search";
@@ -159,7 +158,6 @@ export class Waterproof implements Disposable {
         this.webviewManager.open("goals");
         this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
         this.webviewManager.addToolWebview("search", new Search(this.context.extensionUri));
-        //this.webviewManager.addToolWebview("help", new Help(this.context.extensionUri));
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
         this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));

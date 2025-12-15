@@ -7,5 +7,5 @@
     "esModuleInterop": true,
     "jsx": "react-jsx"
   },
-  "include": ["**/*.ts", "**/*.tsx", "../../lib/**/*", "../debug/ErrorBrowser.tsx", "../debug/Hypothesis.tsx", "../../shared/**/*", "../lib/CoqMessage.ts", "../goalsHelp/HelpSection.tsx"]
+  "include": ["**/*.ts", "**/*.tsx", "../../lib/**/*", "../debug/ErrorBrowser.tsx", "../debug/Hypothesis.tsx", "../../shared/**/*"]
 }

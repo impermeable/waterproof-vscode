@@ -166,9 +166,9 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
 
     private changeState(next: WebviewState) {
         if (next === this._state) return;
-        const prev = this._state;
         this._state = next;
-        this.emit(WebviewEvents.change, prev);
+        // Emit the new state so listeners see the current lifecycle stage
+        this.emit(WebviewEvents.change, next);
     }
 
     public activatePanel() {

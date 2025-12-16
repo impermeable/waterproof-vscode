@@ -36,6 +36,13 @@ const ProofAssistant = () => {
         };
 
         window.addEventListener('message', handleMessage);
+
+        // Request the current tactics mode immediately upon mounting
+        vscode.postMessage({ 
+            type: MessageType.command, 
+            body: { command: "getTacticsMode", time: Date.now() } 
+        });
+
         return () => window.removeEventListener('message', handleMessage);
     }, []);
 

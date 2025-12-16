@@ -3,6 +3,7 @@ import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEd
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
+import leanTactics from "../../completions/tacticsLean.json";
 
 // import style sheet and fonts from waterproof-editor
 import "@impermeable/waterproof-editor/styles.css"
@@ -23,7 +24,8 @@ interface VSCodeAPI {
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
-		completions: format === FileFormat.Lean ? [] : tactics,
+		//can be adjusted to be a setting, i.e leanTactics can be toggled as a setting in the future if wanted
+		completions: format === FileFormat.Lean ? leanTactics : tactics,
 		symbols: symbols,
 		api: {
 			executeHelp() {

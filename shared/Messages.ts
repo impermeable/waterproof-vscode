@@ -42,6 +42,7 @@ export type Message =
     | MessageBase<MessageType.serverStatus, ServerStatus>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
     | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
+    | MessageBase<MessageType.setTacticsMode, "coq" | "lean">       // ADDED: Message to switch tactics mode
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>
@@ -74,6 +75,7 @@ export const enum MessageType {
     serverStatus,
     setAutocomplete,
     setData,
+    setTacticsMode, // ADDED
     setShowLineNumbers,
     setShowMenuItems,
     teacher,

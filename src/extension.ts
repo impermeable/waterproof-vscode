@@ -58,6 +58,7 @@ import {
 import { LspClientFactory } from "./mainNode";
 import { convertToString } from "../lib/types";
 import { Hypothesis } from "./api";
+import { MessageType, Message } from "../shared/Messages"; // Added MessageType import
 import { InfoProvider } from "./infoview";
 
 export function activate(_context: ExtensionContext): void {
@@ -159,6 +160,10 @@ export class Waterproof implements Disposable {
                 if (document.languageId.startsWith("lean")) {
                     // CHANGED: Switch mode to Lean
                     goalsPanel.setMode('lean');
+                    
+                    // Switch tactics panel to Lean mode (safely)
+                    this.safePostMessage("tactics", { type: MessageType.setTacticsMode, body: "lean" });
+                    
                     if (!this.leanClientRunning) {
                         console.warn(
                             "Focus event received before client is ready. Waiting..."
@@ -208,6 +213,8 @@ export class Waterproof implements Disposable {
                 } else {
                     // CHANGED: Switch mode to Coq
                     goalsPanel.setMode('coq');
+                    // Switch tactics panel to Coq mode (safely)
+                    this.safePostMessage("tactics", { type: MessageType.setTacticsMode, body: "coq" });
 
                     if (!this.coqClientRunning) {
                         console.warn(
@@ -498,6 +505,17 @@ export class Waterproof implements Disposable {
             WaterproofConfigHelper.update(WaterproofSetting.ShowLineNumbersInEditor, updated);
             window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
+    }
+    
+    /**
+     * Safely posts a message to a webview. If the webview is not ready/open, it catches the error and ignores it.
+     */
+    private safePostMessage(view: string, message: Message) {
+        try {
+            this.webviewManager.postMessage(view, message);
+        } catch (e) {
+            // Ignore errors if the view is not yet ready or visible
+        }
     }
 
     /**

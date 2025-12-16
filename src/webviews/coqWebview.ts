@@ -195,10 +195,14 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     }
 
     public postMessage(msg: Message): boolean {
+        // CHANGED: Guard against posting to a non-existent panel to avoid corrupting state
+        if (!this._panel) {
+            return false;
+        }
         if (this.state != WebviewState.visible) {
             this.changeState(WebviewState.visible);
         }
-        this._panel?.webview.postMessage(msg);
+        this._panel.webview.postMessage(msg);
         return true;
     }
 }

@@ -15,6 +15,7 @@ export enum WebviewManagerEvents {
     updateButton = "updateButton",
     buttonClick = "buttonClick",
     viewportHint = "viewportHint",
+    toolStateChange = "toolStateChange",
 }
 
 /**
@@ -114,6 +115,8 @@ export class WebviewManager extends EventEmitter {
 
         webview.on(WebviewEvents.change, (state) => {
             if (state == WebviewState.focus && webview.supportInsert) this._active.insert(name);
+            // Emit generic tool state change event for panels
+            this.emit(WebviewManagerEvents.toolStateChange, { name, state });
         });
     }
 

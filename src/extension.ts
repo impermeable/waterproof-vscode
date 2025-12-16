@@ -40,7 +40,7 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
-import { WebviewEvents, WebviewState } from "./webviews/coqWebview";
+import { WebviewState } from "./webviews/coqWebview";
 import {
     WaterproofConfigHelper,
     WaterproofSetting,
@@ -122,9 +122,14 @@ export class Waterproof implements Disposable {
         // Register it as 'goals' so it replaces the standard goals panel
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.goalsPanel = goalsPanel;
-        goalsPanel.on(WebviewEvents.change, () => {
-            void this.handleGoalsPanelStateChange();
-        });
+        this.webviewManager.on(
+            WebviewManagerEvents.toolStateChange,
+            ({ name, state }: { name: string; state: WebviewState }) => {
+                if (name === "goals") {
+                    void this.handleGoalsPanelStateChange(state);
+                }
+            }
+        );
         this.webviewManager.on(
             WebviewManagerEvents.editorReady,
             (document: TextDocument) => {
@@ -927,17 +932,17 @@ export class Waterproof implements Disposable {
         );
     }
 
-    private async handleGoalsPanelStateChange() {
+    private async handleGoalsPanelStateChange(state: WebviewState) {
         if (!this.goalsPanel || !this.infoProvider) {
             return;
         }
 
-        if (this.goalsPanel.state === WebviewState.closed) {
+        if (state === WebviewState.closed) {
             this.infoProvider.isInitialized = false;
             return;
         }
 
-        if (this.goalsPanel.state !== WebviewState.visible) {
+        if (state !== WebviewState.visible) {
             return;
         }
 

@@ -40,6 +40,7 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
+import { WebviewEvents, WebviewState } from "./webviews/coqWebview";
 import {
     WaterproofConfigHelper,
     WaterproofSetting,
@@ -121,6 +122,9 @@ export class Waterproof implements Disposable {
         // Register it as 'goals' so it replaces the standard goals panel
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.goalsPanel = goalsPanel;
+        goalsPanel.on(WebviewEvents.change, () => {
+            void this.handleGoalsPanelStateChange();
+        });
         this.webviewManager.on(
             WebviewManagerEvents.editorReady,
             (document: TextDocument) => {
@@ -183,8 +187,8 @@ export class Waterproof implements Disposable {
                     }
                     this.activeClient = "lean4";
                     if (
-                        this.leanClient.activeDocument?.uri.toString() !==
-                        document.uri.toString()
+                        this.leanClient.activeDocument?.uri.toString() !== document.uri.toString() ||
+                        !this.infoProvider?.isInitialized
                     ) {
                         this.leanClient.activeDocument = document;
                         this.leanClient.activeCursorPosition = undefined;
@@ -921,6 +925,45 @@ export class Waterproof implements Disposable {
                 throw reason;
             }
         );
+    }
+
+    private async handleGoalsPanelStateChange() {
+        if (!this.goalsPanel || !this.infoProvider) {
+            return;
+        }
+
+        if (this.goalsPanel.state === WebviewState.closed) {
+            this.infoProvider.isInitialized = false;
+            return;
+        }
+
+        if (this.goalsPanel.state !== WebviewState.visible) {
+            return;
+        }
+
+        if (!this.leanClientRunning || this.activeClient !== "lean4") {
+            return;
+        }
+
+        const doc = this.leanClient?.activeDocument ?? window.activeTextEditor?.document;
+        if (!doc || !doc.languageId.startsWith("lean")) {
+            return;
+        }
+
+        const position = this.leanClient.activeCursorPosition ?? new Position(0, 0);
+        const loc: Location = {
+            uri: doc.uri.toString(),
+            range: {
+                start: { line: position.line, character: position.character },
+                end: { line: position.line, character: position.character },
+            },
+        };
+
+        if (!this.infoProvider.isInitialized) {
+            await this.infoProvider.initInfoview(loc);
+        } else {
+            await this.infoProvider.sendPosition(loc);
+        }
     }
 
 

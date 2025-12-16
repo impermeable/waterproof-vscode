@@ -4,6 +4,7 @@ import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { CoqGoalsPanel } from "./coqGoalsPanel";
 import { Message } from "../../../shared";
 import { Disposable } from "vscode-languageclient";
+import { WebviewEvents } from "../coqWebview";
 
 export type PanelMode = 'coq' | 'lean';
 
@@ -36,7 +37,7 @@ export class GoalsPanel extends CoqGoalsPanel {
         if (!this._panel) return;
 
         if (this.currentMode === 'lean') {
-            // --- LEAN CONTENT GENERATION ---
+            // Lean content generation
             const distBase = this._panel.webview.asWebviewUri(
                 Uri.joinPath(this.extensionUri, "node_modules", "@leanprover", "infoview", "dist")
             );
@@ -65,8 +66,9 @@ export class GoalsPanel extends CoqGoalsPanel {
                     src="${scriptUri}"></script>
             </body>
             </html>`;
+
         } else {
-            // --- COQ CONTENT GENERATION ---
+            // Coq content generation
             const styleUri = this._panel.webview.asWebviewUri(
                 Uri.joinPath(this.extensionUri, "out", "views", "goals", "index.css")
             );
@@ -110,11 +112,10 @@ export class GoalsPanel extends CoqGoalsPanel {
     }
 
     public onInfoviewMes(callback: (msg: any) => void): Disposable {
-        if(!this._panel) {
-            throw new Error("[Goals webview]: panel not created yet");
+        const handler = (msg: any) => callback(msg);
+        this.on(WebviewEvents.message, handler);
+        return {
+            dispose: () => this.removeListener(WebviewEvents.message, handler)
         };
-        const d = this._panel.webview.onDidReceiveMessage(callback);
-        this.disposables.push(d);
-        return d;
     }
 }

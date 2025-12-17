@@ -96,7 +96,7 @@ export class InfoProvider implements Disposable {
 
         const disp = panel.onInfoviewMes(m => {
             try {
-                this.rpc?.messageReceived(m.body);
+                if(m.type === MessageType.infoviewRpc) this.rpc?.messageReceived(m.body);
             } catch (e) {
                 console.error("infoview rpc.messageReceived failed", e);
             }

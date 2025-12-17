@@ -2,7 +2,6 @@ import { Uri } from "vscode";
 import { GoalAnswer, PpString } from "../../../lib/types";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { CoqGoalsPanel } from "./coqGoalsPanel";
-import { Message } from "../../../shared";
 import { Disposable } from "vscode-languageclient";
 import { WebviewEvents } from "../coqWebview";
 

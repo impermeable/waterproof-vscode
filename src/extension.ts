@@ -281,7 +281,13 @@ export class Waterproof implements Disposable {
             (source: IExecutor, command: string) => {
                 if (command == "createHelp") {
                     source.setResults(["createHelp"]);
-                } else {
+                }
+                // Handle the request for tactics mode
+                else if (command === "getTacticsMode") {
+                    const mode = this.activeClient === "lean4" ? "lean" : "coq";
+                    this.safePostMessage("tactics", { type: MessageType.setTacticsMode, body: mode });
+                }
+                else {
                     if (this.activeClient.startsWith('lean')) {
                         // executeCommand(this.leanClient, command).then(
                         //     results => {

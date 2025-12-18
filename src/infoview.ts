@@ -70,11 +70,13 @@ class RpcSessionAtPos implements Disposable {
         // TODO: at this point we could close the session
     }
 }
+
 export class InfoProvider implements Disposable {
     private client!: LeanLspClient;
     private rpc?: Rpc;
     private api?: InfoviewApi;
     private serverNotifSubscriptions = new Map<string, [number, Disposable[]]>();
+    private clientNotifSubscriptions = new Map<string, [number, Disposable[]]>();
     private disposables: Disposable[] = [];
     public isInitialized: boolean = false;
     private rpcSessions = new Map<string, RpcSessionAtPos>()
@@ -108,40 +110,74 @@ export class InfoProvider implements Disposable {
     dispose() {
         this.disposables.forEach(d => d.dispose());
         this.disposables = [];
+
+        for (const [, [, subscriptions]] of this.serverNotifSubscriptions) {
+            for (const h of subscriptions) {
+                try { h.dispose() } catch {}
+            }
+        }
+        this.serverNotifSubscriptions.clear();
+
+        // dispose client notif subscriptions
+        for (const [, [, subscriptions]] of this.clientNotifSubscriptions) {
+            for (const h of subscriptions) {
+                try { h.dispose() } catch {}
+            }
+        }
+        this.clientNotifSubscriptions.clear();
+
+        // dispose rpc sessions
+        for (const [, sess] of this.rpcSessions) {
+            try { sess.dispose() } catch {}
+        }
+        this.rpcSessions.clear();
+
         this.rpc = undefined;
         this.api = undefined;
     }
-    // private subscribeDidChangeNotification(client: LeanLspClient, method: string) {
-    //     const h = client.didChange(params => {
-    //         void this.api.sentClientNotification(method, params)
-    //     })
-    //     return h
-    // }
 
-    // private subscribeDidCloseNotification(client: LeanLspClient, method: string) {
-    //     const h = client.didClose(params => {
-    //         void this.api.sentClientNotification(method, params)
-    //     })
-    //     return h
-    // }
+    private subscribeDidChangeNotification(client: LeanLspClient, method: string) {
+        const h = client.didChange(params => {
+            void this.api?.sentClientNotification?.(method, params);
+        });
+        return h;
+    }
 
-    // private subscribeDiagnosticsNotification(client: LeanLspClient, method: string) {
-    //     const h = client.diagnostics(params => {
-    //         void this.api.gotServerNotification(method, params)
-    //     })
-    //     return h
-    // }
+    private subscribeDidCloseNotification(client: LeanLspClient, method: string) {
+        const h = client.didClose(params => {
+            void this.api?.sentClientNotification?.(method, params)
+        })
+        return h
+    }
 
-    // private subscribeCustomNotification(client: LeanLspClient, method: string) {
-    //     const h = client.customNotification(({ method: thisMethod, params }) => {
-    //         if (thisMethod !== method) return
-    //         void this.api.gotServerNotification(method, params)
-    //     })
-    //     return h
-    // }
+    private subscribeDiagnosticsNotification(client: LeanLspClient, method: string) {
+        const h = client.diagnostics(params => {
+            void this.api?.gotServerNotification?.(method, params)
+        })
+        return h
+    }
+
+    private subscribeCustomNotification(client: LeanLspClient, method: string) {
+        const h = client.customNotificationFor(method, params => {
+            void this.api?.gotServerNotification?.(method, params);
+        });
+        return h;
+    }
+
+    private handleClientNotification(client: LeanLspClient, method: string, params: any) {
+        this.rpc?.notify?.('clientNotification', { method, params })
+    }
 
     private editorApi: EditorApi = {
         saveConfig: async (config: InfoviewConfig) => {
+            try {
+                const cfg = workspace.getConfiguration('lean4.infoview')
+                for (const [key, value] of Object.entries(config as Record<string, any>)) {
+                    await cfg.update(key, value, ConfigurationTarget.Global)
+                }
+            } catch (e) {
+                console.error('[InfoProvider] saveConfig failed', e)
+            }
             // await workspace
             //     .getConfiguration('lean4.infoview')
             //     .update('allErrorsOnLine', config.allErrorsOnLine, ConfigurationTarget.Global)
@@ -182,6 +218,7 @@ export class InfoProvider implements Disposable {
             //     .getConfiguration('lean4.infoview')
             //     .update('messageOrder', config.messageOrder, ConfigurationTarget.Global)
         },
+
         sendClientRequest: async (uri: string, method: string, params: any): Promise<any> => {
             const client = this.client
             if (client) {
@@ -202,106 +239,117 @@ export class InfoProvider implements Disposable {
             }
             throw Error('No active Lean client.')
         },
+
         sendClientNotification: async (uri: string, method: string, params: any): Promise<void> => {
             const client = this.client;
             if (client) {
                 await client.sendNotification(method, params)
             }
         },
-        subscribeServerNotifications: async method => {
-            const el = this.serverNotifSubscriptions.get(method);
-            // Bookkeeping
+
+        subscribeServerNotifications: async (method: string) => {
+            console.log('[InfoviewHost] subscribeServerNotifications', method)
+
+            const el = this.serverNotifSubscriptions.get(method)
             if (el) {
-                const [count, h] = el
-                this.serverNotifSubscriptions.set(method, [count + 1, h])
+                const [count, subscriptions] = el
+                this.serverNotifSubscriptions.set(method, [count + 1, subscriptions])
+                console.log('[InfoviewHost] subscribeServerNotifications refcount++', method, '->', count + 1)
+                return
             }
-            console.log('[InfoviewHost] subscribeServerNotifications', method);
 
-            // if (method === 'textDocument/publishDiagnostics') {
-            //     const subscriptions: Disposable[] = []
-            //     for (const client of this.clientProvider.getClients()) {
-            //         subscriptions.push(this.subscribeDiagnosticsNotification(client, method))
-            //     }
-            //     this.serverNotifSubscriptions.set(method, [1, subscriptions])
-            // } else if (method.startsWith('$')) {
-            //     const subscriptions: Disposable[] = []
-            //     for (const client of this.clientProvider.getClients()) {
-            //         subscriptions.push(this.subscribeCustomNotification(client, method))
-            //     }
-            //     this.serverNotifSubscriptions.set(method, [1, subscriptions])
-            // } else {
-            //     throw new Error(`subscription to ${method} server notifications not implemented`)
-            // }
-
-
-
-            // one subscription to the lean client
-            // const disposable = this.subscribeServer(method, params => {
-            //     // forward to the webview
-            //     void this.api.gotServerNotification(method, params);
-            // });
-
-            // this.serverNotifSubscriptions.set(method, { refCount: 1, disposable });
-
-        },
-        unsubscribeServerNotifications: async method => {
-            // const el = this.serverNotifSubscriptions.get(method)
-            // if (!el) throw new Error(`trying to unsubscribe from '${method}' with no active subscriptions`)
-            // const [count, subscriptions] = el
-            // if (count === 1) {
-            //     for (const h of subscriptions) {
-            //         h.dispose()
-            //     }
-            //     this.serverNotifSubscriptions.delete(method)
-            // } else {
-            //     this.serverNotifSubscriptions.set(method, [count - 1, subscriptions])
-            // }
-            console.log('[InfoviewHost] unsubscribeServerNotifications', method);
+            if (method === 'textDocument/publishDiagnostics') {
+                const subscriptions: Disposable[] = []
+                subscriptions.push(this.subscribeDiagnosticsNotification(this.client, method))
+                this.serverNotifSubscriptions.set(method, [1, subscriptions])
+                console.log('[InfoviewHost] subscribeServerNotifications NEW diagnostics', method)
+            } else if (method.startsWith('$')) {
+                const subscriptions: Disposable[] = []
+                subscriptions.push(this.subscribeCustomNotification(this.client, method))
+                this.serverNotifSubscriptions.set(method, [1, subscriptions])
+                console.log('[InfoviewHost] subscribeServerNotifications NEW custom', method)
+            } else {
+                console.log('[InfoviewHost] subscribeServerNotifications NOT IMPLEMENTED', method)
+                throw new Error(`subscription to ${method} server notifications not implemented`)
+            }
         },
 
-        subscribeClientNotifications: async method => {
-            console.log('[InfoviewHost] subscribeClientNotifications', method);
-            // const el = this.clientNotifSubscriptions.get(method)
-            // if (el) {
-            //     const [count, d] = el
-            //     this.clientNotifSubscriptions.set(method, [count + 1, d])
-            //     return
-            // }
+        unsubscribeServerNotifications: async (method: string) => {
+            console.log('[InfoviewHost] unsubscribeServerNotifications', method)
 
-            // if (method === 'textDocument/didChange') {
-            //     const subscriptions: Disposable[] = []
-            //     for (const client of this.clientProvider.getClients()) {
-            //         subscriptions.push(this.subscribeDidChangeNotification(client, method))
-            //     }
-            //     this.clientNotifSubscriptions.set(method, [1, subscriptions])
-            // } else if (method === 'textDocument/didClose') {
-            //     const subscriptions: Disposable[] = []
-            //     for (const client of this.clientProvider.getClients()) {
-            //         subscriptions.push(this.subscribeDidCloseNotification(client, method))
-            //     }
-            //     this.clientNotifSubscriptions.set(method, [1, subscriptions])
-            // } else {
-            //     throw new Error(`Subscription to '${method}' client notifications not implemented`)
-            // }
+            const el = this.serverNotifSubscriptions.get(method)
+            if (!el) {
+                console.warn(`[InfoviewHost] unsubscribeServerNotifications: no subscription for ${method}`)
+                return
+            }
+
+            const [count, subscriptions] = el
+            if (count === 1) {
+                console.log('[InfoviewHost] unsubscribeServerNotifications disposing', method)
+                for (const h of subscriptions) {
+                    try { h.dispose() } catch {}
+                }
+                this.serverNotifSubscriptions.delete(method)
+                console.log('[InfoviewHost] unsubscribeServerNotifications removed', method)
+            } else {
+                this.serverNotifSubscriptions.set(method, [count - 1, subscriptions])
+                console.log('[InfoviewHost] unsubscribeServerNotifications refcount--', method, '->', count - 1)
+            }
         },
 
-        unsubscribeClientNotifications: async method => {
-            console.log('[InfoviewHost] unsubscribeClientNotifications', method);
-            // const el = this.clientNotifSubscriptions.get(method)
-            // if (!el) throw new Error(`trying to unsubscribe from '${method}' with no active subscriptions`)
-            // const [count, subscriptions] = el
-            // if (count === 1) {
-            //     for (const d of subscriptions) {
-            //         d.dispose()
-            //     }
-            //     this.clientNotifSubscriptions.delete(method)
-            // } else {
-            //     this.clientNotifSubscriptions.set(method, [count - 1, subscriptions])
-            // }
+        subscribeClientNotifications: async (method: string) => {
+            console.log('[InfoviewHost] subscribeClientNotifications', method)
+
+            const el = this.clientNotifSubscriptions.get(method)
+            if (el) {
+                const [count, subscriptions] = el
+                this.clientNotifSubscriptions.set(method, [count + 1, subscriptions])
+                console.log('[InfoviewHost] subscribeClientNotifications refcount++', method, '->', count + 1)
+                return
+            }
+
+            if (method === 'textDocument/didChange') {
+                const subscriptions: Disposable[] = []
+                subscriptions.push(this.subscribeDidChangeNotification(this.client, method))
+                this.clientNotifSubscriptions.set(method, [1, subscriptions])
+                console.log('[InfoviewHost] subscribeClientNotifications NEW didChange', method)
+            } else if (method === 'textDocument/didClose') {
+                const subscriptions: Disposable[] = []
+                subscriptions.push(this.subscribeDidCloseNotification(this.client, method))
+                this.clientNotifSubscriptions.set(method, [1, subscriptions])
+                console.log('[InfoviewHost] subscribeClientNotifications NEW didClose', method)
+            } else {
+                console.log('[InfoviewHost] subscribeClientNotifications NOT IMPLEMENTED', method)
+                throw new Error(`Subscription to '${method}' client notifications not implemented`)
+            }
         },
+
+        unsubscribeClientNotifications: async (method: string) => {
+            console.log('[InfoviewHost] unsubscribeClientNotifications', method)
+
+            const el = this.clientNotifSubscriptions.get(method)
+            if (!el) {
+                console.warn(`[InfoviewHost] unsubscribeClientNotifications: no subscription for ${method}`)
+                return
+            }
+
+            const [count, subscriptions] = el
+            if (count === 1) {
+                console.log('[InfoviewHost] unsubscribeClientNotifications disposing', method)
+                for (const d of subscriptions) {
+                    try { d.dispose() } catch {}
+                }
+                this.clientNotifSubscriptions.delete(method)
+                console.log('[InfoviewHost] unsubscribeClientNotifications removed', method)
+            } else {
+                this.clientNotifSubscriptions.set(method, [count - 1, subscriptions])
+                console.log('[InfoviewHost] unsubscribeClientNotifications refcount--', method, '->', count - 1)
+            }
+        },
+
+
         copyToClipboard: async text => {
             await env.clipboard.writeText(text)
-            // displayNotification('Information', `Copied to clipboard: ${text}`)
         },
         insertText: async (text, kind, tdpp) => {
             // let uri: ExtUri | undefined
@@ -320,20 +368,10 @@ export class InfoProvider implements Disposable {
             // await workspace.applyEdit(we)
         },
         showDocument: async show => {
-            // const uri = parseExtUri(show.uri)
-            // if (uri === undefined) {
-            //     return
-            // }
-            // void this.revealEditorSelection(uri, p2cConverter.asRange(show.selection))
+            // noop here
         },
         restartFile: async uri => {
-            // TODO: restart the file, first needs to be implemented on the client side
             console.log("This is not yet implemented")
-            // const extUri = parseExtUri(uri)
-            // if (extUri === undefined) {
-            //     return
-            // }
-            // this.clientProvider.restartFile(extUri)
         },
 
         createRpcSession: async uri => {
@@ -366,11 +404,8 @@ export class InfoProvider implements Disposable {
         await api.initialize(loc);
 
         if (this.client.initializeResult) {
-            // await this.sendConfig();
             await api.serverStopped(undefined);
             await api.serverRestarted(this.client.initializeResult);
-            // await this.sendDiagnostics();
-            // await this.sendProgress();
             await this.sendPosition(loc);
         }
         this.isInitialized = true;

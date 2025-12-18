@@ -1,5 +1,7 @@
 import {
+  Disposable,
   ExtensionContext,
+  EventEmitter,
   workspace,
   window,
   TextDocument,
@@ -20,7 +22,6 @@ import { MessageType } from "../../shared";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest } from "vscode-languageclient";
 import { WebviewManager } from "../webviewManager";
 
-
 type LC = new (...args: any[]) => any;
 const Mixed = AbstractLspClient(LanguageClient as LC);
 
@@ -33,6 +34,67 @@ type PlainGoalResult = PlainGoal | null;
 
 export class LeanLspClient extends (Mixed as any) {
   private readonly context: ExtensionContext;
+
+  private _patchedSendNotification = false;
+
+  private didChangeEmitter = new EventEmitter<any>();
+  private didCloseEmitter  = new EventEmitter<any>();
+
+  public didChange(cb: (params: any) => void): Disposable {
+    return this.didChangeEmitter.event(cb);
+  }
+  public didClose(cb: (params: any) => void): Disposable {
+    return this.didCloseEmitter.event(cb);
+  }
+
+  private patchSendNotificationOnce() {
+    if (this._patchedSendNotification) return;
+    this._patchedSendNotification = true;
+
+    const orig = (this as any).sendNotification.bind(this);
+
+    (this as any).sendNotification = async (method: string, params: any) => {
+      // outgoing LSP notifications
+      if (method === "textDocument/didChange") this.didChangeEmitter.fire(params);
+      if (method === "textDocument/didClose")  this.didCloseEmitter.fire(params);
+
+      return orig(method, params);
+    };
+  }
+
+  private readonly _serverEmitters = new Map<string, EventEmitter<any>>();
+  private readonly _serverHooked = new Set<string>();
+
+  private ensureServerHook(method: string) {
+    if (this._serverHooked.has(method)) return;
+    this._serverHooked.add(method);
+
+    (this as any).onNotification(method, (params: any) => {
+      this._serverEmitters.get(method)?.fire(params);
+    });
+  }
+
+  public diagnostics(cb: (params: any) => void): Disposable {
+    const method = "textDocument/publishDiagnostics";
+    let em = this._serverEmitters.get(method);
+    if (!em) {
+      em = new EventEmitter<any>();
+      this._serverEmitters.set(method, em);
+    }
+    this.ensureServerHook(method);
+    return em.event(cb);
+  }
+
+  public customNotificationFor(method: string, cb: (params: any) => void): Disposable {
+    let em = this._serverEmitters.get(method);
+    if (!em) {
+      em = new EventEmitter<any>();
+      this._serverEmitters.set(method, em);
+    }
+    this.ensureServerHook(method);
+    return em.event(cb);
+  }
+
 
   constructor(
     context: ExtensionContext,
@@ -76,6 +138,7 @@ export class LeanLspClient extends (Mixed as any) {
       clientOptions ?? defaultClientOptions
     );
     this.context = context;
+    this.patchSendNotificationOnce();
     (this as any).trace = Trace.Verbose;
     (this as any).setTrace?.(Trace.Verbose);
   }
@@ -232,7 +295,8 @@ export class LeanLspClient extends (Mixed as any) {
       }
     }));
 
-    return super.startWithHandlers(webviewManager);
+    await super.startWithHandlers(webviewManager);
+    this.patchSendNotificationOnce();
   }
 
 

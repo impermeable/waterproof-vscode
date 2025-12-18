@@ -4,22 +4,17 @@ import {
   window,
   TextDocument,
   Position,
-  Range,
   OutputChannel,
-  commands,
-  Uri,
 } from "vscode";
 import { Trace } from "vscode-languageclient/node";
 import {
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
-  VersionedTextDocumentIdentifier,
 } from "vscode-languageclient/node";
 import { AbstractLspClient } from "./abstractLspClient";
 import { GoalAnswer, GoalConfig, GoalRequest, PpString } from "../../lib/types";
 import { WaterproofLogger as wpl } from "../helpers";
-import { version } from "os";
 import { WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest } from "vscode-languageclient";
@@ -27,7 +22,7 @@ import { WebviewManager } from "../webviewManager";
 
 
 type LC = new (...args: any[]) => any;
-const Mixed = AbstractLspClient(LanguageClient as unknown as LC);
+const Mixed = AbstractLspClient(LanguageClient as LC);
 
 interface PlainGoal {
   rendered: string;
@@ -310,19 +305,11 @@ export class LeanLspClient extends (Mixed as any) {
 /// ---
 let leanClientInstance: LeanLspClient | undefined;
 
-let clientRunning: boolean = false;
-
 // lightweight debug output channel
 const leanDebugOutput: OutputChannel =
   window.createOutputChannel("Lean LSP Debug");
 
-export function getLeanInstance(): LeanLspClient | undefined {
-  return leanClientInstance;
-}
 
-export function isLeanClientRunning(): boolean {
-  return clientRunning;
-}
 
 export async function activateLeanClient(
   context: ExtensionContext
@@ -335,8 +322,6 @@ export async function activateLeanClient(
   try {
     leanClientInstance = new LeanLspClient(context, undefined);
     context.subscriptions.push(leanDebugOutput);
-    (leanClientInstance as any).trace = Trace.Verbose;
-    (leanClientInstance as any).setTrace?.(Trace.Verbose);
 
     leanDebugOutput.appendLine("[LeanLspClient] calling start()");
     await leanClientInstance.start();

@@ -19,10 +19,12 @@ import { GoalAnswer, GoalConfig, GoalRequest, PpString } from "../../lib/types";
 import { WaterproofLogger as wpl } from "../helpers";
 import { WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
-import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest } from "vscode-languageclient";
+import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient, Middleware } from "vscode-languageclient";
 import { WebviewManager } from "../webviewManager";
 
-type LC = new (...args: any[]) => any;
+type LC = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & {
+  dispose(timeout?: number): Promise<void>;
+};
 const Mixed = AbstractLspClient(LanguageClient as LC);
 
 interface PlainGoal {
@@ -38,7 +40,7 @@ export class LeanLspClient extends (Mixed as any) {
   private _patchedSendNotification = false;
 
   private didChangeEmitter = new EventEmitter<any>();
-  private didCloseEmitter  = new EventEmitter<any>();
+  private didCloseEmitter = new EventEmitter<any>();
 
   public didChange(cb: (params: any) => void): Disposable {
     return this.didChangeEmitter.event(cb);
@@ -56,7 +58,7 @@ export class LeanLspClient extends (Mixed as any) {
     (this as any).sendNotification = async (method: string, params: any) => {
       // outgoing LSP notifications
       if (method === "textDocument/didChange") this.didChangeEmitter.fire(params);
-      if (method === "textDocument/didClose")  this.didCloseEmitter.fire(params);
+      if (method === "textDocument/didClose") this.didCloseEmitter.fire(params);
 
       return orig(method, params);
     };

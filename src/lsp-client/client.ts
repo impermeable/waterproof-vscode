@@ -81,10 +81,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 onProgress: params => {
                     const document = this.activeDocument;
                     if (!document) return;
-                    const body: SimpleProgressParams = {
-                        numberOfLines:  document.lineCount,
-                        progress:       params.processing.map(convertToSimple)
-                    };
+                    const body: SimpleProgressParams = convertToSimple(document, params);
                     this.webviewManager!.postAndCacheMessage(
                         document,
                         { type: MessageType.progress, body }
@@ -204,13 +201,27 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
             const document = this.activeDocument;
             if (!document) return;
 
+            const length = document.getText().length;
+
             // send message to ProseMirror editor that checking is done
             // (in addition to LSP message that indicates last Markdown is still being processed)
             this.webviewManager!.postAndCacheMessage(
                 document.uri.toString(),
                 {
                     type: MessageType.progress,
-                    body: { numberOfLines: document.lineCount, progress: [] }
+                    body: {
+                        numberOfLines: document.lineCount,
+                        progress: {
+                            offsetRange: {
+                                start: length,
+                                end: length
+                            },
+                            range: {
+                                start: document.positionAt(length),
+                                end: document.positionAt(length)
+                            }
+                        }
+                    }
                 }
             );
 

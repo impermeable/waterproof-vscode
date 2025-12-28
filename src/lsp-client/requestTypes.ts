@@ -1,9 +1,9 @@
-import { Range } from "vscode";
+import { Range, TextDocument } from "vscode";
 import { NotificationType, RequestType } from "vscode-languageclient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
 import { CoqServerStatus, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
-import { CoqFileProgressKind, SimpleProgressInfo } from "@impermeable/waterproof-editor";
+import { CoqFileProgressKind, SimpleProgressParams } from "@impermeable/waterproof-editor";
 
 /**
  * LSP request to obtain the goals at a specific point in the doc.
@@ -39,18 +39,23 @@ export interface CoqFileProgressParams {
     processing: CoqFileProgressProcessingInfo[];
 }
 
-/**
- * Converts `CoqFileProgressProcessingInfo` into `SimpleProgressInfo`. This is necessary(?) because
- * `vscode.Range.start` (and `end`) is secretly a function, which isn't retained when sent as a
- * message.
- */
-export function convertToSimple(info: CoqFileProgressProcessingInfo): SimpleProgressInfo {
-    const r = info.range;
+/** Converts a CoqFileProgressParams object that we received from rocq-lsp into a type that we can sent to waterproof-editor */
+export function convertToSimple(document: TextDocument, info: CoqFileProgressParams): SimpleProgressParams {
+    if (info.processing.length < 1) throw new Error("No processing info in CoqFileProgressParams object");
+    const p = info.processing[0];
+    const r = p.range;
     return {
-        range: {
-            start: { line: r.start.line, character: r.start.character },
-            end:   { line: r.end.line,   character: r.end.character   }
-        },
-        kind: info.kind
+        numberOfLines: document.lineCount,
+        progress: {
+            range: {
+                start: { line: r.start.line, character: r.start.character },
+                end:   { line: r.end.line,   character: r.end.character   }
+            },
+            offsetRange: {
+                start: document.offsetAt(r.start),
+                end: document.offsetAt(r.end)
+            },
+            kind: p.kind
+        }
     }
 }

@@ -14,7 +14,7 @@ import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
 import { determineProofStatus, getInputAreas } from "./qedStatus";
-import { convertToSimple, fileProgressNotificationType, goalRequestType, serverStatusNotificationType } from "./requestTypes";
+import { convertToSimple, executionInformationNotificationType, fileProgressNotificationType, goalRequestType, serverStatusNotificationType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
@@ -136,6 +136,25 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                 params.processing.forEach(fp => { fp.range = this.protocol2CodeConverter.asRange(fp.range) });
                 // notify each component
                 this.fileProgressComponents.forEach(c => c.onProgress(params));
+            }));
+
+            this.disposables.push(this.onNotification(executionInformationNotificationType, info => {
+                const document = this.activeDocument;
+                const webviewManager = this.webviewManager;
+
+                if (document === undefined || webviewManager === undefined) return;
+
+                const {start, end} = info.range;
+
+                // This is needed for some reason as just passing start to offsetAt gives a runtime error
+                const from = document.offsetAt(new Position(start.line, start.character));
+                const to = document.offsetAt(new Position(end.line, end.character));
+
+                webviewManager.postMessage(document.uri.toString(), {
+                        type: MessageType.executionInfo,
+                        body: { from, to }
+                    }
+                );
             }));
 
             this.disposables.push(languages.onDidChangeDiagnostics(e => {

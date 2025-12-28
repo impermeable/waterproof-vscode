@@ -11,87 +11,90 @@ import { HypVisibility } from "../../lib/types";
  * Available settings in the `waterproof` configuration section.
  */
 export enum WaterproofSetting {
-    TeacherMode,
-    DetailedErrorsMode,
-    ShowLineNumbersInEditor,
-    SkipLaunchChecks,
-    ShowMenuItemsInEditor,
-    EnforceCorrectNonInputArea,
-    EagerDiagnostics,
-    ShowWaterproofInfoMessages,
-    ShowNoticesAsDiagnostics,
-    MaxErrors,
-    SendDiagsExtraData,
-    GoalAfterTactic,
-    PpType,
-    VisibilityOfHypotheses,
-    TraceServer,
-    Debug,
-    Path,
-    Args,
     AdmitOnBadQed,
+    Args,
+    ContinuousChecking,
+    Debug,
+    DetailedErrorsMode,
+    EagerDiagnostics,
+    EnforceCorrectNonInputArea,
+    GoalAfterTactic,
+    LogDebugStatements,
+    MaxErrors,
+    Path,
+    PpType,
+    SendDiagsExtraData,
+    SendExecInfo,
+    ShowLineNumbersInEditor,
+    ShowMenuItemsInEditor,
+    ShowNoticesAsDiagnostics,
+    ShowWaterproofInfoMessages,
+    SkipLaunchChecks,
+    TeacherMode,
+    TraceServer,
     UnicodeCompletion,
     UpdateIgnores,
-    ContinuousChecking,
-    LogDebugStatements,
+    VisibilityOfHypotheses,
 }
 
 /**
  * Maps WaterproofSetting enum values to their string representation in the configuration.
  */
 export const WaterproofSettingMap: Record<WaterproofSetting, string> = {
-    [WaterproofSetting.TeacherMode]: "teacherMode",
-    [WaterproofSetting.DetailedErrorsMode]: "detailedErrorsMode",
-    [WaterproofSetting.ShowLineNumbersInEditor]: "showLineNumbersInEditor",
-    [WaterproofSetting.SkipLaunchChecks]: "skipLaunchChecks",
-    [WaterproofSetting.ShowMenuItemsInEditor]: "showMenuItemsInEditor",
-    [WaterproofSetting.EnforceCorrectNonInputArea]: "enforceCorrectNonInputArea",
-    [WaterproofSetting.EagerDiagnostics]: "eagerDiagnostics",
-    [WaterproofSetting.ShowWaterproofInfoMessages]: "showWaterproofInfoMessages",
-    [WaterproofSetting.ShowNoticesAsDiagnostics]: "showNoticesAsDiagnostics",
-    [WaterproofSetting.MaxErrors]: "maxErrors",
-    [WaterproofSetting.SendDiagsExtraData]: "sendDiagsExtraData",
-    [WaterproofSetting.GoalAfterTactic]: "goalAfterTactic",
-    [WaterproofSetting.PpType]: "ppType",
-    [WaterproofSetting.VisibilityOfHypotheses]: "visibilityOfHypotheses",
-    [WaterproofSetting.TraceServer]: "trace.server",
-    [WaterproofSetting.Debug]: "debug",
-    [WaterproofSetting.Path]: "path",
-    [WaterproofSetting.Args]: "args",
     [WaterproofSetting.AdmitOnBadQed]: "admitOnBadQed",
+    [WaterproofSetting.Args]: "args",
+    [WaterproofSetting.ContinuousChecking]: "ContinuousChecking",
+    [WaterproofSetting.Debug]: "debug",
+    [WaterproofSetting.DetailedErrorsMode]: "detailedErrorsMode",
+    [WaterproofSetting.EagerDiagnostics]: "eagerDiagnostics",
+    [WaterproofSetting.EnforceCorrectNonInputArea]: "enforceCorrectNonInputArea",
+    [WaterproofSetting.GoalAfterTactic]: "goalAfterTactic",
+    [WaterproofSetting.LogDebugStatements]: "LogDebugStatements",
+    [WaterproofSetting.MaxErrors]: "maxErrors",
+    [WaterproofSetting.Path]: "path",
+    [WaterproofSetting.PpType]: "ppType",
+    [WaterproofSetting.SendDiagsExtraData]: "sendDiagsExtraData",
+    [WaterproofSetting.SendExecInfo]: "sendExecutionInformation",
+    [WaterproofSetting.ShowLineNumbersInEditor]: "showLineNumbersInEditor",
+    [WaterproofSetting.ShowMenuItemsInEditor]: "showMenuItemsInEditor",
+    [WaterproofSetting.ShowNoticesAsDiagnostics]: "showNoticesAsDiagnostics",
+    [WaterproofSetting.ShowWaterproofInfoMessages]: "showWaterproofInfoMessages",
+    [WaterproofSetting.SkipLaunchChecks]: "skipLaunchChecks",
+    [WaterproofSetting.TeacherMode]: "teacherMode",
+    [WaterproofSetting.TraceServer]: "trace.server",
     [WaterproofSetting.UnicodeCompletion]: "unicodeCompletion",
     [WaterproofSetting.UpdateIgnores]: "updateIgnores",
-    [WaterproofSetting.ContinuousChecking]: "ContinuousChecking",
-    [WaterproofSetting.LogDebugStatements]: "LogDebugStatements",
+    [WaterproofSetting.VisibilityOfHypotheses]: "visibilityOfHypotheses",
 };
 
 /**
  * Maps WaterproofSetting enum values to their types.
  */
 type WaterproofSettingTypes = {
-    [WaterproofSetting.TeacherMode]: boolean;
-    [WaterproofSetting.DetailedErrorsMode]: boolean;
-    [WaterproofSetting.ShowLineNumbersInEditor]: boolean;
-    [WaterproofSetting.SkipLaunchChecks]: boolean;
-    [WaterproofSetting.ShowMenuItemsInEditor]: boolean;
-    [WaterproofSetting.EnforceCorrectNonInputArea]: boolean;
-    [WaterproofSetting.EagerDiagnostics]: boolean;
-    [WaterproofSetting.ShowWaterproofInfoMessages]: boolean;
-    [WaterproofSetting.ShowNoticesAsDiagnostics]: boolean;
-    [WaterproofSetting.MaxErrors]: number;
-    [WaterproofSetting.SendDiagsExtraData]: boolean;
-    [WaterproofSetting.GoalAfterTactic]: boolean;
-    [WaterproofSetting.PpType]: 0 | 1 | 2;
-    [WaterproofSetting.VisibilityOfHypotheses]: HypVisibility;
-    [WaterproofSetting.TraceServer]: "off" | "messages" | "verbose";
-    [WaterproofSetting.Debug]: boolean;
-    [WaterproofSetting.Path]: string;
-    [WaterproofSetting.Args]: string[];
     [WaterproofSetting.AdmitOnBadQed]: boolean;
+    [WaterproofSetting.Args]: string[];
+    [WaterproofSetting.ContinuousChecking]: boolean;
+    [WaterproofSetting.Debug]: boolean;
+    [WaterproofSetting.DetailedErrorsMode]: boolean;
+    [WaterproofSetting.EagerDiagnostics]: boolean;
+    [WaterproofSetting.EnforceCorrectNonInputArea]: boolean;
+    [WaterproofSetting.GoalAfterTactic]: boolean;
+    [WaterproofSetting.LogDebugStatements]: boolean;
+    [WaterproofSetting.MaxErrors]: number;
+    [WaterproofSetting.Path]: string;
+    [WaterproofSetting.PpType]: 0 | 1 | 2;
+    [WaterproofSetting.SendDiagsExtraData]: boolean;
+    [WaterproofSetting.SendExecInfo]: boolean;
+    [WaterproofSetting.ShowLineNumbersInEditor]: boolean;
+    [WaterproofSetting.ShowMenuItemsInEditor]: boolean;
+    [WaterproofSetting.ShowNoticesAsDiagnostics]: boolean;
+    [WaterproofSetting.ShowWaterproofInfoMessages]: boolean;
+    [WaterproofSetting.SkipLaunchChecks]: boolean;
+    [WaterproofSetting.TeacherMode]: boolean;
+    [WaterproofSetting.TraceServer]: "off" | "messages" | "verbose";
     [WaterproofSetting.UnicodeCompletion]: "off" | "normal" | "extended";
     [WaterproofSetting.UpdateIgnores]: boolean;
-    [WaterproofSetting.ContinuousChecking]: boolean;
-    [WaterproofSetting.LogDebugStatements]: boolean;
+    [WaterproofSetting.VisibilityOfHypotheses]: HypVisibility;
 };
 
 /**

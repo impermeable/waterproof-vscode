@@ -15,11 +15,25 @@ export const goalRequestType = new RequestType<GoalRequest, GoalAnswer<PpString>
  */
 export const fileProgressNotificationType = new NotificationType<CoqFileProgressParams>("$/coq/fileProgress");
 
+
+/**
+ * LSP notatification regarding the execution information of the current sentence.
+ */
+export const executionInformationNotificationType = new NotificationType<executionInformationParams>("$/coq/executionInformation");
+
 /**
  * Notification type for the coq-lsp specific `serverStatus` notification. Returns a `CoqServerStatus` object that
  * can be either Busy or Idle.
  */
 export const serverStatusNotificationType = new NotificationType<CoqServerStatus>("$/coq/serverStatus");
+
+/**
+ * Type of object returned by the execution information notification.
+ */
+export type executionInformationParams = {
+    textDocument: VersionedTextDocumentIdentifier;
+    range: Range;
+};
 
 export interface CoqFileProgressProcessingInfo {
     /** Range for which the processing info was reported. */

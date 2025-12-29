@@ -118,7 +118,7 @@ export function vFileParser(document: string): WaterproofDocument {
 			const range = { from: getRangeStart(), to: i };
 			const codeBlock = new CodeBlock(
 				document.slice(range.from, range.to),
-				range, range
+				range, range, 0
 			);
 			pushBlock(codeBlock);
 		}
@@ -144,7 +144,7 @@ export function vFileParser(document: string): WaterproofDocument {
             const innerRange = { from: getInnerRangeStart(), to: i };
 			const markdownBlock = new MarkdownBlock(
 				document.slice(innerRange.from, innerRange.to),
-				range, innerRange
+				range, innerRange, 0
 			);
 			pushBlock(markdownBlock);
 		}
@@ -155,7 +155,7 @@ export function vFileParser(document: string): WaterproofDocument {
 			const range = { from: getRangeStart(), to: i };
 			const mathBlock = new MathDisplayBlock(
 				document.slice(getRangeStart(), i),
-				range, range
+				range, range, 0
 			);
 			pushBlock(mathBlock);
 		}
@@ -197,6 +197,7 @@ export function vFileParser(document: string): WaterproofDocument {
 						document.slice(innerRange.from, innerRange.to),
 						hintTitle,
 						range, innerRange,
+						0,
 						innerBlocks
 					);
 					pushBlock(hintBlock);
@@ -217,6 +218,7 @@ export function vFileParser(document: string): WaterproofDocument {
 					const inputBlock = new InputAreaBlock(
 						document.slice(innerRange.from, innerRange.to),
 						range, innerRange,
+						0,
 						innerBlocks
 					);
 					pushBlock(inputBlock);
@@ -236,7 +238,7 @@ export function vFileParser(document: string): WaterproofDocument {
 							closeCode();
 							// create a newline block
 							const range = { from: i, to: i + 1 };
-							const newlineBlock = new NewlineBlock(range, range);
+							const newlineBlock = new NewlineBlock(range, range, 0);
 							pushBlock(newlineBlock);
 							i++;
 							setRangeStart();
@@ -274,7 +276,7 @@ export function vFileParser(document: string): WaterproofDocument {
 					i++;
 					// create a newline block
 					const range = { from: getRangeStart(), to: i };
-					const newlineBlock = new NewlineBlock(range, range);
+					const newlineBlock = new NewlineBlock(range, range, 0);
 					pushBlock(newlineBlock);
 				}
 				backToCode();

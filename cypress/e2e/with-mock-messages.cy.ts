@@ -53,15 +53,6 @@ const messages: Array<Message> = [
         "body": true
     },
     {
-        "type": MessageType.lineNumbers,
-        "body": {
-            "linenumbers": [
-                2
-            ],
-            "version": 1
-        }
-    },
-    {
         "type": MessageType.setAutocomplete,
         "body": []
     }

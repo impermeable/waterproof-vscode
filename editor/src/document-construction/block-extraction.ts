@@ -33,7 +33,7 @@ function extractInputBlocksMV(document: string) {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
         const innerRange = { from: range.from + inputAreaTagOpenLength, to: range.to - inputAreaTagCloseLength }
-        return new InputAreaBlock(input_area[1], range, innerRange, createInputAndHintInnerBlocks(input_area[1], innerRange));
+        return new InputAreaBlock(input_area[1], range, innerRange, 0, createInputAndHintInnerBlocks(input_area[1], innerRange));
     });
 
     return inputAreaBlocks;
@@ -61,7 +61,7 @@ function extractHintBlocksMV(document: string) {
         const title = hint[1];
         const range = { from: hint.index, to: hint.index + hint[0].length };
         const innerRange = { from: range.from + hintTagOpenLength + title.length, to: range.to - hintTagCloseLength };
-        return new HintBlock(hint[2], title, range, innerRange, createInputAndHintInnerBlocks(hint[2], innerRange));
+        return new HintBlock(hint[2], title, range, innerRange, 0, createInputAndHintInnerBlocks(hint[2], innerRange));
     });
 
     return hintBlocks;
@@ -78,7 +78,7 @@ export function extractMathDisplayBlocks(inputDocument: string, parentOffset: nu
         if (math.index === undefined) throw new Error("Index of math is undefined");
         const range = { from: math.index + parentOffset, to: math.index + math[0].length + parentOffset };
         const innerRange = { from: range.from + "$$".length, to: range.to - "$$".length}
-        return new MathDisplayBlock(math[1], range, innerRange);
+        return new MathDisplayBlock(math[1], range, innerRange, 0);
     });
     return mathDisplayBlocks;
 }
@@ -112,14 +112,14 @@ export function extractCoqBlocks(inputDocument: string, parentOffset: number = 0
         // Range of the inner content of the coq block, excluding the ```coq and ``` markers.
         const innerRange = {from: range.from + coqOpenLength, to: range.to - coqCloseLength };
 
-        const coqBlock = new CodeBlock(content, range, innerRange);
+        const coqBlock = new CodeBlock(content, range, innerRange, 0);
 
         if (newlineBefore && !newlineAfter) {
-            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}), coqBlock];
+            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, 0), coqBlock];
         } else if (!newlineBefore && newlineAfter) {
-            return [coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1})];
+            return [coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1}, 0)];
         } else if (newlineBefore && newlineAfter) {
-            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}), coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1})];
+            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, 0), coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1}, 0)];
         } else {
             return [coqBlock];
         }
@@ -138,7 +138,7 @@ export function extractMathDisplayBlocksCoqDoc(input: string): MathDisplayBlock[
         if (math.index === undefined) throw new Error("Index of math is undefined");
         const range = { from: math.index, to: math.index + math[0].length};
         const innerRange = { from: range.from + "$$".length, to: range.to - "$$".length};
-        return new MathDisplayBlock(math[1], range, innerRange);
+        return new MathDisplayBlock(math[1], range, innerRange, 0);
     });
     return mathDisplayBlocks;
 }

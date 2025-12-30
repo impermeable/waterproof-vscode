@@ -3,7 +3,7 @@ import { NotificationType, RequestType } from "vscode-languageclient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
 import { CoqServerStatus, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
-import { CoqFileProgressKind, SimpleProgressInfo } from "@impermeable/waterproof-editor";
+import { CoqFileProgressKind, SimpleProgressInfo } from "../../shared";
 
 /**
  * LSP request to obtain the goals at a specific point in the doc.

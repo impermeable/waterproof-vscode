@@ -65,5 +65,5 @@ export async function determineProofStatus(client: ICoqLspClient, document: Text
 
     // request goals and return conclusion based on them
     const response = await client.requestGoals(position.translate(0, -1));
-    return isComplete(response) ? InputAreaStatus.Proven : InputAreaStatus.Incomplete;
+    return isComplete(response) ? InputAreaStatus.Correct : InputAreaStatus.Incorrect;
 }

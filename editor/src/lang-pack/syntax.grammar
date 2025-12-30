@@ -1,0 +1,164 @@
+@top Program { Sentence* }
+
+Sentence {
+    Comment space | (( FocusOperation* WaterproofTactic | Vernac | Lemmas | Definitions ) ArgumentEnd)
+}
+
+@tokens {
+    space { @whitespace+ }
+    SentenceEnd { "." space | "." @eof }
+    Comment { "(*" ![*]* "*)" }
+}
+
+
+@local tokens {
+    ArgumentEnd[@name="p"] { space? SentenceEnd }
+    It { space "it" space }
+    As { space "as" space }
+    Both { space "both" space }
+    And { space "and" space }
+    Or { space "or" space }
+    In { space "in" space }
+    We { space "we" space }
+    All { space "All" }
+    That { space "that" space }
+    DefineSymbol { space ":=" space }
+    Magic { space "magic" }
+    SuchAn { space "such" (space "a" "n"?)? space }
+    AccordingTo {space "according" space "to" space}
+    @else Argument
+}
+
+Bullet { "+" | "*" | "-" }
+
+FocusBrace { "{" }
+
+UnfocusBrace { "}" }
+
+FocusOperation { (Bullet+ | FocusBrace | UnfocusBrace) space }
+
+Vernac {
+    Proof
+        { "Proof" }|
+    Qed
+        { "Qed" } |
+    Admitted
+        { "Admitted" } |
+    Defined
+        { "Defined" } |
+    RequireImport
+        { "Require" space "Import" Argument } |
+    Waterproof
+        { "Waterproof" Argument } |
+    SetDefault
+        { "Set" space "Default" Argument } |
+    OpenScope
+        { "Open" space "Scope" Argument } |
+    Notation
+        { "Notation" Argument } |
+    Section
+        { "Section" Argument } |
+    Variable
+        { "Variable" Argument } |
+    Parameter
+        { "Parameter" Argument } |
+    Check
+        { "Check" Argument } |
+    Hypothesis
+        { "Hypothesis" Argument } |
+    Module
+        { "Module" Argument} |
+    End
+        { "End" Argument}
+}
+
+LemmaKeyword {
+    Lemma
+        { "Lemma" } |
+    Theorem
+        { "Theorem" } |
+    Example
+        { "Example" }
+}
+
+DefinitionKeyword { 
+    Definition
+        { "Definition" } |
+    Inductive
+        { "Inductive" } |
+    Fixpoint
+        { "Fixpoint" }
+}
+
+Lemmas {
+    LemmaKeyword Argument
+}
+
+Definitions {
+    DefinitionKeyword Argument DefineSymbol Argument
+}
+
+WaterproofTactic {
+    Help
+        { "Help" } |
+    WeArgueByContradiction
+        { "We" space "argue" space "by" space "contradiction" } |
+    Contradiction
+        { "Contradiction" } |
+    WeShowBothStatements
+        { "We" space "show" space "both" space "statements" } |
+    WeShowBothDirections
+        { "We" space "show" space "both" space "directions" } |
+    WeNowShowTheInductionStep
+        { "We" space "now" space "show" space "the" space "induction" space "step" } |
+    Take
+        { "Take" Argument (And Argument)? } |
+    WeNeedToShow
+        { "We" space "need" space "to" space "show" That Argument } |
+    WeConclude
+        { "We" space "conclude" That Argument } |
+    Case
+        { "Case" Argument } |
+    Assume
+        { "Assume" That Argument (As Argument)* (And Argument (As Argument)?)? } |
+        // The above is not entirely semantic: the reason is that it may not be wise to
+        // give a special role to commas, as they may occur in Rocq terms
+    ItSufficesToShow
+        { "It" space "suffices" space "to" space "show" That Argument } |
+    ItHolds
+        { "It" space "holds" That Argument (As Argument)? } |
+    WeClaim
+        { "We" space "claim" That Argument } |
+    WeUseInductionOn
+        { "We" space "use" space "induction" space "on" Argument } |
+    Indeed
+        { "Indeed," Argument } |
+    Use
+        { "Use" Argument DefineSymbol Argument In Argument } |
+    Choose
+        { "Choose" Argument DefineSymbol Argument } |
+    WeFirstShowTheBaseCase
+        { "We" space "first" space "show" space "the" space "base" space "case" Argument } |
+    Expand
+        { "Expand" (All | Argument) } |
+    Obtain
+        { "Obtain" (Argument AccordingTo | SuchAn ) Argument } |
+    ByItHolds
+        { "By" (Magic | Argument (And Argument)?) It "holds" That Argument (As Argument)? } |
+    ByItSufficesToShow
+        { "By" (Magic | Argument (And Argument)?) It "suffices" space "to" space "show" That Argument } |
+    ByWeConclude
+        { "By" (Magic | Argument (And Argument)?) We "conclude" That Argument } |
+    Define
+        { "Define" Argument DefineSymbol Argument } |
+    Since
+        { "Since" Argument It "holds" That Argument (As Argument)? } |
+    Because
+        { "Because" Argument Both Argument (As Argument)? And Argument (As Argument)? } |
+    Either
+        { "Either" Argument Or Argument } |
+    WeNeedToVerify
+        { "We" space "need" space "to" space "verify" That Argument }
+}
+
+@detectDelim

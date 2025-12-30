@@ -9,7 +9,7 @@ import {
 } from "vscode-languageclient";
 
 import { CoqServerStatusToServerStatus, GoalAnswer, GoalRequest, PpString } from "../../lib/types";
-import { MessageType } from "../../shared";
+import { MessageType, SimpleProgressParams } from "../../shared";
 import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
@@ -17,7 +17,7 @@ import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { convertToSimple, fileProgressNotificationType, goalRequestType, serverStatusNotificationType } from "./requestTypes";
 import { SentenceManager } from "./sentenceManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
-import { SimpleProgressParams, OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
+import { OffsetDiagnostic, Severity, WaterproofCompletion, InputAreaStatus } from "@impermeable/waterproof-editor";
 
 interface TimeoutDisposable extends Disposable {
     dispose(timeout?: number): Promise<void>;
@@ -238,7 +238,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     const statuses = await Promise.all(inputAreas.map(a => {
                             if (this.viewPortBasedChecking && this.viewPortRange && a.intersection(this.viewPortRange) === undefined) {
                                 // This input area is outside of the range that has been checked and thus we can't determine its status
-                                return Promise.resolve(InputAreaStatus.NotInView);
+                                return Promise.resolve(InputAreaStatus.OutOfView);
                             } else {
                                 return determineProofStatus(this, document, a);
                             }

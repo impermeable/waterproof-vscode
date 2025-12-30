@@ -10,6 +10,7 @@ import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksMV } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
+import { highlight_dark, highlight_light, wpLanguageSupport } from "./lang-pack";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -58,6 +59,11 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
 		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq") : tagConfigurationV,
 		disableMarkdownFeatures: format === FileFormat.RegularV ? ["code"] : [],
+		languageConfig: {
+			highlightDark: highlight_dark,
+			highlightLight: highlight_light,
+			languageSupport: wpLanguageSupport
+		}
 	}
 
 	return cfg;
@@ -127,7 +133,7 @@ window.onload = () => {
 				break;
 			case MessageType.qedStatus:
 				{ const statuses = msg.body;  // one status for each input area, in order
-				editor.updateQedStatus(statuses);
+				editor.setInputAreaStatus(statuses);
 				break; }
 			case MessageType.setShowLineNumbers:
 				{ const show = msg.body;
@@ -145,16 +151,29 @@ window.onload = () => {
 				editor.updateLockingState(msg.body);
 				break;
 			case MessageType.progress:
-				{ const progressParams = msg.body;
-				editor.updateProgressBar(progressParams);
-				break; }
+				{
+					const {numberOfLines, progress} = msg.body;
+					const at = progress[0].range.start.line + 1;
+					if (at === numberOfLines) {
+						editor.reportProgress(at, numberOfLines, "File verified");
+					} else {
+						editor.reportProgress(at, numberOfLines, `Verified file up to line: ${at}`);
+					}
+					break;
+				}
 			case MessageType.diagnostics:
 				{ editor.setActiveDiagnostics(msg.body.positionedDiagnostics);
 				break; }
 			case MessageType.serverStatus:
-				{ const status = msg.body;
-				editor.updateServerStatus(status);
-				break; }
+				{
+					const {status} = msg.body;
+					if (status === "Busy") {
+						editor.startSpinner();
+					} else {
+						editor.stopSpinner();
+					}
+					break;
+				}
 			case MessageType.themeUpdate:
 				editor.updateNodeViewThemes(msg.body);
 				break;

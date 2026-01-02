@@ -1,9 +1,11 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
-import React, { useState } from 'react';
-import { MessageType } from '../../shared';
+import React, { useState, useEffect} from 'react';
+import { Message, MessageType } from '../../shared';
 
-// Import the JSON data containing the tactics
-import data from "../../completions/tactics.json";
+// Import the JSON data containing the Coq tactics
+import dataCoq from "../../completions/tactics.json";
+// Import the new JSON data for Lean tactics
+import dataLean from "../../completions/tacticsLean.json";
 
 import '../styles/tactics.css';
 
@@ -11,11 +13,41 @@ const vscode = acquireVsCodeApi();
 
 const ProofAssistant = () => {
     // State variable to track tactic visibility
-    const [tacticVisibility, setTacticVisibility] = useState({});
+    const [tacticVisibility, setTacticVisibility] = useState<Record<string, boolean>>({});
     const [value, setValue] = useState("");
 
+    // State for the currently active tactics data (default to Coq)
+    const [tacticsData, setTacticsData] = useState(dataCoq);
+
+    // Listen for messages from the extension
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            const message = event.data as Message;
+            if (message.type === MessageType.setTacticsMode) {
+                if (message.body === 'lean') {
+                    setTacticsData(dataLean);
+                } else {
+                    setTacticsData(dataCoq);
+                }
+                // Reset search and visibility when switching modes
+                setTacticVisibility({});
+                setValue(""); 
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        // Request the current tactics mode immediately upon mounting
+        vscode.postMessage({ 
+            type: MessageType.command, 
+            body: { command: "getTacticsMode", time: Date.now() } 
+        });
+
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
     // Function to toggle tactic visibility
-    const toggleVisibility = (tacticName) => {
+    const toggleVisibility = (tacticName: string) => {
         setTacticVisibility((prevState) => ({
             ...prevState,
             [tacticName]: !prevState[tacticName],
@@ -23,19 +55,19 @@ const ProofAssistant = () => {
     };
 
     //handle button press of inserting a tactic
-    const handleInsert = (event, template) => {
+    const handleInsert = (event: React.MouseEvent, template: string) => {
         // log the name of the tactic
         vscode.postMessage({ time: Date.now(), type: MessageType.insert, body: { symbolLatex: template, symbolUnicode: template, type: "tactics" } });
     };
 
     //handle button press of copying a tactic to the clipboard
-    const handleCopy = (event, name) => {
+    const handleCopy = (event: React.MouseEvent, name: string) => {
         // put the tactic on the clipboard
         navigator.clipboard.writeText(name);
     };
 
     // Function to generate code for each tactic
-    const generateCode = (tactic) => {
+    const generateCode = (tactic: any) => {
         const { label, description, example, template } = tactic;
         // FIXME: 
         const name = label;
@@ -75,7 +107,7 @@ const ProofAssistant = () => {
         );
     };
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === 'Enter' && event.shiftKey) {
             // Handle Shift + Enter key press logic here
             // Prevent adding a new line in the textarea
@@ -84,7 +116,7 @@ const ProofAssistant = () => {
     };
 
     // If text get added, filter
-    const handleChange = (event) => {
+    const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setValue(event.target.value);
     };
 
@@ -103,9 +135,10 @@ const ProofAssistant = () => {
                 onChange={handleChange}
                 onClick={handleClick} />
         </div><div className="proof-assistant">
-                {/* here we filter the data */}
-                {data.filter(item => item.label.toLowerCase().includes(value.toLowerCase())).map((tactic) => generateCode(tactic))}
-            </div></>);
+                {/* here we filter the data based on the active tacticsData */}
+                {tacticsData.filter(item => item.label.toLowerCase().includes(value.toLowerCase())).map((tactic) => generateCode(tactic))}
+            </div></>
+        );
 };
 
 export default ProofAssistant;

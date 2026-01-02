@@ -8,45 +8,30 @@ import {
 import { Disposable } from "vscode-languageclient";
 import { Message } from "../../shared";
 
-/**
- * Defines the states of the webview
- */
-
 export enum WebviewState {
-    /** Closed and can't be made visible (i.e., any interaction is ignored). */
     closed = "closedWebview",
-    /** Closed but can be made visible. */
     ready = "readyWebview",
-    /** Open but not visible. For example, it's a hidden editor tab. */
     open = "openWebview",
-    /** Open and visible. */
     visible = "visibleWebview",
-    /** Open and primary selected. Only used for communication, never set as actual state. */
     focus = "focusWebview",
 }
 
-/**
- * Events emitted by Webview
- */
 export enum WebviewEvents {
-    change = "changedState",  // Webview change notification
+    change = "changedState",
     message = "receivedMessage",
     dispose = "disposedView",
-    finishUpdate = "finishedUpdating", // Webviews in charge of doc changes
+    finishUpdate = "finishedUpdating",
 }
 
-/**
- * This is the abstract webview class: it has four states.
- * It's only for UI webviews, not the editor.
- */
 export abstract class CoqWebview extends EventEmitter implements Disposable {
-    private _panel: WebviewPanel | null = null;
-    private extensionUri: Uri;
-    private _state: WebviewState;
-    private name: string;
-    /** Whether the webview contains an input field. */
+    // CHANGED: private -> protected
+    protected _panel: WebviewPanel | null = null;
+    protected extensionUri: Uri;
+    protected _state: WebviewState;
+    protected name: string;
+    
     private readonly _supportInsert: boolean;
-    private disposables: Disposable[] = [];
+    protected disposables: Disposable[] = [];
 
     constructor(extensionUri: Uri, name: string, supportInsert: boolean = false) {
         super();
@@ -78,33 +63,33 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         }
     }
 
+    // CHANGED: protected visibility to allow override
     protected create() {
-        if (this.state != WebviewState.ready) return; // Error handling
+        if (this.state != WebviewState.ready) return;
 
         const webviewOpts = { enableScripts: true, enableFindWidget: false };
-        if (this.name == "help") {
-            this._panel = window.createWebviewPanel(
-                this.name,
-                "Help",
-                { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts
-            );
-        } else if (this.name == "search") {
-            this._panel = window.createWebviewPanel(
-                this.name,
-                "Search",
-                { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts
-            );
-        } else {
-            this._panel = window.createWebviewPanel(
-                this.name,
-                this.name.charAt(0).toUpperCase() + this.name.slice(1),
-                { preserveFocus: true, viewColumn: ViewColumn.Two },
-                webviewOpts,
-            );
-        }
-
+        // if (this.name == "help") {
+        //     this._panel = window.createWebviewPanel(
+        //         this.name,
+        //         "Help",
+        //         { preserveFocus: true, viewColumn: ViewColumn.Two },
+        //         webviewOpts
+        //     );
+        // } else if (this.name == "search") {
+        //     this._panel = window.createWebviewPanel(
+        //         this.name,
+        //         "Search",
+        //         { preserveFocus: true, viewColumn: ViewColumn.Two },
+        //         webviewOpts
+        //     );
+        // } else {
+        this._panel = window.createWebviewPanel(
+            this.name,
+            this.name.charAt(0).toUpperCase() + this.name.slice(1),
+            { preserveFocus: true, viewColumn: ViewColumn.Two },
+            webviewOpts,
+        );
+        // }
 
         this._panel.onDidChangeViewState((e) => {
             if(e.webviewPanel.active) this.emit(WebviewEvents.change, WebviewState.focus);
@@ -127,55 +112,65 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             Uri.joinPath(this.extensionUri, "out", "views", this.name, "index.js")
         );
 
-        this._panel.webview.html = `
+        if (this.name == "infoview") {
+            const distBase = this._panel.webview.asWebviewUri(
+                Uri.joinPath(this.extensionUri, "node_modules", "@leanprover", "infoview", "dist")
+            );
+            const libPostfix = `.production.min.js`
+            this._panel.webview.html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8" />
+                <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+                <title>Infoview</title>
+                <link rel="stylesheet" href="${distBase}/index.css">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script
+                    data-importmap-leanprover-infoview="${distBase}/index${libPostfix}"
+                    data-importmap-react="${distBase}/react${libPostfix}"
+                    data-importmap-react-jsx-runtime="${distBase}/react-jsx-runtime${libPostfix}"
+                    data-importmap-react-dom="${distBase}/react-dom${libPostfix}"
+                    src="${scriptUri}"></script>
+            </body>
+            </html>`
+        } else {
+            this._panel.webview.html = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link rel="stylesheet" type="text/css" href="${styleUri}">
-                <script src="${scriptUri}" type="module"></script>
-                <title>Coq's info panel</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" type="text/css" href="${styleUri}">
+            <script src="${scriptUri}" type="module"></script>
+            <title>Coq's info panel</title>
             </head>
             <body>
                 <div id="root"></div>
             </body>
             </html>
-        `;
-
+            `;
+        }
 
         this.disposables.push(this._panel.onDidDispose(() => {
-            // Once the panel has been disposed (for example when the user has closed the panel), we close (in terms of state) it here.
             this.closePanel();
         }));
     }
 
-    /**
-     * Closes the panel
-     */
     private closePanel() {
-        // Update the state to closed
         this.changeState(WebviewState.closed);
-        // Remove the webview panel instance
         this._panel = null;
     }
 
-    /**
-     * Helper function to allow for proper state transitions
-     *
-     * @param next next webviewstate
-     */
     private changeState(next: WebviewState) {
         if (next === this._state) return;
-        const prev = this._state;
         this._state = next;
-        this.emit(WebviewEvents.change, prev);
-
+        // Emit the new state so listeners see the current lifecycle stage
+        this.emit(WebviewEvents.change, next);
     }
 
-    /**
-     * Activate the panel if possible
-     */
     public activatePanel() {
         if (this.state == WebviewState.ready) {
             this.create();
@@ -183,45 +178,31 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
         }
     }
 
-    /**
-     * Reveal the panel if possible
-     */
     public revealPanel() {
         if (!this._panel?.visible) {
             this._panel?.reveal(ViewColumn.Two);
         }
     }
 
-    /**
-     * Deactivate the panel
-     */
     public deactivatePanel() {
         this._panel?.dispose();
         this.closePanel();
     }
 
-    /**
-     * Change the panel state to the ready state
-     */
     public readyPanel() {
-        if(this._state != WebviewState.closed) return;
+        if (this._state != WebviewState.closed) return;
         this.changeState(WebviewState.ready);
     }
 
-    /**
-     * Attempts to post a message to the webview, will result in a failure
-     * if the webview is not visible
-     *
-     * @param type type of message (as in ./shared/Messages.ts)
-     * @param params body of message
-     * @returns boolean on whether message was sent successfully
-     */
-    public postMessage(msg: Message) : boolean {
+    public postMessage(msg: Message): boolean {
+        // CHANGED: Guard against posting to a non-existent panel to avoid corrupting state
+        if (!this._panel) {
+            return false;
+        }
         if (this.state != WebviewState.visible) {
             this.changeState(WebviewState.visible);
         }
-        this._panel?.webview.postMessage(msg);
+        this._panel.webview.postMessage(msg);
         return true;
     }
-
 }

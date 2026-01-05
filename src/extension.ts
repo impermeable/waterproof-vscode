@@ -283,7 +283,10 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Request the goals for the current document and cursor position.
+     * Returns the goals at the position of the user cursor.
+     * - `currentGoal`: String representation of the the current goal.
+     * - `hypotheses`: Array of objects containing a name and content of the hypotheses.
+     * - `otherGoals`: Other remaining goals in open proofs.
      */
     public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
         if (!this.client.activeDocument || !this.client.activeCursorPosition) { throw new Error("No active document or cursor position."); }
@@ -307,7 +310,8 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Get the currently active document in the editor.
+     * Returns the `TextDocument` object of the open document in which the user cursor
+     * is located.
      */
     public currentDocument(): TextDocument {
         if (!this.client.activeDocument) { throw new Error("No active document."); }
@@ -315,7 +319,7 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Executes the Help command at the cursor position and returns the output.
+     * Executes the `Help.` command at the cursor position and returns the output as an array of strings.
      */
     public async help(): Promise<Array<string>> {
         // Execute command
@@ -326,7 +330,7 @@ export class Waterproof implements Disposable {
 
     /**
      * Executes a command at the cursor position and returns the full output including messages,
-     * goals, goal stack, etc.
+     * goals, goal stack, etc. See {@linkcode GoalConfig} and {@linkcode RunResult} for more details.
      */
     public async execCommand(cmd: string): Promise<GoalConfig<string> & RunResult<number>> {
         // Execute command and return output
@@ -416,8 +420,7 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Returns the cursor position known by the client.
-     * @returns The cursor position as stored in the client. `undefined` if there is none.
+     * Returns the cursor position known by the extension or `undefined` if there is none.
      */
     public cursorPosition(): Position | undefined {
         return this.client.activeCursorPosition;

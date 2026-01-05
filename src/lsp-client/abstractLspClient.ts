@@ -38,7 +38,6 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
 
             // send diagnostics to editor (for squiggly lines)
             this.middleware.handleDiagnostics = (uri, diagnostics_) => {
-
                 const diagnostics = (diagnostics_ as WpDiagnostic[]);
                 this.diagnosticsCollection.set(uri, diagnostics.map(d => {
                     const start = d.data?.sentenceRange?.start ?? d.range.start;
@@ -98,7 +97,7 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
          * Returns the notification method name for viewport hints.
          * Subclasses must override this to provide the correct notification name.
          */
-        abstract getViewportNotificationName(): string;
+        // abstract getViewportNotificationName(): string;
 
         async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
             if (!(this as any).isRunning()) return;

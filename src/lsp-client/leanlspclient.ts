@@ -35,13 +35,14 @@ interface PlainGoal {
 
 type PlainGoalResult = PlainGoal | null;
 
-export class LeanLspClient extends (Mixed as any) {
+export class LeanLspClient extends (Mixed) {
   private readonly context: ExtensionContext;
 
   private _patchedSendNotification = false;
 
   private didChangeEmitter = new EventEmitter<any>();
   private didCloseEmitter = new EventEmitter<any>();
+  private diagnosticsEmitter = new EventEmitter();
 
   public didChange(cb: (params: any) => void): Disposable {
     return this.didChangeEmitter.event(cb);
@@ -71,10 +72,10 @@ export class LeanLspClient extends (Mixed as any) {
   private ensureServerHook(method: string) {
     if (this._serverHooked.has(method)) return;
     this._serverHooked.add(method);
-
-    (this as any).onNotification(method, (params: any) => {
-      this._serverEmitters.get(method)?.fire(params);
-    });
+    // FIX: move this firing to middleware.handleDiagnostics
+    // (this as any).onNotification(method, (params: any) => {
+    //   this._serverEmitters.get(method)?.fire(params);
+    // });
   }
 
   public diagnostics(cb: (params: any) => void): Disposable {
@@ -422,25 +423,26 @@ export async function activateLeanClient(
 
     leanDebugOutput.appendLine("[LeanLspClient] ready (state=Running)");
 
-    (leanClientInstance as any).onNotification(
-      "window/logMessage",
-      (msg: any) => {
-        leanDebugOutput.appendLine(
-          `[server window/logMessage] ${JSON.stringify(msg)}`
-        );
-      }
-    );
-    (leanClientInstance as any).onNotification(
-      "textDocument/publishDiagnostics",
-      (p: any) => {
-        leanDebugOutput.appendLine(`[diagnostics] ${JSON.stringify(p)}`);
-      }
-    );
-    (leanClientInstance as any).onNotification("$/progress", (p: any) => {
-      leanDebugOutput.appendLine(`[progress] ${JSON.stringify(p)}`);
-    });
+  
+    // (leanClientInstance as any).onNotification(
+    //   "window/logMessage",
+    //   (msg: any) => {
+    //     leanDebugOutput.appendLine(
+    //       `[server window/logMessage] ${JSON.stringify(msg)}`
+    //     );
+    //   }
+    // );
+    // (leanClientInstance as any).onNotification(
+    //   "textDocument/publishDiagnostics",
+    //   (p: any) => {
+    //     leanDebugOutput.appendLine(`[diagnostics] ${JSON.stringify(p)}`);
+    //   }
+    // );
+    // (leanClientInstance as any).onNotification("$/progress", (p: any) => {
+    //   leanDebugOutput.appendLine(`[progress] ${JSON.stringify(p)}`);
+    // });
 
-    clientRunning = true;
+    // clientRunning = true;
   } catch (err) {
     leanDebugOutput.appendLine(`[LeanLspClient] start failed: ${String(err)}`);
   }

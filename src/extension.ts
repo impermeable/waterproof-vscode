@@ -51,8 +51,6 @@ import {
 import {
     activateLeanClient,
     deactivateLeanClient,
-    getLeanInstance,
-    isLeanClientRunning,
     LeanLspClient,
     restartLeanClient,
 } from "./lsp-client/leanlspclient";

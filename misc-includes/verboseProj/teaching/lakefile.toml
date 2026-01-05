@@ -1,0 +1,11 @@
+name = "teaching"
+version = "0.1.0"
+defaultTargets = ["Teaching"]
+
+[[lean_lib]]
+name = "Teaching"
+
+[[require]]
+name = "verbose"
+git = "https://github.com/PatrickMassot/verbose-lean4.git"
+rev = "master"

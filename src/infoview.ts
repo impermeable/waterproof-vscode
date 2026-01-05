@@ -164,9 +164,9 @@ export class InfoProvider implements Disposable {
         return h;
     }
 
-    private handleClientNotification(client: LeanLspClient, method: string, params: any) {
-        this.rpc?.notify?.('clientNotification', { method, params })
-    }
+    // private handleClientNotification(client: LeanLspClient, method: string, params: any) {
+    //     this.rpc?.notify?.('clientNotification', { method, params })
+    // }
 
     private editorApi: EditorApi = {
         saveConfig: async (config: InfoviewConfig) => {

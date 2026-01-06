@@ -8,8 +8,6 @@ type TokenKind =
     | 'InputOpen'
     | 'HintOpen'
     | 'Close'
-    | 'MultileanOpen'
-    | 'OuterClose'
     | 'MathInline'
     | 'MathOpen'
     | 'MathClose'
@@ -20,11 +18,9 @@ const regexes: [RegExp, TokenKind][] = [
     [/^[\s\S]*#doc .*? =>\n/, 'Preamble'],
     [/(?<=\n)```lean\n/, 'CodeOpen'],
     [/\n```(?=\n|$)/, 'CodeClose'],
-    [/(?<=\n):::input(?=\n)/, 'InputOpen'],
+    [/(?<=\n):::input\n/, 'InputOpen'],
     [/(?<=\n):::hint "([\s\S]*?)"(?=\n)/, 'HintOpen'],
-    [/(?<=\n):::(?=\n|$)/, 'Close'],
-    [/::::multilean(?=\n)/, 'MultileanOpen'],
-    [/\n::::(?=\n|$)/, 'OuterClose'],
+    [/\n:::(?=\n|$)/, 'Close'],
     [/\$`[\s\S]*?`/, 'MathInline'],
     [/\$\$`/, 'MathOpen'],
     [/`/, 'MathClose'],
@@ -69,8 +65,8 @@ function expect(token: Token | undefined, kinds?: TokenKind[]): Token {
 function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     const isSignificantNewline = (token: Token) =>
         token.kind === 'Newline'
-        && (isOneOf(token.prev, ['Close', 'OuterClose'])
-            || isOneOf(token.next, ['CodeOpen', 'InputOpen', 'HintOpen', 'MultileanOpen']));
+        && (isOneOf(token.prev, ['Close'])
+            || isOneOf(token.next, ['CodeOpen', 'InputOpen', 'HintOpen']));
 
     if (token.kind === 'Preamble') {
         const range = { from: token.from, to: token.to };
@@ -85,7 +81,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         blocks.push(new NewlineBlock(range, range));
 
         return token.next;
-    } else if (token.kind === 'Text' || token.kind === 'Newline') {
+    } else if (token.kind === 'Text' || token.kind === 'Newline' || token.kind === 'MathInline') {
         // concatenate following inline math, text, and newlines
         let head: Token = token;
         while (head.next
@@ -134,13 +130,6 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
             blocks.push(new InputAreaBlock(content, range, innerRange, innerBlocks));
         }
 
-        return head.next;
-    } else if (token.kind === 'MultileanOpen') {
-        // parse everything to the corresponding close
-        let head = expect(token.next);
-        while (head.kind !== 'OuterClose') {
-            head = expect(handle(doc, head, blocks));
-        }
         return head.next;
     } else if (token.kind === 'MathOpen') {
         let head = token;

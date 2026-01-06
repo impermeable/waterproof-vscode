@@ -1,14 +1,15 @@
-import { TagConfiguration, DocumentSerializer, DefaultTagSerializer, Node } from "@impermeable/waterproof-editor";
+import { DocumentSerializer, DefaultTagSerializer, Node } from "@impermeable/waterproof-editor";
+import { tagConfigurationLean } from "./leanFileConfiguration";
 
 type Neighborhood = {nodeAbove: string | null, nodeBelow: string | null}
 
 export class LeanSerializer extends DocumentSerializer {
     private tagSerializer: DefaultTagSerializer;
 
-    constructor(tagConf: TagConfiguration) {
+    constructor() {
         super();
 
-        this.tagSerializer = new DefaultTagSerializer(tagConf);
+        this.tagSerializer = new DefaultTagSerializer(tagConfigurationLean);
     }
 
     serializeHint(

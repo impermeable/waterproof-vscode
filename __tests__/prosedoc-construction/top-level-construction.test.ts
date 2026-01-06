@@ -1,8 +1,9 @@
 /* eslint-disable no-useless-escape */
 // Disable due to latex code in sample data
 
-import { BlockRange, MarkdownBlock, typeguards } from "@impermeable/waterproof-editor";
+import { BlockRange, MarkdownBlock, typeguards, constructDocument } from "@impermeable/waterproof-editor";
 import { topLevelBlocksMV, topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
+import { LeanSerializer } from "../../editor/src/leanSerializer";
 
 const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">
@@ -181,34 +182,30 @@ Goal True.
 
 test("Parse top level blocks (Lean)", () => {
     const blocks = topLevelBlocksLean(inputDocumentLean);
-    console.log(blocks);
-    expect(blocks.length).toBe(11);
+    expect(blocks.length).toBe(10);
 
-    const [preamble, md1, nl1, nl2, code, nl3, input, nl4, md2, math, md3] = blocks;
+    const [preamble, md1, nl1, code, nl2, input, nl3, md2, math, md3] = blocks;
 
     expect(typeguards.isHintBlock(preamble)).toBe(true);
     expect(preamble.stringContent).toBe("import Some.Library\n#doc (Genre) \"Title\" =>\n");
 
     expect(typeguards.isMarkdownBlock(md1)).toBe(true);
-    expect(md1.stringContent).toBe("# A Header")
+    expect(md1.stringContent).toBe("# A Header\n::::multilean")
 
-    // this newline is here due to a multilean block
     expect(typeguards.isNewlineBlock(nl1)).toBe(true);
-
-    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
 
     expect(typeguards.isCodeBlock(code)).toBe(true);
     expect(code.stringContent).toBe("def fortyTwo :=\n  30 +")
 
-    expect(typeguards.isNewlineBlock(nl3)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
 
     expect(typeguards.isInputAreaBlock(input)).toBe(true);
-    expect(input.stringContent).toBe("\n```lean\n  12\n```\n");
+    expect(input.stringContent).toBe("```lean\n  12\n```");
 
-    expect(typeguards.isNewlineBlock(nl4)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl3)).toBe(true);
 
     expect(typeguards.isMarkdownBlock(md2)).toBe(true);
-    expect(md2.stringContent).toBe("## Markdown Content\n");
+    expect(md2.stringContent).toBe("::::\n## Markdown Content\n");
 
     expect(typeguards.isMathDisplayBlock(math)).toBe(true);
     expect(math.stringContent).toBe("x^2 + y = z");
@@ -216,4 +213,11 @@ test("Parse top level blocks (Lean)", () => {
     expect(typeguards.isMarkdownBlock(md3)).toBe(true);
     expect(md3.stringContent)
         .toBe("\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n");
+})
+
+test("Parse and serialize document (Lean)", () => {
+    const doc = constructDocument(topLevelBlocksLean(inputDocumentLean));
+    const out = new LeanSerializer().serializeDocument(doc);
+
+    expect(out).toBe(inputDocumentLean);
 })

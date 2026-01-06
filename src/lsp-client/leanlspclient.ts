@@ -8,6 +8,7 @@ import {
   Position,
   OutputChannel,
   languages,
+  Range
 } from "vscode";
 import { Trace } from "vscode-languageclient/node";
 import {
@@ -22,6 +23,7 @@ import { WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient, Middleware } from "vscode-languageclient";
 import { WebviewManager } from "../webviewManager";
+import { WpDiagnostic } from "./clientTypes";
 
 type LC = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & {
   dispose(timeout?: number): Promise<void>;
@@ -144,6 +146,11 @@ export class LeanLspClient extends (Mixed) {
     );
     this.context = context;
     this.diagnosticsCollection = languages.createDiagnosticCollection("lean4");
+    
+    //(this as any).onNotification(this.processDiagnostics, (params: any) => {
+      //this._serverEmitters.get("processDiagnostics")?.fire(params);
+    //});
+    
     this.patchSendNotificationOnce();
     (this as any).trace = Trace.Verbose;
     (this as any).setTrace?.(Trace.Verbose);

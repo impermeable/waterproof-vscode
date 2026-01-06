@@ -2,32 +2,17 @@ import {
     EditorApi,
     InfoviewApi,
     InfoviewConfig,
-    LeanFileProgressParams,
     RpcConnected,
     RpcConnectParams,
     RpcErrorCode,
     RpcKeepAliveParams,
-    ServerStoppedReason,
-    TextInsertKind,
 } from '@leanprover/infoview-api'
 import { Rpc } from './helpers/rpc';
-import { Message, MessageType } from '../shared';
+import { MessageType } from '../shared';
 import {
-    commands,
     ConfigurationTarget,
-    Diagnostic,
     Disposable,
     env,
-    ExtensionContext,
-    Position,
-    Range,
-    Selection,
-    TextDocument,
-    TextEditor,
-    TextEditorRevealType,
-    Uri,
-    WebviewPanel,
-    window,
     workspace,
 } from 'vscode'
 import { LeanLspClient } from './lsp-client/leanlspclient';
@@ -158,9 +143,10 @@ export class InfoProvider implements Disposable {
     }
 
     private subscribeCustomNotification(client: LeanLspClient, method: string) {
-        const h = client.customNotificationFor(method, params => {
-            void this.api?.gotServerNotification?.(method, params);
-        });
+        const h = client.customNotification(({ method: thisMethod, params }) => {
+            if (thisMethod !== method) return
+            void this.api?.gotServerNotification(method, params)
+        })
         return h;
     }
 

@@ -16,6 +16,7 @@ import {
   LanguageClientOptions,
   ServerOptions,
 } from "vscode-languageclient/node";
+import { WpDiagnostic } from "./clientTypes";
 import { AbstractLspClient } from "./abstractLspClient";
 import { GoalAnswer, GoalConfig, GoalRequest, PpString } from "../../lib/types";
 import { WaterproofLogger as wpl } from "../helpers";
@@ -23,7 +24,7 @@ import { WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, FeatureClient, Middleware } from "vscode-languageclient";
 import { WebviewManager } from "../webviewManager";
-import { WpDiagnostic } from "./clientTypes";
+
 
 type LC = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & {
   dispose(timeout?: number): Promise<void>;
@@ -40,67 +41,30 @@ type PlainGoalResult = PlainGoal | null;
 export class LeanLspClient extends (Mixed) {
   private readonly context: ExtensionContext;
 
-  private _patchedSendNotification = false;
 
+
+  // Emitters for infoview
   private didChangeEmitter = new EventEmitter<any>();
-  private didCloseEmitter = new EventEmitter<any>();
-  private diagnosticsEmitter = new EventEmitter();
-
   public didChange(cb: (params: any) => void): Disposable {
     return this.didChangeEmitter.event(cb);
   }
+
+  private didCloseEmitter = new EventEmitter<any>();
   public didClose(cb: (params: any) => void): Disposable {
     return this.didCloseEmitter.event(cb);
   }
 
-  private patchSendNotificationOnce() {
-    if (this._patchedSendNotification) return;
-    this._patchedSendNotification = true;
-
-    const orig = (this as any).sendNotification.bind(this);
-
-    (this as any).sendNotification = async (method: string, params: any) => {
-      // outgoing LSP notifications
-      if (method === "textDocument/didChange") this.didChangeEmitter.fire(params);
-      if (method === "textDocument/didClose") this.didCloseEmitter.fire(params);
-
-      return orig(method, params);
-    };
-  }
-
-  private readonly _serverEmitters = new Map<string, EventEmitter<any>>();
-  private readonly _serverHooked = new Set<string>();
-
-  private ensureServerHook(method: string) {
-    if (this._serverHooked.has(method)) return;
-    this._serverHooked.add(method);
-    // FIX: move this firing to middleware.handleDiagnostics
-    // (this as any).onNotification(method, (params: any) => {
-    //   this._serverEmitters.get(method)?.fire(params);
-    // });
-  }
-
+  private diagnosticsEmitter = new EventEmitter<any>();
   public diagnostics(cb: (params: any) => void): Disposable {
-    const method = "textDocument/publishDiagnostics";
-    let em = this._serverEmitters.get(method);
-    if (!em) {
-      em = new EventEmitter<any>();
-      this._serverEmitters.set(method, em);
-    }
-    this.ensureServerHook(method);
-    return em.event(cb);
+    return this.diagnosticsEmitter.event(cb);
   }
 
-  public customNotificationFor(method: string, cb: (params: any) => void): Disposable {
-    let em = this._serverEmitters.get(method);
-    if (!em) {
-      em = new EventEmitter<any>();
-      this._serverEmitters.set(method, em);
-    }
-    this.ensureServerHook(method);
-    return em.event(cb);
-  }
+  private customNotificationEmitter = new EventEmitter<{ method: string; params: any }>()
 
+  /** Fires whenever a custom notification (i.e. one not defined in LSP) is received. */
+  public customNotification(cb: (params: any) => void): Disposable {
+    return this.customNotificationEmitter.event(cb);
+  }
 
   constructor(
     context: ExtensionContext,
@@ -146,14 +110,41 @@ export class LeanLspClient extends (Mixed) {
     );
     this.context = context;
     this.diagnosticsCollection = languages.createDiagnosticCollection("lean4");
-    
-    //(this as any).onNotification(this.processDiagnostics, (params: any) => {
-      //this._serverEmitters.get("processDiagnostics")?.fire(params);
-    //});
-    
-    this.patchSendNotificationOnce();
     (this as any).trace = Trace.Verbose;
     (this as any).setTrace?.(Trace.Verbose);
+
+    // send diagnostics to editor (for squiggly lines)
+    this.middleware.handleDiagnostics = (uri, diagnostics_, next) => {
+      const diagnostics = (diagnostics_ as WpDiagnostic[])
+      console.log("[LEAN DIAGS]");
+      console.log(diagnostics_);
+
+      this.diagnosticsCollection.set(uri, diagnostics.map(d => {
+        const start = d.data?.sentenceRange?.start ?? d.range.start;
+        const end = d.data?.sentenceRange?.end ?? d.range.end;
+        return {
+          message: d.message,
+          severity: d.severity,
+          range: new Range(start, end),
+        };
+      }))
+
+      // diagnostics formatting for infoview
+      const c2p = this.code2ProtocolConverter;
+      const uri_ = c2p.asUri(uri);
+
+      const infoviewDiagnostics = diagnostics.map(d => ({
+        ...c2p.asDiagnostic(d),
+        ...(d.data?.sentenceRange
+          ? { range: { start: d.data.sentenceRange.start, end: d.data.sentenceRange.end } }
+          : {})
+      }));
+
+      this.diagnosticsEmitter.fire({ uri: uri_, diagnostics: infoviewDiagnostics });
+
+      // Possibly not needed?
+      next(uri, diagnostics_);
+    };
   }
 
   createGoalsRequestParameters(
@@ -309,7 +300,11 @@ export class LeanLspClient extends (Mixed) {
     }));
 
     await super.startWithHandlers(webviewManager);
-    this.patchSendNotificationOnce();
+    // Add special handling of custom notifications
+    const starHandler = (method: string, params_: any) => {
+      this.customNotificationEmitter.fire({ method, params: params_ })
+    }
+    this.onNotification(starHandler as any, () => { })
   }
 
 
@@ -429,27 +424,6 @@ export async function activateLeanClient(
     });
 
     leanDebugOutput.appendLine("[LeanLspClient] ready (state=Running)");
-
-  
-    // (leanClientInstance as any).onNotification(
-    //   "window/logMessage",
-    //   (msg: any) => {
-    //     leanDebugOutput.appendLine(
-    //       `[server window/logMessage] ${JSON.stringify(msg)}`
-    //     );
-    //   }
-    // );
-    // (leanClientInstance as any).onNotification(
-    //   "textDocument/publishDiagnostics",
-    //   (p: any) => {
-    //     leanDebugOutput.appendLine(`[diagnostics] ${JSON.stringify(p)}`);
-    //   }
-    // );
-    // (leanClientInstance as any).onNotification("$/progress", (p: any) => {
-    //   leanDebugOutput.appendLine(`[progress] ${JSON.stringify(p)}`);
-    // });
-
-    // clientRunning = true;
   } catch (err) {
     leanDebugOutput.appendLine(`[LeanLspClient] start failed: ${String(err)}`);
   }

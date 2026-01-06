@@ -36,19 +36,7 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
             super(...args);
             this.sentenceManager = new SentenceManager();
 
-            // send diagnostics to editor (for squiggly lines)
-            this.middleware.handleDiagnostics = (uri, diagnostics_) => {
-                const diagnostics = (diagnostics_ as WpDiagnostic[]);
-                this.diagnosticsCollection.set(uri, diagnostics.map(d => {
-                    const start = d.data?.sentenceRange?.start ?? d.range.start;
-                    const end = d.data?.sentenceRange?.end ?? d.range.end;
-                    return {
-                        message: d.message,
-                        severity: d.severity,
-                        range: new Range(start, end),
-                    };
-                }));
-            };
+          
             
             this.disposables.push(languages.onDidChangeDiagnostics(e => {
                 if (this.activeDocument === undefined) return;
@@ -73,7 +61,7 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
         // Common implementation for startWithHandlers - can be overridden
         async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
             this.webviewManager = webviewManager;
-            return (this as any).start();
+            return this.start();
         }
 
         // Common implementation for requestSymbols - can be overridden
@@ -138,7 +126,7 @@ export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
         async processDiagnostics() {
             const document = this.activeDocument;
             if (!document) return;
-
+            
             const diagnostics = languages.getDiagnostics(document.uri);
 
             const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {

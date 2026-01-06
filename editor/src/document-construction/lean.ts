@@ -1,52 +1,83 @@
 import { Block, BlockRange, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
 
-type TokenKind =
-    | 'Text'
-    | 'Preamble'
-    | 'CodeOpen'
-    | 'CodeClose'
-    | 'InputOpen'
-    | 'HintOpen'
-    | 'Close'
-    | 'MathInline'
-    | 'MathOpen'
-    | 'MathClose'
-    | 'Newline'
-type Token = { kind: TokenKind, groups: string[], next?: Token, prev?: Token } & BlockRange;
+enum Kind {
+    Text,
+    Preamble,
+    CodeOpen,
+    CodeClose,
+    InputOpen,
+    HintOpen,
+    Close,
+    MathInline,
+    MathOpen,
+    MathClose,
+    Newline,
+}
 
-const regexes: [RegExp, TokenKind][] = [
-    [/^[\s\S]*#doc .*? =>\n/, 'Preamble'],
-    [/(?<=\n)```lean\n/, 'CodeOpen'],
-    [/\n```(?=\n|$)/, 'CodeClose'],
-    [/(?<=\n):::input\n/, 'InputOpen'],
-    [/(?<=\n):::hint "([\s\S]*?)"(?=\n)/, 'HintOpen'],
-    [/\n:::(?=\n|$)/, 'Close'],
-    [/\$`[\s\S]*?`/, 'MathInline'],
-    [/\$\$`/, 'MathOpen'],
-    [/`/, 'MathClose'],
-    [/\n{1}?/, 'Newline'],
+class Token {
+    private readonly index: number;
+
+    /**
+     * Create a token and append it to `list`.
+     */
+    constructor(
+        private readonly list: Token[],
+        public readonly kind: Kind,
+        public readonly range: BlockRange,
+        public readonly groups: string[],
+    ) {
+        this.index = list.length;
+        list.push(this);
+    }
+
+    /**
+     * Return the next token.
+     */
+    get next(): Token | undefined {
+        return this.list.at(this.index + 1);
+    }
+
+    /**
+     * Return the previous token.
+     */
+    get prev(): Token | undefined {
+        if (this.index == 0) return undefined;
+        return this.list.at(this.index - 1);
+    }
+
+    /**
+     * Check if a token has one of given token kinds.
+     */
+    isOneOf(kinds: Kind[]): boolean {
+        return kinds.includes(this.kind);
+    }
+}
+
+const regexes: [RegExp, Kind][] = [
+    [/^[\s\S]*#doc .*? =>\n/,             Kind.Preamble  ],
+    [/(?<=\n)```lean\n/,                  Kind.CodeOpen  ],
+    [/\n```(?=\n|$)/,                     Kind.CodeClose ],
+    [/(?<=\n):::input\n/,                 Kind.InputOpen ],
+    [/(?<=\n):::hint "([\s\S]*?)"(?=\n)/, Kind.HintOpen  ],
+    [/\n:::(?=\n|$)/,                     Kind.Close     ],
+    [/\$`[\s\S]*?`/,                      Kind.MathInline],
+    [/\$\$`/,                             Kind.MathOpen  ],
+    [/`/,                                 Kind.MathClose ],
+    [/\n{1}?/,                            Kind.Newline   ],
 ];
 const flags: string = 'g';
 const tokenRegex = new RegExp(regexes.map(([regex, toKind]) => {
-    return '(?<' + toKind + '>' + regex.source + ')'
+    return '(?<' + Kind[toKind] + '>' + regex.source + ')'
 }).join('|'), flags);
 
 
 /**
- * Check if a token has one of given token kinds.
- */
-function isOneOf(token: Token | undefined, kinds: TokenKind[]): boolean {
-    if (!token) return false;
-    return kinds.includes(token.kind);
-}
-
-/**
  * Return token but fail if a token is undefined or not of one of given kinds.
  */
-function expect(token: Token | undefined, kinds?: TokenKind[]): Token {
+function expect(token: Token | undefined, kinds?: Kind[]): Token {
     if (token === undefined) {
         throw new Error('Expected a token but found nothing');
-    } else if (kinds !== undefined && !isOneOf(token, kinds)) {
+    } else if (kinds !== undefined && !token.isOneOf(kinds)) {
         throw new Error(`Expected one of [${kinds.join(', ')}] but found ${token?.kind}`);
     }
 
@@ -64,66 +95,73 @@ function expect(token: Token | undefined, kinds?: TokenKind[]): Token {
  */
 function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     const isSignificantNewline = (token: Token) =>
-        token.kind === 'Newline'
-        && (isOneOf(token.prev, ['Close'])
-            || isOneOf(token.next, ['CodeOpen', 'InputOpen', 'HintOpen']));
+        token.kind === Kind.Newline
+        && (token.prev?.isOneOf([Kind.Close])
+            || token.next?.isOneOf([Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen]));
 
-    if (token.kind === 'Preamble') {
-        const range = { from: token.from, to: token.to };
-        const content = doc.substring(token.from, token.to);
+    if (token.kind === Kind.Preamble) {
+        const range = token.range;
+        const content = doc.substring(range.from, range.to);
 
         const child = new CodeBlock(content, range, range);
         blocks.push(new HintBlock(content, "🛠 Technical details", range, range, [child]));
 
         return token.next;
     } else if (isSignificantNewline(token)) {
-        const range = { from: token.from, to: token.to };
+        const range = token.range;
         blocks.push(new NewlineBlock(range, range));
 
         return token.next;
-    } else if (token.kind === 'Text' || token.kind === 'Newline' || token.kind === 'MathInline') {
+    } else if (token.isOneOf([Kind.Text, Kind.Newline, Kind.MathInline])) {
         // concatenate following inline math, text, and newlines
         let head: Token = token;
         while (head.next
-               && isOneOf(head.next, ['Text', 'Newline', 'MathInline'])
+               && head.next.isOneOf([Kind.Text, Kind.Newline, Kind.MathInline])
                && !isSignificantNewline(head.next)) {
             head = head.next as Token;
         }
 
-        const range = { from: token.from, to: head.to };
+        const range = { from: token.range.from, to: head.range.to };
         const content = doc.substring(range.from, range.to);
 
         if (range.to - range.from > 1)
             blocks.push(new MarkdownBlock(content, range, range));
 
         return head.next;
-    } else if (token.kind === 'CodeOpen') {
+    } else if (token.kind === Kind.CodeOpen) {
         let head = token;
-        while (head.kind !== 'CodeClose') {
-            head = expect(head.next, ['CodeClose', 'Text', 'Newline'])
+        while (head.kind !== Kind.CodeClose) {
+            head = expect(head.next, [Kind.CodeClose, Kind.Text, Kind.Newline])
         }
 
-        const range = { from: token.from, to: head.to };
-        const innerRange = { from: token.to, to: head.from };
+        const range = { from: token.range.from, to: head.range.to };
+        const innerRange = { from: token.range.to, to: head.range.from };
         const content = doc.substring(innerRange.from, innerRange.to);
 
         blocks.push(new CodeBlock(content, range, innerRange));
 
         return head.next;
-    } else if (token.kind === 'HintOpen' || token.kind === 'InputOpen') {
-        const expected: TokenKind[] = ['Close', 'Text', 'MathInline',
-                                       'MathOpen', 'CodeOpen', 'Newline'];
+    } else if (token.isOneOf([Kind.HintOpen, Kind.InputOpen])) {
+        const expected: Kind[] = [
+            Kind.Close,
+            Kind.Text,
+            Kind.MathInline,
+            Kind.MathOpen,
+            Kind.CodeOpen,
+            Kind.Newline,
+        ];
+
         let head: Token = expect(token.next, expected);
         const innerBlocks: Block[] = [];
-        while (head && head.kind !== 'Close') {
+        while (head && head.kind !== Kind.Close) {
             head = expect(handle(doc, head, innerBlocks));
         }
 
-        const range = { from: token.from, to: head.to };
-        const innerRange = { from: token.to, to: head.from };
+        const range = { from: token.range.from, to: head.range.to };
+        const innerRange = { from: token.range.to, to: head.range.from };
         const content = doc.substring(innerRange.from, innerRange.to);
 
-        if (token.kind === 'HintOpen') {
+        if (token.kind === Kind.HintOpen) {
             const title = token.groups[1];
             blocks.push(new HintBlock(content, title, range, innerRange, innerBlocks));
         } else {
@@ -131,14 +169,14 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         }
 
         return head.next;
-    } else if (token.kind === 'MathOpen') {
+    } else if (token.kind === Kind.MathOpen) {
         let head = token;
         do {
-            head = expect(head.next, ['Text', 'Newline', 'MathClose']);
-        } while (head.kind != 'MathClose');
+            head = expect(head.next, [Kind.Text, Kind.Newline, Kind.MathClose]);
+        } while (head.kind != Kind.MathClose);
 
-        const range = { from: token.from, to: head.to };
-        const innerRange = { from: token.to, to: head.from };
+        const range = { from: token.range.from, to: head.range.to };
+        const innerRange = { from: token.range.to, to: head.range.from };
         const content = doc.substring(innerRange.from, innerRange.to);
 
         blocks.push(new MathDisplayBlock(content, range, innerRange));
@@ -159,37 +197,29 @@ function tokenize(inputDocument: string): Token | undefined {
         inputDocument.matchAll(tokenRegex)
     );
 
-    let head: Token | undefined = undefined
-    let tail: Token | undefined = undefined;
+    const tokens: Token[] = [];
+
     for (const m of matches) {
         const pos = m.index as number;
+
         // Create 'Text' tokens for fragments inbetween regex matches
-        if (!tail && pos > 0) {
-            tail = { kind: 'Text', from: 0, to: pos, groups: [] };
-            head = tail;
-        } else if (tail && pos > tail.to + 1) {
-            tail.next = { kind: 'Text', from: tail.to, to: pos, groups: [], prev: tail };
-            tail = tail.next;
+        const prev = tokens.at(-1);
+        if (!prev && pos > 0) {
+            new Token(tokens, Kind.Text, { from: 0, to: pos }, []);
+        } else if (prev && pos > prev.range.to + 1) {
+            new Token(tokens, Kind.Text, { from: prev.range.to, to: pos }, []);
         }
 
+        // Check which regex matched and create a token of the appropriate kind
         for (const [_, toKind] of regexes) {
-            if (m.groups && m.groups[toKind]) {
-                const token = {
-                    kind: toKind,
-                    from: m.index as number, to: m.index as number + m[0].length,
-                    groups: Array.from(m),
-                    prev: tail,
-                };
-                if (tail) tail.next = token;
-                else {
-                    head = token;
-                }
-                tail = token;
+            if (m.groups && m.groups[Kind[toKind]]) {
+                const range = { from: m.index as number, to: m.index as number + m[0].length };
+                new Token(tokens, toKind, range, Array.from(m));
             }
         }
     }
 
-    return head;
+    return tokens.at(0);
 }
 
 /**

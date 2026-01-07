@@ -1,8 +1,9 @@
 /* eslint-disable no-useless-escape */
 // Disable due to latex code in sample data
 
-import { BlockRange, MarkdownBlock, typeguards } from "@impermeable/waterproof-editor";
-import { topLevelBlocksMV, topLevelBlocksLean } from "../../editor/src/document-construction/construct-document"
+import { BlockRange, MarkdownBlock, typeguards, constructDocument } from "@impermeable/waterproof-editor";
+import { topLevelBlocksMV, topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
+import { LeanSerializer } from "../../editor/src/leanSerializer";
 
 const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">
@@ -27,21 +28,25 @@ Random Markdown list:
     3. $1 + 1$
 `;
 
-const inputDocumentLean = `def test := 3
-/-!
-# Markdown Header
-$$2 + 3 = 4$$
-This is *italicized*
--/
-
-/- begin details : example hint -/
-import Mathlib.CategoryTheory.Functor.Basic
-/- end details -/
-
-def hello :=
-/- begin input -/
-    "Hello, World!"
-/- end input -/
+const inputDocumentLean = `import Some.Library
+#doc (Genre) "Title" =>
+# A Header
+::::multilean
+\`\`\`lean
+def fortyTwo :=
+  30 +
+\`\`\`
+:::input
+\`\`\`lean
+  12
+\`\`\`
+:::
+::::
+## Markdown Content
+$$\`x^2 + y = z\`
+A list:
+  1. *Italicized* text
+  2. $\`y = z - x^2\`
 `;
 
 
@@ -177,26 +182,42 @@ Goal True.
 
 test("Parse top level blocks (Lean)", () => {
     const blocks = topLevelBlocksLean(inputDocumentLean);
-    expect(blocks.length).toBe(6);
+    expect(blocks.length).toBe(10);
 
-    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("def test := 3\n")
+    const [preamble, md1, nl1, code, nl2, input, nl3, md2, math, md3] = blocks;
 
-    expect(typeguards.isMarkdownBlock(blocks[1])).toBe(true);
-    expect(blocks[1].stringContent).toBe("# Markdown Header\n");
+    expect(typeguards.isHintBlock(preamble)).toBe(true);
+    expect(preamble.stringContent).toBe("import Some.Library\n#doc (Genre) \"Title\" =>\n");
 
-    expect(typeguards.isMathDisplayBlock(blocks[2])).toBe(true);
-    expect(blocks[2].stringContent).toBe("2 + 3 = 4\n");
+    expect(typeguards.isMarkdownBlock(md1)).toBe(true);
+    expect(md1.stringContent).toBe("# A Header\n::::multilean")
 
-    expect(typeguards.isMarkdownBlock(blocks[3])).toBe(true);
-    expect(blocks[3].stringContent).toBe("This is *italicized*\n");
+    expect(typeguards.isNewlineBlock(nl1)).toBe(true);
 
-    expect(typeguards.isHintBlock(blocks[4])).toBe(true);
-    expect(blocks[4].stringContent).toBe("import Mathlib.CategoryTheory.Functor.Basic");
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(code.stringContent).toBe("def fortyTwo :=\n  30 +")
 
-    expect(typeguards.isCodeBlock(blocks[5])).toBe(true);
-    expect(blocks[5].stringContent).toBe("def hello :=\n")
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
 
-    expect(typeguards.isInputAreaBlock).toBe(true);
-    expect(blocks[5].stringContent).toBe("    \"Hello, World!\"");
+    expect(typeguards.isInputAreaBlock(input)).toBe(true);
+    expect(input.stringContent).toBe("```lean\n  12\n```");
+
+    expect(typeguards.isNewlineBlock(nl3)).toBe(true);
+
+    expect(typeguards.isMarkdownBlock(md2)).toBe(true);
+    expect(md2.stringContent).toBe("::::\n## Markdown Content\n");
+
+    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+    expect(math.stringContent).toBe("x^2 + y = z");
+
+    expect(typeguards.isMarkdownBlock(md3)).toBe(true);
+    expect(md3.stringContent)
+        .toBe("\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n");
+})
+
+test("Parse and serialize document (Lean)", () => {
+    const doc = constructDocument(topLevelBlocksLean(inputDocumentLean));
+    const out = new LeanSerializer().serializeDocument(doc);
+
+    expect(out).toBe(inputDocumentLean);
 })

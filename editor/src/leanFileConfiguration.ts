@@ -2,29 +2,29 @@ import { TagConfiguration } from "@impermeable/waterproof-editor";
 
 export const tagConfigurationLean: TagConfiguration = {
 	code: {
-		openTag: "", closeTag: "",
-		openRequiresNewline: false, closeRequiresNewline: false
+		openTag: "```lean\n", closeTag: "\n```",
+		openRequiresNewline: true, closeRequiresNewline: true
 	},
 	hint: {
-		openTag: (title) => `/- begin details : ${title} -/\n`,
-		closeTag: "\n/- end -/",
+		openTag: (title) => `:::hint ${title}\n`,
+		closeTag: "\n:::",
 		openRequiresNewline: true,
 		closeRequiresNewline: true,
 	},
 	input: {
-		openTag: "/- begin input -/\n",
-		closeTag: "\n/- end -/",
+		openTag: ":::input\n",
+		closeTag: "\n:::",
 		openRequiresNewline: true,
 		closeRequiresNewline: true,
 	},
 	markdown: {
-		openTag: "/-! ",
-		closeTag: " -/",
-		openRequiresNewline: true,
-		closeRequiresNewline: true
+		openTag: "",
+		closeTag: "",
+		openRequiresNewline: false,
+		closeRequiresNewline: false
 	},
 	math: {
-		openTag: "$", closeTag: "$",
+		openTag: "$$`", closeTag: "`",
 		openRequiresNewline: false, closeRequiresNewline: false,
 	}
 }

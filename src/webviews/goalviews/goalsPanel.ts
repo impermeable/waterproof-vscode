@@ -1,5 +1,5 @@
 import { Uri } from "vscode";
-import { GoalAnswer, PpString } from "../../../lib/types";
+import { CoqGoalAnswer, PpString } from "../../../lib/types";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { CoqGoalsPanel } from "./coqGoalsPanel";
 import { Disposable } from "vscode-languageclient";
@@ -45,7 +45,7 @@ export class GoalsPanel extends CoqGoalsPanel {
                 Uri.joinPath(this.extensionUri, "out", "views", "infoview", "index.js")
             );
             const libPostfix = `.production.min.js`;
-            
+
             this._panel.webview.html = `
             <!DOCTYPE html>
             <html>
@@ -90,7 +90,7 @@ export class GoalsPanel extends CoqGoalsPanel {
             </body>
             </html>
             `;
-            
+
             // Restore previous Coq goals if available
             if (this.previousGoal) {
                 setTimeout(() => {
@@ -100,10 +100,10 @@ export class GoalsPanel extends CoqGoalsPanel {
         }
     }
 
-    override updateGoals(goals: GoalAnswer<PpString> | undefined) {
+    override updateGoals(goals: CoqGoalAnswer<PpString> | undefined) {
         // We capture the goals for restoration purposes even if we are in Lean mode
         this.previousGoal = goals;
-        
+
         // But we only send the visual update message if we are actively in Coq mode
         if (this.currentMode === 'coq') {
             super.updateGoals(goals);

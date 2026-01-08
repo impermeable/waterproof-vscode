@@ -57,22 +57,35 @@ export interface OblsView {
 
 export type ProgramInfo = [Id, OblsView][];
 
-export interface GoalAnswer<Pp> {
+export interface GoalAnswer {
     textDocument: VersionedTextDocumentIdentifier;
     position: Position;
+}
+
+export interface CoqGoalAnswer<Pp> extends GoalAnswer {
     goals?: GoalConfig<Pp>;
     program?: ProgramInfo;
     messages: Pp[] | Message<Pp>[];
     error?: Pp;
 }
 
+export interface LeanGoalAnswer extends GoalAnswer {
+    rendered: string;
+    goals: string[];
+}
+
 export interface GoalRequest {
     textDocument: VersionedTextDocumentIdentifier;
     position: Position;
+}
+
+export interface CoqGoalRequest extends GoalRequest {
     pp_format?: "Pp" | "Str";
     command?: string;
     mode?: 'Prev' | 'After';
 }
+
+export type LeanGoalRequest = GoalRequest
 
 export type Pp =
     | ["Pp_empty"]

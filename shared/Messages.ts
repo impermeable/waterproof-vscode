@@ -1,5 +1,5 @@
 import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, DiagnosticMessage, SimpleProgressParams, ServerStatus, ThemeStyle } from "@impermeable/waterproof-editor";
-import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
+import { CoqGoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 
 
@@ -36,12 +36,12 @@ export type Message =
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
-    | MessageBase<MessageType.renderGoals, { goals : GoalAnswer<PpString>, visibility?: HypVisibility }>
-    | MessageBase<MessageType.renderGoalsList, { goalsList : GoalAnswer<PpString>[]}>
+    | MessageBase<MessageType.renderGoals, { goals : CoqGoalAnswer<PpString>, visibility?: HypVisibility }>
+    | MessageBase<MessageType.renderGoalsList, { goalsList : CoqGoalAnswer<PpString>[]}>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
     | MessageBase<MessageType.serverStatus, ServerStatus>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
-    | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
+    | MessageBase<MessageType.setData, string[] | CoqGoalAnswer<PpString> >
     | MessageBase<MessageType.setTacticsMode, "coq" | "lean">       // ADDED: Message to switch tactics mode
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>

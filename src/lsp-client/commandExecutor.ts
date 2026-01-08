@@ -1,5 +1,5 @@
 import { Position } from "vscode";
-import { GoalAnswer, GoalConfig } from "../../lib/types";
+import { CoqGoalAnswer, GoalConfig } from "../../lib/types";
 import { AbstractLspClient, CoqLspClient } from "./clientTypes";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
@@ -53,7 +53,7 @@ async function executeCommandBase(client: AbstractLspClient, command: string) {
  * @returns The output of executing `command` formatted as a valid `GoalAnswer<string>` object, this can be passed to any component that
  * implement `IGoalsComponent`.
  */
-export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<string>> {
+export async function executeCommand(client: CoqLspClient, command: string): Promise<CoqGoalAnswer<string>> {
     try {
         const { goalsRes, runRes, document } = await executeCommandBase(client, command);
         // This should form a valid `GoalAnswer<string>`
@@ -69,7 +69,7 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
 }
 
 /**
- * Execute `command` using client `client` and return the full output, that is, the goal after executing the command (`GoalConfig`, contains only goals information) and the result of 
+ * Execute `command` using client `client` and return the full output, that is, the goal after executing the command (`GoalConfig`, contains only goals information) and the result of
  * running the command (`RunResult`, this includes messages and whether the proof was finished running `command`)
  * @param client The client to use when executing the command.
  * @param command The command/tactic to execute. It is allowed to execute multiple tactics/commands by seperating them using `.`'s.

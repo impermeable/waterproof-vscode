@@ -268,7 +268,7 @@ export class WebviewManager extends EventEmitter {
             case MessageType.applyStepError:
                 {
                     const mes = "The editor encountered an error in applying an edit (see log for details): " + message.body;
-                    WaterproofLogger.log(message.body);
+                    wpl.log(message.body);
                     window.showErrorMessage(mes);
                     break;
                 }

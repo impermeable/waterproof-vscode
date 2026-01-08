@@ -1,5 +1,5 @@
 import { Uri } from "vscode";
-import { GoalAnswer, PpString } from "../../../lib/types";
+import { CoqGoalAnswer, PpString } from "../../../lib/types";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
 import { WebviewEvents, WebviewState } from "../coqWebview";
 import { GoalsBase } from "./goalsBase";
@@ -7,7 +7,7 @@ import { GoalsBase } from "./goalsBase";
 // Renamed from GoalsPanel to CoqGoalsPanel
 export class CoqGoalsPanel extends GoalsBase {
 
-    protected previousGoal: GoalAnswer<PpString> | undefined;
+    protected previousGoal: CoqGoalAnswer<PpString> | undefined;
 
     constructor(extensionUri: Uri, config: CoqLspClientConfig) {
         // We still pass "goals" as the name, as this is the underlying ID used by the webview manager
@@ -19,7 +19,7 @@ export class CoqGoalsPanel extends GoalsBase {
         });
     }
 
-    override updateGoals(goals: GoalAnswer<PpString> | undefined) {
+    override updateGoals(goals: CoqGoalAnswer<PpString> | undefined) {
         this.previousGoal = goals;
         super.updateGoals(goals);
     }

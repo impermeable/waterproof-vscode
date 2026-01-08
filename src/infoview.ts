@@ -15,7 +15,7 @@ import {
     env,
     workspace,
 } from 'vscode'
-import { LeanLspClient } from './lsp-client/leanlspclient';
+import { LeanLspClient } from './lsp-client/leanClient';
 import { DocumentUri, WorkspaceEdit, Location } from 'vscode-languageserver-protocol';
 import { GoalsPanel } from './webviews/goalviews/goalsPanel';
 
@@ -24,7 +24,7 @@ const keepAlivePeriodMs = 10000
 // Connects client to server and returns result
 async function rpcConnect(client: LeanLspClient, uri: DocumentUri): Promise<string> {
     const connParams: RpcConnectParams = { uri }
-    const result: RpcConnected = await client.sendRequest('$/lean/rpc/connect', connParams)
+    const result: RpcConnected = await client.client.sendRequest('$/lean/rpc/connect', connParams)
     return result.sessionId
 }
 
@@ -38,11 +38,11 @@ class RpcSessionAtPos implements Disposable {
         public sessionId: string,
         public uri: DocumentUri,
     ) {
-        this.client = client
+        this.client = client;
         this.keepAliveInterval = setInterval(async () => {
             const params: RpcKeepAliveParams = { uri, sessionId }
             try {
-                await client.sendNotification('$/lean/rpc/keepAlive', params)
+                await client.client.sendNotification('$/lean/rpc/keepAlive', params)
             } catch (e) {
                 console.log(`[InfoProvider] failed to send keepalive for ${uri}: ${e}`)
                 if (this.keepAliveInterval) clearInterval(this.keepAliveInterval)
@@ -209,7 +209,7 @@ export class InfoProvider implements Disposable {
             const client = this.client
             if (client) {
                 try {
-                    const result = await client.sendRequest(method, params)
+                    const result = await client.client.sendRequest(method, params)
                     return result
                 } catch (ex: any) {
                     if (ex.code === RpcErrorCode.WorkerCrashed) {
@@ -229,7 +229,7 @@ export class InfoProvider implements Disposable {
         sendClientNotification: async (uri: string, method: string, params: any): Promise<void> => {
             const client = this.client;
             if (client) {
-                await client.sendNotification(method, params)
+                await client.client.sendNotification(method, params)
             }
         },
 
@@ -366,7 +366,7 @@ export class InfoProvider implements Disposable {
                 throw new Error('No active Lean client')
             }
             const connParams = { uri }
-            const result = await client.sendRequest('$/lean/rpc/connect', connParams)
+            const result = await client.client.sendRequest('$/lean/rpc/connect', connParams)
             const sessionId = result.sessionId
             const session = new RpcSessionAtPos(client, sessionId, uri)
             this.rpcSessions.set(sessionId, session)
@@ -389,9 +389,9 @@ export class InfoProvider implements Disposable {
         }
         await api.initialize(loc);
 
-        if (this.client.initializeResult) {
+        if (this.client.client.initializeResult) {
             await api.serverStopped(undefined);
-            await api.serverRestarted(this.client.initializeResult);
+            await api.serverRestarted(this.client.client.initializeResult);
             await this.sendPosition(loc);
         }
         this.isInitialized = true;
@@ -400,7 +400,5 @@ export class InfoProvider implements Disposable {
     public async sendPosition(loc: Location) {
         await this.api?.changedCursorLocation(loc)
     }
-
-
 
 }

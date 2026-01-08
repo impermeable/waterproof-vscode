@@ -1,5 +1,5 @@
 import { Uri } from "vscode";
-import { GoalAnswer, PpString } from "../../../lib/types";
+import { CoqGoalAnswer, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { IGoalsComponent } from "../../components";
 import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
@@ -16,7 +16,7 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
     }
 
     //sends message for renderGoals
-    updateGoals(goals: GoalAnswer<PpString> | undefined) {
+    updateGoals(goals: CoqGoalAnswer<PpString> | undefined) {
         if (goals) {
             const visibility = WaterproofConfigHelper.get(WaterproofSetting.VisibilityOfHypotheses);
             this.postMessage({ type: MessageType.renderGoals, body: {goals, visibility } });

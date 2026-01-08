@@ -18,11 +18,10 @@ import {
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
 import {
-    CoqLspClient,
     CoqLspClientConfig,
-    CoqLspClientFactory,
+    // CoqLspClientFactory,
     CoqLspServerConfig,
-    LeanLspClientFactory,
+    // LeanLspClientFactory,
 } from "./lsp-client/clientTypes";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
@@ -48,39 +47,17 @@ import {
     WaterproofFileUtil,
     WaterproofPackageJSON
 } from "./helpers";
-import {
-    activateLeanClient,
-    deactivateLeanClient,
-    LeanLspClient,
-    restartLeanClient,
-} from "./lsp-client/leanlspclient";
-import { LspClientFactory } from "./mainNode";
+import { CoqLspClient } from "./lsp-client/coqClient";
+import { LeanLspClient } from "./lsp-client/leanClient";
+import { LspClientFactory } from "./lsp-client/clientTypes";
 import { convertToString } from "../lib/types";
 import { Hypothesis } from "./api";
 import { MessageType, Message } from "../shared/Messages"; // Added MessageType import
 import { InfoProvider } from "./infoview";
 
-export function activate(_context: ExtensionContext): void {
-
-    commands.executeCommand(
-        `workbench.action.openWalkthrough`,
-        `waterproof-tue.waterproof#waterproof.setup`,
-        false
-    );
-    const context = _context as unknown as ExtensionContext;
-    activateLeanClient(context).catch((err) =>
-        console.error("lean client activation failed:", err)
-    );
-    const disposableRestart = commands.registerCommand("lean.restart", () =>
-        restartLeanClient(context)
-    );
-    context.subscriptions.push(disposableRestart);
-}
-
 export class Waterproof implements Disposable {
     private readonly context: ExtensionContext;
     private readonly disposables: Disposable[] = [];
-    private readonly clientFactory: LspClientFactory;
     public readonly webviewManager: WebviewManager;
     public coqClient!: CoqLspClient;
     public leanClient!: LeanLspClient;
@@ -96,7 +73,8 @@ export class Waterproof implements Disposable {
 
     constructor(
         context: ExtensionContext,
-        clientFactory: LspClientFactory,
+        private readonly leanClientFactory: LspClientFactory<LeanLspClient>,
+        private readonly coqClientFactory: LspClientFactory<CoqLspClient>,
         private readonly _isWeb = false
     ) {
         wpl.log("Waterproof initialized");
@@ -104,7 +82,6 @@ export class Waterproof implements Disposable {
         excludeCoqFileTypes();
 
         this.context = context;
-        this.clientFactory = clientFactory;
         this.activeClient = "none";
         this.webviewManager = new WebviewManager();
 
@@ -143,14 +120,14 @@ export class Waterproof implements Disposable {
             ({ document, start, end }) => {
                 wpl.debug(`[EXTENSION] ViewportHint event received for ${document.uri.fsPath}: ${start}-${end}`);
                 if (document.languageId.startsWith("lean")) {
-                    if (!this.leanClient || !this.leanClient.isRunning()) {
+                    if (!this.leanClient || !this.leanClient.client.isRunning()) {
                         wpl.debug("[EXTENSION] ViewportHint: Lean client not available, skipping");
                         return;
                     }
                     wpl.debug("[EXTENSION] ViewportHint: Calling leanClient.sendViewportHint");
                     this.leanClient.sendViewportHint(document, start, end);
                 } else {
-                    if (!this.coqClient || !this.coqClient.isRunning()) {
+                    if (!this.coqClient || !this.coqClient.client.isRunning()) {
                         wpl.debug("[EXTENSION] ViewportHint: Coq client not available, skipping");
                         return;
                     }
@@ -167,10 +144,10 @@ export class Waterproof implements Disposable {
                 if (document.languageId.startsWith("lean")) {
                     // CHANGED: Switch mode to Lean
                     goalsPanel.setMode('lean');
-                    
+
                     // Switch tactics panel to Lean mode (safely)
                     this.safePostMessage("tactics", { type: MessageType.setTacticsMode, body: "lean" });
-                    
+
                     if (!this.leanClientRunning) {
                         console.warn(
                             "Focus event received before client is ready. Waiting..."
@@ -519,7 +496,7 @@ export class Waterproof implements Disposable {
             window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
     }
-    
+
     /**
      * Safely posts a message to a webview. If the webview is not ready/open, it catches the error and ignores it.
      */
@@ -535,32 +512,24 @@ export class Waterproof implements Disposable {
      * Request the goals for the current document and cursor position.
      */
     public async goals(): Promise<{ currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[] }> {
-        if (this.activeClient == "lean4") {
-            if (!this.leanClient.activeDocument || !this.leanClient.activeCursorPosition) { throw new Error("No active document or cursor position."); }
+        const client = this.activeClient === "lean4" ? this.leanClient : this.coqClient;
+        if (!client.activeDocument || !client.activeCursorPosition) {
+            throw new Error("No active document or cursor position.");
+        }
 
-            const document = this.leanClient.activeDocument;
-            const position = this.leanClient.activeCursorPosition;
+        const document = client.activeDocument;
+        const position = client.activeCursorPosition;
 
+        if (client === this.leanClient) {
             const params = this.leanClient.createGoalsRequestParameters(document, position);
             const goalResponse = await this.leanClient.requestGoals(params);
 
-            if (goalResponse.goals === undefined) {
+            if (goalResponse.goals.length === 0) {
                 throw new Error("Response contained no goals.");
             }
 
-            // Convert goals and hypotheses to strings
-            const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
-            // Note: only taking hypotheses from the first goal
-            const hyps = goalResponse.goals.goals[0].hyps.map(h => { return { name: convertToString(h.names[0]), content: convertToString(h.ty) }; });
-
-
-            return { currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1) };
+            return { currentGoal: goalResponse.goals[0], hypotheses: [], otherGoals: goalResponse.goals.slice(1) };
         } else {
-            if (!this.coqClient.activeDocument || !this.coqClient.activeCursorPosition) { throw new Error("No active document or cursor position."); }
-
-            const document = this.coqClient.activeDocument;
-            const position = this.coqClient.activeCursorPosition;
-
             const params = this.coqClient.createGoalsRequestParameters(document, position);
             const goalResponse = await this.coqClient.requestGoals(params);
 
@@ -572,7 +541,6 @@ export class Waterproof implements Disposable {
             const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
             // Note: only taking hypotheses from the first goal
             const hyps = goalResponse.goals.goals[0].hyps.map(h => { return { name: convertToString(h.names[0]), content: convertToString(h.ty) }; });
-
 
             return { currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1) };
         }
@@ -854,7 +822,7 @@ export class Waterproof implements Disposable {
             }
         }
 
-        if (this.coqClient?.isRunning()) {
+        if (this.coqClient?.client.isRunning()) {
             return Promise.reject(
                 new Error("Cannot initialize client; one is already running.")
             );
@@ -866,7 +834,7 @@ export class Waterproof implements Disposable {
         );
 
         const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "markdown" }, { language: "coq" }, { language: "lean4" }],  // .mv, .v, and .lean files
+            documentSelector: [{ language: "markdown" }, { language: "coq" }],  // .mv and .v files
             outputChannelName: "Waterproof LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
             initializationOptions: serverOptions,
@@ -874,10 +842,10 @@ export class Waterproof implements Disposable {
         };
 
         wpl.log("Initializing client...");
-        this.coqClient = this.clientFactory(
+        this.coqClient = this.coqClientFactory(
             this.context,
             clientOptions,
-            WaterproofConfigHelper.configuration
+            "rocq"
         );
         return this.coqClient.startWithHandlers(this.webviewManager).then(
             () => {
@@ -898,7 +866,7 @@ export class Waterproof implements Disposable {
     async initializeLeanClient(): Promise<void> {
         wpl.log("Start of initializeLeanClient");
 
-        if (this.leanClient?.isRunning && this.leanClient.isRunning()) {
+        if (this.leanClient?.client.isRunning()) {
             return Promise.reject(
                 new Error("Cannot initialize Lean client; one is already running.")
             );
@@ -911,7 +879,7 @@ export class Waterproof implements Disposable {
         };
 
         wpl.log("Initializing Lean client via clientFactory...");
-        this.leanClient = this.clientFactory(
+        this.leanClient = this.leanClientFactory(
             this.context,
             clientOptions,
             "lean"
@@ -985,7 +953,7 @@ export class Waterproof implements Disposable {
     }
 
     private toggleClient(): Promise<void> {
-        if (this.coqClient?.isRunning()) {
+        if (this.coqClient?.client.isRunning()) {
             return this.stopClient();
         } else {
             return this.initializeClient();
@@ -993,7 +961,7 @@ export class Waterproof implements Disposable {
     }
 
     private async stopClient(): Promise<void> {
-        if (this.coqClient.isRunning()) {
+        if (this.coqClient.client.isRunning()) {
             for (const g of this.goalsComponents) g.disable();
             await this.coqClient.dispose(2000);
             this.coqClientRunning = false;
@@ -1011,7 +979,7 @@ export class Waterproof implements Disposable {
             `Updating goals for document: ${document.uri.toString()} at position: ${position.line
             }:${position.character}`
         );
-        if (!this.coqClient.isRunning()) {
+        if (!this.coqClient.client.isRunning()) {
             wpl.debug("Client is not running, cannot update goals.");
             return;
         }
@@ -1038,51 +1006,6 @@ export class Waterproof implements Disposable {
         );
     }
 
-    private async updateGoalsLean(
-        document: TextDocument,
-        position: Position
-    ): Promise<void> {
-        wpl.debug("=== UPDATE GOALS LEAN ===");
-        wpl.debug(`Document: ${document.uri.fsPath}`);
-        wpl.debug(`Position: ${position.line}:${position.character}`);
-
-        if (!this.leanClient) {
-            wpl.debug("ERROR: leanClient is not initialized!");
-            return;
-        }
-
-        if (!this.leanClient.isRunning()) {
-            wpl.debug("ERROR: Lean client is not running!");
-            return;
-        }
-
-        const params = this.leanClient.createGoalsRequestParameters(document, position);
-        //wpl.debug(`Request params: ${JSON.stringify(params)}`);
-        wpl.debug(`Number of goals components: ${this.goalsComponents.length}`);
-
-        this.leanClient.requestGoals(params).then(
-            (response) => {
-                wpl.debug("=== GOALS RESPONSE RECEIVED ===");
-                wpl.debug(`Response has goals?: ${response.goals ? "YES" : "NO"}`);
-                if (response.goals) {
-                    wpl.debug(`Goals config goals count: ${response.goals.goals?.length || 0}`);
-                }
-                //wpl.debug(`Full response: ${JSON.stringify(response, null, 2)}`);
-
-                for (const g of this.goalsComponents) {
-                    wpl.debug(`Updating goals component: ${g.constructor.name}`);
-                    g.updateGoals(response);
-                }
-                wpl.debug("=== GOALS UPDATED ===");
-            },
-            (reason) => {
-                wpl.debug(`ERROR: Failed to get goals - ${reason}`);
-                for (const g of this.goalsComponents) {
-                    g.failedGoals(reason);
-                }
-            }
-        );
-    }
     dispose() {
         this.statusBar.dispose();
         this.stopClient();
@@ -1090,9 +1013,4 @@ export class Waterproof implements Disposable {
             d.dispose();
         }
     }
-}
-
-export async function deactivate(): Promise<void> {
-    await deactivateLeanClient();
-    return;
 }

@@ -1,21 +1,20 @@
-import { Disposable, TextDocument, Position, Range, OutputChannel, DiagnosticSeverity, DiagnosticCollection, languages } from "vscode";
-import { FeatureClient, Middleware, LanguageClientOptions, DocumentSymbol, VersionedTextDocumentIdentifier } from "vscode-languageclient";
+import { Position, TextDocument, Range, OutputChannel, languages, workspace, Disposable, window, DiagnosticSeverity } from "vscode";
+import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, LogTraceNotification, SymbolInformation } from "vscode-languageclient";
 import { SentenceManager } from "./sentenceManager";
-import { WebviewManager } from "../webviewManager";
 import { IFileProgressComponent } from "../components";
-import { ICoqLspClient, WpDiagnostic } from "./clientTypes";
-import { GoalAnswer, GoalRequest, PpString } from "../../lib/types";
-import { OffsetDiagnostic, Severity } from "@impermeable/waterproof-editor";
+import { WebviewManager } from "../webviewManager";
+import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
+
+import { LanguageClient as NodeLanguageClient } from "vscode-languageclient/node"
+import { LanguageClient as BrowserLanguageClient } from "vscode-languageclient/browser"
+import { InputAreaStatus, OffsetDiagnostic, Severity, SimpleProgressParams, WaterproofCompletion } from "@impermeable/waterproof-editor";
+import { convertToSimple, FileProgressParams } from "./requestTypes";
 import { MessageType } from "../../shared";
+import { WpDiagnostic } from "./clientTypes";
+import { determineProofStatus, getInputAreas } from "./qedStatus";
+import { GoalAnswer, GoalRequest } from "../../lib/types";
 
-interface TimeoutDisposable extends Disposable {
-    dispose(timeout?: number): Promise<void>;
-}
-// Seems to be needed for the mixin class below
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ClientConstructor = new (...args: any[]) => FeatureClient<Middleware, LanguageClientOptions> & TimeoutDisposable;
-
-export function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
+function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
     switch (severity) {
         case DiagnosticSeverity.Error: return Severity.Error;
         case DiagnosticSeverity.Warning: return Severity.Warning;
@@ -24,123 +23,360 @@ export function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severi
     }
 }
 
-export function AbstractLspClient<T extends ClientConstructor>(Base: T) {
-    return class extends Base implements ICoqLspClient {
-        readonly disposables: Disposable[] = [];
-        activeDocument: TextDocument | undefined;
-        activeCursorPosition: Position | undefined;
-        readonly sentenceManager: SentenceManager;
-        webviewManager: WebviewManager | undefined;
-        diagnosticsCollection: DiagnosticCollection;
-        constructor(...args: any[]) {
-            super(...args);
-            this.sentenceManager = new SentenceManager();
+function wasCanceledByServer(reason: unknown): boolean {
+    return !!reason
+        && typeof reason === "object"
+        && "message" in reason
+        && reason.message === "Request got old in server";  // or: code == -32802
+}
 
-          
-            
-            this.disposables.push(languages.onDidChangeDiagnostics(e => {
-                if (this.activeDocument === undefined) return;
-                // Comparing the uris (by doing uris.includes(this.activeDocument.uri)) does not seem to achieve
-                // the same result.
-                if (e.uris.map(uri => uri.path).includes(this.activeDocument.uri.path)) {
-                    this.processDiagnostics();
-                }
-            }));
-        }
+// alternatively, this could be defined as `FeatureClient<Middleware, LanguageClientOptions>`
+type LanguageClient = NodeLanguageClient | BrowserLanguageClient
 
-        getBeginningOfCurrentSentence(): Position | undefined {
-            if (!this.activeDocument || !this.activeCursorPosition) return undefined;
-            return this.sentenceManager.getBeginningOfSentence(this.activeCursorPosition);
-        }
+interface TimeoutDisposable extends Disposable {
+    dispose(timeout?: number): Promise<void>;
+}
 
-        getEndOfCurrentSentence(): Position | undefined {
-            if (!this.activeDocument || !this.activeCursorPosition) return undefined;
-            return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);
-        }
+export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT extends GoalAnswer> implements TimeoutDisposable {
+    /**
+     * The underlying VS Code language client.
+     */
+    readonly client: LanguageClient
 
-        // Common implementation for startWithHandlers - can be overridden
-        async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
-            this.webviewManager = webviewManager;
-            return this.start();
-        }
+    /**
+     * Language identifier of this client, e.g. 'rocq' or 'lean4'
+     */
+    readonly language: string | undefined;
 
-        // Common implementation for requestSymbols - can be overridden
-        async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
-            // Default implementation that throws - should be overridden by subclasses
-            throw new Error("requestSymbols must be implemented by subclass");
-        }
+    /**
+     * Resources that must be released upon disposal of this client.
+     */
+    readonly disposables: Disposable[] = [];
 
-        // Common implementation for updateCompletions - can be overridden
-        async updateCompletions(document: TextDocument): Promise<void> {
-            // Default implementation that throws - should be overridden by subclasses
-            throw new Error("updateCompletions must be implemented by subclass");
-        }
+    detailedErrors: boolean = false;
 
-        // Methods that subclasses must override (throw error if not implemented)
-        requestGoals(params?: GoalRequest | Position): Promise<GoalAnswer<PpString>> {
-            throw new Error("requestGoals must be implemented by subclass");
-        }
+    /**
+     * The currently active document.
+     * Only the `WebviewManager` should change this.
+     */
+    activeDocument: TextDocument | undefined;
 
-        /**
-         * Returns the notification method name for viewport hints.
-         * Subclasses must override this to provide the correct notification name.
-         */
-        // abstract getViewportNotificationName(): string;
+    /**
+     * The position of the text cursor in the active document.
+     * Only the `WebviewManager` should change this.
+     */
+    activeCursorPosition: Position | undefined;
 
-        async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
-            if (!(this as any).isRunning()) return;
+    /**
+     * The object that keeps track of the (end) positions of the sentences in `activeDocument`.
+     */
+    readonly sentenceManager: SentenceManager;
+    protected readonly fileProgressComponents: IFileProgressComponent[] = [];
 
-            const startPos = document.positionAt(start);
-            let endPos = document.positionAt(end);
+    readonly lspOutputChannel: OutputChannel;
 
-            // Compute end of document position, use that if we're close
-            const endOfDocument = document.positionAt(document.getText().length);
-            if (endOfDocument.line - endPos.line < 20) {
-                endPos = endOfDocument;
+    webviewManager: WebviewManager | undefined;
+
+    /**
+     * Whether we are using viewport based checking.
+     */
+    readonly viewPortBasedChecking: boolean = !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking);
+    /**
+     * The range of the current viewport.
+     */
+    viewPortRange: Range | undefined = undefined;
+
+    /*
+     * Constructs a Waterproof language client.
+     */
+    constructor(client: LanguageClient) {
+        this.client = client;
+        this.sentenceManager = new SentenceManager();
+
+        // forward progress notifications to editor
+        this.fileProgressComponents.push({
+            dispose() { /* noop */ },
+            onProgress: params => {
+                const document = this.activeDocument;
+                if (!document) return;
+                const body: SimpleProgressParams = {
+                    numberOfLines:  document.lineCount,
+                    progress:       params.processing.map(convertToSimple)
+                };
+                this.webviewManager!.postAndCacheMessage(
+                    document,
+                    { type: MessageType.progress, body }
+                );
+            },
+        });
+
+        // deduce (end) positions of sentences from progress notifications
+        this.fileProgressComponents.push(this.sentenceManager);
+        const diagnosticsCollection = languages.createDiagnosticCollection(this.language);
+
+        // Set detailedErrors to the value of the `Waterproof.detailedErrorsMode` setting.
+        this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
+        // Update `detailedErrors` when the setting changes.
+        this.disposables.push(workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.DetailedErrorsMode))) {
+                this.detailedErrors = WaterproofConfigHelper.get(WaterproofSetting.DetailedErrorsMode);
             }
 
-            const requestBody = {
-                textDocument: VersionedTextDocumentIdentifier.create(
-                    document.uri.toString(),
-                    document.version
-                ),
-                range: {
-                    start: {
-                        line: startPos.line,
-                        character: startPos.character
-                    },
-                    end: {
-                        line: endPos.line,
-                        character: endPos.character
-                    }
-                }
+            // When the LogDebugStatements setting changes we update the logDebug boolean in the WaterproofLogger class.
+            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.LogDebugStatements))) {
+                wpl.logDebug = WaterproofConfigHelper.get(WaterproofSetting.LogDebugStatements);
+            }
+        }));
+
+        // send diagnostics to editor (for squiggly lines)
+        this.client.middleware.handleDiagnostics = (uri, diagnostics_) => {
+            // Note: Here we typecast diagnostics_ to WpDiagnostic[], the new type includes the custom data field
+            //      added by coq-lsp required for the line long error mode.
+            if (!this.detailedErrors) {
+                const diagnostics = (diagnostics_ as WpDiagnostic[]);
+                diagnosticsCollection.set(uri, diagnostics.map(d => {
+                    const start = d.data?.sentenceRange?.start ?? d.range.start;
+                    const end = d.data?.sentenceRange?.end ?? d.range.end;
+                    return {
+                        message: d.message,
+                        severity: d.severity,
+                        range: new Range(start, end),
+                    };
+                }));
+            } else {
+                diagnosticsCollection.set(uri, diagnostics_);
+            }
+        };
+
+        this.disposables.push(languages.onDidChangeDiagnostics(e => {
+            if (this.activeDocument === undefined) return;
+            // Comparing the uris (by doing uris.includes(this.activeDocument.uri)) does not seem to achieve
+            // the same result.
+            if (e.uris.map(uri => uri.path).includes(this.activeDocument.uri.path)) {
+                this.processDiagnostics();
+            }
+        }));
+
+        this.lspOutputChannel = window.createOutputChannel("Waterproof LSP Events (After Initialization)");
+
+        // send proof statuses to editor when document checking is done
+        this.disposables.push(this.client.onNotification(LogTraceNotification.type, params => {
+            // Print `params.message` to custom lsp output channel
+            this.lspOutputChannel.appendLine(params.message);
+
+            if (params.message.includes("document fully checked")) {
+                this.onCheckingCompleted();
+            }
+        }));
+    }
+
+    protected onFileProgress(params: FileProgressParams): void {
+        // convert LSP range to VSC range
+        params.processing.forEach((fp): void => {
+            fp.range = this.client.protocol2CodeConverter.asRange(fp.range)
+        });
+        // notify each component
+        this.fileProgressComponents.forEach(c => c.onProgress(params));
+    }
+
+
+    // Does this async do anything?
+    async processDiagnostics() {
+        const document = this.activeDocument;
+        if (!document) return;
+
+        const diagnostics = languages.getDiagnostics(document.uri);
+
+        const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
+            return {
+                message:        d.message,
+                severity:       vscodeSeverityToWaterproof(d.severity),
+                startOffset:    document.offsetAt(d.range.start),
+                endOffset:      document.offsetAt(d.range.end)
             };
+        });
+        this.webviewManager!.postAndCacheMessage(document, {
+            type: MessageType.diagnostics,
+            body: {positionedDiagnostics, version: document.version}
+        });
+    }
 
-            await (this as any).sendNotification(this.getViewportNotificationName(), requestBody);
+    async onCheckingCompleted(): Promise<void> {
+        // ensure there is an active document
+        const document = this.activeDocument;
+        if (!document) return;
+
+        // send message to ProseMirror editor that checking is done
+        // (in addition to LSP message that indicates last Markdown is still being processed)
+        this.webviewManager!.postAndCacheMessage(
+            document.uri.toString(),
+            {
+                type: MessageType.progress,
+                body: { numberOfLines: document.lineCount, progress: [] }
+            }
+        );
+
+        this.computeInputAreaStatus(document);
+    }
+
+    // This setTimeout creates a NodeJS.Timeout object, but in the browser it is just a number.
+    computeInputAreaStatusTimer?: NodeJS.Timeout | number;
+
+    async computeInputAreaStatus(document: TextDocument) {
+        if (this.computeInputAreaStatusTimer) {
+            clearTimeout(this.computeInputAreaStatusTimer);
+        }
+        // Computing where all the input areas are requires a fair bit of work,
+        // so we add a debounce delay to this function to avoid recomputing on every keystroke.
+        this.computeInputAreaStatusTimer = setTimeout(async () => {
+            // get input areas based on tags
+            const inputAreas = getInputAreas(document);
+            if (!inputAreas) {
+                throw new Error("Cannot check proof status; illegal input areas.");
+            }
+
+            // for each input area, check the proof status
+            try {
+                const statuses = await Promise.all(inputAreas.map(a => {
+                    if (this.viewPortBasedChecking && this.viewPortRange && a.intersection(this.viewPortRange) === undefined) {
+                        // This input area is outside of the range that has been checked and thus we can't determine its status
+                        return Promise.resolve(InputAreaStatus.NotInView);
+                    } else {
+                        return determineProofStatus(this, document, a);
+                    }
+                }));
+
+                // forward statuses to corresponding ProseMirror editor
+                this.webviewManager!.postAndCacheMessage(document, {
+                    type: MessageType.qedStatus,
+                    body: statuses
+                });
+            } catch (reason) {
+                if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
+                console.log("[computeInputAreaStatus] The catch block caught an error that we don't classify as 'cancelled by server':", reason);
+            }
+        }, 250);
+    }
+
+    /**
+     * Registers handlers (for, e.g., file progress notifications, which need to be forwarded to the
+     * editor) and starts client.
+     */
+    startWithHandlers(webviewManager: WebviewManager): Promise<void> {
+        this.webviewManager = webviewManager;
+
+        // after every document change, request symbols and send completions to the editor
+        this.disposables.push(workspace.onDidChangeTextDocument(event => {
+            if (webviewManager.has(event.document.uri.toString()))
+                this.updateCompletions(event.document);
+        }));
+
+        return this.client.start();
+    }
+
+    /**
+     * Returns the end position of the currently selected sentence, i.e., the Coq sentence in the
+     * active document in which the text cursor is located. Only returns `undefined` if no sentences
+     * are known.
+     */
+    getBeginningOfCurrentSentence(): Position | undefined {
+        if (!this.activeCursorPosition) return undefined;
+        return this.sentenceManager.getBeginningOfSentence(this.activeCursorPosition);
+    }
+
+    /**
+     * Returns the beginning position of the currently selected sentence, i.e., the Coq sentence in the
+     * active document in which the text cursor is located. Only returns `undefined` if no sentences
+     * are known. This is really just the end position of the previous sentence.
+     */
+    getEndOfCurrentSentence(): Position | undefined {
+        if (!this.activeCursorPosition) return undefined;
+        return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);
+    }
+
+    /**
+     * Creates parameter object for a goals request.
+     */
+    abstract createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequestT;
+
+    /** Sends an LSP request with the specified parameters to retrieve the goals. */
+    abstract requestGoals(parameters: GoalRequestT): Promise<GoalAnswerT>;
+    /** Sends an LSP request to retrieve the goals at `position` in the active document. */
+    abstract requestGoals(position: Position): Promise<GoalAnswerT>;
+    /** Sends an LSP request to retrieve the goals at the active cursor position. */
+    abstract requestGoals(): Promise<GoalAnswerT>;
+
+    /** Sends an LSP request to retrieve the symbols in the `activeDocument`. */
+    async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
+        // use active document if no document is given
+        document ??= this.activeDocument;
+        if (!document) {
+            throw new Error("Cannot request symbols; there is no active document.");
         }
 
-        createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequest {
-            throw new Error("createGoalsRequestParameters must be implemented by subclass");
+        // send "documentSymbol" request and wait for response
+        const params: DocumentSymbolParams = {
+            textDocument: {
+                uri: document.uri.toString()
+            }
+        };
+        const response = await this.client.sendRequest(DocumentSymbolRequest.type, params);
+
+        // convert `response` to array of `DocumentSymbol` (if necessary) and return it
+        if (!response) {
+            console.error("Response to 'textDocument/documentSymbol' was `null`.");
+            return [];
+        } else if (response.length === 0 || "range" in response[0]) {
+            return response as DocumentSymbol[];
+        } else {
+            return (response as SymbolInformation[]).map(s => ({
+                name:           s.name,
+                kind:           s.kind,
+                tags:           s.tags,
+                range:          s.location.range,
+                selectionRange: s.location.range
+            }));
+        }
+    }
+
+    abstract sendViewportHint(document: TextDocument, start: number, end: number): Promise<void>;
+
+    /**
+     * Requests symbols and sends corresponding completions to the editor.
+     */
+    async updateCompletions(document: TextDocument): Promise<void> {
+        if (!this.client.isRunning()) return;
+        if (!this.webviewManager?.has(document)) {
+            throw new Error("Cannot update completions; no ProseMirror webview is known for " + document.uri.toString());
         }
 
-        async processDiagnostics() {
-            const document = this.activeDocument;
-            if (!document) return;
-            
-            const diagnostics = languages.getDiagnostics(document.uri);
-
-            const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map(d => {
-                return {
-                    message: d.message,
-                    severity: vscodeSeverityToWaterproof(d.severity),
-                    startOffset: document.offsetAt(d.range.start),
-                    endOffset: document.offsetAt(d.range.end)
-                };
-            });
-            this.webviewManager!.postAndCacheMessage(document, {
-                type: MessageType.diagnostics,
-                body: { positionedDiagnostics, version: document.version }
-            });
+        // request symbols for `document`
+        let symbols: DocumentSymbol[];
+        try {
+            symbols = await this.requestSymbols(document);
+        } catch (reason) {
+            if (wasCanceledByServer(reason)) return;  // we've likely already sent a new request
+            throw reason;
         }
-    };
+
+        // convert symbols to completions
+        const completions: WaterproofCompletion[] = symbols.map(s => ({
+            label:  s.name,
+            detail: s.detail?.toLowerCase() ?? "",
+            type:   "variable",
+            template: s.name
+        }));
+
+        // send completions to (all code blocks in) the document's editor (not cached!)
+        this.webviewManager.postMessage(document.uri.toString(), {
+            type: MessageType.setAutocomplete,
+            body: completions
+        });
+    }
+
+    dispose(timeout?: number): Promise<void> {
+        this.fileProgressComponents.forEach(c => c.dispose());
+        this.disposables.forEach(d => d.dispose());
+        return this.client.dispose(timeout);
+    }
 }

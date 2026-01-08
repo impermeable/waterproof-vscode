@@ -1,13 +1,10 @@
 import { ExtensionContext } from "vscode";
-import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
+import { LanguageClient, ServerOptions } from "vscode-languageclient/node";
 import { Waterproof } from "./extension";
 import { CoqLspClient } from "./lsp-client/coqClient";
-import { LeanLspClient } from "./lsp-client/leanlspclient";
-import { CoqLspClientFactory } from "./lsp-client/clientTypes";
+import { LeanLspClient } from "./lsp-client/leanClient";
+import { LspClientFactory } from "./lsp-client/clientTypes";
 import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
-
-export type LspClientFactory =
-    (context: ExtensionContext, clientOptions: LanguageClientOptions, kind: ClientKind) => any;
 
 import { WaterproofAPI } from "./api";
 
@@ -19,33 +16,43 @@ import { WaterproofAPI } from "./api";
  * @param wsConfig the workspace configuration of Waterproof
  * @returns an LSP client with the added functionality of `CoqFeatures`
  */
-const clientFactory: LspClientFactory = (context, clientOptions, kind) => {
-    if (kind === 'lean') {
-        return new LeanLspClient(context, clientOptions);
-    }
+export const leanClientFactory: LspClientFactory<LeanLspClient> = (_context, clientOptions) => {
+    const serverOptions: ServerOptions = {
+        // TODO: get from config
+        command: "lake",
+        args: ["serve"],
+    };
+
+    return new LeanLspClient(new LanguageClient(
+        "waterproof_lean4_client",
+        "Waterproof Document Checker (Lean 4)",
+        serverOptions,
+        clientOptions,
+    ));
+};
+
+export const coqClientFactory: LspClientFactory<CoqLspClient> = (_context, clientOptions) => {
     const serverOptions: ServerOptions = {
         command: WaterproofConfigHelper.get(WaterproofSetting.Path),
         args: WaterproofConfigHelper.get(WaterproofSetting.Args),
     };
-    return new (CoqLspClient(LanguageClient))(
-        "waterproof",
-        "Waterproof Document Checker",
+    return new CoqLspClient(new LanguageClient(
+        "waterproof_rocq_client",
+        "Waterproof Document Checker (Rocq)",
         serverOptions,
         clientOptions,
-    );
+    ));
 };
 
 export function activate(context: ExtensionContext): WaterproofAPI {
- 
-    const extension = new Waterproof(context, clientFactory, false);
-    context.subscriptions.push(extension);
-    // start the lsp client
-    extension.initializeClient();    // Rocq client
 
+    const extension = new Waterproof(context, leanClientFactory, coqClientFactory, false);
+    context.subscriptions.push(extension);
+
+    // start the lsp clients
+    extension.initializeClient();    // Rocq client
     extension.initializeLeanClient();   // Lean client
-  /*   activateLeanClient(context).catch((err) => {
-        console.error("Failed to activate Lean LSP client:", err);
-    });*/
+
     // Expose the Waterproof API
     return {
         goals: extension.goals.bind(extension),
@@ -54,7 +61,7 @@ export function activate(context: ExtensionContext): WaterproofAPI {
         proofContext: extension.proofContext.bind(extension),
         tryProof: extension.tryProof.bind(extension),
     }
-} 
+}
 
 export function deactivate(): void {
     // TODO: stop client

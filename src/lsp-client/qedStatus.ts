@@ -1,8 +1,8 @@
 import { Range, TextDocument } from "vscode";
 
-import { GoalAnswer, PpString } from "../../lib/types";
-import { ICoqLspClient } from "./clientTypes";
+import { CoqGoalAnswer, PpString } from "../../lib/types";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
+import { LspClient } from "./abstractLspClient";
 
 // TODO: only consider Markdown parts
 function findOccurrences(substr: string, str: string): number[] {
@@ -42,11 +42,11 @@ export function getInputAreas(document: TextDocument): Range[] | undefined {
     return inputAreas;
 }
 
-function isComplete(response: GoalAnswer<PpString>): boolean {
+function isComplete(response: CoqGoalAnswer<PpString>): boolean {
     return !("error" in response);
 }
 
-export async function determineProofStatus(client: ICoqLspClient, document: TextDocument, inputArea: Range): Promise<InputAreaStatus> {
+export async function determineProofStatus<LspClientT extends LspClient<any, any>>(client: LspClientT, document: TextDocument, inputArea: Range): Promise<InputAreaStatus> {
     // get the (end) position of the last line in the input area
     // funnily, it can be in a next input area, and we accept this
     const position = client.sentenceManager.getEndOfSentence(inputArea.end, true);

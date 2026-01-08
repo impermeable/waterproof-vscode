@@ -49,9 +49,9 @@ export function activate(context: ExtensionContext): WaterproofAPI {
     const extension = new Waterproof(context, leanClientFactory, coqClientFactory, false);
     context.subscriptions.push(extension);
 
-    // start the lsp clients
-    extension.initializeClient();    // Rocq client
-    extension.initializeLeanClient();   // Lean client
+    // start the lsp clients (Clients how start on focus event)
+    // extension.initializeClient();    // Rocq client
+    // extension.initializeLeanClient();   // Lean client
 
     // Expose the Waterproof API
     return {

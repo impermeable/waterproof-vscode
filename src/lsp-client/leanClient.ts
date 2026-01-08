@@ -1,12 +1,14 @@
 import { LanguageClient } from "vscode-languageclient/node";
 import { LeanGoalAnswer, LeanGoalRequest } from "../../lib/types";
 import { LspClient } from "./abstractLspClient";
-import { EventEmitter, Position, TextDocument, Disposable } from "vscode";
+import { EventEmitter, Position, TextDocument, Disposable, Range } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { leanFileProgressNotificationType, leanGoalRequestType } from "./requestTypes";
 import { WaterproofLogger as wpl } from "../helpers";
 import { WpDiagnostic } from "./clientTypes";
 import { WebviewManager } from "../webviewManager";
+import { findOccurrences } from "./qedStatus";
+import { InputAreaStatus } from "@impermeable/waterproof-editor";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
@@ -36,9 +38,17 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             }));
 
             this.diagnosticsEmitter.fire({ uri: uri_, diagnostics: infoviewDiagnostics });
-        }
+        };
+    }
 
-        // TODO: subscribe to server status notifications?
+    protected async processDiagnostics() {
+        super.processDiagnostics();
+
+        // Lean does not implement a server status notification,
+        // so we update the status of input areas
+        if (this.activeDocument) {
+            this.computeInputAreaStatus(this.activeDocument);
+        }
     }
 
     createGoalsRequestParameters(document: TextDocument, position: Position): LeanGoalRequest {
@@ -80,6 +90,37 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
           this.customNotificationEmitter.fire({ method, params: params_ })
         };
         this.client.onNotification(starHandler as any, () => { });
+    }
+
+    protected getInputAreas(document: TextDocument): Range[] | undefined {
+        const content = document.getText();
+
+        // find (positions of) opening and closings tags for input areas, and check that they're valid
+        const openOffsets = findOccurrences(":::input\n", content);
+
+        return openOffsets.map(openPos => {
+            const closePos = content.indexOf(":::\n", openPos);
+            return new Range(
+                document.positionAt(openPos),
+                document.positionAt(closePos),
+            );
+        });
+    }
+
+    protected async determineProofStatus(document: TextDocument, inputArea: Range): Promise<InputAreaStatus> {
+        const content = document.getText();
+
+        const nextQed = content.indexOf("\nQed\n", document.offsetAt(inputArea.start));
+        const nextProof = content.indexOf("\nProof:\n", document.offsetAt(inputArea.start));
+
+        if (nextQed >= nextProof) {
+            return InputAreaStatus.Invalid;
+        }
+
+        // request goals and return conclusion based on them
+        const response = await this.requestGoals(this.createGoalsRequestParameters(document, inputArea.end.translate(0, 0)));
+
+        return (response.goals.length) ? InputAreaStatus.Incomplete : InputAreaStatus.Proven;
     }
 
     // Emitters for infoview

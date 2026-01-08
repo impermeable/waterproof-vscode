@@ -3,10 +3,12 @@ import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
 import { CoqGoalAnswer, CoqGoalRequest, CoqServerStatusToServerStatus, GoalRequest, PpString } from "../../lib/types";
 import { MessageType } from "../../shared";
-import { coqFileProgressNotificationType, coqGoalRequestType, serverStatusNotificationType } from "./requestTypes";
+import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType } from "./requestTypes";
 import { WaterproofLogger as wpl } from "../helpers";
 import { LspClient } from "./abstractLspClient";
 import { LanguageClient } from "vscode-languageclient/node";
+import { InputAreaStatus } from "@impermeable/waterproof-editor";
+import { findOccurrences, areInputAreasValid } from "./qedStatus";
 
 export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpString>> {
     language = "rocq";
@@ -23,7 +25,7 @@ export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpStri
             this.onFileProgress(params);
         }));
 
-        this.disposables.push(this.client.onNotification(serverStatusNotificationType, params => {
+        this.disposables.push(this.client.onNotification(coqServerStatusNotificationType, params => {
             const document = this.activeDocument;
             if (!document) return;
 
@@ -97,5 +99,47 @@ export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpStri
         // Save the range for which the document has been checked
         this.viewPortRange = new Range(startPos, endPos);
         await this.client.sendNotification("coq/viewRange", requestBody);
+    }
+
+    protected getInputAreas(document: TextDocument): Range[] | undefined {
+        const content = document.getText();
+
+        // find (positions of) opening and closings tags for input areas, and check that they're valid
+        const openOffsets = findOccurrences("<input-area>", content);
+        const closeOffsets = findOccurrences("</input-area>", content);
+        if (!areInputAreasValid(openOffsets, closeOffsets)) return undefined;
+
+        // We know the length of this array in advance
+        const inputAreas: Range[] = new Array(openOffsets.length);
+        for (let i = 0; i < openOffsets.length; i++) {
+            // Convert the open and close positions to ranges
+            inputAreas[i] = new Range(
+                document.positionAt(openOffsets[i]),
+                document.positionAt(closeOffsets[i]),
+            );
+        }
+        return inputAreas;
+    }
+
+    protected async determineProofStatus(document: TextDocument, inputArea: Range): Promise<InputAreaStatus> {
+        // get the (end) position of the last line in the input area
+        // funnily, it can be in a next input area, and we accept this
+        const position = this.sentenceManager.getEndOfSentence(inputArea.end, true);
+        if (!position) {
+            // console.warn("qedStatus.ts : No sentence after input area");
+            return InputAreaStatus.Invalid;
+        }
+
+        // check that last command is "Qed" (or return "invalid")
+        // note that we don't allow, e.g., comments between "Qed" and "."
+        const i = position.character - 4;
+        if (i < 0 || document.lineAt(position).text.slice(i, i+4) !== "Qed.") {
+            // console.warn("qedStatus.ts : Last sentence is not `Qed.`");
+            return InputAreaStatus.Invalid;
+        }
+
+        // request goals and return conclusion based on them
+        const response = await this.requestGoals(position.translate(0, -1));
+        return ("error" in response) ? InputAreaStatus.Incomplete : InputAreaStatus.Proven;
     }
 }

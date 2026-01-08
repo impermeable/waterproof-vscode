@@ -21,7 +21,7 @@ export const leanFileProgressNotificationType = new NotificationType<FileProgres
  * Notification type for the coq-lsp specific `serverStatus` notification. Returns a `CoqServerStatus` object that
  * can be either Busy or Idle.
  */
-export const serverStatusNotificationType = new NotificationType<CoqServerStatus>("$/coq/serverStatus");
+export const coqServerStatusNotificationType = new NotificationType<CoqServerStatus>("$/coq/serverStatus");
 
 export interface FileProgressProcessingInfo {
     /** Range for which the processing info was reported. */

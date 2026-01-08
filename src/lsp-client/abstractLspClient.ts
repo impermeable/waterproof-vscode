@@ -11,7 +11,6 @@ import { InputAreaStatus, OffsetDiagnostic, Severity, SimpleProgressParams, Wate
 import { convertToSimple, FileProgressParams } from "./requestTypes";
 import { MessageType } from "../../shared";
 import { WpDiagnostic } from "./clientTypes";
-import { determineProofStatus, getInputAreas } from "./qedStatus";
 import { GoalAnswer, GoalRequest } from "../../lib/types";
 
 function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
@@ -181,7 +180,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
 
 
     // Does this async do anything?
-    async processDiagnostics() {
+    protected async processDiagnostics() {
         const document = this.activeDocument;
         if (!document) return;
 
@@ -201,7 +200,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         });
     }
 
-    async onCheckingCompleted(): Promise<void> {
+    protected async onCheckingCompleted(): Promise<void> {
         // ensure there is an active document
         const document = this.activeDocument;
         if (!document) return;
@@ -219,10 +218,14 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         this.computeInputAreaStatus(document);
     }
 
+    protected abstract determineProofStatus(document: TextDocument, inputArea: Range): Promise<InputAreaStatus>;
+
+    protected abstract getInputAreas(document: TextDocument): Range[] | undefined;
+
     // This setTimeout creates a NodeJS.Timeout object, but in the browser it is just a number.
     computeInputAreaStatusTimer?: NodeJS.Timeout | number;
 
-    async computeInputAreaStatus(document: TextDocument) {
+    protected async computeInputAreaStatus(document: TextDocument) {
         if (this.computeInputAreaStatusTimer) {
             clearTimeout(this.computeInputAreaStatusTimer);
         }
@@ -230,7 +233,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         // so we add a debounce delay to this function to avoid recomputing on every keystroke.
         this.computeInputAreaStatusTimer = setTimeout(async () => {
             // get input areas based on tags
-            const inputAreas = getInputAreas(document);
+            const inputAreas = this.getInputAreas(document);
             if (!inputAreas) {
                 throw new Error("Cannot check proof status; illegal input areas.");
             }
@@ -242,7 +245,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                         // This input area is outside of the range that has been checked and thus we can't determine its status
                         return Promise.resolve(InputAreaStatus.NotInView);
                     } else {
-                        return determineProofStatus(this, document, a);
+                        return this.determineProofStatus(document, a);
                     }
                 }));
 
@@ -373,6 +376,8 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
             body: completions
         });
     }
+
+
 
     dispose(timeout?: number): Promise<void> {
         this.fileProgressComponents.forEach(c => c.dispose());

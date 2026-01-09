@@ -1,14 +1,14 @@
 import { Position } from "vscode";
 import { CoqGoalAnswer, GoalConfig } from "../../lib/types";
-import { AbstractLspClient, CoqLspClient } from "./clientTypes";
+import { LspClient } from "./abstractLspClient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
-import { LeanLspClient } from "./leanlspclient";
+import { CoqLspClient } from "./coqClient";
 
 /**
  * Base function for executing tactics/commands in a client.
  */
-async function executeCommandBase(client: AbstractLspClient, command: string) {
+async function executeCommandBase(client: CoqLspClient, command: string) {
     const document = client.activeDocument;
 
     if (!document) {
@@ -29,14 +29,14 @@ async function executeCommandBase(client: AbstractLspClient, command: string) {
     }
 
     try {
-        const stateRes = await client.sendRequest(getStateAtPosReq, params);
+        const stateRes = await client.client.sendRequest(getStateAtPosReq, params);
         // Create the RunParams object, st is the state to execute in, tac the command
         // to execute.
         const runParams: RunParams = { st: stateRes.st, tac: command };
-        const runRes = await client.sendRequest(runReq, runParams);
+        const runRes = await client.client.sendRequest(runReq, runParams);
         // The state on which to query the goals is the state *after* the command has been run.
         const goalParams: GoalParams = { st: runRes.st };
-        const goalsRes = await client.sendRequest(goalsReq, goalParams);
+        const goalsRes = await client.client.sendRequest(goalsReq, goalParams);
 
         return {
             goalsRes, runRes, document

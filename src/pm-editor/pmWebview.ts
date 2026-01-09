@@ -271,6 +271,8 @@ export class ProseMirrorWebview extends EventEmitter {
         </body>
         </html>
         `;
+        // TODO: find a proper way to do this
+        this.themeUpdate();
     }
 
     private themeUpdate() {

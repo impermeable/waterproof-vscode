@@ -1,14 +1,14 @@
 import { Position } from "vscode";
 import { CoqGoalAnswer, GoalConfig } from "../../lib/types";
-import { AbstractLspClient, CoqLspClient } from "./clientTypes";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
 import { LeanLspClient } from "./leanlspclient";
+import { CoqLspClient } from "./coqClient";
 
 /**
  * Base function for executing tactics/commands in a client.
  */
-async function executeCommandBase(client: AbstractLspClient, command: string) {
+async function executeCommandBase(client: CoqLspClient, command: string) {
     const document = client.activeDocument;
 
     if (!document) {

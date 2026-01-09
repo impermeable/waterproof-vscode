@@ -1,11 +1,11 @@
 [
     {
-        "label": "hel",
+        "label": "help",
         "type": "type",
         "detail": "tactic",
         "template": "help${}",
         "description": "Asks for suggestions on how to proceed with the current goal or a specific hypothesis.",
-        "example": "hel",
+        "example": "help",
         "boost": 5
     },
     {

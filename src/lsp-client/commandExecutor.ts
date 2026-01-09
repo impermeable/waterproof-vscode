@@ -1,8 +1,8 @@
 import { Position } from "vscode";
 import { CoqGoalAnswer, GoalConfig } from "../../lib/types";
+import { LspClient } from "./abstractLspClient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
-import { LeanLspClient } from "./leanlspclient";
 import { CoqLspClient } from "./coqClient";
 
 /**

@@ -347,6 +347,11 @@
             "type": "boolean",
             "default": false,
             "description": "By default, Waterproof only checks the part of the document that is visble. Turning this setting on will check the whole document continuously. Turning this on may cause performance issues."
+          },
+          "waterproof.DebounceTime": {
+            "type": "number",
+            "default": 250,
+            "description": "Number of milliseconds to wait after a keystroke before checking the document, reset when another key is pressed."
           }
         }
       },

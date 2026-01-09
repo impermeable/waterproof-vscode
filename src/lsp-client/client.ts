@@ -254,7 +254,7 @@ export function CoqLspClient<T extends ClientConstructor>(Base: T) {
                     if (wasCanceledByServer(reason)) return;  // we've likely already sent new requests
                     console.log("[computeInputAreaStatus] The catch block caught an error that we don't classify as 'cancelled by server':", reason);
                 }
-            }, 250);
+            }, WaterproofConfigHelper.get(WaterproofSetting.DebounceTime));
         }
 
         startWithHandlers(webviewManager: WebviewManager): Promise<void> {

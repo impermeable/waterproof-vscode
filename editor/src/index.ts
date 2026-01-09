@@ -176,7 +176,7 @@ window.onload = () => {
 					break;
 				}
 			case MessageType.themeUpdate:
-				editor.updateNodeViewThemes(msg.body);
+				editor.updateNodeViewThemes(msg.body.theme, msg.body.lang);
 				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.

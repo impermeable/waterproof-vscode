@@ -1,11 +1,11 @@
 [
     {
-        "label": "Help.",
+        "label": "help",
         "type": "type",
         "detail": "tactic",
-        "template": "Help.${}",
+        "template": "help${}",
         "description": "Asks for suggestions on how to proceed with the current goal or a specific hypothesis.",
-        "example": "Help h.",
+        "example": "help",
         "boost": 5
     },
     {

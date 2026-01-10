@@ -54,14 +54,16 @@ import { convertToString } from "../lib/types";
 import { Hypothesis } from "./api";
 import { MessageType, Message } from "../shared/Messages"; // Added MessageType import
 import { InfoProvider } from "./infoview";
+import { LspClient } from "./lsp-client/abstractLspClient";
 
 export class Waterproof implements Disposable {
     private readonly context: ExtensionContext;
     private readonly disposables: Disposable[] = [];
     public readonly webviewManager: WebviewManager;
-    public coqClient!: CoqLspClient;
-    public leanClient!: LeanLspClient;
+    public client!: LeanLspClient | CoqLspClient;
     public activeClient: string;
+    private leanClient!: LeanLspClient;
+    private coqClient!: CoqLspClient;
     private readonly statusBar: IStatusComponent;
     private readonly goalsComponents: IGoalsComponent[] = [];
     public readonly executorComponent: IExecutor;
@@ -108,32 +110,19 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(
             WebviewManagerEvents.editorReady,
             (document: TextDocument) => {
-                if (document.languageId.startsWith("lean")) {
-                    this.leanClient.updateCompletions(document);
-                } else {
-                    this.coqClient.updateCompletions(document);
-                }
+                this.client.updateCompletions(document);
             }
         );
         this.webviewManager.on(
             WebviewManagerEvents.viewportHint,
             ({ document, start, end }) => {
                 wpl.debug(`[EXTENSION] ViewportHint event received for ${document.uri.fsPath}: ${start}-${end}`);
-                if (document.languageId.startsWith("lean")) {
-                    if (!this.leanClient || !this.leanClient.client.isRunning()) {
-                        wpl.debug("[EXTENSION] ViewportHint: Lean client not available, skipping");
-                        return;
-                    }
-                    wpl.debug("[EXTENSION] ViewportHint: Calling leanClient.sendViewportHint");
-                    this.leanClient.sendViewportHint(document, start, end);
-                } else {
-                    if (!this.coqClient || !this.coqClient.client.isRunning()) {
-                        wpl.debug("[EXTENSION] ViewportHint: Coq client not available, skipping");
-                        return;
-                    }
-                    wpl.debug("[EXTENSION] ViewportHint: Calling coqClient.sendViewportHint");
-                    this.coqClient.sendViewportHint(document, start, end);
+                if (!this.client || !this.client.client.isRunning()) {
+                    wpl.debug("[EXTENSION] ViewportHint: client not available, skipping");
+                    return;
                 }
+                wpl.debug("[EXTENSION] ViewportHint: Calling client.sendViewportHint");
+                this.client.sendViewportHint(document, start, end);
             }
         );
 
@@ -152,6 +141,10 @@ export class Waterproof implements Disposable {
                         console.warn(
                             "Focus event received before client is ready. Waiting..."
                         );
+                        // Initiliaze Lean client
+                        if (!this.coqClient?.client.isRunning()) {
+                            this.initializeLeanClient(); 
+                        }
                         const waitForClient = async (): Promise<void> => {
                             return new Promise((resolve) => {
                                 const interval = setInterval(() => {
@@ -166,6 +159,7 @@ export class Waterproof implements Disposable {
                         wpl.log("Lean Client ready. Proceeding with focus event.");
                     }
                     this.activeClient = "lean4";
+                    this.client = this.leanClient;
                     if (
                         this.leanClient.activeDocument?.uri.toString() !== document.uri.toString() ||
                         !this.infoProvider?.isInitialized
@@ -204,6 +198,10 @@ export class Waterproof implements Disposable {
                         console.warn(
                             "Focus event received before client is ready. Waiting..."
                         );
+                        // Initiliaze Coq client
+                        if (!this.coqClient?.client.isRunning()) {
+                            this.initializeCoqClient(); 
+                        }
                         const waitForClient = async (): Promise<void> => {
                             return new Promise((resolve) => {
                                 const interval = setInterval(() => {
@@ -219,9 +217,10 @@ export class Waterproof implements Disposable {
                     }
                     wpl.log("Client state");
                     this.activeClient = 'coq';
-                    if (this.coqClient.activeDocument?.uri.toString() !== document.uri.toString()) {
-                        this.coqClient.activeDocument = document;
-                        this.coqClient.activeCursorPosition = undefined;
+                    this.client = this.coqClient;
+                    if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
+                        this.client.activeDocument = document;
+                        this.client.activeCursorPosition = undefined;
                         this.webviewManager.open("goals");
                         for (const g of this.goalsComponents) g.updateGoals(undefined);
                     }
@@ -231,9 +230,9 @@ export class Waterproof implements Disposable {
         this.webviewManager.on(
             WebviewManagerEvents.cursorChange,
             async (document: TextDocument, position: Position) => {
-                if (document.languageId.startsWith('lean')) {
-                    this.leanClient.activeDocument = document;
-                    this.leanClient.activeCursorPosition = position;
+                this.client.activeDocument = document;
+                this.client.activeCursorPosition = position;
+                if (this.activeClient == 'lean4') {
                     if (this.infoProvider) {
                         const loc: Location = {
                             uri: document.uri.toString(),
@@ -245,8 +244,6 @@ export class Waterproof implements Disposable {
                         this.infoProvider?.sendPosition(loc);
                     }
                 } else {
-                    this.coqClient.activeDocument = document;
-                    this.coqClient.activeCursorPosition = position;
                     this.updateGoalsCoq(document, position);
                 }
             });
@@ -263,25 +260,14 @@ export class Waterproof implements Disposable {
                     this.safePostMessage("tactics", { type: MessageType.setTacticsMode, body: mode });
                 }
                 else {
-                    if (this.activeClient.startsWith('lean')) {
-                        // executeCommand(this.leanClient, command).then(
-                        //     results => {
-                        //         source.setResults(results);
-                        //     },
-                        //     (error: Error) => {
-                        //         source.setResults(["Error: " + error.message]);
-                        //     }
-                        // );
-                    } else {
-                        executeCommand(this.coqClient, command).then(
-                            results => {
-                                source.setResults(results);
-                            },
-                            (error: Error) => {
-                                source.setResults(["Error: " + error.message]);
-                            }
-                        );
-                    }
+                    executeCommand(this.client, command).then(
+                        results => {
+                            source.setResults(results);
+                        },
+                        (error: Error) => {
+                            source.setResults(["Error: " + error.message]);
+                        }
+                    );
                 }
             });
 
@@ -319,7 +305,7 @@ export class Waterproof implements Disposable {
         this.executorComponent = executorPanel;
 
         wpl.log("Calling initializeClient...");
-        this.registerCommand("start", this.initializeClient);
+        this.registerCommand("start", this.initializeCoqClient);
         this.registerCommand("restart", this.restartClient);
         this.registerCommand("toggle", this.toggleClient);
         this.registerCommand("stop", this.stopClient);
@@ -512,30 +498,25 @@ export class Waterproof implements Disposable {
      * Request the goals for the current document and cursor position.
      */
     public async goals(): Promise<{ currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[] }> {
-        const client = this.activeClient === "lean4" ? this.leanClient : this.coqClient;
-        if (!client.activeDocument || !client.activeCursorPosition) {
+    
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) {
             throw new Error("No active document or cursor position.");
         }
 
-        const document = client.activeDocument;
-        const position = client.activeCursorPosition;
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
 
-        if (client === this.leanClient) {
-            const params = this.leanClient.createGoalsRequestParameters(document, position);
-            const goalResponse = await this.leanClient.requestGoals(params);
+        const params = this.client.createGoalsRequestParameters(document, position);
+        const goalResponse = await this.client.requestGoals(params);
 
-            if (goalResponse.goals.length === 0) {
-                throw new Error("Response contained no goals.");
-            }
+        if (goalResponse.goals === undefined || goalResponse.goals.length === 0) {
+            throw new Error("Response contained no goals.");
+        }
 
+        if (this.activeClient === "lean4") {
+            
             return { currentGoal: goalResponse.goals[0], hypotheses: [], otherGoals: goalResponse.goals.slice(1) };
         } else {
-            const params = this.coqClient.createGoalsRequestParameters(document, position);
-            const goalResponse = await this.coqClient.requestGoals(params);
-
-            if (goalResponse.goals === undefined) {
-                throw new Error("Response contained no goals.");
-            }
 
             // Convert goals and hypotheses to strings
             const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
@@ -550,13 +531,8 @@ export class Waterproof implements Disposable {
      * Get the currently active document in the editor.
      */
     public currentDocument(): TextDocument {
-        if (this.activeClient == "lean4") {
-            if (!this.leanClient.activeDocument) { throw new Error("No active document."); }
-            return this.leanClient.activeDocument;
-        } else {
-            if (!this.coqClient.activeDocument) { throw new Error("No active document."); }
-            return this.coqClient.activeDocument;
-        }
+        if (!this.client.activeDocument) { throw new Error("No active document."); }
+        return this.client.activeDocument;
     }
 
     /**
@@ -564,7 +540,7 @@ export class Waterproof implements Disposable {
      */
     public async help(): Promise<Array<string>> {
         // Execute command
-        const wpHelpResponse = await executeCommandFullOutput(this.coqClient, "Help.");
+        const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
         // Return the help messages. val[0] contains the levels, which we ignore.
         return wpHelpResponse.feedback.map(val => val[1]);
     }
@@ -587,18 +563,18 @@ export class Waterproof implements Disposable {
         full: string
         withCursorMarker: string
     }> {
-        if (!this.coqClient.activeDocument || !this.coqClient.activeCursorPosition) {
+        if (!this.client.activeDocument || !this.client.activeCursorPosition) {
             throw new Error("No active document or cursor position.");
         }
 
-        const document = this.coqClient.activeDocument;
-        const position = this.coqClient.activeCursorPosition;
+        const document = this.client.activeDocument;
+        const position = this.client.activeCursorPosition;
         const posAsOffset = document.offsetAt(position);
 
         // Regex to find the end of the proof the user is working on.
         const endRegex = /(?:Qed|Admitted|Defined)\.\s/;
         // We request the document symbols with the goal of finding the lemma the user is working on.
-        const symbols = await this.coqClient.requestSymbols();
+        const symbols = await this.client.requestSymbols();
         const firstBefore = symbols.filter(s => {
             const sPos = new Position(s.range.start.line, s.range.start.character);
             return sPos.isBefore(position);
@@ -646,7 +622,7 @@ export class Waterproof implements Disposable {
      * usual `.` and space.
      */
     public async tryProof(steps: string): Promise<{ finished: boolean, remainingGoals: string[] }> {
-        const execResponse = await executeCommandFullOutput(this.coqClient, steps);
+        const execResponse = await executeCommandFullOutput(this.client, steps);
         return {
             finished: execResponse.proof_finished,
             remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
@@ -778,9 +754,10 @@ export class Waterproof implements Disposable {
         this.disposables.push(register("waterproof." + name, handler, this));
     }
 
+    // TODO: implement for Lean
     async exportExerciseSheet() {
-        const document = this.coqClient.activeDocument;
-        if (document) {
+        const document = this.client.activeDocument;
+        if (document && this.activeClient == 'coq') { 
             let content = document.getText();
             const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g;
             const replacement = `<input-area>\n\`\`\`coq\n\n\`\`\`\n</input-area>`;
@@ -793,7 +770,7 @@ export class Waterproof implements Disposable {
         }
     }
 
-    async initializeClient(): Promise<void> {
+    async initializeCoqClient(): Promise<void> {
         wpl.log("Start of initializeClient");
 
         const launchChecksDisabled = WaterproofConfigHelper.get(
@@ -922,12 +899,12 @@ export class Waterproof implements Disposable {
             return;
         }
 
-        const doc = this.leanClient?.activeDocument ?? window.activeTextEditor?.document;
+        const doc = this.client?.activeDocument ?? window.activeTextEditor?.document;
         if (!doc || !doc.languageId.startsWith("lean")) {
             return;
         }
 
-        const position = this.leanClient.activeCursorPosition ?? new Position(0, 0);
+        const position = this.client.activeCursorPosition ?? new Position(0, 0);
         const loc: Location = {
             uri: doc.uri.toString(),
             range: {
@@ -949,21 +926,23 @@ export class Waterproof implements Disposable {
      */
     private async restartClient(): Promise<void> {
         await this.stopClient();
-        await this.initializeClient();
+        if (this.activeClient == 'lean4') await this.initializeLeanClient();
+        else await this.initializeCoqClient();
     }
 
     private toggleClient(): Promise<void> {
-        if (this.coqClient?.client.isRunning()) {
+        if (this.client?.client.isRunning()) {
             return this.stopClient();
         } else {
-            return this.initializeClient();
+            if (this.activeClient == 'lean4') return this.initializeLeanClient();
+            else return this.initializeCoqClient();
         }
     }
 
     private async stopClient(): Promise<void> {
-        if (this.coqClient.client.isRunning()) {
+        if (this.client.client.isRunning()) {
             for (const g of this.goalsComponents) g.disable();
-            await this.coqClient.dispose(2000);
+            await this.client.dispose(2000);
             this.coqClientRunning = false;
             this.statusBar.update(false);
         } else {
@@ -979,16 +958,16 @@ export class Waterproof implements Disposable {
             `Updating goals for document: ${document.uri.toString()} at position: ${position.line
             }:${position.character}`
         );
-        if (!this.coqClient.client.isRunning()) {
+        if (!this.client.client.isRunning()) {
             wpl.debug("Client is not running, cannot update goals.");
             return;
         }
-        const params = this.coqClient.createGoalsRequestParameters(
+        const params = this.client.createGoalsRequestParameters(
             document,
             position
         );
         wpl.debug(`Requesting goals for components: ${this.goalsComponents}`);
-        this.coqClient.requestGoals(params).then(
+        this.client.requestGoals(params).then(
             (response: any) => {
                 wpl.debug(`Received goals response: ${JSON.stringify(response)}`);
                 for (const g of this.goalsComponents) {

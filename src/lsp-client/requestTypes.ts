@@ -3,7 +3,7 @@ import { NotificationType, RequestType } from "vscode-languageclient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
 import { CoqServerStatus, CoqGoalAnswer, CoqGoalRequest, PpString, LeanGoalRequest, LeanGoalAnswer } from "../../lib/types";
-import { FileProgressKind, SimpleProgressInfo } from "@impermeable/waterproof-editor";
+import { CoqFileProgressKind, SimpleProgressInfo } from "@impermeable/waterproof-editor";
 
 /**
  * LSP request to obtain the goals at a specific point in the doc.
@@ -27,7 +27,7 @@ export interface FileProgressProcessingInfo {
     /** Range for which the processing info was reported. */
     range: Range;
     /** Kind of progress that was reported. */
-    kind?: FileProgressKind;
+    kind?: CoqFileProgressKind;
 }
 
 export interface FileProgressParams {

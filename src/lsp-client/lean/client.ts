@@ -1,20 +1,20 @@
-import { LanguageClient } from "vscode-languageclient/node";
-import { LeanGoalAnswer, LeanGoalRequest } from "../../lib/types";
-import { LspClient } from "./abstractLspClient";
+import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
+import { LspClient } from "../client";
 import { EventEmitter, Position, TextDocument, Disposable, Range } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
-import { leanFileProgressNotificationType, leanGoalRequestType } from "./requestTypes";
-import { WaterproofLogger as wpl } from "../helpers";
-import { WpDiagnostic } from "./clientTypes";
-import { WebviewManager } from "../webviewManager";
-import { findOccurrences } from "./qedStatus";
+import { leanFileProgressNotificationType, leanGoalRequestType } from "../requestTypes";
+import { WaterproofLogger as wpl } from "../../helpers";
+import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
+import { WebviewManager } from "../../webviewManager";
+import { findOccurrences } from "../qedStatus";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
+import { ServerStoppedReason } from "@leanprover/infoview-api";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
 
-    constructor(client: LanguageClient) {
-        super(client);
+    constructor(clientProvider: LanguageClientProvider) {
+        super(clientProvider);
 
         // call each file progress component when the server has processed a part
         this.disposables.push(this.client.onNotification(leanFileProgressNotificationType, params => {
@@ -144,5 +144,13 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     /** Fires whenever a custom notification (i.e. one not defined in LSP) is received. */
     public customNotification(cb: (params: any) => void): Disposable {
         return this.customNotificationEmitter.event(cb);
+    }
+
+    private clientStoppedEmitter = new EventEmitter<ServerStoppedReason>();
+    public clientStopped = this.clientStoppedEmitter.event;
+
+    async dispose(timeout?: number): Promise<void> {
+        await super.dispose(timeout);
+        this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
     }
 }

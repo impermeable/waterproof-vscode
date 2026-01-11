@@ -1,6 +1,7 @@
 import { Disposable, Position } from "vscode";
 import { CoqGoalAnswer, PpString } from "../lib/types";
 import { FileProgressParams } from "./lsp-client/requestTypes";
+import { ILspClient } from "./lsp-client/clientTypes";
 
 /**
  * This defines the interface of a component that displays
@@ -55,7 +56,7 @@ export interface IGoalsComponent extends Disposable {
      *
      * @param goals the goal answer object received from coq-lsp
      */
-    updateGoals(goals: CoqGoalAnswer<PpString> | undefined): void;
+    updateGoals(client: ILspClient): Promise<void>;
 
     /**
      * Update the status bar to indicate failure to start client

@@ -5,12 +5,10 @@ import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 
-import { LanguageClient as NodeLanguageClient } from "vscode-languageclient/node"
-import { LanguageClient as BrowserLanguageClient } from "vscode-languageclient/browser"
 import { InputAreaStatus, OffsetDiagnostic, Severity, SimpleProgressParams, WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { convertToSimple, FileProgressParams } from "./requestTypes";
 import { MessageType } from "../../shared";
-import { WpDiagnostic } from "./clientTypes";
+import { ILspClient, LanguageClient, LanguageClientProvider, WpDiagnostic } from "./clientTypes";
 import { GoalAnswer, GoalRequest } from "../../lib/types";
 
 function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
@@ -29,18 +27,28 @@ function wasCanceledByServer(reason: unknown): boolean {
         && reason.message === "Request got old in server";  // or: code == -32802
 }
 
-// alternatively, this could be defined as `FeatureClient<Middleware, LanguageClientOptions>`
-type LanguageClient = NodeLanguageClient | BrowserLanguageClient
+export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT extends GoalAnswer> implements ILspClient {
+    private _client?: LanguageClient;
 
-interface TimeoutDisposable extends Disposable {
-    dispose(timeout?: number): Promise<void>;
-}
-
-export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT extends GoalAnswer> implements TimeoutDisposable {
     /**
-     * The underlying VS Code language client.
+     * Gets the underlying VS Code language client.
+     * Initializes one if necessary.
      */
-    readonly client: LanguageClient
+    get client(): LanguageClient {
+        if (this._client === undefined) {
+            wpl.log(`${this.language} client not running, initializing`)
+            this._client = this.provideClient();
+        }
+        return this._client;
+    }
+
+    /**
+     * Checks whether the underlying client exists and is running.
+     */
+    isRunning(): boolean {
+        if (this._client === undefined) return false;
+        return this._client.isRunning();
+    }
 
     /**
      * Language identifier of this client, e.g. 'rocq' or 'lean4'
@@ -54,16 +62,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
 
     detailedErrors: boolean = false;
 
-    /**
-     * The currently active document.
-     * Only the `WebviewManager` should change this.
-     */
     activeDocument: TextDocument | undefined;
-
-    /**
-     * The position of the text cursor in the active document.
-     * Only the `WebviewManager` should change this.
-     */
     activeCursorPosition: Position | undefined;
 
     /**
@@ -88,8 +87,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     /*
      * Constructs a Waterproof language client.
      */
-    constructor(client: LanguageClient) {
-        this.client = client;
+    constructor(private readonly provideClient: LanguageClientProvider) {
         this.sentenceManager = new SentenceManager();
 
         // forward progress notifications to editor
@@ -261,10 +259,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         }, 250);
     }
 
-    /**
-     * Registers handlers (for, e.g., file progress notifications, which need to be forwarded to the
-     * editor) and starts client.
-     */
     startWithHandlers(webviewManager: WebviewManager): Promise<void> {
         this.webviewManager = webviewManager;
 
@@ -275,26 +269,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         }));
 
         return this.client.start();
-    }
-
-    /**
-     * Returns the end position of the currently selected sentence, i.e., the Coq sentence in the
-     * active document in which the text cursor is located. Only returns `undefined` if no sentences
-     * are known.
-     */
-    getBeginningOfCurrentSentence(): Position | undefined {
-        if (!this.activeCursorPosition) return undefined;
-        return this.sentenceManager.getBeginningOfSentence(this.activeCursorPosition);
-    }
-
-    /**
-     * Returns the beginning position of the currently selected sentence, i.e., the Coq sentence in the
-     * active document in which the text cursor is located. Only returns `undefined` if no sentences
-     * are known. This is really just the end position of the previous sentence.
-     */
-    getEndOfCurrentSentence(): Position | undefined {
-        if (!this.activeCursorPosition) return undefined;
-        return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);
     }
 
     /**
@@ -309,7 +283,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     /** Sends an LSP request to retrieve the goals at the active cursor position. */
     abstract requestGoals(): Promise<GoalAnswerT>;
 
-    /** Sends an LSP request to retrieve the symbols in the `activeDocument`. */
     async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
         // use active document if no document is given
         document ??= this.activeDocument;
@@ -344,9 +317,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
 
     abstract sendViewportHint(document: TextDocument, start: number, end: number): Promise<void>;
 
-    /**
-     * Requests symbols and sends corresponding completions to the editor.
-     */
     async updateCompletions(document: TextDocument): Promise<void> {
         if (!this.client.isRunning()) return;
         if (!this.webviewManager?.has(document)) {
@@ -356,6 +326,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         // request symbols for `document`
         let symbols: DocumentSymbol[];
         try {
+            // This causes the error
             symbols = await this.requestSymbols(document);
         } catch (reason) {
             if (wasCanceledByServer(reason)) return;  // we've likely already sent a new request
@@ -376,8 +347,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
             body: completions
         });
     }
-
-
 
     dispose(timeout?: number): Promise<void> {
         this.fileProgressComponents.forEach(c => c.dispose());

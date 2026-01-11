@@ -2,49 +2,24 @@ import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
 import React, { useState, useEffect} from 'react';
 import { Message, MessageType } from '../../shared';
 
-// Import the JSON data containing the Coq tactics
-import dataCoq from "../../completions/tactics.json";
-// Import the new JSON data for Lean tactics
-import dataLean from "../../completions/tacticsLean.json";
-
 import '../styles/tactics.css';
+
+type Tactic = {
+    label: string,
+    type: "type",
+    detail: "tactic",
+    template: string,
+    description: string,
+    example: string,
+    boost: number,
+};
 
 const vscode = acquireVsCodeApi();
 
-const ProofAssistant = () => {
+const ProofAssistant = ({ data }: { data: Tactic[] }) => {
     // State variable to track tactic visibility
     const [tacticVisibility, setTacticVisibility] = useState<Record<string, boolean>>({});
     const [value, setValue] = useState("");
-
-    // State for the currently active tactics data (default to Coq)
-    const [tacticsData, setTacticsData] = useState(dataCoq);
-
-    // Listen for messages from the extension
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            const message = event.data as Message;
-            if (message.type === MessageType.setTacticsMode) {
-                if (message.body === 'lean') {
-                    setTacticsData(dataLean);
-                } else {
-                    setTacticsData(dataCoq);
-                }
-                // Reset search and visibility when switching modes
-                setTacticVisibility({});
-                setValue(""); 
-            }
-        };
-
-        window.addEventListener('message', handleMessage);
-
-        // Request the current tactics mode immediately upon mounting
-        vscode.postMessage({ 
-            type: MessageType.command, 
-            body: { command: "getTacticsMode", time: Date.now() } 
-        });
-
-        return () => window.removeEventListener('message', handleMessage);
-    }, []);
 
     // Function to toggle tactic visibility
     const toggleVisibility = (tacticName: string) => {
@@ -136,7 +111,7 @@ const ProofAssistant = () => {
                 onClick={handleClick} />
         </div><div className="proof-assistant">
                 {/* here we filter the data based on the active tacticsData */}
-                {tacticsData.filter(item => item.label.toLowerCase().includes(value.toLowerCase())).map((tactic) => generateCode(tactic))}
+                {data.filter(item => item.label.toLowerCase().includes(value.toLowerCase())).map((tactic) => generateCode(tactic))}
             </div></>
         );
 };

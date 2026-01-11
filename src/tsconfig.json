@@ -6,5 +6,5 @@
     "resolveJsonModule": true,
     "moduleResolution": "nodenext"
   },
-  "include": ["**/*.ts", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts"]
+  "include": ["**/*.ts", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts", "../completions/*.json"]
 }

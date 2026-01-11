@@ -8,27 +8,20 @@ import {
     window,
     ConfigurationTarget,
     Uri,
+    TerminalShellExecutionCommandLineConfidence
 } from "vscode";
-import {
-    LanguageClientOptions,
-    RevealOutputChannelOn,
-    Location
-} from "vscode-languageclient";
+import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
-import {
-    CoqLspClientConfig,
-    // CoqLspClientFactory,
-    CoqLspServerConfig,
-    // LeanLspClientFactory,
-} from "./lsp-client/clientTypes";
+import { LanguageClientProviderFactory, LspClientConfig } from "./lsp-client/clientTypes";
+import { CoqLspServerConfig } from "./lsp-client/coq";
+import { LeanLspClient, LeanLspServerConfig } from "./lsp-client/lean";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
-// CHANGED: Import the new GoalsPanel (multiplexer)
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 import { SidePanelProvider, addSidePanel } from "./webviews/sidePanel";
 import { Search } from "./webviews/standardviews/search";
@@ -39,44 +32,65 @@ import { TacticsPanel } from "./webviews/standardviews/tactics";
 
 import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
-import { WebviewState } from "./webviews/coqWebview";
-import {
-    WaterproofConfigHelper,
-    WaterproofSetting,
-    WaterproofLogger as wpl,
-    WaterproofFileUtil,
-    WaterproofPackageJSON
-} from "./helpers";
-import { CoqLspClient } from "./lsp-client/coqClient";
-import { LeanLspClient } from "./lsp-client/leanClient";
-import { LspClientFactory } from "./lsp-client/clientTypes";
+import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
+
 import { convertToString } from "../lib/types";
 import { Hypothesis } from "./api";
-import { MessageType, Message } from "../shared/Messages"; // Added MessageType import
-import { InfoProvider } from "./infoview";
-import { LspClient } from "./lsp-client/abstractLspClient";
+import { CompositeClient } from "./lsp-client/composite";
+import { CompositeGoalsPanel } from "./webviews/goalviews/compositeGoalsPanel";
+import { MessageType } from "../shared/Messages";
 
+/**
+ * Main extension class
+ */
 export class Waterproof implements Disposable {
-    private readonly context: ExtensionContext;
-    private readonly disposables: Disposable[] = [];
-    public readonly webviewManager: WebviewManager;
-    public client!: LeanLspClient | CoqLspClient;
-    public activeClient: string;
-    private leanClient!: LeanLspClient;
-    private coqClient!: CoqLspClient;
-    private readonly statusBar: IStatusComponent;
-    private readonly goalsComponents: IGoalsComponent[] = [];
-    public readonly executorComponent: IExecutor;
-    private sidePanelProvider: SidePanelProvider;
-    private coqClientRunning: boolean = false;
-    private leanClientRunning: boolean = false;
-    private infoProvider?: InfoProvider;
-    private goalsPanel?: GoalsPanel;
 
+    /** The extension context */
+    private readonly context: ExtensionContext;
+
+    /** The resources that must be released when this extension is disposed of */
+    private readonly disposables: Disposable[] = [];
+
+    /** The function that can create a new Coq language client provider */
+    private readonly getCoqClientProvider: LanguageClientProviderFactory;
+
+    /** The function that can create a new Lean language client provider */
+    private readonly getLeanClientProvider: LanguageClientProviderFactory;
+
+    /** The manager for (communication between) webviews */
+    public readonly webviewManager: WebviewManager;
+
+    /**
+     * The client that communicates with the LSP server.
+     * It's created by the `initializeClient` function.
+     */
+    public client!: CompositeClient;
+
+    /** The status bar item that indicates whether this extension is running */
+    private readonly statusBar: IStatusComponent;
+
+    /** The components that display or process the goals and messages on the current line */
+    private readonly goalsComponents: IGoalsComponent[] = [];
+
+    /** The tactics panel */
+    private readonly tacticsPanel: TacticsPanel;
+
+    /** Main executor that allows for arbitrary execution */
+    public readonly executorComponent: IExecutor;
+
+    private sidePanelProvider: SidePanelProvider;
+
+    private clientRunning: boolean = false;
+
+    /**
+     * Constructs the extension lifecycle object.
+     *
+     * @param context the extension context object
+     */
     constructor(
         context: ExtensionContext,
-        private readonly leanClientFactory: LspClientFactory<LeanLspClient>,
-        private readonly coqClientFactory: LspClientFactory<CoqLspClient>,
+        getCoqClientProvider: LanguageClientProviderFactory,
+        getLeanClientProvider: LanguageClientProviderFactory,
         private readonly _isWeb = false
     ) {
         wpl.log("Waterproof initialized");
@@ -84,219 +98,89 @@ export class Waterproof implements Disposable {
         excludeCoqFileTypes();
 
         this.context = context;
-        this.activeClient = "none";
+        this.getCoqClientProvider = getCoqClientProvider;
+        this.getLeanClientProvider = getLeanClientProvider;
+
         this.webviewManager = new WebviewManager();
+        this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
+            this.client.updateCompletions(document);
+        });
+        this.webviewManager.on(WebviewManagerEvents.viewportHint, ({document, start, end}) => {
+            this.client.sendViewportHint(document, start, end);
+        });
 
-        this.statusBar = new CoqnitiveStatusBar();
+        this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
+            wpl.log("Focus event received");
 
-        // CHANGED: Use the new GoalsPanel (Multiplexer)
-        const goalsPanel = new GoalsPanel(
-            this.context.extensionUri,
-            CoqLspClientConfig.create()
-        );
-        this.goalsComponents.push(goalsPanel);
-
-        // Register it as 'goals' so it replaces the standard goals panel
-        this.webviewManager.addToolWebview("goals", goalsPanel);
-        this.goalsPanel = goalsPanel;
-        this.webviewManager.on(
-            WebviewManagerEvents.toolStateChange,
-            ({ name, state }: { name: string; state: WebviewState }) => {
-                if (name === "goals") {
-                    void this.handleGoalsPanelStateChange(state);
-                }
-            }
-        );
-        this.webviewManager.on(
-            WebviewManagerEvents.editorReady,
-            (document: TextDocument) => {
-                this.client.updateCompletions(document);
-            }
-        );
-        this.webviewManager.on(
-            WebviewManagerEvents.viewportHint,
-            ({ document, start, end }) => {
-                wpl.debug(`[EXTENSION] ViewportHint event received for ${document.uri.fsPath}: ${start}-${end}`);
-                if (!this.client || !this.client.client.isRunning()) {
-                    wpl.debug("[EXTENSION] ViewportHint: client not available, skipping");
-                    return;
-                }
-                wpl.debug("[EXTENSION] ViewportHint: Calling client.sendViewportHint");
-                this.client.sendViewportHint(document, start, end);
-            }
-        );
-
-        this.webviewManager.on(
-            WebviewManagerEvents.focus,
-            async (document: TextDocument) => {
-                wpl.log("Focus event received");
-                if (document.languageId.startsWith("lean")) {
-                    // CHANGED: Switch mode to Lean
-                    goalsPanel.setMode('lean');
-
-                    // Switch tactics panel to Lean mode (safely)
-                    this.safePostMessage("tactics", { type: MessageType.setTacticsMode, body: "lean" });
-
-                    if (!this.leanClientRunning) {
-                        console.warn(
-                            "Focus event received before client is ready. Waiting..."
-                        );
-                        // Initiliaze Lean client
-                        if (!this.coqClient?.client.isRunning()) {
-                            this.initializeLeanClient(); 
-                        }
-                        const waitForClient = async (): Promise<void> => {
-                            return new Promise((resolve) => {
-                                const interval = setInterval(() => {
-                                    if (this.leanClientRunning) {
-                                        clearInterval(interval);
-                                        resolve();
-                                    }
-                                }, 100);
-                            });
-                        };
-                        await waitForClient();
-                        wpl.log("Lean Client ready. Proceeding with focus event.");
-                    }
-                    this.activeClient = "lean4";
-                    this.client = this.leanClient;
-                    if (
-                        this.leanClient.activeDocument?.uri.toString() !== document.uri.toString() ||
-                        !this.infoProvider?.isInitialized
-                    ) {
-                        this.leanClient.activeDocument = document;
-                        this.leanClient.activeCursorPosition = undefined;
-                        this.webviewManager.open("goals");
-                        if (this.infoProvider) {
-                            const loc: Location = {
-                                uri: document.uri.toString(),
-                                range: {
-                                    start: {
-                                        line: 0, character: 0
-                                    },
-                                    end: {
-                                        line: 0, character: 0
-                                    }
-                                }
+            // Wait for client to initialize
+            if (!this.clientRunning) {
+                console.warn("Focus event received before client is ready. Waiting...");
+                const waitForClient = async (): Promise<void> => {
+                    return new Promise(resolve => {
+                        const interval = setInterval(() => {
+                            if (this.clientRunning) {
+                                clearInterval(interval);
+                                resolve();
                             }
+                        }, 100);
+                    });
+                };
+                await waitForClient();
+                wpl.log("Client ready. Proceeding with focus event.");
+            }
 
-                            if (!this.infoProvider.isInitialized) {
-                                await this.infoProvider.initInfoview(loc)
-                            } else {
-                                this.infoProvider.sendPosition(loc)
-                            }
-                        }
-                        for (const g of this.goalsComponents) g.updateGoals(undefined);
-                    }
-                } else {
-                    // CHANGED: Switch mode to Coq
-                    goalsPanel.setMode('coq');
-                    // Switch tactics panel to Coq mode (safely)
-                    this.safePostMessage("tactics", { type: MessageType.setTacticsMode, body: "coq" });
+            wpl.log("Client state");
 
-                    if (!this.coqClientRunning) {
-                        console.warn(
-                            "Focus event received before client is ready. Waiting..."
-                        );
-                        // Initiliaze Coq client
-                        if (!this.coqClient?.client.isRunning()) {
-                            this.initializeCoqClient(); 
-                        }
-                        const waitForClient = async (): Promise<void> => {
-                            return new Promise((resolve) => {
-                                const interval = setInterval(() => {
-                                    if (this.coqClientRunning) {
-                                        clearInterval(interval);
-                                        resolve();
-                                    }
-                                }, 100);
-                            });
-                        };
-                        await waitForClient();
-                        wpl.log("Client ready. Proceeding with focus event.");
-                    }
-                    wpl.log("Client state");
-                    this.activeClient = 'coq';
-                    this.client = this.coqClient;
-                    if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
-                        this.client.activeDocument = document;
-                        this.client.activeCursorPosition = undefined;
-                        this.webviewManager.open("goals");
-                        for (const g of this.goalsComponents) g.updateGoals(undefined);
-                    }
-                }
-            });
-
-        this.webviewManager.on(
-            WebviewManagerEvents.cursorChange,
-            async (document: TextDocument, position: Position) => {
+            // update active document
+            // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
+            if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
                 this.client.activeDocument = document;
-                this.client.activeCursorPosition = position;
-                if (this.activeClient == 'lean4') {
-                    if (this.infoProvider) {
-                        const loc: Location = {
-                            uri: document.uri.toString(),
-                            range: {
-                                start: { line: position.line, character: position.character },
-                                end: { line: position.line, character: position.character },
-                            },
-                        };
-                        this.infoProvider?.sendPosition(loc);
+                this.client.activeCursorPosition = undefined;
+                this.webviewManager.open("goals");
+                for (const g of this.goalsComponents) g.updateGoals(this.client);
+            }
+
+            this.tacticsPanel.update(this.client);
+        });
+        this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
+            // update active document and cursor
+            this.client.activeDocument = document;
+            this.client.activeCursorPosition = position;
+            this.updateGoals(document, position);  // TODO: error handling
+        });
+        this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
+            if (command == "createHelp") {
+                source.setResults(["createHelp"]);
+            } else {
+                executeCommand(this.client.coqClient, command).then(
+                    results => {
+                        source.setResults(results);
+                    },
+                    (error: Error) => {
+                        source.setResults(["Error: " + error.message]);  // (temp)
                     }
-                } else {
-                    this.updateGoalsCoq(document, position);
-                }
-            });
+                );
+            }
+        });
 
-        this.webviewManager.on(
-            WebviewManagerEvents.command,
-            (source: IExecutor, command: string) => {
-                if (command == "createHelp") {
-                    source.setResults(["createHelp"]);
-                }
-                // Handle the request for tactics mode
-                else if (command === "getTacticsMode") {
-                    const mode = this.activeClient === "lean4" ? "lean" : "coq";
-                    this.safePostMessage("tactics", { type: MessageType.setTacticsMode, body: mode });
-                }
-                else {
-                    executeCommand(this.client, command).then(
-                        results => {
-                            source.setResults(results);
-                        },
-                        (error: Error) => {
-                            source.setResults(["Error: " + error.message]);
-                        }
-                    );
-                }
-            });
+        this.disposables.push(CoqEditorProvider.register(context, this.webviewManager));
 
-        this.disposables.push(
-            CoqEditorProvider.register(context, this.webviewManager)
-        );
 
-        this.webviewManager.addToolWebview(
-            "symbols",
-            new SymbolsPanel(this.context.extensionUri)
-        );
-        this.webviewManager.addToolWebview(
-            "search",
-            new Search(this.context.extensionUri)
-        );
-        this.webviewManager.addToolWebview(
-            "help",
-            new Help(this.context.extensionUri)
-        );
+        // make relevant gui components
+        this.statusBar = new CoqnitiveStatusBar();
+        const goalsPanel = new GoalsPanel(this.context.extensionUri, LspClientConfig.create())
+        const compositeGoalsPanel = new CompositeGoalsPanel(this.client, goalsPanel);
+        this.goalsComponents.push(compositeGoalsPanel);
+        this.webviewManager.addToolWebview("goals", goalsPanel);
+        this.webviewManager.open("goals");
+        this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
+        this.webviewManager.addToolWebview("search", new Search(this.context.extensionUri));
+        this.webviewManager.addToolWebview("help", new Help(this.context.extensionUri));
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
-        this.webviewManager.addToolWebview(
-            "tactics",
-            new TacticsPanel(this.context.extensionUri)
-        );
-        const debug = new DebugPanel(
-            this.context.extensionUri,
-            CoqLspClientConfig.create()
-        );
+        this.tacticsPanel = new TacticsPanel(this.context.extensionUri);
+        this.webviewManager.addToolWebview("tactics", this.tacticsPanel);
+        const debug = new DebugPanel(this.context.extensionUri, LspClientConfig.create());
         this.webviewManager.addToolWebview("debug", debug);
         this.goalsComponents.push(debug);
 
@@ -304,86 +188,50 @@ export class Waterproof implements Disposable {
 
         this.executorComponent = executorPanel;
 
+        // register commands
         wpl.log("Calling initializeClient...");
-        this.registerCommand("start", this.initializeCoqClient);
+        this.registerCommand("start", this.initializeClient);
         this.registerCommand("restart", this.restartClient);
         this.registerCommand("toggle", this.toggleClient);
         this.registerCommand("stop", this.stopClient);
         this.registerCommand("exportExerciseSheet", this.exportExerciseSheet);
+
+        // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
+
+        // FIXME: Move command handlers to their own location.
+
         this.registerCommand("openTutorial", this.waterproofTutorialCommand);
 
-        this.registerCommand("pathSetting", () => {
-            commands.executeCommand("workbench.action.openSettings", "waterproof.path");
-        });
-        this.registerCommand("argsSetting", () => {
-            commands.executeCommand("workbench.action.openSettings", "waterproof.args");
-        });
-
+        this.registerCommand("pathSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.path");});
+        this.registerCommand("argsSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.args");});
         this.registerCommand("defaultPath", () => {
             let defaultValue: string | undefined;
             switch (process.platform) {
-                case "aix":
-                    defaultValue = undefined;
-                    break;
-                case "android":
-                    defaultValue = undefined;
-                    break;
+                case "aix": defaultValue = undefined; break;
+                case "android": defaultValue = undefined; break;
                 // MACOS
-                case "darwin":
-                    defaultValue = "coq-lsp";
-                    break;
-                case "freebsd":
-                    defaultValue = undefined;
-                    break;
-                case "haiku":
-                    defaultValue = undefined;
-                    break;
+                case "darwin": defaultValue = "coq-lsp"; break;
+                case "freebsd": defaultValue = undefined; break;
+                case "haiku": defaultValue = undefined; break;
                 // LINUX
-                case "linux":
-                    defaultValue = "coq-lsp";
-                    break;
-                case "openbsd":
-                    defaultValue = undefined;
-                    break;
-                case "sunos":
-                    defaultValue = undefined;
-                    break;
+                case "linux": defaultValue = "coq-lsp"; break;
+                case "openbsd": defaultValue = undefined; break;
+                case "sunos": defaultValue = undefined; break;
                 // WINDOWS
-                case "win32":
-                    defaultValue =
-                        WaterproofPackageJSON.defaultCoqLspPathWindows(this.context);
-                    break;
-                case "cygwin":
-                    defaultValue = undefined;
-                    break;
-                case "netbsd":
-                    defaultValue = undefined;
-                    break;
+                case "win32": defaultValue = WaterproofPackageJSON.defaultCoqLspPathWindows(this.context); break;
+                case "cygwin": defaultValue = undefined; break;
+                case "netbsd": defaultValue = undefined; break;
             }
             if (defaultValue === undefined) {
-                window.showInformationMessage(
-                    "Waterproof has no known default value for this platform, please update the setting manually."
-                );
-                commands.executeCommand(
-                    "workbench.action.openSettings",
-                    "waterproof.path"
-                );
+                window.showInformationMessage("Waterproof has no known default value for this platform, please update the setting manually.");
+                commands.executeCommand("workbench.action.openSettings", "waterproof.path");
             } else {
                 try {
-                    WaterproofConfigHelper.update(
-                        WaterproofSetting.Path,
-                        defaultValue,
-                        ConfigurationTarget.Global
-                    ).then(() => {
+                    WaterproofConfigHelper.update(WaterproofSetting.Path, defaultValue, ConfigurationTarget.Global).then(() => {
                         setTimeout(() => {
-                            wpl.log(
-                                "Waterproof Args setting changed to: " +
-                                WaterproofConfigHelper.get(WaterproofSetting.Path).toString()
-                            );
-                            window.showInformationMessage(
-                                `Waterproof Path setting succesfully updated!`
-                            );
+                            wpl.log("Waterproof Args setting changed to: " + WaterproofConfigHelper.get(WaterproofSetting.Path).toString());
+                            window.showInformationMessage(`Waterproof Path setting succesfully updated!`);
                         }, 100);
                     });
                 } catch (e) {
@@ -418,61 +266,31 @@ export class Waterproof implements Disposable {
 
             let cmnd: string | undefined;
             switch (process.platform) {
-                case "aix":
-                    cmnd = undefined;
-                    break;
-                case "android":
-                    cmnd = undefined;
-                    break;
+                case "aix": cmnd = undefined; break;
+                case "android": cmnd = undefined; break;
                 // MACOS - This is currently not implemented, future task
-                case "darwin":
-                    cmnd = undefined;
-                    break;
-                case "freebsd":
-                    cmnd = undefined;
-                    break;
-                case "haiku":
-                    cmnd = undefined;
-                    break;
+                case "darwin": cmnd = undefined; break;
+                case "freebsd": cmnd = undefined; break;
+                case "haiku": cmnd = undefined; break;
                 // LINUX - This is currently not implemented, issues when dealing with different distros and basic packages, installation is also easy enough
-                case "linux":
-                    cmnd = undefined;
-                    break;
-                case "openbsd":
-                    cmnd = undefined;
-                    break;
-                case "sunos":
-                    cmnd = undefined;
-                    break;
+                case "linux": cmnd = undefined; break;
+                case "openbsd": cmnd = undefined; break;
+                case "sunos": cmnd = undefined; break;
                 // WINDOWS
                 case "win32":
-                // If a waterproof installation is found in the default location it is first uninstalled.
-                // The path is updated to the default location so if an installation is present in another directory it still will not be utilised
-                // The installer is then downloaded, run and then removed.
+                    // If a waterproof installation is found in the default location it is first uninstalled.
+                    // The path is updated to the default location so if an installation is present in another directory it still will not be utilised
+                    // The installer is then downloaded, run and then removed.
                 // eslint-disable-next-line no-fallthrough
-                case "cygwin":
-                    cmnd =
-                        `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` +
-                        uninstallerLocation +
-                        ` (echo Uninstalling previous installation of Waterproof && ` +
-                        uninstallerLocation +
-                        ` && ` +
-                        windowsInstallationScript +
-                        ` ) ELSE (echo No previous installation found && ` +
-                        windowsInstallationScript +
-                        ` )"`;
-                    break;
-                case "netbsd":
-                    cmnd = undefined;
-                    break;
+                case "cygwin": cmnd =  `start "WATERPROOF INSTALLER" cmd /k "IF EXIST ` + uninstallerLocation + ` (echo Uninstalling previous installation of Waterproof && `
+                    + uninstallerLocation + ` && ` + windowsInstallationScript + ` ) ELSE (echo No previous installation found && ` +  windowsInstallationScript + ` )"`; break;
+                case "netbsd": cmnd = undefined; break;
             }
 
             if (cmnd === undefined) {
-                window.showInformationMessage(
-                    "Waterproof has no automatic installation process for this platform, please refer to the walktrough page."
-                );
+                window.showInformationMessage("Waterproof has no automatic installation process for this platform, please refer to the walktrough page.");
             } else {
-                await this.autoInstall(cmnd);
+                await this.autoInstall(cmnd)
             }
         });
 
@@ -481,50 +299,6 @@ export class Waterproof implements Disposable {
             WaterproofConfigHelper.update(WaterproofSetting.ShowLineNumbersInEditor, updated);
             window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
-    }
-
-    /**
-     * Safely posts a message to a webview. If the webview is not ready/open, it catches the error and ignores it.
-     */
-    private safePostMessage(view: string, message: Message) {
-        try {
-            this.webviewManager.postMessage(view, message);
-        } catch (e) {
-            // Ignore errors if the view is not yet ready or visible
-        }
-    }
-
-    /**
-     * Request the goals for the current document and cursor position.
-     */
-    public async goals(): Promise<{ currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[] }> {
-    
-        if (!this.client.activeDocument || !this.client.activeCursorPosition) {
-            throw new Error("No active document or cursor position.");
-        }
-
-        const document = this.client.activeDocument;
-        const position = this.client.activeCursorPosition;
-
-        const params = this.client.createGoalsRequestParameters(document, position);
-        const goalResponse = await this.client.requestGoals(params);
-
-        if (goalResponse.goals === undefined || goalResponse.goals.length === 0) {
-            throw new Error("Response contained no goals.");
-        }
-
-        if (this.activeClient === "lean4") {
-            
-            return { currentGoal: goalResponse.goals[0], hypotheses: [], otherGoals: goalResponse.goals.slice(1) };
-        } else {
-
-            // Convert goals and hypotheses to strings
-            const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
-            // Note: only taking hypotheses from the first goal
-            const hyps = goalResponse.goals.goals[0].hyps.map(h => { return { name: convertToString(h.names[0]), content: convertToString(h.ty) }; });
-
-            return { currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1) };
-        }
     }
 
     /**
@@ -540,13 +314,12 @@ export class Waterproof implements Disposable {
      */
     public async help(): Promise<Array<string>> {
         // Execute command
-        const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
+        const wpHelpResponse = await executeCommandFullOutput(this.client.coqClient, "Help.");
         // Return the help messages. val[0] contains the levels, which we ignore.
         return wpHelpResponse.feedback.map(val => val[1]);
     }
 
-    // TODO: add lean client to proofContext
-    /**
+    /*,.*
      * Returns information about the current proof on a document level.
      * This function will look at the current document to figure out what
      * statement the user is currently proving.
@@ -615,14 +388,13 @@ export class Waterproof implements Disposable {
         }
     }
 
-    // TODO: add lean client
     /**
      * Try a proof/step by executing the given commands/tactics.
      * @param steps The proof steps to try. This can be a single tactic or command or multiple separated by the
      * usual `.` and space.
      */
-    public async tryProof(steps: string): Promise<{ finished: boolean, remainingGoals: string[] }> {
-        const execResponse = await executeCommandFullOutput(this.client, steps);
+    public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
+        const execResponse = await executeCommandFullOutput(this.client.coqClient, steps);
         return {
             finished: execResponse.proof_finished,
             remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
@@ -638,156 +410,117 @@ export class Waterproof implements Disposable {
             // Doing the require here to avoid issues with the import in the browser version
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { exec } = require("child_process");
-            exec(command, (err: unknown, _stdout: unknown, _stderr: unknown) => {
+            exec(command, (err : unknown, _stdout: unknown, _stderr: unknown) => {
                 if (err) {
                     // Simple fixed scripts are run, the user is able to stop these but they are not considered errors
                     // as the user has freedom to choose the steps and can rerun the command.
                 }
                 this.initializeClient();
-                resolve(true);
+                resolve(true)
             });
         });
     }
 
     private async waterproofTutorialCommand(): Promise<void> {
-        const hasWorkspaceOpen =
-            workspace.workspaceFolders !== undefined &&
-            workspace.workspaceFolders.length != 0;
-        const defaultUri = hasWorkspaceOpen
-            ? Utils.joinPath(
-                workspace.workspaceFolders![0].uri,
-                "waterproof_tutorial.mv"
-            )
-            : Uri.parse("./waterproof_tutorial.mv");
-        window
-            .showSaveDialog({
-                filters: { Waterproof: ["mv", "v"] },
-                title: "Waterproof Tutorial",
-                defaultUri,
-            })
-            .then((uri) => {
-                if (!uri) {
-                    window.showErrorMessage(
-                        "Something went wrong in saving the Waterproof tutorial file"
-                    );
+        const hasWorkspaceOpen = workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length != 0;
+        const defaultUri = hasWorkspaceOpen ? Utils.joinPath(workspace.workspaceFolders![0].uri, "waterproof_tutorial.mv") : Uri.parse("./waterproof_tutorial.mv");
+        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "Waterproof Tutorial", defaultUri}).then((uri) => {
+            if (!uri) {
+                window.showErrorMessage("Something went wrong in saving the Waterproof tutorial file");
+                return;
+            }
+            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "waterproof_tutorial.mv");
+            workspace.fs.readFile(newFilePath)
+                .then((data) => {
+                    workspace.fs.writeFile(uri, data).then(() => {
+                        // Open the file using the waterproof editor
+                        // TODO: Hardcoded `coqEditor.coqEditor`.
+                        commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
+                    });
+                }, (err) => {
+                    window.showErrorMessage("Could not open Waterproof tutorial file.");
+                    console.error(`Could not read Waterproof tutorial file: ${err}`);
                     return;
-                }
-                const newFilePath = Uri.joinPath(
-                    this.context.extensionUri,
-                    "misc-includes",
-                    "waterproof_tutorial.mv"
-                );
-                workspace.fs.readFile(newFilePath).then(
-                    (data) => {
-                        workspace.fs.writeFile(uri, data).then(() => {
-                            commands.executeCommand(
-                                "vscode.openWith",
-                                uri,
-                                "waterproofTue.waterproofEditor"
-                            );
-                        });
-                    },
-                    (err) => {
-                        window.showErrorMessage("Could not open Waterproof tutorial file.");
-                        console.error(`Could not read Waterproof tutorial file: ${err}`);
-                        return;
-                    }
-                );
-            });
+                })
+        });
     }
 
+    /**
+     * Handle the newWaterproofDocument command.
+     * This command can be either activated by the user via the 'command palette'
+     * or by using the File -> New File... option.
+     */
     private async newFileCommand(): Promise<void> {
-        const hasWorkspaceOpen =
-            workspace.workspaceFolders !== undefined &&
-            workspace.workspaceFolders.length != 0;
-        const defaultUri = hasWorkspaceOpen
-            ? Utils.joinPath(
-                workspace.workspaceFolders![0].uri,
-                "new_waterproof_document.mv"
-            )
-            : Uri.parse("./new_waterproof_document.mv");
-        window
-            .showSaveDialog({
-                filters: { Waterproof: ["mv", "v"] },
-                title: "New Waterproof Document",
-                defaultUri,
-            })
-            .then((uri) => {
-                if (!uri) {
-                    window.showErrorMessage(
-                        "Something went wrong in creating a new waterproof document"
-                    );
+        const hasWorkspaceOpen = workspace.workspaceFolders !== undefined && workspace.workspaceFolders.length != 0;
+        const defaultUri = hasWorkspaceOpen ? Utils.joinPath(workspace.workspaceFolders![0].uri, "new_waterproof_document.mv") : Uri.parse("./new_waterproof_document.mv");
+        window.showSaveDialog({filters: {'Waterproof': ["mv", "v"]}, title: "New Waterproof Document", defaultUri}).then((uri) => {
+            if (!uri) {
+                window.showErrorMessage("Something went wrong in creating a new waterproof document");
+                return;
+            }
+            const newFilePath = Uri.joinPath(this.context.extensionUri, "misc-includes", "empty_waterproof_document.mv");
+            workspace.fs.readFile(newFilePath)
+                .then((data) => {
+                    workspace.fs.writeFile(uri, data).then(() => {
+                        // Open the file using the waterproof editor
+                        // TODO: Hardcoded `coqEditor.coqEditor`.
+                        commands.executeCommand("vscode.openWith", uri, "waterproofTue.waterproofEditor");
+                    });
+                }, (err) => {
+                    window.showErrorMessage("Could not create a new Waterproof file.");
+                    console.error(`Could not read Waterproof tutorial file: ${err}`);
                     return;
-                }
-                const newFilePath = Uri.joinPath(
-                    this.context.extensionUri,
-                    "misc-includes",
-                    "empty_waterproof_document.mv"
-                );
-                workspace.fs.readFile(newFilePath).then(
-                    (data) => {
-                        workspace.fs.writeFile(uri, data).then(() => {
-                            commands.executeCommand(
-                                "vscode.openWith",
-                                uri,
-                                "waterproofTue.waterproofEditor"
-                            );
-                        });
-                    },
-                    (err) => {
-                        window.showErrorMessage("Could not create a new Waterproof file.");
-                        console.error(`Could not read Waterproof tutorial file: ${err}`);
-                        return;
-                    }
-                );
-            });
+                })
+        });
     }
 
-    private registerCommand(
-        name: string,
-        handler: (...args: unknown[]) => void,
-        editorCommand: boolean = false
-    ) {
-        const register = editorCommand
-            ? commands.registerTextEditorCommand
-            : commands.registerCommand;
+    /**
+     * Registers a new Waterproof command and adds it to `disposables`.
+     *
+     * @param name the identifier for the command (after the "waterproof." prefix)
+     * @param handler the function that runs when the command is executed
+     * @param editorCommand whether to register a "text editor" or ordinary command
+     */
+    private registerCommand(name: string, handler: (...args: unknown[]) => void, editorCommand: boolean = false) {
+        const register = editorCommand ? commands.registerTextEditorCommand : commands.registerCommand;
         this.disposables.push(register("waterproof." + name, handler, this));
     }
 
-    // TODO: implement for Lean
+    /**
+     * Remove solutions from document and open save dialog for the solution-less file.
+     */
     async exportExerciseSheet() {
         const document = this.client.activeDocument;
-        if (document && this.activeClient == 'coq') { 
+        if (document) {
             let content = document.getText();
             const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g;
             const replacement = `<input-area>\n\`\`\`coq\n\n\`\`\`\n</input-area>`;
             content = content.replace(pattern, replacement);
             const fileUri = await window.showSaveDialog();
             if (fileUri) {
-                await workspace.fs.writeFile(fileUri, Buffer.from(content, "utf8"));
+                await workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
                 window.showInformationMessage(`Saved to: ${fileUri.fsPath}`);
             }
         }
     }
 
-    async initializeCoqClient(): Promise<void> {
+    /**
+     * Create the lsp client and update relevant status components
+     */
+    async initializeClient(): Promise<void> {
         wpl.log("Start of initializeClient");
 
-        const launchChecksDisabled = WaterproofConfigHelper.get(
-            WaterproofSetting.SkipLaunchChecks
-        );
+        // Whether the user has decided to skip the launch checks
+        const launchChecksDisabled = WaterproofConfigHelper.get(WaterproofSetting.SkipLaunchChecks);
 
         if (launchChecksDisabled || this._isWeb) {
             const reason = launchChecksDisabled ? "Launch checks disabled by user." : "Web extension, skipping launch checks.";
             wpl.log(`${reason} Attempting to launch client...`);
         } else {
             // Run the version checker.
-            const requiredCoqLSPVersion =
-                WaterproofPackageJSON.requiredCoqLspVersion(this.context);
-            const requiredCoqWaterproofVersion =
-                WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
-            const versionChecker =
-                new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
+            const requiredCoqLSPVersion = WaterproofPackageJSON.requiredCoqLspVersion(this.context);
+            const requiredCoqWaterproofVersion =  WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
+            const versionChecker = new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
 
             // Check whether we can find coq-lsp
             const foundServer = await versionChecker.prelaunchChecks();
@@ -799,190 +532,114 @@ export class Waterproof implements Disposable {
             }
         }
 
-        if (this.coqClient?.client.isRunning()) {
-            return Promise.reject(
-                new Error("Cannot initialize client; one is already running.")
-            );
+        if (this.client?.isRunning()) {
+            return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
 
-        const serverOptions = CoqLspServerConfig.create(
+        const coqServerOptions = CoqLspServerConfig.create(
             // TODO: Support +coqversion versions.
             WaterproofPackageJSON.requiredCoqLspVersion(this.context).slice(2)
         );
 
-        const clientOptions: LanguageClientOptions = {
+        const coqClientOptions: LanguageClientOptions = {
             documentSelector: [{ language: "markdown" }, { language: "coq" }],  // .mv and .v files
             outputChannelName: "Waterproof LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
-            initializationOptions: serverOptions,
+            initializationOptions: coqServerOptions,
+            markdown: { isTrusted: true, supportHtml: true },
+        };
+
+        const leanServerOptions = LeanLspServerConfig.create();
+
+        const leanClientOptions: LanguageClientOptions = {
+            documentSelector: [{ language: "lean4" }],
+            outputChannelName: "Waterproof LSP Events (Initial)",
+            revealOutputChannelOn: RevealOutputChannelOn.Info,
+            initializationOptions: leanServerOptions,
             markdown: { isTrusted: true, supportHtml: true },
         };
 
         wpl.log("Initializing client...");
-        this.coqClient = this.coqClientFactory(
-            this.context,
-            clientOptions,
-            "rocq"
+        this.client = new CompositeClient(
+            this.getCoqClientProvider(this.context, coqClientOptions, WaterproofConfigHelper.configuration),
+            this.getLeanClientProvider(this.context, leanClientOptions, WaterproofConfigHelper.configuration),
         );
-        return this.coqClient.startWithHandlers(this.webviewManager).then(
+        return this.client.startWithHandlers(this.webviewManager).then(
             () => {
                 this.webviewManager.open("goals");
+                // show user that LSP is working
                 this.statusBar.update(true);
-                this.coqClientRunning = true;
+                this.clientRunning = true;
                 wpl.log("Client initialization complete.");
+
             },
-            (reason: any) => {
+            reason => {
                 const message = reason.toString();
                 wpl.log(`Error during client initialization: ${message}`);
                 this.statusBar.failed(message);
-                throw reason;
+                throw reason;  // keep chain rejected
             }
         );
+
     }
-
-    async initializeLeanClient(): Promise<void> {
-        wpl.log("Start of initializeLeanClient");
-
-        if (this.leanClient?.client.isRunning()) {
-            return Promise.reject(
-                new Error("Cannot initialize Lean client; one is already running.")
-            );
-        }
-
-        const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "lean4" }],
-            outputChannelName: "Waterproof Lean LSP",
-            revealOutputChannelOn: RevealOutputChannelOn.Info,
-        };
-
-        wpl.log("Initializing Lean client via clientFactory...");
-        this.leanClient = this.leanClientFactory(
-            this.context,
-            clientOptions,
-            "lean"
-        ) as LeanLspClient;
-
-        return this.leanClient.startWithHandlers(this.webviewManager).then(
-            () => {
-                this.webviewManager.open("goals");
-                this.statusBar.update(true);
-                this.leanClientRunning = true;
-                wpl.log("Lean client initialization complete.");
-
-                this.infoProvider = new InfoProvider(this.leanClient);
-                this.infoProvider.attachHost(this.goalsPanel);
-            },
-            (reason) => {
-                const message = String(reason);
-                wpl.log(`Error during Lean client initialization: ${message}`);
-                this.statusBar.failed(message);
-                throw reason;
-            }
-        );
-    }
-
-    private async handleGoalsPanelStateChange(state: WebviewState) {
-        if (!this.goalsPanel || !this.infoProvider) {
-            return;
-        }
-
-        if (state === WebviewState.closed) {
-            this.infoProvider.isInitialized = false;
-            return;
-        }
-
-        if (state !== WebviewState.visible) {
-            return;
-        }
-
-        if (!this.leanClientRunning || this.activeClient !== "lean4") {
-            return;
-        }
-
-        const doc = this.client?.activeDocument ?? window.activeTextEditor?.document;
-        if (!doc || !doc.languageId.startsWith("lean")) {
-            return;
-        }
-
-        const position = this.client.activeCursorPosition ?? new Position(0, 0);
-        const loc: Location = {
-            uri: doc.uri.toString(),
-            range: {
-                start: { line: position.line, character: position.character },
-                end: { line: position.line, character: position.character },
-            },
-        };
-
-        if (!this.infoProvider.isInitialized) {
-            await this.infoProvider.initInfoview(loc);
-        } else {
-            await this.infoProvider.sendPosition(loc);
-        }
-    }
-
 
     /**
      * Restarts the Coq LSP client.
      */
     private async restartClient(): Promise<void> {
         await this.stopClient();
-        if (this.activeClient == 'lean4') await this.initializeLeanClient();
-        else await this.initializeCoqClient();
+        await this.initializeClient();
     }
 
+    /**
+     * Toggles the state of the Coq LSP client. That is, stop the client if it's running and
+     * otherwise initialize it.
+     */
     private toggleClient(): Promise<void> {
-        if (this.client?.client.isRunning()) {
+        if (this.client?.isRunning()) {
             return this.stopClient();
         } else {
-            if (this.activeClient == 'lean4') return this.initializeLeanClient();
-            else return this.initializeCoqClient();
+            return this.initializeClient();
         }
     }
 
+    /**
+     * Disposes of the Coq LSP client.
+     */
     private async stopClient(): Promise<void> {
-        if (this.client.client.isRunning()) {
-            for (const g of this.goalsComponents) g.disable();
+        if (this.client.isRunning()) {
             await this.client.dispose(2000);
-            this.coqClientRunning = false;
+            this.clientRunning = false;
             this.statusBar.update(false);
         } else {
             return Promise.resolve();
         }
     }
 
-    private async updateGoalsCoq(
-        document: TextDocument,
-        position: Position
-    ): Promise<void> {
-        wpl.debug(
-            `Updating goals for document: ${document.uri.toString()} at position: ${position.line
-            }:${position.character}`
-        );
-        if (!this.client.client.isRunning()) {
+    /**
+     * Request the goals for the current document and cursor position.
+     */
+    public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
+        return this.client.goals();
+    }
+
+    /**
+     * This function gets called on TextEditorSelectionChange events and it requests the goals
+     * if needed
+     */
+    private async updateGoals(document: TextDocument, position: Position): Promise<void> {
+        wpl.debug(`Updating goals for document: ${document.uri.toString()} at position: ${position.line}:${position.character}`);
+        if (!this.client.isRunning()) {
             wpl.debug("Client is not running, cannot update goals.");
             return;
         }
-        const params = this.client.createGoalsRequestParameters(
-            document,
-            position
-        );
         wpl.debug(`Requesting goals for components: ${this.goalsComponents}`);
-        this.client.requestGoals(params).then(
-            (response: any) => {
-                wpl.debug(`Received goals response: ${JSON.stringify(response)}`);
-                for (const g of this.goalsComponents) {
-                    wpl.debug(`Updating goals component: ${g.constructor.name}`);
-                    g.updateGoals(response);
-                }
-            },
-            (reason: any) => {
-                wpl.debug(`Failed for reason: ${reason}`);
-                for (const g of this.goalsComponents) {
-                    wpl.debug(`Failed to update goals component: ${g.constructor.name}`);
-                    g.failedGoals(reason);
-                }
-            }
-        );
+
+        for (const g of this.goalsComponents) {
+            // TODO: avoid requesting goals separately for each component?
+            //       (e.g. by caching requestGoals in LspClient)
+            g.updateGoals(this.client);
+        }
     }
 
     dispose() {

@@ -1,14 +1,14 @@
 import { Position, Range, TextDocument } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
-import { CoqGoalAnswer, CoqGoalRequest, CoqServerStatusToServerStatus, GoalRequest, PpString } from "../../lib/types";
-import { MessageType } from "../../shared";
-import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType } from "./requestTypes";
-import { WaterproofLogger as wpl } from "../helpers";
-import { LspClient } from "./abstractLspClient";
-import { LanguageClient } from "vscode-languageclient/node";
+import { CoqGoalAnswer, CoqGoalRequest, CoqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
+import { MessageType } from "../../../shared";
+import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType } from "../requestTypes";
+import { WaterproofLogger as wpl } from "../../helpers";
+import { LspClient } from "../client";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
-import { findOccurrences, areInputAreasValid } from "./qedStatus";
+import { findOccurrences, areInputAreasValid } from "../qedStatus";
+import { LanguageClientProvider } from "../clientTypes";
 
 export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpString>> {
     language = "rocq";
@@ -17,8 +17,8 @@ export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpStri
      * Initializes the client.
      * @param args the arguments for the base `LanguageClient`
      */
-    constructor(client: LanguageClient) {
-        super(client);
+    constructor(clientProvider: LanguageClientProvider) {
+        super(clientProvider);
 
         // call each file progress component when the server has processed a part
         this.disposables.push(this.client.onNotification(coqFileProgressNotificationType, params => {
@@ -141,5 +141,25 @@ export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpStri
         // request goals and return conclusion based on them
         const response = await this.requestGoals(position.translate(0, -1));
         return ("error" in response) ? InputAreaStatus.Incomplete : InputAreaStatus.Proven;
+    }
+
+    /**
+     * Returns the end position of the currently selected sentence, i.e., the Coq sentence in the
+     * active document in which the text cursor is located. Only returns `undefined` if no sentences
+     * are known.
+     */
+    getBeginningOfCurrentSentence(): Position | undefined {
+        if (!this.activeCursorPosition) return undefined;
+        return this.sentenceManager.getBeginningOfSentence(this.activeCursorPosition);
+    }
+
+    /**
+     * Returns the beginning position of the currently selected sentence, i.e., the Coq sentence in the
+     * active document in which the text cursor is located. Only returns `undefined` if no sentences
+     * are known. This is really just the end position of the previous sentence.
+     */
+    getEndOfCurrentSentence(): Position | undefined {
+        if (!this.activeCursorPosition) return undefined;
+        return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);
     }
 }

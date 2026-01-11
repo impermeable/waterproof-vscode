@@ -1,11 +1,71 @@
-import { Uri, Range, DiagnosticRelatedInformation, DiagnosticSeverity, DiagnosticTag, ExtensionContext } from "vscode";
+import {
+    Uri,
+    Range,
+    DiagnosticRelatedInformation,
+    DiagnosticSeverity,
+    DiagnosticTag,
+    ExtensionContext,
+    WorkspaceConfiguration,
+    Disposable,
+    Position,
+    TextDocument
+} from "vscode";
+import { DocumentSymbol } from "vscode-languageserver-types";
 
-import { WaterproofConfigHelper, WaterproofSetting } from "../helpers";
+import { LanguageClient as NodeLanguageClient } from "vscode-languageclient/node";
+import { LanguageClient as BrowserLanguageClient } from "vscode-languageclient/browser";
 import { LanguageClientOptions } from "vscode-languageclient";
-import { LspClient } from "./abstractLspClient";
+import { WebviewManager } from "../webviewManager";
 
-export type LspClientFactory<LspClientT extends LspClient<any, any>> =
-    (context: ExtensionContext, clientOptions: LanguageClientOptions, kind: ClientKind) => LspClientT;
+export interface TimeoutDisposable extends Disposable {
+    dispose(timeout?: number): Promise<void>;
+}
+
+// alternatively, this could be defined as `FeatureClient<Middleware, LanguageClientOptions>`
+export type LanguageClient = NodeLanguageClient | BrowserLanguageClient
+
+export type LanguageClientProvider = () => LanguageClient;
+
+export type LanguageClientProviderFactory = (
+    context: ExtensionContext,
+    clientOptions: LanguageClientOptions,
+    wsConfig: WorkspaceConfiguration
+) => LanguageClientProvider;
+
+export interface ILspClient extends TimeoutDisposable {
+    /**
+     * Check whether this client is running.
+     */
+    isRunning(): boolean;
+
+    /**
+     * The currently active document.
+     * Only the `WebviewManager` should change this.
+     */
+    activeDocument: TextDocument | undefined;
+
+    /**
+     * The position of the text cursor in the active document.
+     * Only the `WebviewManager` should change this.
+     */
+    activeCursorPosition: Position | undefined;
+
+    /**
+     * Registers handlers (for, e.g., file progress notifications, which
+     * need to be forwarded to the * editor) and starts client.
+     */
+    startWithHandlers(webviewManager: WebviewManager): Promise<void>;
+
+    /**
+     * Sends an LSP request to retrieve the symbols in the `activeDocument`.
+     */
+    requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]>;
+
+    /**
+     * Requests symbols and sends corresponding completions to the editor.
+     */
+    updateCompletions(document: TextDocument): Promise<void>;
+}
 
 /**
  * The following are types related to the configuration of the
@@ -26,56 +86,15 @@ export enum ShowGoalsOnCursorChange {
 /**
  * The lsp client configuration
  */
-export interface CoqLspClientConfig {
+export interface LspClientConfig {
     show_goals_on: ShowGoalsOnCursorChange;
 }
 
-/**
- * The lsp server configuration
- */
-export interface CoqLspServerConfig {
-    client_version: string;
-    eager_diagnostics: boolean;
-    goal_after_tactic: boolean;
-    show_coq_info_messages: boolean;
-    show_notices_as_diagnostics: boolean;
-    admit_on_bad_qed: boolean;
-    debug: boolean;
-    unicode_completion: "off" | "normal" | "extended";
-    max_errors: number;
-    pp_type: 0 | 1 | 2;
-    send_diags_extra_data: boolean;
-    check_only_on_request: boolean;
-}
-
 // TODO: Rewrite namespace to modern syntax
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace CoqLspServerConfig {
-    export function create(
-        client_version: string
-    ): CoqLspServerConfig {
-        return {
-            client_version: client_version,
-            eager_diagnostics: WaterproofConfigHelper.get(WaterproofSetting.EagerDiagnostics),
-            goal_after_tactic: WaterproofConfigHelper.get(WaterproofSetting.GoalAfterTactic),
-            show_coq_info_messages: WaterproofConfigHelper.get(WaterproofSetting.ShowWaterproofInfoMessages),
-            show_notices_as_diagnostics: WaterproofConfigHelper.get(WaterproofSetting.ShowNoticesAsDiagnostics),
-            admit_on_bad_qed: WaterproofConfigHelper.get(WaterproofSetting.AdmitOnBadQed),
-            debug: WaterproofConfigHelper.get(WaterproofSetting.Debug),
-            unicode_completion: WaterproofConfigHelper.get(WaterproofSetting.UnicodeCompletion),
-            max_errors: WaterproofConfigHelper.get(WaterproofSetting.MaxErrors),
-            pp_type: WaterproofConfigHelper.get(WaterproofSetting.PpType),
-            send_diags_extra_data: WaterproofConfigHelper.get(WaterproofSetting.SendDiagsExtraData),
-            check_only_on_request: !WaterproofConfigHelper.get(WaterproofSetting.ContinuousChecking)
-        };
-    }
-}
-
-// TODO: Rewrite namespace to modern syntax
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace CoqLspClientConfig {
-    export function create(): CoqLspClientConfig {
-        const obj: CoqLspClientConfig = { show_goals_on: ShowGoalsOnCursorChange.Never };
+export namespace LspClientConfig {
+    export function create(): LspClientConfig {
+        const obj: LspClientConfig = { show_goals_on: ShowGoalsOnCursorChange.Never };
         return obj;
     }
 }
@@ -114,5 +133,3 @@ type DiagnosticsData = {
     sentenceRange?: Range;
     // failedRequire ?: FailedRequire // TODO: Unsupported by us for now
 }
-
-export type ClientKind = 'rocq' | 'lean';

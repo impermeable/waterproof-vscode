@@ -1,9 +1,8 @@
 import { Position } from "vscode";
 import { CoqGoalAnswer, GoalConfig } from "../../lib/types";
-import { LspClient } from "./abstractLspClient";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
-import { CoqLspClient } from "./coqClient";
+import { CoqLspClient } from "./coq";
 
 /**
  * Base function for executing tactics/commands in a client.

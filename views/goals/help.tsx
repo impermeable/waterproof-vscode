@@ -1,7 +1,6 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { GoalAnswer, PpString } from "../../lib/types";
-import { Message, MessageType } from "../../shared";
 import "../styles/execute.css";
 import { Messages } from '../goals/Messages';
 

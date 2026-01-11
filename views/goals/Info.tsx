@@ -1,5 +1,4 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import { GoalAnswer, HypVisibility, PpString } from "../../lib/types";
 import { ErrorBrowser } from "./ErrorBrowser";
 import { Goals } from "./Goals";
@@ -36,8 +35,7 @@ export function InfoPanel() {
   function infoViewDispatch(msg: Message) { 
     switch (msg.type) {
       case MessageType.renderGoals:
-          const goals = msg.body.goals;
-          setGoals(goals); //setting the information
+          setGoals(msg.body.goals); //setting the information
           setGoalsLoading(false);
           setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None  
           break;

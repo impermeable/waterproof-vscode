@@ -125,14 +125,6 @@ Send by the extension to inform the editor that a symbol should be inserted.
 }
 ```
 
-### `lineNumbers`
-#### Description
-Send in both directions:
-
-- `editor -> extension` to request updates to the set of line numbers.
-- `extension -> editor` to update the set of line numbers.
-
-
 #### Body
 ```ts
 LineNumber // Contains line numbers (as array) and the version of the document they correspond to.

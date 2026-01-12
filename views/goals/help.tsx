@@ -10,26 +10,13 @@ type HelpParams = {
   onRequestHelp: () => void;
 };
 
-export function Help({ helpInfo, isLoading, onRequestHelp }: HelpParams) {
+export function Help({ helpInfo, isLoading, onRequestHelp }: Readonly<HelpParams>) {
     const hasNoResults = Array.isArray(helpInfo) && helpInfo.length === 0;
     return (
         <div className="info-panel-container">
             <div className="sentence">
-                <table>
-                    <tbody>
-                        <tr>
-                        <td>
-                            <div className="sentence">
-                                {/* help button */}
-                                <VSCodeButton onClick={onRequestHelp}>Help</VSCodeButton>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td></td>
-                        </tr>
-                    </tbody>
-                </table>
-
+              {/* help button */}
+              <VSCodeButton onClick={onRequestHelp}>Help</VSCodeButton>
             </div>
             {/* when loading show loading */}
             {isLoading ? (

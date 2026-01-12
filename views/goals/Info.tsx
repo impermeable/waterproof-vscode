@@ -28,7 +28,7 @@ export function InfoPanel() {
   //visibility of the hypotheses in the goals panel as State
   const [visibility, setVisibility] = useState<HypVisibility>(HypVisibility.None);
   
-  const [isHelpLoading, setHelpIsLoading] = useState(false);
+  const [isHelpLoading, setIsHelpLoading] = useState(false);
   const [helpInfo, setHelpInfo] = useState([""]);
   //handles the message
   //event : CoqMessageEvent as defined above
@@ -40,10 +40,10 @@ export function InfoPanel() {
           setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None  
           break;
       case MessageType.setData:
-        //@ts-expect-error FIXME: setInfo expects string[]
+        //@ts-expect-error FIXME: setHelpInfo expects string[]
         // in theory setData can also contain GoalAnswer
         setHelpInfo(msg.body);
-        setHelpIsLoading(false);
+        setIsHelpLoading(false);
         break;
     }
   }
@@ -56,7 +56,7 @@ export function InfoPanel() {
   }, []);
 
   const requestHelp = () => {
-    setHelpIsLoading(true);
+    setIsHelpLoading(true);
     vscode.postMessage({
       type: MessageType.command,
       body: { command: "Help.", time: Date.now() },

@@ -24,6 +24,7 @@ class Token {
         private readonly list: Token[],
         public readonly kind: Kind,
         public readonly range: BlockRange,
+        public readonly line: number,
         public readonly groups: string[],
     ) {
         this.index = list.length;
@@ -103,13 +104,13 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         const range = token.range;
         const content = doc.substring(range.from, range.to);
 
-        const child = new CodeBlock(content, range, range);
-        blocks.push(new HintBlock(content, "🛠 Technical details", range, range, [child]));
+        const child = new CodeBlock(content, range, range, token.line);
+        blocks.push(new HintBlock(content, "🛠 Technical details", range, range, token.line, [child]));
 
         return token.next;
     } else if (isSignificantNewline(token)) {
         const range = token.range;
-        blocks.push(new NewlineBlock(range, range));
+        blocks.push(new NewlineBlock(range, range, token.line));
 
         return token.next;
     } else if (token.isOneOf([Kind.Text, Kind.Newline, Kind.MathInline])) {
@@ -125,7 +126,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         const content = doc.substring(range.from, range.to);
 
         if (range.to - range.from > 1)
-            blocks.push(new MarkdownBlock(content, range, range));
+            blocks.push(new MarkdownBlock(content, range, range, token.line));
 
         return head.next;
     } else if (token.kind === Kind.CodeOpen) {
@@ -138,7 +139,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         const innerRange = { from: token.range.to, to: head.range.from };
         const content = doc.substring(innerRange.from, innerRange.to);
 
-        blocks.push(new CodeBlock(content, range, innerRange));
+        blocks.push(new CodeBlock(content, range, innerRange, token.line));
 
         return head.next;
     } else if (token.isOneOf([Kind.HintOpen, Kind.InputOpen])) {
@@ -163,9 +164,9 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
         if (token.kind === Kind.HintOpen) {
             const title = token.groups[1];
-            blocks.push(new HintBlock(content, title, range, innerRange, innerBlocks));
+            blocks.push(new HintBlock(content, title, range, innerRange, token.line, innerBlocks));
         } else {
-            blocks.push(new InputAreaBlock(content, range, innerRange, innerBlocks));
+            blocks.push(new InputAreaBlock(content, range, innerRange, token.line, innerBlocks));
         }
 
         return head.next;
@@ -179,7 +180,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         const innerRange = { from: token.range.to, to: head.range.from };
         const content = doc.substring(innerRange.from, innerRange.to);
 
-        blocks.push(new MathDisplayBlock(content, range, innerRange));
+        blocks.push(new MathDisplayBlock(content, range, innerRange, token.line));
 
         return head.next;
     } else {
@@ -197,6 +198,15 @@ function tokenize(inputDocument: string): Token | undefined {
         inputDocument.matchAll(tokenRegex)
     );
 
+    const numOfNewlines = (range: BlockRange): number => {
+        let count = 0;
+        for (let i = range.from; i < range.to; i++)
+            if (inputDocument.charAt(i) === "\n")
+                count++;
+        return count;
+    };
+
+    let newlines = 1;
     const tokens: Token[] = [];
 
     for (const m of matches) {
@@ -205,16 +215,19 @@ function tokenize(inputDocument: string): Token | undefined {
         // Create 'Text' tokens for fragments inbetween regex matches
         const prev = tokens.at(-1);
         if (!prev && pos > 0) {
-            new Token(tokens, Kind.Text, { from: 0, to: pos }, []);
+            const tok = new Token(tokens, Kind.Text, { from: 0, to: pos }, newlines, []);
+            newlines += numOfNewlines(tok.range);
         } else if (prev && pos > prev.range.to + 1) {
-            new Token(tokens, Kind.Text, { from: prev.range.to, to: pos }, []);
+            const tok = new Token(tokens, Kind.Text, { from: prev.range.to, to: pos }, newlines, []);
+            newlines += numOfNewlines(tok.range);
         }
 
         // Check which regex matched and create a token of the appropriate kind
         for (const [_, toKind] of regexes) {
             if (m.groups && m.groups[Kind[toKind]]) {
                 const range = { from: m.index as number, to: m.index as number + m[0].length };
-                new Token(tokens, toKind, range, Array.from(m));
+                const tok = new Token(tokens, toKind, range, newlines, Array.from(m));
+                newlines += numOfNewlines(tok.range);
             }
         }
     }

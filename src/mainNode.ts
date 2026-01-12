@@ -64,6 +64,7 @@ export function activate(context: ExtensionContext): WaterproofAPI {
         goals: extension.goals.bind(extension),
         currentDocument: extension.currentDocument.bind(extension),
         help: extension.help.bind(extension),
+        execCommand: extension.execCommand.bind(extension),
         proofContext: extension.proofContext.bind(extension),
         tryProof: extension.tryProof.bind(extension),
     }

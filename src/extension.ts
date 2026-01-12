@@ -34,11 +34,11 @@ import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
-import { convertToString } from "../lib/types";
 import { Hypothesis } from "./api";
 import { CompositeClient } from "./lsp-client/composite";
 import { CompositeGoalsPanel } from "./webviews/goalviews/compositeGoalsPanel";
-import { MessageType } from "../shared/Messages";
+import { convertToString, GoalConfig } from "../lib/types";
+import { RunResult } from "./lsp-client/petanque";
 
 /**
  * Main extension class
@@ -319,7 +319,16 @@ export class Waterproof implements Disposable {
         return wpHelpResponse.feedback.map(val => val[1]);
     }
 
-    /*,.*
+    /**
+     * Executes a command at the cursor position and returns the full output including messages,
+     * goals, goal stack, etc.
+     */
+    public async execCommand(cmd: string): Promise<GoalConfig<string> & RunResult<number>> {
+        // Execute command and return output
+        return await executeCommandFullOutput(this.client.coqClient, cmd);
+    }
+
+    /**
      * Returns information about the current proof on a document level.
      * This function will look at the current document to figure out what
      * statement the user is currently proving.

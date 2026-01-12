@@ -1,9 +1,10 @@
 /// <reference types="cypress" />
+import { DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
 import { MessageType } from "../../shared";
 import { setupTest } from "./util";
 
-const edits = [];
-const startingDocument: string = "# Title\n```coq\nDefinition foo := 42.\n```\n";
+const edits: (DocChange | WrappingDocChange)[] = [];
+const startingDocument: string = "# Title\n```coq\nDefinition foo := 42.\n```";
 
 describe('Basic tests', () => {
   beforeEach(() => {
@@ -34,7 +35,7 @@ describe('Basic tests', () => {
     cy.window().then((win) => { win.postMessage({type: MessageType.teacher, body: true}) });
     // now that we are in teacher mode the menubar should be visible
     cy.get(".menubar").should("be.visible");
-    cy.get("coqblock > .cm-editor > .cm-scroller > .cm-content").click(); // to reset h1
+    cy.get('.cm-activeLine').click(); // to reset h1
     cy.get("#editor h1").should("be.visible");
     cy.get("#editor h1").click();
     cy.get(".markdown-view").should("be.visible");
@@ -53,17 +54,20 @@ describe('Basic tests', () => {
       expect(edits.length).to.equal(15);
 
       // expect edits startInFile to be in increasing order
-      expect(edits).to.satisfy((edits) => 
-        edits.every((edit, i, arr) => 
+      expect(edits).to.satisfy((edits: (DocChange | WrappingDocChange)[]) => 
+        edits.every((edit, i, arr) =>
+          "startInFile" in edit &&
           // startInFile equals endInFile (insertions)
           edit.startInFile === edit.endInFile  
           && 
           // startInFile's are in increasing order (consecutive)
+          // @ts-expect-error Already checked this above
           (i === 0 || arr[i-1].startInFile < edit.startInFile)
         )
       );
 
       // Flatten the edits finalText into one string
+      // @ts-expect-error This edit is a DocChange as verified above
       const insertedText = edits.map(e => e.finalText).join("");
       expect(insertedText).to.equal("\n## Hello World");
     });

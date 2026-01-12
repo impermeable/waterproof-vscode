@@ -11,7 +11,7 @@ import { qualifiedSettingName, WaterproofConfigHelper, WaterproofFileUtil, Water
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { FileFormat, Message, MessageType } from "../../shared";
-import { DocChange, HistoryChange, LineNumber, ThemeStyle, WrappingDocChange } from "@impermeable/waterproof-editor";
+import { DocChange, HistoryChange, ThemeStyle, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -28,9 +28,6 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Disposables */
     private readonly _disposables: Disposable[] = [];
-
-    /** The latest linenumbers message */
-    private _linenumber: LineNumber | undefined = undefined;
 
     private _teacherMode: boolean;
     private _enforceCorrectNonInputArea: boolean;
@@ -93,7 +90,6 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this._panel = webview;
         this._workspaceEditor.onFinish(() => {
-            this.updateLineNumbers();
             this.emit(WebviewEvents.finishUpdate);
         });
         this._cachedMessages = new Map();
@@ -315,7 +311,6 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     private updateLineNumberStatusInEditor() {
-        this.updateLineNumbers();
         this.postMessage({
             type: MessageType.setShowLineNumbers,
             body: this._showLineNrsInEditor
@@ -327,20 +322,6 @@ export class ProseMirrorWebview extends EventEmitter {
         this.postMessage({
             type: MessageType.setShowMenuItems,
             body: this._showMenuItemsInEditor
-        }, true);
-    }
-
-    /** Convert line number offsets to line indices and send message to Editor webview */
-    private updateLineNumbers() {
-        // Early return if line numbers should not be shown in the editor.
-        if (!this._showLineNrsInEditor) return;
-        if (!this._linenumber || this._linenumber.version > this._document.version) return;
-        this.postMessage({
-            type: MessageType.lineNumbers,
-            body: {
-                linenumbers: this._linenumber.linenumbers.map(n => this._document.positionAt(n).line),
-                version: this._document.version,
-            }
         }, true);
     }
 
@@ -454,10 +435,6 @@ export class ProseMirrorWebview extends EventEmitter {
                 // When ready send the state of the teacher mode and show menu items settings to editor
                 this.updateTeacherMode();
                 this.updateMenuItemsInEditor();
-                break;
-            case MessageType.lineNumbers:
-                this._linenumber = msg.body;
-                this.updateLineNumbers();
                 break;
             default:
                 this.emit(WebviewEvents.message, msg);

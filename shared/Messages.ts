@@ -1,5 +1,5 @@
-import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, DiagnosticMessage, SimpleProgressParams, ServerStatus, ThemeStyle } from "@impermeable/waterproof-editor";
-import { CoqGoalAnswer, HypVisibility, PpString } from "../lib/types";
+import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, SimpleProgressParams, ServerStatus, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
+import { CoqGoalAnswer, GoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 
 
@@ -25,14 +25,13 @@ export type Message =
     | MessageBase<MessageType.applyStepError, string>
     | MessageBase<MessageType.command, { command: string, time?: number}>
     | MessageBase<MessageType.cursorChange, number>
-    | MessageBase<MessageType.diagnostics, DiagnosticMessage>
+    | MessageBase<MessageType.diagnostics, { positionedDiagnostics: Array<OffsetDiagnostic>, version: number }>
     | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
     | MessageBase<MessageType.editorHistoryChange, HistoryChange>
     | MessageBase<MessageType.editorReady>
     | MessageBase<MessageType.errorGoals, unknown>
     | MessageBase<MessageType.init, { value: string, version: number }>
     | MessageBase<MessageType.insert, { symbolUnicode: string, type: "symbol" | "tactics", time: number }>
-    | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
@@ -41,8 +40,7 @@ export type Message =
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
     | MessageBase<MessageType.serverStatus, ServerStatus>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
-    | MessageBase<MessageType.setData, string[] | CoqGoalAnswer<PpString> >
-    | MessageBase<MessageType.setTacticsMode, "coq" | "lean">       // ADDED: Message to switch tactics mode
+    | MessageBase<MessageType.setData, string[] | CoqGoalAnswer<PpString>>
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>
@@ -65,7 +63,6 @@ export const enum MessageType {
     errorGoals,
     init,
     insert,
-    lineNumbers,
     progress,
     qedStatus,
     ready,
@@ -75,7 +72,6 @@ export const enum MessageType {
     serverStatus,
     setAutocomplete,
     setData,
-    setTacticsMode, // ADDED
     setShowLineNumbers,
     setShowMenuItems,
     teacher,

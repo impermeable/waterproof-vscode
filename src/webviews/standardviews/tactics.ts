@@ -16,7 +16,7 @@ export class TacticsPanel extends CoqWebview {
 
     constructor(extensionUri: Uri) {
         // Initialize the tactics panel with the extension Uri and the webview name
-        super(extensionUri,"tactics");
+        super(extensionUri, "tactics");
 
         this.readyPanel();
         // Set up an event listener for WebviewEvents.change event
@@ -40,15 +40,20 @@ export class TacticsPanel extends CoqWebview {
         });
     }
 
+    showView(name: string, data?: any) {
+        if (data)
+            super.showView("tactics", data);
+        else if (this.lastClient instanceof LeanLspClient)
+            super.showView("tactics", dataLean);
+        else
+            super.showView("tactics", dataCoq);
+    }
+
     update(client: CompositeClient) {
         if (this.lastClient === client.activeClient)
             return;
 
-        if (client.activeClient instanceof LeanLspClient)
-            this.showView("tactics", dataLean);
-        else
-            this.showView("tactics", dataCoq);
-
         this.lastClient = client.activeClient;
+        this.showView("tactics");
     }
 }

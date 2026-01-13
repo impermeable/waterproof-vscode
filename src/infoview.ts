@@ -278,8 +278,8 @@ export class InfoProvider implements Disposable {
             // await this.handleInsertText(text, kind, uri, pos)
         },
         applyEdit: async (e: WorkspaceEdit) => {
-            // const we = await p2cConverter.asWorkspaceEdit(e)
-            // await workspace.applyEdit(we)
+            const we = await this.client.client.protocol2CodeConverter.asWorkspaceEdit(e)    
+            await workspace.applyEdit(we)
         },
         showDocument: async show => {
             // noop here

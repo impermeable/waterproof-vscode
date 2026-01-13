@@ -4,22 +4,36 @@ import { IGoalsComponent } from "../../components";
 import { LeanLspClient } from "../../lsp-client/lean";
 import { InfoProvider } from "../../infoview";
 import { Location } from "vscode-languageserver-types";
+import { WebviewEvents, WebviewState } from "../coqWebview";
 
 export class CompositeGoalsPanel implements IGoalsComponent {
-    protected lastState: 'goals' | 'infoview' = 'goals';
+    protected lastClient?: CompositeClient;
+
+    protected lastState?: 'goals' | 'infoview';
     protected infoProvider?: InfoProvider;
 
     constructor(
-        protected readonly client: CompositeClient,
-        protected readonly panel: GoalsPanel,
+        protected readonly panel: GoalsPanel
     ) {
+        panel.on(WebviewEvents.change, () => {
+            if (panel.state === WebviewState.closed) {
+                this.lastState = undefined;
+            } else if (panel.state === WebviewState.visible) {
+                this.updateGoals(this.lastClient!);
+            }
+        });
     }
-  
+
     async updateGoals(client: CompositeClient): Promise<void> {
+        if (!this.panel.isOpened) return;
+
+        this.lastClient = client;
+
         if (client.activeClient instanceof LeanLspClient) {
             if (this.lastState !== 'infoview') {
                 this.lastState = 'infoview';
                 this.panel.showView("infoview");
+                this.infoProvider?.resetServerState();
             }
             const loc: Location = {
                 // FIXME: will we always have an active document here?

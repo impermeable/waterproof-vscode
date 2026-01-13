@@ -331,11 +331,17 @@ export class InfoProvider implements Disposable {
         await api.initialize(loc);
 
         if (this.client.client.initializeResult) {
-            await api.serverStopped(undefined);
-            await api.serverRestarted(this.client.client.initializeResult);
+            this.resetServerState();
             await this.sendPosition(loc);
         }
         this.isInitialized = true;
+    }
+
+    public async resetServerState(): Promise<void> {
+        if (this.client.client.initializeResult) {
+            await this.api?.serverStopped(undefined);
+            await this.api?.serverRestarted(this.client.client.initializeResult);
+        }
     }
 
     public async sendPosition(loc: Location) {

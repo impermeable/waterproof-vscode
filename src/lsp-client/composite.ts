@@ -10,6 +10,7 @@ import { WebviewManager } from "../webviewManager";
 export class CompositeClient implements ILspClient {
     public readonly coqClient: CoqLspClient;
     public readonly leanClient: LeanLspClient;
+    protected readonly lastClient: CoqLspClient | LeanLspClient;
 
     protected document?: TextDocument;
 
@@ -19,6 +20,8 @@ export class CompositeClient implements ILspClient {
     ) {
         this.coqClient = new CoqLspClient(coqClientProvider);
         this.leanClient = new LeanLspClient(leanClientProvider);
+
+        this.lastClient = this.coqClient;
     }
 
     set activeDocument(document: TextDocument) {
@@ -39,8 +42,7 @@ export class CompositeClient implements ILspClient {
     }
 
     get activeClient(): CoqLspClient | LeanLspClient {
-        // TODO: handle this properly instead of defaulting to Rocq?
-        if (!this.activeDocument) return this.coqClient;
+        if (!this.activeDocument) return this.lastClient;
 
         return this.getClient(this.activeDocument);
     }

@@ -169,7 +169,7 @@ export class Waterproof implements Disposable {
         // make relevant gui components
         this.statusBar = new CoqnitiveStatusBar();
         const goalsPanel = new GoalsPanel(this.context.extensionUri, LspClientConfig.create())
-        const compositeGoalsPanel = new CompositeGoalsPanel(this.client, goalsPanel);
+        const compositeGoalsPanel = new CompositeGoalsPanel(goalsPanel);
         this.goalsComponents.push(compositeGoalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals");

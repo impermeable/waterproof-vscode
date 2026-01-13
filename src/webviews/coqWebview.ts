@@ -7,6 +7,7 @@ import {
 } from "vscode";
 import { Disposable } from "vscode-languageclient";
 import { Message } from "../../shared";
+import { WaterproofLogger as wpl } from "../helpers";
 
 /**
  * Defines the states of the webview
@@ -131,8 +132,10 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      * Set the webview's content to the view with the given name.
      */
     showView(name: string, data?: any) {
-        if (!this._panel)
-            throw new Error(`Could not show ${name}, WebviewPanel does not exist`);
+        if (!this._panel) {
+            wpl.debug(`Could not show ${name}, WebviewPanel does not exist`);
+            return;
+        }
 
         const styleUri = this._panel.webview.asWebviewUri(
             Uri.joinPath(this.extensionUri, "out", "views", name, "index.css")

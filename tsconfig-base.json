@@ -1,7 +1,4 @@
 {
-  "exclude": [
-    "lib/editor"
-  ],
   "compilerOptions": {
     "sourceMap": true,
     "strict": true,

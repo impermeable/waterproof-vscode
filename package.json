@@ -528,7 +528,7 @@
     "typescript-eslint": "^8.20.0"
   },
   "dependencies": {
-    "@impermeable/waterproof-editor": "./lib/editor/",
+    "@impermeable/waterproof-editor": "0.13.0",
     "@leanprover/infoview": "^0.10.0",
     "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
@@ -555,9 +555,7 @@
   "main": "./out/src/mainNode.js",
   "browser": "./out/src/mainBrowser.js",
   "scripts": {
-    "preinstall": "cd lib/editor/ && npm install",
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
-    "preesbuild": "cd lib/editor && npm run build",
     "esbuild": "node esbuild.mjs",
     "typecheck": "tsc -b",
     "compile": "npm run esbuild",

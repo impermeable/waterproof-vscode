@@ -11,8 +11,5 @@ module.exports = {
   ],
   moduleDirectories: [
     "node_modules",
-  ],
-  testPathIgnorePatterns: [
-    "<rootDir>/lib/editor",
-  ],
+  ]
 };

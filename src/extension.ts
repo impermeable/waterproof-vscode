@@ -8,7 +8,6 @@ import {
     window,
     ConfigurationTarget,
     Uri,
-    TerminalShellExecutionCommandLineConfidence
 } from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
@@ -16,7 +15,7 @@ import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
 import { LanguageClientProviderFactory, LspClientConfig } from "./lsp-client/clientTypes";
 import { CoqLspServerConfig } from "./lsp-client/coq";
-import { LeanLspClient, LeanLspServerConfig } from "./lsp-client/lean";
+import { LeanLspServerConfig } from "./lsp-client/lean";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
@@ -552,7 +551,7 @@ export class Waterproof implements Disposable {
 
         const coqClientOptions: LanguageClientOptions = {
             documentSelector: [{ language: "markdown" }, { language: "coq" }],  // .mv and .v files
-            outputChannelName: "Waterproof LSP Events (Initial)",
+            outputChannelName: "Waterproof Rocq LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
             initializationOptions: coqServerOptions,
             markdown: { isTrusted: true, supportHtml: true },
@@ -562,7 +561,7 @@ export class Waterproof implements Disposable {
 
         const leanClientOptions: LanguageClientOptions = {
             documentSelector: [{ language: "lean4" }],
-            outputChannelName: "Waterproof LSP Events (Initial)",
+            outputChannelName: "Waterproof Lean LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
             initializationOptions: leanServerOptions,
             markdown: { isTrusted: true, supportHtml: true },
@@ -571,7 +570,9 @@ export class Waterproof implements Disposable {
         wpl.log("Initializing client...");
         this.client = new CompositeClient(
             this.getCoqClientProvider(this.context, coqClientOptions, WaterproofConfigHelper.configuration),
+            window.createOutputChannel("Waterproof Rocq LSP Events (After Initialization)"),
             this.getLeanClientProvider(this.context, leanClientOptions, WaterproofConfigHelper.configuration),
+            window.createOutputChannel("Waterproof Lean LSP Events (After Initialization)"),
         );
         return this.client.startWithHandlers(this.webviewManager).then(
             () => {

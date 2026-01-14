@@ -71,8 +71,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     readonly sentenceManager: SentenceManager;
     protected readonly fileProgressComponents: IFileProgressComponent[] = [];
 
-    readonly lspOutputChannel: OutputChannel;
-
     webviewManager: WebviewManager | undefined;
 
     /**
@@ -87,7 +85,10 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     /*
      * Constructs a Waterproof language client.
      */
-    constructor(private readonly provideClient: LanguageClientProvider) {
+    constructor(
+        private readonly provideClient: LanguageClientProvider,
+        protected readonly lspOutputChannel: OutputChannel,
+    ) {
         this.sentenceManager = new SentenceManager();
 
         // forward progress notifications to editor
@@ -153,8 +154,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 this.processDiagnostics();
             }
         }));
-
-        this.lspOutputChannel = window.createOutputChannel("Waterproof LSP Events (After Initialization)");
 
         // send proof statuses to editor when document checking is done
         this.disposables.push(this.client.onNotification(LogTraceNotification.type, params => {

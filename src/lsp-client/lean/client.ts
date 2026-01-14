@@ -1,6 +1,6 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { EventEmitter, Position, TextDocument, Disposable, Range, languages } from "vscode";
+import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams, leanFileProgressNotificationType, leanGoalRequestType } from "../requestTypes";
 import { WaterproofLogger as wpl } from "../../helpers";
@@ -13,8 +13,8 @@ import { ServerStoppedReason } from "@leanprover/infoview-api";
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
 
-    constructor(clientProvider: LanguageClientProvider) {
-        super(clientProvider);
+    constructor(clientProvider: LanguageClientProvider, channel: OutputChannel) {
+        super(clientProvider, channel);
 
         // call each file progress component when the server has processed a part
         this.disposables.push(this.client.onNotification(leanFileProgressNotificationType, params => {

@@ -2,7 +2,7 @@ import { LeanLspClient  } from "./lean";
 import { CoqLspClient } from "./coq";
 import { convertToString } from "../../lib/types";
 import { ILspClient, LanguageClientProvider } from "./clientTypes";
-import { Position, TextDocument } from "vscode";
+import { OutputChannel, Position, TextDocument } from "vscode";
 import { DocumentSymbol } from "vscode-languageserver-types";
 import { Hypothesis } from "../api";
 import { WebviewManager } from "../webviewManager";
@@ -16,10 +16,12 @@ export class CompositeClient implements ILspClient {
 
     constructor(
         coqClientProvider: LanguageClientProvider,
+        coqOutputChannel: OutputChannel,
         leanClientProvider: LanguageClientProvider,
+        leanOutputChannel: OutputChannel,
     ) {
-        this.coqClient = new CoqLspClient(coqClientProvider);
-        this.leanClient = new LeanLspClient(leanClientProvider);
+        this.coqClient = new CoqLspClient(coqClientProvider, coqOutputChannel);
+        this.leanClient = new LeanLspClient(leanClientProvider, leanOutputChannel);
 
         this.lastClient = this.coqClient;
     }

@@ -1,4 +1,4 @@
-import { Position, Range, TextDocument } from "vscode";
+import { OutputChannel, Position, Range, TextDocument } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
 import { CoqGoalAnswer, CoqGoalRequest, CoqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
@@ -17,8 +17,8 @@ export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpStri
      * Initializes the client.
      * @param args the arguments for the base `LanguageClient`
      */
-    constructor(clientProvider: LanguageClientProvider) {
-        super(clientProvider);
+    constructor(clientProvider: LanguageClientProvider, channel: OutputChannel) {
+        super(clientProvider, channel);
 
         // call each file progress component when the server has processed a part
         this.disposables.push(this.client.onNotification(coqFileProgressNotificationType, params => {

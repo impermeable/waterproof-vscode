@@ -24,7 +24,9 @@ import { WebviewEvents } from './webviews/coqWebview';
 
 const keepAlivePeriodMs = 10000
 
-// Connects client to server and returns result
+/** 
+ * Connects client to server and returns result 
+ */ 
 async function rpcConnect(client: LeanLspClient, uri: DocumentUri): Promise<string> {
     const connParams: RpcConnectParams = { uri }
     try {
@@ -36,7 +38,9 @@ async function rpcConnect(client: LeanLspClient, uri: DocumentUri): Promise<stri
     }
 }
 
-// The class for rpc session for some position at the document
+/**
+ * The class for rpc session 
+ */ 
 class RpcSessionAtPos implements Disposable {
     keepAliveInterval?: NodeJS.Timeout
     client: LeanLspClient
@@ -102,6 +106,7 @@ export class InfoProvider implements Disposable {
         this.api = undefined;
     }
 
+    /** Subscribe to emitters on client */
     private subscribeDidChangeNotification(client: LeanLspClient, method: string) {
         const h = client.didChange(params => {
             void this.api?.sentClientNotification?.(method, params);
@@ -131,10 +136,7 @@ export class InfoProvider implements Disposable {
         return h;
     }
 
-    // private handleClientNotification(client: LeanLspClient, method: string, params: any) {
-    //     this.rpc?.notify?.('clientNotification', { method, params })
-    // }
-
+    /** Api that is exposed to InfoView */
     private editorApi: EditorApi = {
         saveConfig: async (config: InfoviewConfig) => {
             try {
@@ -143,7 +145,7 @@ export class InfoProvider implements Disposable {
                     await cfg.update(key, value, ConfigurationTarget.Global)
                 }
             } catch (e) {
-                console.error('[InfoProvider] saveConfig failed', e)
+                console.warn('[InfoProvider] saveConfig failed', e)
             }
         },
 
@@ -154,18 +156,9 @@ export class InfoProvider implements Disposable {
                     const result = await this.client.client.sendRequest(method, params)
                     return result
                 } catch (ex: any) {
-                    if (ex.code === RpcErrorCode.WorkerCrashed) {
-                        // ex codes related with worker exited or crashed
-                        wpl.log(`[InfoProvider]The Lean Server has stopped processing this file: ${ex.message}`)
-                        // await this.onWorkerStopped(uri, client, {
-                        //     message: 'The Lean Server has stopped processing this file: ',
-                        //     reason: ex.message as string,
-                        // })
-                    }
-                    throw ex
+                    wpl.log(`[InfoProvider] Failed to send client request: ${ex.message}`)
                 }
             }
-            throw Error('No active Lean client.')
         },
 
         sendClientNotification: async (uri: string, method: string, params: any): Promise<void> => {
@@ -176,7 +169,7 @@ export class InfoProvider implements Disposable {
         },
 
         subscribeServerNotifications: async (method: string) => {
-            wpl.log(`[InfoviewHost] subscribeServerNotifications ${method}`)
+            wpl.log(`[InfoProvider] subscribeServerNotifications ${method}`)
 
             const el = this.serverNotifSubscriptions.get(method)
             if (el) {
@@ -197,13 +190,12 @@ export class InfoProvider implements Disposable {
                 throw new Error(`subscription to ${method} server notifications not implemented`)
             }
         },
-
         unsubscribeServerNotifications: async (method: string) => {
-            wpl.log(`[InfoviewHost] unsubscribeServerNotifications, ${method}`)
+            wpl.log(`[InfoProvider] unsubscribeServerNotifications, ${method}`)
 
             const el = this.serverNotifSubscriptions.get(method)
             if (!el) {
-                console.warn(`[InfoviewHost] unsubscribeServerNotifications: no subscription for ${method}`)
+                console.warn(`[InfoProvider] unsubscribeServerNotifications: no subscription for ${method}`)
                 return
             }
 
@@ -219,7 +211,7 @@ export class InfoProvider implements Disposable {
         },
 
         subscribeClientNotifications: async (method: string) => {
-            wpl.log(`[InfoviewHost] subscribeClientNotifications ${method}`)
+            wpl.log(`[InfoProvider] subscribeClientNotifications ${method}`)
 
             const el = this.clientNotifSubscriptions.get(method)
             if (el) {
@@ -242,11 +234,10 @@ export class InfoProvider implements Disposable {
         },
 
         unsubscribeClientNotifications: async (method: string) => {
-            wpl.log(`[InfoviewHost] unsubscribeClientNotifications ${method}`)
+            wpl.log(`[InfoProvider] unsubscribeClientNotifications ${method}`)
 
             const el = this.clientNotifSubscriptions.get(method)
             if (!el) {
-                console.warn(`[InfoviewHost] unsubscribeClientNotifications: no subscription for ${method}`)
                 return
             }
 
@@ -261,31 +252,24 @@ export class InfoProvider implements Disposable {
             }
         },
 
-
         copyToClipboard: async text => {
             await env.clipboard.writeText(text)
         },
+
         insertText: async (text, kind, tdpp) => {
-            // let uri: ExtUri | undefined
-            // let pos: Position | undefined
-            // if (tdpp) {
-            //     uri = toExtUri(p2cConverter.asUri(tdpp.textDocument.uri))
-            //     if (uri === undefined) {
-            //         return
-            //     }
-            //     pos = p2cConverter.asPosition(tdpp.position)
-            // }
-            // await this.handleInsertText(text, kind, uri, pos)
+            wpl.log(`[Infoprovider] Method "insertText" is not implemented`);
         },
         applyEdit: async (e: WorkspaceEdit) => {
             const we = await this.client.client.protocol2CodeConverter.asWorkspaceEdit(e)    
             await workspace.applyEdit(we)
         },
+
         showDocument: async show => {
             // noop here
         },
+
         restartFile: async uri => {
-            wpl.log("This is not yet implemented")
+            wpl.log("[Infoprovider] This is not yet implemented")
         },
 
         createRpcSession: async uri => {
@@ -295,8 +279,9 @@ export class InfoProvider implements Disposable {
             this.rpcSessions.set(sessionId, session)
             return sessionId
         },
+        
         closeRpcSession: async sessionId => {
-            wpl.log(`Close rpc session: ${sessionId}`)
+            wpl.log(`[Infoprovider] Close rpc session: ${sessionId}`)
             const sess = this.rpcSessions.get(sessionId)
             if (sess) {
                 sess.dispose()
@@ -323,6 +308,11 @@ export class InfoProvider implements Disposable {
         });
     }
 
+    /**
+     * Initiallizes InfoView through sending server restarted message
+     * @param loc location at current document
+     * @returns 
+     */
     public async initInfoview(loc: Location) {
         const api = this.api;
         if (!api) {
@@ -337,6 +327,9 @@ export class InfoProvider implements Disposable {
         this.isInitialized = true;
     }
 
+    /**
+     * Helper to (re-)initialize InfoView 
+     */
     public async resetServerState(): Promise<void> {
         if (this.client.client.initializeResult) {
             await this.api?.serverStopped(undefined);
@@ -344,6 +337,10 @@ export class InfoProvider implements Disposable {
         }
     }
 
+    /**
+     * Sends the location in current document to InfoView through `InfoviewApi`
+     * @param loc Location in the document
+     */
     public async sendPosition(loc: Location) {
         await this.api?.changedCursorLocation(loc)
     }

@@ -40,8 +40,7 @@
     "onCommand:waterproof.toggle",
     "onLanguage:coq",
     "onLanguage:markdown",
-    "onLanguage:lean4",
-    "onLanguage:lean"
+    "onLanguage:lean4"
   ],
   "contributes": {
     "themes": [

@@ -176,9 +176,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         this.fileProgressComponents.forEach(c => c.onProgress(params));
     }
 
-
-    // Does this async do anything?
-    protected async processDiagnostics() {
+    protected processDiagnostics() {
         const document = this.activeDocument;
         if (!document) return;
 

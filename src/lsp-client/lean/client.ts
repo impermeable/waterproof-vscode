@@ -1,8 +1,8 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { EventEmitter, Position, TextDocument, Disposable, Range } from "vscode";
+import { EventEmitter, Position, TextDocument, Disposable, Range, languages } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
-import { leanFileProgressNotificationType, leanGoalRequestType } from "../requestTypes";
+import { FileProgressParams, leanFileProgressNotificationType, leanGoalRequestType } from "../requestTypes";
 import { WaterproofLogger as wpl } from "../../helpers";
 import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
@@ -41,14 +41,12 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         };
     }
 
-    protected async processDiagnostics() {
-        super.processDiagnostics();
-
-        // Lean does not implement a server status notification,
-        // so we update the status of input areas
-        if (this.activeDocument) {
+    protected async onFileProgress(progress: FileProgressParams) {
+        if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
             this.computeInputAreaStatus(this.activeDocument);
         }
+
+        super.onFileProgress(progress);
     }
 
     createGoalsRequestParameters(document: TextDocument, position: Position): LeanGoalRequest {
@@ -77,9 +75,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     }
 
     async sendViewportHint(_document: TextDocument, _start: number, _end: number): Promise<void> {
-        // FIXME: remove this method (from the parent class as well) as Lean
-        //        does not seem to support incremental verification based on
-        //        viewport range
+        // this is not currently used or supported by Lean
     }
 
     async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
@@ -113,14 +109,14 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         const nextQed = content.indexOf("\nQed\n", document.offsetAt(inputArea.start));
         const nextProof = content.indexOf("\nProof:\n", document.offsetAt(inputArea.start));
 
-        if (nextQed >= nextProof) {
+        if (nextProof && nextQed >= nextProof) {
             return InputAreaStatus.Invalid;
         }
 
         // request goals and return conclusion based on them
         const response = await this.requestGoals(this.createGoalsRequestParameters(document, inputArea.end.translate(0, 0)));
 
-        return (response.goals.length) ? InputAreaStatus.Incomplete : InputAreaStatus.Proven;
+        return response?.goals.length ? InputAreaStatus.Incomplete : InputAreaStatus.Proven;
     }
 
     // Emitters for infoview

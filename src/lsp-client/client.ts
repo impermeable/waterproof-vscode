@@ -264,8 +264,12 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
 
         // after every document change, request symbols and send completions to the editor
         this.disposables.push(workspace.onDidChangeTextDocument(event => {
-            if (webviewManager.has(event.document.uri.toString()))
+            if (
+                webviewManager.has(event.document.uri.toString())
+                && event.document.languageId === this.language
+            ) {
                 this.updateCompletions(event.document);
+            }
         }));
 
         return this.client.start();
@@ -326,7 +330,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         // request symbols for `document`
         let symbols: DocumentSymbol[];
         try {
-            // This causes the error
             symbols = await this.requestSymbols(document);
         } catch (reason) {
             if (wasCanceledByServer(reason)) return;  // we've likely already sent a new request

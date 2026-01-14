@@ -53,11 +53,11 @@ export class CompositeClient implements ILspClient {
     }
 
     updateCompletions(document: TextDocument): Promise<void> {
-        return this.activeClient.updateCompletions(document);
+        return this.getClient(document).updateCompletions(document);
     }
 
     sendViewportHint(document: TextDocument, start: number, end: number) {
-        this.activeClient.sendViewportHint(document, start, end);
+        this.getClient(document).sendViewportHint(document, start, end);
     }
 
     /**

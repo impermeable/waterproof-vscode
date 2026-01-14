@@ -19,13 +19,15 @@ export class CompositeGoalsPanel implements IGoalsComponent {
             if (panel.state === WebviewState.closed) {
                 this.lastState = undefined;
             } else if (panel.state === WebviewState.visible) {
-                this.updateGoals(this.lastClient!);
+                if (this.lastClient) {
+                    this.updateGoals(this.lastClient);
+                }
             }
         });
     }
 
     async updateGoals(client: CompositeClient): Promise<void> {
-        if (!this.panel.isOpened) return;
+        if (!this.panel.isOpened || !client) return;
 
         this.lastClient = client;
 

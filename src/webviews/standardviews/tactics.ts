@@ -50,7 +50,7 @@ export class TacticsPanel extends CoqWebview {
     }
 
     update(client: CompositeClient) {
-        if (this.lastClient === client.activeClient)
+        if (!client || this.lastClient === client.activeClient)
             return;
 
         this.lastClient = client.activeClient;

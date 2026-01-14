@@ -1,7 +1,7 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, DocumentSerializer, markdown, TagConfiguration, ThemeStyle, WaterproofDocument, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
-import tactics from "../../completions/tactics.json";
+import coqTactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
 import leanTactics from "../../completions/tacticsLean.json";
 
@@ -9,7 +9,7 @@ import leanTactics from "../../completions/tacticsLean.json";
 import "@impermeable/waterproof-editor/styles.css"
 import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
-import { topLevelBlocksMV, topLevelBlocksLean } from "./document-construction/construct-document";
+import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
@@ -23,10 +23,46 @@ interface VSCodeAPI {
 }
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
+	let formatConf;
+
+	// Set format-specific configuration
+	switch (format) {
+		case FileFormat.MarkdownV:
+			formatConf = {
+				completions: coqTactics,
+				documentConstructor: (v: string) => markdown.parse(v, "coq"),
+				toMarkdown: defaultToMarkdown,
+				markdownName: "Markdown",
+				tagConfiguration: markdown.configuration("coq"),
+			}
+			break;
+		case FileFormat.RegularV:
+			formatConf = {
+				completions: coqTactics,
+				documentConstructor: vFileParser,
+				toMarkdown: coqdocToMarkdown,
+				markdownName: "coqdoc",
+				tagConfiguration: tagConfigurationV,
+				disableMarkdownFeatures: ["code"],
+			}
+			break;
+		case FileFormat.Lean:
+			formatConf = {
+				completions: leanTactics,
+				documentConstructor: topLevelBlocksLean,
+				toMarkdown: defaultToMarkdown,
+				markdownName: "Markdown",
+				tagConfiguration: tagConfigurationLean,
+				serializer: new LeanSerializer(),
+			}
+			break;
+	}
+
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
-		//can be adjusted to be a setting, i.e leanTactics can be toggled as a setting in the future if wanted
-		completions: format === FileFormat.Lean ? leanTactics : tactics,
+		// Include format-specific configuration
+		...formatConf,
+
 		symbols: symbols,
 		api: {
 			executeHelp() {
@@ -51,17 +87,6 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				codeAPI.postMessage({ type: MessageType.viewportHint, body: { start, end } });
 			}
 		},
-		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
-		documentConstructor:
-			format === FileFormat.MarkdownV ? v => markdown.parse(v, "coq")
-				: (format === FileFormat.RegularV) ? vFileParser : topLevelBlocksLean,
-		// documentConstructor: format === FileFormat.MarkdownV ? doc => markdownParser(doc, "coq") : vFileParser,
-		toMarkdown: (format === FileFormat.MarkdownV || format === FileFormat.Lean) ? defaultToMarkdown : coqdocToMarkdown,
-		markdownName: (format === FileFormat.MarkdownV || format === FileFormat.Lean) ? "Markdown" : "coqdoc",
-		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq")
-			: (format === FileFormat.RegularV) ? tagConfigurationV : tagConfigurationLean,
-		disableMarkdownFeatures: format === FileFormat.RegularV ? ["code"] : [],
-		serializer: format === FileFormat.Lean ? new LeanSerializer() : undefined,
 	}
 
 	return cfg;

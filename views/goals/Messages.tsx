@@ -1,5 +1,5 @@
 import objectHash from "object-hash";
-import { GoalAnswer} from "../../lib/types";
+import { CoqGoalAnswer} from "../../lib/types";
 import { PpString } from "../../lib/types";
 import { Message } from "./Message";
 import {Box} from "./Box";
@@ -10,8 +10,8 @@ import { PropsWithChildren } from "react";
 //type that makes a GoalAnswer<PpString> also takes its childrens components with
 export type MessagesInfo = PropsWithChildren<
   {
-    answer: GoalAnswer<PpString>
-  } 
+    answer: CoqGoalAnswer<PpString>
+  }
 >;
 
 //component that takes in the MessagesInfo and displays the list of messages

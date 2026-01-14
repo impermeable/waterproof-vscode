@@ -287,31 +287,6 @@
     ],
     "configuration": [
       {
-        "title": "Lean",
-        "properties": {
-          "lean.executablePath": {
-            "type": "string",
-            "default": "",
-            "description": "Path to the Lean executable used to start the language server (default: 'lean' on PATH)."
-          },
-          "lean.lakePath": {
-            "type": "string",
-            "default": "lake",
-            "description": "Path to the lake executable used to run the Lean server (default: 'lake' on PATH)."
-          },
-          "lean.lakeArgs": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "default": [
-              "serve"
-            ],
-            "description": "Arguments passed to lake to start the server (default: ['serve'])."
-          }
-        }
-      },
-      {
         "title": "Editor Experience",
         "properties": {
           "waterproof.showLineNumbersInEditor": {
@@ -453,6 +428,19 @@
             },
             "default": [],
             "description": "Arguments to the coq-lsp server"
+          },
+          "waterproof.lakePath": {
+            "type": "string",
+            "default": "lake",
+            "description": "Path to the Lake executable used to run the Lean server, by default, search in PATH."
+          },
+          "waterproof.lakeArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Arguments passed to Lake to start the server (before 'serve')."
           }
         }
       },

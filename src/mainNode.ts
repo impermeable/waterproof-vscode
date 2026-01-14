@@ -40,9 +40,8 @@ const getLeanClientProvider: LanguageClientProviderFactory = (
     clientOptions: LanguageClientOptions
 ): LanguageClientProvider => {
     const serverOptions: ServerOptions = {
-        // FIXME: expose this in Waterproof configuration
-        command: "lake",
-        args: ["serve"],
+        command: WaterproofConfigHelper.get(WaterproofSetting.LakePath),
+        args: WaterproofConfigHelper.get(WaterproofSetting.LakeArgs).concat(["serve"]),
     };
     return () => new LanguageClient(
         "waterproof",

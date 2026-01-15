@@ -1,11 +1,11 @@
 import { Uri } from "vscode";
-import { CoqGoalAnswer, PpString } from "../../../lib/types";
+import { RocqGoalAnswer, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { IGoalsComponent } from "../../components";
 import { LspClientConfig } from "../../lsp-client/clientTypes";
 import { CoqWebview } from "../coqWebview";
 import { WaterproofConfigHelper, WaterproofSetting } from "../../helpers";
-import { CoqLspClient } from "../../lsp-client/coq";
+import { RocqLspClient } from "../../lsp-client/rocq";
 import { WaterproofLogger as wpl } from "../../helpers";
 
 //class for panels that need Goals objects from coq-lsp
@@ -18,13 +18,13 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
         this.config = config;
     }
 
-    getGoals(client: CoqLspClient): Promise<CoqGoalAnswer<PpString>> {
+    getGoals(client: RocqLspClient): Promise<RocqGoalAnswer<PpString>> {
         return client.requestGoals();
     }
 
     //sends message for renderGoals
-    async updateGoals(client: CoqLspClient): Promise<void> {
-        let goals: CoqGoalAnswer<PpString>;
+    async updateGoals(client: RocqLspClient): Promise<void> {
+        let goals: RocqGoalAnswer<PpString>;
         try {
             goals = await this.getGoals(client);
         } catch (error) {

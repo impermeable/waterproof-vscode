@@ -1,5 +1,5 @@
 import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, SimpleProgressParams, ServerStatus, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
-import { CoqGoalAnswer, HypVisibility, PpString } from "../lib/types";
+import { RocqGoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 
 
@@ -35,12 +35,12 @@ export type Message =
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
-    | MessageBase<MessageType.renderGoals, { goals : CoqGoalAnswer<PpString>, visibility?: HypVisibility }>
-    | MessageBase<MessageType.renderGoalsList, { goalsList : CoqGoalAnswer<PpString>[]}>
+    | MessageBase<MessageType.renderGoals, { goals : RocqGoalAnswer<PpString>, visibility?: HypVisibility }>
+    | MessageBase<MessageType.renderGoalsList, { goalsList : RocqGoalAnswer<PpString>[]}>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
     | MessageBase<MessageType.serverStatus, ServerStatus>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
-    | MessageBase<MessageType.setData, string[] | CoqGoalAnswer<PpString>>
+    | MessageBase<MessageType.setData, string[] | RocqGoalAnswer<PpString>>
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>

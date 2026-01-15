@@ -14,7 +14,7 @@ import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languagecli
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
 import { LanguageClientProviderFactory, LspClientConfig } from "./lsp-client/clientTypes";
-import { CoqLspServerConfig } from "./lsp-client/coq";
+import { CoqLspServerConfig } from "./lsp-client/rocq";
 import { LeanLspServerConfig } from "./lsp-client/lean";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
@@ -51,7 +51,7 @@ export class Waterproof implements Disposable {
     private readonly disposables: Disposable[] = [];
 
     /** The function that can create a new Coq language client provider */
-    private readonly getCoqClientProvider: LanguageClientProviderFactory;
+    private readonly getRocqClientProvider: LanguageClientProviderFactory;
 
     /** The function that can create a new Lean language client provider */
     private readonly getLeanClientProvider: LanguageClientProviderFactory;
@@ -97,7 +97,7 @@ export class Waterproof implements Disposable {
         excludeCoqFileTypes();
 
         this.context = context;
-        this.getCoqClientProvider = getCoqClientProvider;
+        this.getRocqClientProvider = getCoqClientProvider;
         this.getLeanClientProvider = getLeanClientProvider;
 
         this.webviewManager = new WebviewManager();
@@ -151,7 +151,7 @@ export class Waterproof implements Disposable {
             if (command == "createHelp") {
                 source.setResults(["createHelp"]);
             } else {
-                executeCommand(this.client.coqClient, command).then(
+                executeCommand(this.client.rocqClient, command).then(
                     results => {
                         source.setResults(results);
                     },
@@ -313,7 +313,7 @@ export class Waterproof implements Disposable {
      */
     public async help(): Promise<Array<string>> {
         // Execute command
-        const wpHelpResponse = await executeCommandFullOutput(this.client.coqClient, "Help.");
+        const wpHelpResponse = await executeCommandFullOutput(this.client.rocqClient, "Help.");
         // Return the help messages. val[0] contains the levels, which we ignore.
         return wpHelpResponse.feedback.map(val => val[1]);
     }
@@ -324,7 +324,7 @@ export class Waterproof implements Disposable {
      */
     public async execCommand(cmd: string): Promise<GoalConfig<string> & RunResult<number>> {
         // Execute command and return output
-        return await executeCommandFullOutput(this.client.coqClient, cmd);
+        return await executeCommandFullOutput(this.client.rocqClient, cmd);
     }
 
     /**
@@ -402,7 +402,7 @@ export class Waterproof implements Disposable {
      * usual `.` and space.
      */
     public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
-        const execResponse = await executeCommandFullOutput(this.client.coqClient, steps);
+        const execResponse = await executeCommandFullOutput(this.client.rocqClient, steps);
         return {
             finished: execResponse.proof_finished,
             remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
@@ -569,7 +569,7 @@ export class Waterproof implements Disposable {
 
         wpl.log("Initializing client...");
         this.client = new CompositeClient(
-            this.getCoqClientProvider(this.context, coqClientOptions, WaterproofConfigHelper.configuration),
+            this.getRocqClientProvider(this.context, coqClientOptions, WaterproofConfigHelper.configuration),
             window.createOutputChannel("Waterproof Rocq LSP Events (After Initialization)"),
             this.getLeanClientProvider(this.context, leanClientOptions, WaterproofConfigHelper.configuration),
             window.createOutputChannel("Waterproof Lean LSP Events (After Initialization)"),

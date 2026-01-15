@@ -4,11 +4,11 @@ import {
 import { CoqWebview, WebviewEvents, WebviewState } from "../coqWebview";
 import { MessageType } from "../../../shared";
 import { IExecutor } from "../../components";
-import { CoqGoalAnswer, PpString } from "../../../lib/types";
+import { RocqGoalAnswer, PpString } from "../../../lib/types";
 
 export class ExecutePanel extends CoqWebview implements IExecutor {
     // Initialize the data for the results
-    public data: string[] | CoqGoalAnswer<PpString> = ['No results'];
+    public data: string[] | RocqGoalAnswer<PpString> = ['No results'];
 
     constructor(extensionUri: Uri) {
         // Initialize the execute panel with the extension Uri and the webview name
@@ -35,7 +35,7 @@ export class ExecutePanel extends CoqWebview implements IExecutor {
         });
     }
 
-    setResults(results: CoqGoalAnswer<PpString> | string[]): void {
+    setResults(results: RocqGoalAnswer<PpString> | string[]): void {
         // Set the data property to the provided results
         this.data = results;
         // Send a postMessage to the webview with the MessageType.setData and the data

@@ -1,5 +1,5 @@
 import { LeanLspClient  } from "./lean";
-import { CoqLspClient } from "./coq";
+import { RocqLspClient } from "./rocq";
 import { convertToString } from "../../lib/types";
 import { ILspClient, LanguageClientProvider } from "./clientTypes";
 import { OutputChannel, Position, TextDocument } from "vscode";
@@ -8,22 +8,22 @@ import { Hypothesis } from "../api";
 import { WebviewManager } from "../webviewManager";
 
 export class CompositeClient implements ILspClient {
-    public readonly coqClient: CoqLspClient;
+    public readonly rocqClient: RocqLspClient;
     public readonly leanClient: LeanLspClient;
-    protected readonly lastClient: CoqLspClient | LeanLspClient;
+    protected readonly lastClient: RocqLspClient | LeanLspClient;
 
     protected document?: TextDocument;
 
     constructor(
-        coqClientProvider: LanguageClientProvider,
-        coqOutputChannel: OutputChannel,
+        rocqClientProvider: LanguageClientProvider,
+        rocqOutputChannel: OutputChannel,
         leanClientProvider: LanguageClientProvider,
         leanOutputChannel: OutputChannel,
     ) {
-        this.coqClient = new CoqLspClient(coqClientProvider, coqOutputChannel);
+        this.rocqClient = new RocqLspClient(rocqClientProvider, rocqOutputChannel);
         this.leanClient = new LeanLspClient(leanClientProvider, leanOutputChannel);
 
-        this.lastClient = this.coqClient;
+        this.lastClient = this.rocqClient;
     }
 
     set activeDocument(document: TextDocument) {
@@ -43,15 +43,15 @@ export class CompositeClient implements ILspClient {
         return this.activeClient.activeCursorPosition;
     }
 
-    get activeClient(): CoqLspClient | LeanLspClient {
+    get activeClient(): RocqLspClient | LeanLspClient {
         if (!this.activeDocument) return this.lastClient;
 
         return this.getClient(this.activeDocument);
     }
 
-    protected getClient(document: TextDocument): CoqLspClient | LeanLspClient {
+    protected getClient(document: TextDocument): RocqLspClient | LeanLspClient {
         if (document?.languageId === 'lean4') return this.leanClient;
-        else return this.coqClient;
+        else return this.rocqClient;
     }
 
     updateCompletions(document: TextDocument): Promise<void> {
@@ -110,16 +110,16 @@ export class CompositeClient implements ILspClient {
      * Check if all clients are running.
      */
     isRunning(): boolean {
-        return this.coqClient.isRunning() && this.leanClient.isRunning();
+        return this.rocqClient.isRunning() && this.leanClient.isRunning();
     }
 
     async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
-        await this.coqClient.startWithHandlers(webviewManager);
+        await this.rocqClient.startWithHandlers(webviewManager);
         await this.leanClient.startWithHandlers(webviewManager);
     }
 
     async dispose(timeout?: number): Promise<void> {
-        await this.coqClient.dispose(timeout);
+        await this.rocqClient.dispose(timeout);
         await this.leanClient.dispose(timeout);
     }
 }

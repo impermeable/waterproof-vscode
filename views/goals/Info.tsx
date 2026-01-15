@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 
-import { CoqGoalAnswer, HypVisibility, PpString } from "../../lib/types";
+import { RocqGoalAnswer, HypVisibility, PpString } from "../../lib/types";
 import { ErrorBrowser } from "./ErrorBrowser";
 import { Goals } from "./Goals";
 import { Messages } from "./Messages";
@@ -22,7 +22,7 @@ export function InfoPanel() {
   // visibility of the hypotheses in the goals panel
 
   //saves the goal
-  const [goals, setGoals] = useState<CoqGoalAnswer<PpString>>();
+  const [goals, setGoals] = useState<RocqGoalAnswer<PpString>>();
   //boolean to check if the goals are still loading
   const [isLoading, setIsLoading] = useState(false);
   //visibility of the hypotheses in the goals panel as State

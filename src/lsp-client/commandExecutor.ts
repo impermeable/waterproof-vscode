@@ -1,13 +1,13 @@
 import { Position } from "vscode";
-import { CoqGoalAnswer, GoalConfig } from "../../lib/types";
+import { RocqGoalAnswer, GoalConfig } from "../../lib/types";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
-import { CoqLspClient } from "./coq";
+import { RocqLspClient } from "./rocq";
 
 /**
  * Base function for executing tactics/commands in a client.
  */
-async function executeCommandBase(client: CoqLspClient, command: string) {
+async function executeCommandBase(client: RocqLspClient, command: string) {
     const document = client.activeDocument;
 
     if (!document) {
@@ -55,7 +55,7 @@ async function executeCommandBase(client: CoqLspClient, command: string) {
  * @returns The output of executing `command` formatted as a valid `GoalAnswer<string>` object, this can be passed to any component that
  * implement `IGoalsComponent`.
  */
-export async function executeCommand(client: CoqLspClient, command: string): Promise<CoqGoalAnswer<string>> {
+export async function executeCommand(client: RocqLspClient, command: string): Promise<RocqGoalAnswer<string>> {
     try {
         const { goalsRes, runRes, document } = await executeCommandBase(client, command);
         // This should form a valid `GoalAnswer<string>`
@@ -77,7 +77,7 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
  * @param command The command/tactic to execute. It is allowed to execute multiple tactics/commands by seperating them using `.`'s.
  * @returns The full output of running `command` using `client`.
  */
-export async function executeCommandFullOutput(client: CoqLspClient, command: string): Promise<GoalConfig<string> & RunResult<number>> {
+export async function executeCommandFullOutput(client: RocqLspClient, command: string): Promise<GoalConfig<string> & RunResult<number>> {
     try {
         const { goalsRes, runRes } = await executeCommandBase(client, command);
         return { ...goalsRes, ...runRes };

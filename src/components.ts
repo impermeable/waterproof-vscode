@@ -1,5 +1,5 @@
 import { Disposable, Position } from "vscode";
-import { CoqGoalAnswer, PpString } from "../lib/types";
+import { RocqGoalAnswer, PpString } from "../lib/types";
 import { FileProgressParams } from "./lsp-client/requestTypes";
 import { ILspClient } from "./lsp-client/clientTypes";
 
@@ -76,5 +76,5 @@ export interface IGoalsComponent extends Disposable {
  * This defines the interface of components that execute commands
 */
 export interface IExecutor {
-    setResults(results: CoqGoalAnswer<PpString> | string[]): void;
+    setResults(results: RocqGoalAnswer<PpString> | string[]): void;
 }

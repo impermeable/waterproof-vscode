@@ -2,7 +2,7 @@ import { Uri } from "vscode";
 import { LspClientConfig } from "../../lsp-client/clientTypes";
 import { WebviewEvents, WebviewState } from "../coqWebview";
 import { GoalsBase } from "./goalsBase";
-import { CoqLspClient } from "../../lsp-client/coq";
+import { RocqLspClient } from "../../lsp-client/rocq";
 
 //the debug panel extends the GoalsBase class
 export class DebugPanel extends GoalsBase {
@@ -16,7 +16,7 @@ export class DebugPanel extends GoalsBase {
     }
 
     //override updateGoals to activate the panel before posting the goals message
-    override updateGoals(client: CoqLspClient): Promise<void> {
+    override updateGoals(client: RocqLspClient): Promise<void> {
         this.activatePanel();
         return super.updateGoals(client);
     }

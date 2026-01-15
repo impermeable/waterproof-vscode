@@ -1,7 +1,7 @@
 import { OutputChannel, Position, Range, TextDocument } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
-import { CoqGoalAnswer, CoqGoalRequest, CoqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
+import { RocqGoalAnswer, RocqGoalRequest, RocqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType } from "./requestTypes";
 import { WaterproofLogger as wpl } from "../../helpers";
@@ -10,7 +10,7 @@ import { InputAreaStatus } from "@impermeable/waterproof-editor";
 import { findOccurrences, areInputAreasValid } from "../qedStatus";
 import { LanguageClientProvider } from "../clientTypes";
 
-export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpString>> {
+export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpString>> {
     language = "rocq";
 
     /**
@@ -38,13 +38,13 @@ export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpStri
             // Handle the server status notification
             this.webviewManager!.postMessage(document.uri.toString(), {
                     type: MessageType.serverStatus,
-                    body: CoqServerStatusToServerStatus(params)
+                    body: RocqServerStatusToServerStatus(params)
                 }
             );
         }));
     }
 
-    createGoalsRequestParameters(document: TextDocument, position: Position): CoqGoalRequest {
+    createGoalsRequestParameters(document: TextDocument, position: Position): RocqGoalRequest {
         return {
             textDocument: VersionedTextDocumentIdentifier.create(
                 document.uri.toString(),
@@ -57,7 +57,7 @@ export class CoqLspClient extends LspClient<CoqGoalRequest, CoqGoalAnswer<PpStri
         };
     }
 
-    async requestGoals(params?: GoalRequest | Position): Promise<CoqGoalAnswer<PpString>> {
+    async requestGoals(params?: GoalRequest | Position): Promise<RocqGoalAnswer<PpString>> {
         if (!params || "line" in params) {  // if `params` is not a `GoalRequest` ...
             params ??= this.activeCursorPosition;
             if (!this.activeDocument || !params) {

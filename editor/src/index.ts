@@ -1,7 +1,7 @@
 import { FileFormat, Message, MessageType } from "../../shared";
 import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
-import coqTactics from "../../completions/tactics.json";
+import rocqTactics from "../../completions/tactics.json";
 import leanTactics from "../../completions/tacticsLean.json";
 import symbols from "../../completions/symbols.json";
 
@@ -29,7 +29,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	switch (format) {
 		case FileFormat.MarkdownV:
 			formatConf = {
-				completions: coqTactics,
+				completions: rocqTactics,
 				documentConstructor: (v: string) => markdown.parse(v, "coq"),
 				toMarkdown: defaultToMarkdown,
 				markdownName: "Markdown",
@@ -38,7 +38,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 			break;
 		case FileFormat.RegularV:
 			formatConf = {
-				completions: coqTactics,
+				completions: rocqTactics,
 				documentConstructor: vFileParser,
 				toMarkdown: coqdocToMarkdown,
 				markdownName: "coqdoc",

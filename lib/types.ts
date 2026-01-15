@@ -62,7 +62,7 @@ export interface GoalAnswer {
     position: Position;
 }
 
-export interface CoqGoalAnswer<Pp> extends GoalAnswer {
+export interface RocqGoalAnswer<Pp> extends GoalAnswer {
     goals?: GoalConfig<Pp>;
     program?: ProgramInfo;
     messages: Pp[] | Message<Pp>[];
@@ -79,7 +79,7 @@ export interface GoalRequest {
     position: Position;
 }
 
-export interface CoqGoalRequest extends GoalRequest {
+export interface RocqGoalRequest extends GoalRequest {
     pp_format?: "Pp" | "Str";
     command?: string;
     mode?: 'Prev' | 'After';
@@ -168,22 +168,22 @@ export interface DocumentPerfParams {
     timings: SentencePerfParams[];
 }
 
-export interface CoqBusyStatus {
+export interface RocqBusyStatus {
     status: "Busy";
     modname: string;
 }
 
-export interface CoqIdleStatus {
+export interface RocqIdleStatus {
     status: "Idle" | "Stopped";
 }
 
-export type CoqServerStatus = CoqBusyStatus | CoqIdleStatus;
+export type RocqServerStatus = RocqBusyStatus | RocqIdleStatus;
 
-function isBusyStatus(status: CoqServerStatus): status is CoqBusyStatus {
+function isBusyStatus(status: RocqServerStatus): status is RocqBusyStatus {
     return status.status === "Busy";
 }
 
-export function CoqServerStatusToServerStatus(status: CoqServerStatus): ServerStatus {
+export function RocqServerStatusToServerStatus(status: RocqServerStatus): ServerStatus {
     if (isBusyStatus(status)) {
         return { status: status.status, metadata: status.modname };
     }

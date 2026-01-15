@@ -3,16 +3,16 @@ import {
 } from "vscode";
 import { CoqWebview, WebviewEvents, WebviewState } from "../coqWebview";
 
-// Import the JSON data containing the Coq tactics
-import dataCoq from "../../../completions/tactics.json";
+// Import the JSON data containing the Rocq tactics
+import dataRocq from "../../../completions/tactics.json";
 // Import the JSON data for Lean tactics
 import dataLean from "../../../completions/tacticsLean.json";
 import { CompositeClient } from "../../lsp-client/composite";
-import { CoqLspClient } from "../../lsp-client/coq";
+import { RocqLspClient } from "../../lsp-client/rocq";
 import { LeanLspClient } from "../../lsp-client/lean";
 
 export class TacticsPanel extends CoqWebview {
-    private lastClient?: CoqLspClient | LeanLspClient;
+    private lastClient?: RocqLspClient | LeanLspClient;
 
     constructor(extensionUri: Uri) {
         // Initialize the tactics panel with the extension Uri and the webview name
@@ -46,7 +46,7 @@ export class TacticsPanel extends CoqWebview {
         else if (this.lastClient instanceof LeanLspClient)
             super.showView("tactics", dataLean);
         else
-            super.showView("tactics", dataCoq);
+            super.showView("tactics", dataRocq);
     }
 
     update(client: CompositeClient) {

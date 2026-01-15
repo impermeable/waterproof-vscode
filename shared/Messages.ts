@@ -1,4 +1,4 @@
-import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
+import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
 import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 import { ServerStatus } from "./ServerStatus";
@@ -34,7 +34,6 @@ export type Message =
     | MessageBase<MessageType.errorGoals, unknown>
     | MessageBase<MessageType.init, { value: string, version: number }>
     | MessageBase<MessageType.insert, { symbolUnicode: string, type: "symbol" | "tactics", time: number }>
-    | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
@@ -65,7 +64,6 @@ export const enum MessageType {
     errorGoals,
     init,
     insert,
-    lineNumbers,
     progress,
     qedStatus,
     ready,

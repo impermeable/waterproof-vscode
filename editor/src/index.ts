@@ -8,7 +8,6 @@ import symbols from "../../completions/symbols.json";
 import "@impermeable/waterproof-editor/styles.css"
 import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
-import { topLevelBlocksMV } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import { highlight_dark, highlight_light, wpLanguageSupport } from "./lang-pack";
 
@@ -46,14 +45,10 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 			},
 			viewportHint(start, end) {
 				codeAPI.postMessage({ type: MessageType.viewportHint, body: { start, end } });
-			},
-			lineNumbers(linenumbers, version) {
-				codeAPI.postMessage({ type: MessageType.lineNumbers, body: { linenumbers, version } });
-			},
-
+			}
 		},
 		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
-		documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : vFileParser,
+		documentConstructor: format === FileFormat.MarkdownV ? v => markdown.parse(v, { language: "coq" }) : vFileParser,
 		// documentConstructor: format === FileFormat.MarkdownV ? doc => markdownParser(doc, "coq") : vFileParser,
 		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
 		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
@@ -143,9 +138,6 @@ window.onload = () => {
 				{ const show = msg.body; editor.setShowMenuItems(show); break; }
 			case MessageType.editorHistoryChange:
 				editor.handleHistoryChange(msg.body);
-				break;
-			case MessageType.lineNumbers:
-				editor.setLineNumbers(msg.body);
 				break;
 			case MessageType.teacher:
 				editor.updateLockingState(msg.body);

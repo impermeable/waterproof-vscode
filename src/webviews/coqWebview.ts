@@ -147,7 +147,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             Uri.joinPath(this.extensionUri, "out", "views", name, "index.js")
         );
 
-        // TODO: remove this exception (inject/load necessary resources from views/infoview/index.ts)
+        // TODO: remove this workaround (inject/load necessary resources from views/infoview/index.ts)
         if (name === 'infoview') {
             const distBase = this._panel.webview.asWebviewUri(
                 Uri.joinPath(this.extensionUri, "node_modules", "@leanprover", "infoview", "dist")

@@ -1,3 +1,4 @@
+// https://github.com/leanprover/vscode-lean4/blob/master/vscode-lean4/src/rpc.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export class Rpc {
     private seqNum = 0

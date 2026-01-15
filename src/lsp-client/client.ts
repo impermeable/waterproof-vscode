@@ -1,4 +1,4 @@
-import { Position, TextDocument, Range, OutputChannel, languages, workspace, Disposable, window, DiagnosticSeverity } from "vscode";
+import { Position, TextDocument, Range, OutputChannel, languages, workspace, Disposable, DiagnosticSeverity } from "vscode";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, LogTraceNotification, SymbolInformation } from "vscode-languageclient";
 import { SentenceManager } from "./sentenceManager";
 import { IFileProgressComponent } from "../components";

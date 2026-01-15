@@ -1,4 +1,4 @@
-import { Message, MessageType } from "../../shared"; 
+import { MessageType } from "../../shared";
 import type { EditorApi, InfoviewApi, InfoviewConfig, LeanPublishDiagnosticsParams } from '@leanprover/infoview'
 import { loadRenderInfoview } from '@leanprover/infoview/loader'
 import type { InitializeResult, Location } from 'vscode-languageserver-protocol'
@@ -22,6 +22,8 @@ function modifyState(f: (previousState: PersistentInfoviewState) => PersistentIn
     vscodeApi.setState(f(vscodeApi.getState() ?? {}))
 }
 
+// The exact type or shape of an Rpc message does not matter to us
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpc = new Rpc((m: any) => vscodeApi.postMessage({ type: MessageType.infoviewRpc, body: m }))
 window.addEventListener('message', e => rpc.messageReceived(e.data))
 const editorApi: EditorApi = rpc.getApi<EditorApi>()
@@ -75,7 +77,7 @@ if (div && script) {
         }
 
         rpc.register(apiWithPersistedState)
-        
+
         if (previousState !== undefined) {
             if (previousState.cursorLoc !== undefined) {
                 await api.initialize(previousState.cursorLoc)

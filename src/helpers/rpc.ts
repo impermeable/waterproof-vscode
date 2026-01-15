@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export class Rpc {
     private seqNum = 0
     private methods: { [name: string]: (...args: any[]) => Promise<any> } = {}
@@ -29,7 +30,7 @@ export class Rpc {
         this.initialized = true
     }
 
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+
     messageReceived(msg: any): void {
         if (msg.kind) {
             if (msg.kind === 'initialize') {
@@ -48,7 +49,7 @@ export class Rpc {
                 try {
                     const fn = this.methods[name]
                     if (fn === undefined) throw new Error(`unknown RPC method ${name}`)
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
                     this.sendMessage({ seqNum, result: await fn(...args) })
                 } catch (ex: any) {
                     this.sendMessage({ seqNum, exception: prepareExceptionForSerialization(ex) })

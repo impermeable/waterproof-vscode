@@ -2,13 +2,15 @@ import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
 import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
-import { FileProgressParams, leanFileProgressNotificationType, leanGoalRequestType } from "../requestTypes";
+import { FileProgressParams } from "../requestTypes";
+import { leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams } from "./requestTypes";
 import { WaterproofLogger as wpl } from "../../helpers";
 import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
 import { findOccurrences } from "../qedStatus";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
 import { ServerStoppedReason } from "@leanprover/infoview-api";
+import { DidChangeTextDocumentParams, DidCloseTextDocumentParams } from "vscode-languageclient";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
@@ -81,10 +83,14 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
         await super.startWithHandlers(webviewManager);
 
-        // Add special handling of custom notifications
+        // Allows for any custom notifications to be handled by
+        // forwarding to a custom notification emitter
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const starHandler = (method: string, params_: any) => {
-          this.customNotificationEmitter.fire({ method, params: params_ })
+            this.customNotificationEmitter.fire({ method, params: params_ })
         };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.client.onNotification(starHandler as any, () => { });
     }
 
@@ -120,24 +126,26 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     }
 
     // Emitters for infoview
-    private didChangeEmitter = new EventEmitter<any>();
-    public didChange(cb: (params: any) => void): Disposable {
+    private didChangeEmitter = new EventEmitter<DidChangeTextDocumentParams>();
+    public didChange(cb: (params: DidChangeTextDocumentParams) => void): Disposable {
         return this.didChangeEmitter.event(cb);
     }
 
-    private didCloseEmitter = new EventEmitter<any>();
-    public didClose(cb: (params: any) => void): Disposable {
+    private didCloseEmitter = new EventEmitter<DidCloseTextDocumentParams>();
+    public didClose(cb: (params: DidCloseTextDocumentParams) => void): Disposable {
         return this.didCloseEmitter.event(cb);
     }
 
-    private diagnosticsEmitter = new EventEmitter<any>();
-    public diagnostics(cb: (params: any) => void): Disposable {
+    private diagnosticsEmitter = new EventEmitter<LeanPublishDiagnosticsParams>();
+    public diagnostics(cb: (params: LeanPublishDiagnosticsParams) => void): Disposable {
         return this.diagnosticsEmitter.event(cb);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private customNotificationEmitter = new EventEmitter<{ method: string; params: any }>()
 
     /** Fires whenever a custom notification (i.e. one not defined in LSP) is received. */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public customNotification(cb: (params: any) => void): Disposable {
         return this.customNotificationEmitter.event(cb);
     }

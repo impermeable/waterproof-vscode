@@ -1,6 +1,6 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
-import React, { useState, useEffect} from 'react';
-import { Message, MessageType } from '../../shared';
+import React, { useState } from 'react';
+import { MessageType } from '../../shared';
 
 import '../styles/tactics.css';
 
@@ -30,21 +30,21 @@ const ProofAssistant = ({ data }: { data: Tactic[] }) => {
     };
 
     //handle button press of inserting a tactic
-    const handleInsert = (event: React.MouseEvent, template: string) => {
+    const handleInsert = (_event: React.MouseEvent, template: string) => {
         // log the name of the tactic
         vscode.postMessage({ time: Date.now(), type: MessageType.insert, body: { symbolLatex: template, symbolUnicode: template, type: "tactics" } });
     };
 
     //handle button press of copying a tactic to the clipboard
-    const handleCopy = (event: React.MouseEvent, name: string) => {
+    const handleCopy = (_event: React.MouseEvent, name: string) => {
         // put the tactic on the clipboard
         navigator.clipboard.writeText(name);
     };
 
     // Function to generate code for each tactic
-    const generateCode = (tactic: any) => {
+    const generateCode = (tactic: Tactic) => {
         const { label, description, example, template } = tactic;
-        // FIXME: 
+        // FIXME:
         const name = label;
         const isVisible = tacticVisibility[name];
         return (

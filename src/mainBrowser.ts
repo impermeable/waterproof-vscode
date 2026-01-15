@@ -36,11 +36,10 @@ const getCoqClientProvider: LanguageClientProviderFactory = (
  * @returns an LSP client with the added functionality of `CoqFeatures`
  */
 const getLeanClientProvider: LanguageClientProviderFactory = (
-    context: ExtensionContext,
-    clientOptions: LanguageClientOptions,
+    _context: ExtensionContext,
+    _clientOptions: LanguageClientOptions,
     _wsConfig: WorkspaceConfiguration
 ) => {
-    // FIXME
     throw new Error("Not implemented");
 };
 

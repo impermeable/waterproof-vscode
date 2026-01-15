@@ -28,14 +28,17 @@ async function executeCommandBase(client: CoqLspClient, command: string) {
     }
 
     try {
-        const stateRes = await client.client.sendRequest(getStateAtPosReq, params);
+        // The underlying (VS Code) language client
+        const languageClient = client.client;
+
+        const stateRes = await languageClient.sendRequest(getStateAtPosReq, params);
         // Create the RunParams object, st is the state to execute in, tac the command
         // to execute.
         const runParams: RunParams = { st: stateRes.st, tac: command };
-        const runRes = await client.client.sendRequest(runReq, runParams);
+        const runRes = await languageClient.sendRequest(runReq, runParams);
         // The state on which to query the goals is the state *after* the command has been run.
         const goalParams: GoalParams = { st: runRes.st };
-        const goalsRes = await client.client.sendRequest(goalsReq, goalParams);
+        const goalsRes = await languageClient.sendRequest(goalsReq, goalParams);
 
         return {
             goalsRes, runRes, document

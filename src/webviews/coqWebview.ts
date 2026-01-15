@@ -129,8 +129,10 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     }
 
     /**
-     * Set the webview's content to the view with the given name.
+     * Set the webview's content to the view with the given name,
+     * optionally passing `data` into window.extraData.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     showView(name: string, data?: any) {
         if (!this._panel) {
             wpl.debug(`Could not show ${name}, WebviewPanel does not exist`);
@@ -152,24 +154,25 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             );
             const libPostfix = `.production.min.js`
             this._panel.webview.html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8" />
-                <meta http-equiv="Content-type" content="text/html;charset=utf-8">
-                <title>Infoview</title>
-                <link rel="stylesheet" href="${distBase}/index.css">
-            </head>
-            <body>
-                <div id="root"></div>
-                <script
-                    data-importmap-leanprover-infoview="${distBase}/index${libPostfix}"
-                    data-importmap-react="${distBase}/react${libPostfix}"
-                    data-importmap-react-jsx-runtime="${distBase}/react-jsx-runtime${libPostfix}"
-                    data-importmap-react-dom="${distBase}/react-dom${libPostfix}"
-                    src="${scriptUri}"></script>
-            </body>
-            </html>`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8" />
+                    <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+                    <title>Infoview</title>
+                    <link rel="stylesheet" href="${distBase}/index.css">
+                </head>
+                <body>
+                    <div id="root"></div>
+                    <script
+                        data-importmap-leanprover-infoview="${distBase}/index${libPostfix}"
+                        data-importmap-react="${distBase}/react${libPostfix}"
+                        data-importmap-react-jsx-runtime="${distBase}/react-jsx-runtime${libPostfix}"
+                        data-importmap-react-dom="${distBase}/react-dom${libPostfix}"
+                        src="${scriptUri}"></script>
+                </body>
+                </html>
+            `;
             return;
         }
 
@@ -180,7 +183,12 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link rel="stylesheet" type="text/css" href="${styleUri}">
-                <script>
+                <script>`
+                    /* Allow for passing custom parameters to views.
+                       This is used to pass the language-specific
+                       tactics data to the tactics panel.
+                     */
+                    + `
                     window.extraData = ${JSON.stringify(data)};
                 </script>
                 <script src="${scriptUri}" type="module"></script>

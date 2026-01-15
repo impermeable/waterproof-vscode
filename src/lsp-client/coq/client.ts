@@ -3,7 +3,7 @@ import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
 import { CoqGoalAnswer, CoqGoalRequest, CoqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
-import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType } from "../requestTypes";
+import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType } from "./requestTypes";
 import { WaterproofLogger as wpl } from "../../helpers";
 import { LspClient } from "../client";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";

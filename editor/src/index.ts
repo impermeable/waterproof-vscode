@@ -1,9 +1,9 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, DocumentSerializer, markdown, TagConfiguration, ThemeStyle, WaterproofDocument, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import coqTactics from "../../completions/tactics.json";
-import symbols from "../../completions/symbols.json";
 import leanTactics from "../../completions/tacticsLean.json";
+import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
 import "@impermeable/waterproof-editor/styles.css"

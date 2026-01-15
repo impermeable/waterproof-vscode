@@ -40,7 +40,7 @@ export class TacticsPanel extends CoqWebview {
         });
     }
 
-    showView(name: string, data?: any) {
+    showView(_name: string, data?: any) {
         if (data)
             super.showView("tactics", data);
         else if (this.lastClient instanceof LeanLspClient)

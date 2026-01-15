@@ -1,5 +1,5 @@
 import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, SimpleProgressParams, ServerStatus, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
-import { CoqGoalAnswer, GoalAnswer, HypVisibility, PpString } from "../lib/types";
+import { CoqGoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 
 
@@ -44,9 +44,12 @@ export type Message =
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>
-    | MessageBase<MessageType.themeUpdate, {theme: ThemeStyle, lang: string}>
-    | MessageBase<MessageType.infoviewRpc, {payload: any}>
-    | MessageBase<MessageType.viewportHint, { start: number, end: number }>;
+    | MessageBase<MessageType.themeUpdate, { theme: ThemeStyle, lang: string }>
+    | MessageBase<MessageType.viewportHint, { start: number, end: number }>
+    // The payload is forwarded to an InfoView instance, so its type does not concern us
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | MessageBase<MessageType.infoviewRpc, { payload: any }>
+    ;
 
 /**
  * Message type enum. Every message that is send from the

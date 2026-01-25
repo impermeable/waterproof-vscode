@@ -8,7 +8,9 @@ import tactics from "../../completions/tactics.json";
 import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
-import "@impermeable/waterproof-editor/styles.css"
+import "@impermeable/waterproof-editor/styles.css";
+// import the style sheet mapping waterproof style properties to vscode styles
+import "./vscodemapping.css";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.

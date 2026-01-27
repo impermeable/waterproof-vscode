@@ -3,10 +3,21 @@ import {
 } from "vscode";
 import { CoqWebview, WebviewEvents, WebviewState } from "../coqWebview";
 
+// Import the JSON data containing the Rocq tactics
+import dataRocq from "../../../completions/tactics.json";
+// Import the JSON data for Lean tactics
+import dataLean from "../../../completions/tacticsLean.json";
+import { CompositeClient } from "../../lsp-client/composite";
+import { RocqLspClient } from "../../lsp-client/rocq";
+import { LeanLspClient } from "../../lsp-client/lean";
+
 export class TacticsPanel extends CoqWebview {
+    private lastClient?: RocqLspClient | LeanLspClient;
+
     constructor(extensionUri: Uri) {
         // Initialize the tactics panel with the extension Uri and the webview name
-        super(extensionUri,"tactics");
+        super(extensionUri, "tactics");
+
         this.readyPanel();
         // Set up an event listener for WebviewEvents.change event
         this.on(WebviewEvents.change,(_e) => {
@@ -29,6 +40,20 @@ export class TacticsPanel extends CoqWebview {
         });
     }
 
+    showView(_name: string, data?: any) {
+        if (data)
+            super.showView("tactics", data);
+        else if (this.lastClient instanceof LeanLspClient)
+            super.showView("tactics", dataLean);
+        else
+            super.showView("tactics", dataRocq);
+    }
 
+    update(client: CompositeClient) {
+        if (!client || this.lastClient === client.activeClient)
+            return;
 
+        this.lastClient = client.activeClient;
+        this.showView("tactics");
+    }
 }

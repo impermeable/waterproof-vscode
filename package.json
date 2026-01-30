@@ -39,7 +39,8 @@
   "activationEvents": [
     "onCommand:waterproof.toggle",
     "onLanguage:coq",
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onLanguage:lean4"
   ],
   "contributes": {
     "themes": [
@@ -69,7 +70,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v}"
+            "filenamePattern": "*.{mv,v,lean}"
           }
         ]
       }
@@ -94,6 +95,12 @@
         ],
         "extensions": [
           ".mv"
+        ]
+      },
+      {
+        "id": "lean4",
+        "extensions": [
+          ".lean"
         ]
       }
     ],
@@ -421,6 +428,19 @@
             },
             "default": [],
             "description": "Arguments to the coq-lsp server"
+          },
+          "waterproof.lakePath": {
+            "type": "string",
+            "default": "lake",
+            "description": "Path to the Lake executable used to run the Lean server, by default, search in PATH."
+          },
+          "waterproof.lakeArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Arguments passed to Lake to start the server (before 'serve')."
           }
         }
       },
@@ -496,6 +516,8 @@
   },
   "dependencies": {
     "@impermeable/waterproof-editor": "0.13.0",
+    "@leanprover/infoview": "^0.10.0",
+    "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
     "@ocaml-wasm/4.12--num": "^1.4.0-0",
     "@ocaml-wasm/4.12--zarith": "^1.13.0-0",
@@ -518,7 +540,7 @@
     "vscode-uri": "3.1.0"
   },
   "main": "./out/src/mainNode.js",
-  "browser": "/out/src/mainBrowser.js",
+  "browser": "./out/src/mainBrowser.js",
   "scripts": {
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
     "esbuild": "node esbuild.mjs",

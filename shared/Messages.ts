@@ -1,5 +1,5 @@
 import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, SimpleProgressParams, ServerStatus, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
-import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
+import { RocqGoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 
 
@@ -35,17 +35,21 @@ export type Message =
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
-    | MessageBase<MessageType.renderGoals, { goals : GoalAnswer<PpString>, visibility?: HypVisibility }>
-    | MessageBase<MessageType.renderGoalsList, { goalsList : GoalAnswer<PpString>[]}>
+    | MessageBase<MessageType.renderGoals, { goals : RocqGoalAnswer<PpString>, visibility?: HypVisibility }>
+    | MessageBase<MessageType.renderGoalsList, { goalsList : RocqGoalAnswer<PpString>[]}>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
     | MessageBase<MessageType.serverStatus, ServerStatus>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
-    | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
+    | MessageBase<MessageType.setData, string[] | RocqGoalAnswer<PpString>>
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>
-    | MessageBase<MessageType.themeUpdate, ThemeStyle>
-    | MessageBase<MessageType.viewportHint, { start: number, end: number }>;
+    | MessageBase<MessageType.themeUpdate, { theme: ThemeStyle, lang: string }>
+    | MessageBase<MessageType.viewportHint, { start: number, end: number }>
+    // The payload is forwarded to an InfoView instance, so its type does not concern us
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | MessageBase<MessageType.infoviewRpc, { payload: any }>
+    ;
 
 /**
  * Message type enum. Every message that is send from the
@@ -77,4 +81,5 @@ export const enum MessageType {
     themeUpdate,
     flash,
     viewportHint,
+    infoviewRpc
 }

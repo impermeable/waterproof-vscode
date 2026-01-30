@@ -2,20 +2,27 @@ import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
 import React, { useState } from 'react';
 import { MessageType } from '../../shared';
 
-// Import the JSON data containing the tactics
-import data from "../../completions/tactics.json";
-
 import '../styles/tactics.css';
+
+type Tactic = {
+    label: string,
+    type: "type",
+    detail: "tactic",
+    template: string,
+    description: string,
+    example: string,
+    boost: number,
+};
 
 const vscode = acquireVsCodeApi();
 
-const ProofAssistant = () => {
+const ProofAssistant = ({ data }: { data: Tactic[] }) => {
     // State variable to track tactic visibility
-    const [tacticVisibility, setTacticVisibility] = useState({});
+    const [tacticVisibility, setTacticVisibility] = useState<Record<string, boolean>>({});
     const [value, setValue] = useState("");
 
     // Function to toggle tactic visibility
-    const toggleVisibility = (tacticName) => {
+    const toggleVisibility = (tacticName: string) => {
         setTacticVisibility((prevState) => ({
             ...prevState,
             [tacticName]: !prevState[tacticName],
@@ -23,21 +30,21 @@ const ProofAssistant = () => {
     };
 
     //handle button press of inserting a tactic
-    const handleInsert = (event, template) => {
+    const handleInsert = (_event: React.MouseEvent, template: string) => {
         // log the name of the tactic
         vscode.postMessage({ time: Date.now(), type: MessageType.insert, body: { symbolLatex: template, symbolUnicode: template, type: "tactics" } });
     };
 
     //handle button press of copying a tactic to the clipboard
-    const handleCopy = (event, name) => {
+    const handleCopy = (_event: React.MouseEvent, name: string) => {
         // put the tactic on the clipboard
         navigator.clipboard.writeText(name);
     };
 
     // Function to generate code for each tactic
-    const generateCode = (tactic) => {
+    const generateCode = (tactic: Tactic) => {
         const { label, description, example, template } = tactic;
-        // FIXME: 
+        // FIXME:
         const name = label;
         const isVisible = tacticVisibility[name];
         return (
@@ -75,7 +82,7 @@ const ProofAssistant = () => {
         );
     };
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === 'Enter' && event.shiftKey) {
             // Handle Shift + Enter key press logic here
             // Prevent adding a new line in the textarea
@@ -84,7 +91,7 @@ const ProofAssistant = () => {
     };
 
     // If text get added, filter
-    const handleChange = (event) => {
+    const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setValue(event.target.value);
     };
 
@@ -103,9 +110,10 @@ const ProofAssistant = () => {
                 onChange={handleChange}
                 onClick={handleClick} />
         </div><div className="proof-assistant">
-                {/* here we filter the data */}
+                {/* here we filter the data based on the active tacticsData */}
                 {data.filter(item => item.label.toLowerCase().includes(value.toLowerCase())).map((tactic) => generateCode(tactic))}
-            </div></>);
+            </div></>
+        );
 };
 
 export default ProofAssistant;

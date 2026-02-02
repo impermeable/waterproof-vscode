@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { GoalAnswer, HypVisibility, PpString } from "../../lib/types";
 import { ErrorBrowser } from "./ErrorBrowser";
 import { Goals } from "./Goals";
@@ -23,25 +23,34 @@ export function InfoPanel() {
   
   //saves the goal
   const [goals, setGoals] = useState<GoalAnswer<PpString>>();
+  const goalsRef = useRef<GoalAnswer<PpString> | undefined>();
   //boolean to check if the goals are still loading
   const [goalsLoading, setGoalsLoading] = useState(false);
   //visibility of the hypotheses in the goals panel as State
   const [visibility, setVisibility] = useState<HypVisibility>(HypVisibility.None);
   
   const [isHelpLoading, setIsHelpLoading] = useState(false);
-  const [helpInfo, setHelpInfo] = useState([""]);
+  const [helpInfo, setHelpInfo] = useState<string[] | GoalAnswer<PpString> | undefined>(undefined);
   //handles the message
   //event : CoqMessageEvent as defined above
   function infoViewDispatch(msg: Message) { 
     switch (msg.type) {
       case MessageType.renderGoals:
-          setGoals(msg.body.goals); //setting the information
+          const newGoals = msg.body.goals;
+          const prevGoals = goalsRef.current;
+
+          const goalsChanged = JSON.stringify(newGoals.goals) !== JSON.stringify(prevGoals?.goals);
+          if (goalsChanged) {
+            setHelpInfo(undefined);
+            setIsHelpLoading(false);
+          }
+
+          goalsRef.current = newGoals;
+          setGoals(newGoals); //setting the information
           setGoalsLoading(false);
           setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None  
           break;
       case MessageType.setData:
-        //@ts-expect-error FIXME: setHelpInfo expects string[]
-        // in theory setData can also contain GoalAnswer
         setHelpInfo(msg.body);
         setIsHelpLoading(false);
         break;

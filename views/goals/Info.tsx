@@ -35,7 +35,7 @@ export function InfoPanel() {
   //event : CoqMessageEvent as defined above
   function infoViewDispatch(msg: Message) { 
     switch (msg.type) {
-      case MessageType.renderGoals:
+      case MessageType.renderGoals: {
           const newGoals = msg.body.goals;
           const prevGoals = goalsRef.current;
 
@@ -50,10 +50,12 @@ export function InfoPanel() {
           setGoalsLoading(false);
           setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None  
           break;
-      case MessageType.setData:
+      }
+      case MessageType.setData:{
         setHelpInfo(msg.body);
         setIsHelpLoading(false);
         break;
+      }
     }
   }
 

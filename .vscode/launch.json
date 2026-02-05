@@ -15,11 +15,11 @@
             "preLaunchTask": "${defaultBuildTask}"
           },
           {
-            "name": "Run Extension (Disable only coq-lsp)",
+            "name": "Run Extension (Disable only coq-lsp & lean4)",
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceFolder}", "--disable-extension=ejgallego.coq-lsp"],
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}", "--disable-extension=ejgallego.coq-lsp", "--disable-extension=leanprover.lean4"],
             "outFiles": ["${workspaceFolder}/out/**/*.js"],
             "preLaunchTask": "${defaultBuildTask}"
           },

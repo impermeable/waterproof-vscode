@@ -10,6 +10,7 @@ import dataLean from "../../../completions/tacticsLean.json";
 import { CompositeClient } from "../../lsp-client/composite";
 import { RocqLspClient } from "../../lsp-client/rocq";
 import { LeanLspClient } from "../../lsp-client/lean";
+import type { TacticsData } from "../../../shared";
 
 export class TacticsPanel extends CoqWebview {
     private lastClient?: RocqLspClient | LeanLspClient;
@@ -40,7 +41,7 @@ export class TacticsPanel extends CoqWebview {
         });
     }
 
-    showView(_name: string, data?: any) {
+    showView(_name: string, data?: TacticsData) {
         if (data)
             super.showView("tactics", data);
         else if (this.lastClient instanceof LeanLspClient)

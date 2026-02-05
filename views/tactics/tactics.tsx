@@ -1,22 +1,12 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
 import React, { useState } from 'react';
-import { MessageType } from '../../shared';
+import { MessageType, TacticsData, Tactic } from '../../shared';
 
 import '../styles/tactics.css';
 
-type Tactic = {
-    label: string,
-    type: "type",
-    detail: "tactic",
-    template: string,
-    description: string,
-    example: string,
-    boost: number,
-};
-
 const vscode = acquireVsCodeApi();
 
-const ProofAssistant = ({ data }: { data: Tactic[] }) => {
+const ProofAssistant = ({ data }: { data: TacticsData }) => {
     // State variable to track tactic visibility
     const [tacticVisibility, setTacticVisibility] = useState<Record<string, boolean>>({});
     const [value, setValue] = useState("");

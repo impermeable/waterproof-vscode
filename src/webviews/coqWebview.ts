@@ -6,7 +6,7 @@ import {
     window
 } from "vscode";
 import { Disposable } from "vscode-languageclient";
-import { Message } from "../../shared";
+import type { Message, TacticsData } from "../../shared";
 import { WaterproofLogger as wpl } from "../helpers";
 
 /**
@@ -132,8 +132,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      * Set the webview's content to the view with the given name,
      * optionally passing `data` into window.extraData.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    showView(name: string, data?: any) {
+    showView(name: string, data?: TacticsData) {
         if (!this._panel) {
             wpl.debug(`Could not show ${name}, WebviewPanel does not exist`);
             return;

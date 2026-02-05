@@ -558,6 +558,7 @@
     "cypress-tests": "npx cypress run",
     "lint": "npx eslint .",
     "lint-fix": "npx eslint . --fix",
-    "test": "npm run unit-tests && npm run cypress-tests"
+    "test": "npm run unit-tests && npm run cypress-tests",
+    "install-extension": "npm run test-package && code --install-extension test_out/extension.vsix --force"
   }
 }

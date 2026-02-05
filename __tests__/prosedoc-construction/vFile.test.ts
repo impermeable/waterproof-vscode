@@ -109,55 +109,55 @@ test("vFile with input area", () => {
     // We now generate the mapping and check its ranges
     const mapping = new Mapping(blocks, 0, tagConfigurationV, new DefaultTagSerializer(tagConfigurationV)).getMapping();
 
-    expect(mapping.root.range).toStrictEqual<BlockRange>({ from: 0, to: doc.length });
-    expect(mapping.root.innerRange).toStrictEqual<BlockRange>({ from: 0, to: doc.length });
+    expect(mapping.root.tagRange).toStrictEqual<BlockRange>({ from: 0, to: doc.length });
+    expect(mapping.root.contentRange).toStrictEqual<BlockRange>({ from: 0, to: doc.length });
     expect(mapping.root.children.length).toBe(7);
 
     expect(mapping.root.children[0].type).toBe("markdown");
-    expect(mapping.root.children[0].range).toStrictEqual<BlockRange>({ from: 0, to: 8 });
-    expect(mapping.root.children[0].innerRange).toStrictEqual<BlockRange>({ from: 4, to: 5 });
+    expect(mapping.root.children[0].tagRange).toStrictEqual<BlockRange>({ from: 0, to: 8 });
+    expect(mapping.root.children[0].contentRange).toStrictEqual<BlockRange>({ from: 4, to: 5 });
     expect(mapping.root.children[0].prosemirrorStart).toBe(1);
     expect(mapping.root.children[0].prosemirrorEnd).toBe(2);
 
     expect(mapping.root.children[1].type).toBe("newline");
-    expect(mapping.root.children[1].range).toStrictEqual<BlockRange>({ from: 8, to: 9 });
-    expect(mapping.root.children[1].innerRange).toStrictEqual<BlockRange>({ from: 8, to: 9 });
+    expect(mapping.root.children[1].tagRange).toStrictEqual<BlockRange>({ from: 8, to: 9 });
+    expect(mapping.root.children[1].contentRange).toStrictEqual<BlockRange>({ from: 8, to: 9 });
     expect(mapping.root.children[1].prosemirrorStart).toBe(3);
     expect(mapping.root.children[1].prosemirrorEnd).toBe(3);
     
     expect(mapping.root.children[2].type).toBe("code");
-    expect(mapping.root.children[2].range).toStrictEqual<BlockRange>({ from: 9, to: 10 });
-    expect(mapping.root.children[2].innerRange).toStrictEqual<BlockRange>({ from: 9, to: 10 });
+    expect(mapping.root.children[2].tagRange).toStrictEqual<BlockRange>({ from: 9, to: 10 });
+    expect(mapping.root.children[2].contentRange).toStrictEqual<BlockRange>({ from: 9, to: 10 });
     expect(mapping.root.children[2].prosemirrorStart).toBe(5);
     expect(mapping.root.children[2].prosemirrorEnd).toBe(6);
 
     expect(mapping.root.children[3].type).toBe("newline");
-    expect(mapping.root.children[3].range).toStrictEqual<BlockRange>({ from: 10, to: 11 });
-    expect(mapping.root.children[3].innerRange).toStrictEqual<BlockRange>({ from: 10, to: 11 });
+    expect(mapping.root.children[3].tagRange).toStrictEqual<BlockRange>({ from: 10, to: 11 });
+    expect(mapping.root.children[3].contentRange).toStrictEqual<BlockRange>({ from: 10, to: 11 });
     expect(mapping.root.children[3].prosemirrorStart).toBe(7);
     expect(mapping.root.children[3].prosemirrorEnd).toBe(7);
 
     expect(mapping.root.children[4].type).toBe("input");
-    expect(mapping.root.children[4].range).toStrictEqual<BlockRange>({ from: 11, to: 46 });
-    expect(mapping.root.children[4].innerRange).toStrictEqual<BlockRange>({ from: 29, to: 30 });
+    expect(mapping.root.children[4].tagRange).toStrictEqual<BlockRange>({ from: 11, to: 46 });
+    expect(mapping.root.children[4].contentRange).toStrictEqual<BlockRange>({ from: 29, to: 30 });
     expect(mapping.root.children[4].children.length).toBe(1);
     expect(mapping.root.children[4].children[0].type).toBe("code");
     expect(mapping.root.children[4].children[0].prosemirrorStart).toBe(10);
     expect(mapping.root.children[4].children[0].prosemirrorEnd).toBe(11);
-    expect(mapping.root.children[4].children[0].range).toStrictEqual<BlockRange>({ from: 29, to: 30 });
-    expect(mapping.root.children[4].children[0].innerRange).toStrictEqual<BlockRange>({ from: 29, to: 30 });
+    expect(mapping.root.children[4].children[0].tagRange).toStrictEqual<BlockRange>({ from: 29, to: 30 });
+    expect(mapping.root.children[4].children[0].contentRange).toStrictEqual<BlockRange>({ from: 29, to: 30 });
     expect(mapping.root.children[4].prosemirrorStart).toBe(9);
     expect(mapping.root.children[4].prosemirrorEnd).toBe(12);
 
     expect(mapping.root.children[5].type).toBe("newline");
-    expect(mapping.root.children[5].range).toStrictEqual<BlockRange>({ from: 46, to: 47 });
-    expect(mapping.root.children[5].innerRange).toStrictEqual<BlockRange>({ from: 46, to: 47 });
+    expect(mapping.root.children[5].tagRange).toStrictEqual<BlockRange>({ from: 46, to: 47 });
+    expect(mapping.root.children[5].contentRange).toStrictEqual<BlockRange>({ from: 46, to: 47 });
     expect(mapping.root.children[5].prosemirrorStart).toBe(13);
     expect(mapping.root.children[5].prosemirrorEnd).toBe(13);
     
     expect(mapping.root.children[6].type).toBe("markdown");
-    expect(mapping.root.children[6].range).toStrictEqual<BlockRange>({ from: 47, to: doc.length });
-    expect(mapping.root.children[6].innerRange).toStrictEqual<BlockRange>({ from: 51, to: 52 });
+    expect(mapping.root.children[6].tagRange).toStrictEqual<BlockRange>({ from: 47, to: doc.length });
+    expect(mapping.root.children[6].contentRange).toStrictEqual<BlockRange>({ from: 51, to: 52 });
     expect(mapping.root.children[6].prosemirrorStart).toBe(15);
     expect(mapping.root.children[6].prosemirrorEnd).toBe(16);
 });

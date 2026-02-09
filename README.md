@@ -12,7 +12,8 @@ The Waterproof vscode extension helps students learn how to write mathematical p
     c. [Manual installation on Windows with installer](#manual-installation-on-windows-with-installer)
 
     d. [Manual installation on Windows with WSL](#manual-installation-on-windows-with-wsl)
-3. [Getting Started](#getting-started)
+3. [Optional dependencies for (Verbose) Lean](#optional-dependencies)
+4. [Getting Started](#getting-started)
 
 # Automatic installation instructions for Windows
 
@@ -153,6 +154,14 @@ Alternatively, one navigate to a folder in WSL itself, and type `code .` to open
 ### Step 4: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
 
 From this page in vscode, you can just click on the "Install" button.
+
+# Optional dependencies
+
+If you want to use the (Verbose) Lean functionality in Waterproof, you will need to have `elan` installed,
+which will automatically install the right dependencies.
+You can do this by following the instructions [here](https://lean-lang.org/install/).
+
+
 
 # Getting Started
 

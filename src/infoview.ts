@@ -13,6 +13,7 @@ import {
     ConfigurationTarget,
     Disposable,
     env,
+    Position,
     workspace,
 } from 'vscode'
 import { LeanLspClient } from './lsp-client/lean';
@@ -278,12 +279,47 @@ export class InfoProvider implements Disposable {
             await env.clipboard.writeText(text)
         },
 
-        insertText: async (_text, _kind, _tdpp) => {
-            wpl.log(`[Infoprovider] Method "insertText" is not implemented`);
+        insertText: async (text, _kind, _tdpp) => {
+            wpl.log(`[InfoProvider] insertText called with: ${text}`);
+            const document = this.client.activeDocument;
+            if (!document || !this.client.webviewManager) {
+                wpl.log(`[InfoProvider] Cannot insert text: no active document or webviewManager`);
+                return;
+            }
+            this.client.webviewManager.postMessage(document.uri.toString(), {
+                type: MessageType.insert,
+                body: {
+                    symbolUnicode: text,
+                    type: "tactics",
+                    time: Date.now()
+                }
+            });
         },
+
         applyEdit: async (e: WorkspaceEdit) => {
-            const we = await this.client.client.protocol2CodeConverter.asWorkspaceEdit(e)
-            await workspace.applyEdit(we)
+            const document = this.client.activeDocument;
+            if (!document || !this.client.webviewManager) {
+                wpl.log(`[InfoProvider] Cannot apply edit: no active document or webviewManager`);
+                return;
+            }
+            const uri = document.uri.toString();
+            const changes = e.changes?.[uri];
+            if (!changes || changes.length === 0) {
+                wpl.log(`[InfoProvider] No changes for active document`);
+                return;
+            }
+            for (const change of changes) {
+                const start = document.offsetAt(
+                    new Position(change.range.start.line, change.range.start.character)
+                );
+                const end = document.offsetAt(
+                    new Position(change.range.end.line, change.range.end.character)
+                );
+                this.client.webviewManager.postMessage(uri, {
+                    type: MessageType.replaceRange,
+                    body: { start, end, text: change.newText }
+                });
+            }
         },
 
         showDocument: async _show => {

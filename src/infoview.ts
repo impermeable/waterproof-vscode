@@ -279,21 +279,8 @@ export class InfoProvider implements Disposable {
             await env.clipboard.writeText(text)
         },
 
-        insertText: async (text, _kind, _tdpp) => {
-            wpl.log(`[InfoProvider] insertText called with: ${text}`);
-            const document = this.client.activeDocument;
-            if (!document || !this.client.webviewManager) {
-                wpl.log(`[InfoProvider] Cannot insert text: no active document or webviewManager`);
-                return;
-            }
-            this.client.webviewManager.postMessage(document.uri.toString(), {
-                type: MessageType.insert,
-                body: {
-                    symbolUnicode: text,
-                    type: "tactics",
-                    time: Date.now()
-                }
-            });
+        insertText: async (_text, _kind, _tdpp) => {
+            wpl.log(`[Infoprovider] Method "insertText" is not implemented`);
         },
 
         applyEdit: async (e: WorkspaceEdit) => {

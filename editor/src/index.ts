@@ -151,6 +151,12 @@ window.onload = () => {
 					}
 					break;
 				}
+			case MessageType.replaceRange:
+                {
+                    const { start, end, text } = msg.body;
+                    editor.replaceRange(start, end, text);
+                    break;
+                }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
 				editor.handleCompletions(msg.body);

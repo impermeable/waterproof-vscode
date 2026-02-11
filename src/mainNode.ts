@@ -52,7 +52,6 @@ const getLeanClientProvider: LanguageClientProviderFactory = (
 };
 
 export function activate(context: ExtensionContext): WaterproofAPI {
-
     const extension = new Waterproof(context, getCoqClientProvider, getLeanClientProvider, false);
     context.subscriptions.push(extension);
     // start the lsp client

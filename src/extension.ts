@@ -526,11 +526,16 @@ export class Waterproof implements Disposable {
     async initializeClient(): Promise<void> {
         wpl.log("Start of initializeClient");
 
+        const hasMvFile =         
+            await workspace.findFiles("**/*.mv").then(files => files.length > 0);
+        wpl.debug(`Checking for .mv files in workspace: ${hasMvFile}`);
         // Whether the user has decided to skip the launch checks
         const launchChecksDisabled = WaterproofConfigHelper.get(WaterproofSetting.SkipLaunchChecks);
 
-        if (launchChecksDisabled || this._isWeb) {
-            const reason = launchChecksDisabled ? "Launch checks disabled by user." : "Web extension, skipping launch checks.";
+        
+        if (launchChecksDisabled || this._isWeb || !hasMvFile) {
+            const reason = launchChecksDisabled ? "Launch checks disabled by user." : 
+              this._isWeb ? "Web extension, skipping launch checks." : "No .mv files found, skipping launch checks.";
             wpl.log(`${reason} Attempting to launch client...`);
         } else {
             // Run the version checker.
@@ -583,10 +588,10 @@ export class Waterproof implements Disposable {
             window.createOutputChannel("Waterproof Lean LSP Events (After Initialization)"),
         );
         return this.client.startWithHandlers(this.webviewManager).then(
-            () => {
+            (clients) => {
                 this.webviewManager.open("goals");
                 // show user that LSP is working
-                this.statusBar.update(true);
+                this.statusBar.update(clients);
                 this.clientRunning = true;
                 wpl.log("Client initialization complete.");
 
@@ -628,7 +633,7 @@ export class Waterproof implements Disposable {
         if (this.client.isRunning()) {
             await this.client.dispose(2000);
             this.clientRunning = false;
-            this.statusBar.update(false);
+            this.statusBar.update([]);
         } else {
             return Promise.resolve();
         }

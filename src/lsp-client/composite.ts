@@ -2,6 +2,7 @@ import { LeanLspClient  } from "./lean";
 import { RocqLspClient } from "./rocq";
 import { convertToString } from "../../lib/types";
 import { ILspClient, LanguageClientProvider } from "./clientTypes";
+import { WaterproofLogger as wpl } from "../helpers";
 import { OutputChannel, Position, TextDocument } from "vscode";
 import { DocumentSymbol } from "vscode-languageserver-types";
 import { Hypothesis } from "../api";
@@ -113,9 +114,17 @@ export class CompositeClient implements ILspClient {
         return this.rocqClient.isRunning() && this.leanClient.isRunning();
     }
 
-    async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
-        await this.rocqClient.startWithHandlers(webviewManager);
-        await this.leanClient.startWithHandlers(webviewManager);
+    async startWithHandlers(webviewManager: WebviewManager): Promise<string[]> {
+        const rocqStart = this.rocqClient.startWithHandlers(webviewManager).catch(err => {
+            wpl.log(`Failed to start Rocq client: ${err}`);
+            return [];
+        });
+        const leanStart = this.leanClient.startWithHandlers(webviewManager).catch(err => {
+            wpl.log(`Failed to start Lean client: ${err}`);
+            return [];
+        });
+
+        return Promise.all([rocqStart, leanStart]).then(([rocqLangs, leanLangs]) => [...rocqLangs, ...leanLangs]);
     }
 
     async dispose(timeout?: number): Promise<void> {

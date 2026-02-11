@@ -256,7 +256,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         }, 250);
     }
 
-    startWithHandlers(webviewManager: WebviewManager): Promise<void> {
+    async startWithHandlers(webviewManager: WebviewManager): Promise<string[]> {
         this.webviewManager = webviewManager;
 
         // after every document change, request symbols and send completions to the editor
@@ -269,7 +269,8 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
             }
         }));
 
-        return this.client.start();
+        await this.client.start();
+        return [this.language ?? "unknown"];
     }
 
     /**

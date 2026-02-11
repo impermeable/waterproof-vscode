@@ -80,8 +80,8 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         // this is not currently used or supported by Lean
     }
 
-    async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
-        await super.startWithHandlers(webviewManager);
+    async startWithHandlers(webviewManager: WebviewManager): Promise<string[]> {
+        const lang = await super.startWithHandlers(webviewManager);
 
         // Allows for any custom notifications to be handled by
         // forwarding to a custom notification emitter
@@ -92,6 +92,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.client.onNotification(starHandler as any, () => { });
+        return lang;
     }
 
     protected getInputAreas(document: TextDocument): Range[] | undefined {

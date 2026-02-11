@@ -111,7 +111,7 @@ export class CompositeClient implements ILspClient {
      * Check if all clients are running.
      */
     isRunning(): boolean {
-        return this.rocqClient.isRunning() && this.leanClient.isRunning();
+        return this.rocqClient.isRunning() || this.leanClient.isRunning();
     }
 
     async startWithHandlers(webviewManager: WebviewManager): Promise<string[]> {

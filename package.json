@@ -310,9 +310,21 @@
             "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
           },
           "waterproof.skipLaunchChecks": {
-            "type": "boolean",
-            "default": false,
-            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Rocq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+            "type": "string",
+            "default": "none",
+            "enum": [
+              "none",
+              "lean4",
+              "rocq",
+              "all"
+            ],
+            "enumItemLabels": [
+              "None",
+              "Lean",
+              "Rocq",
+              "All"
+            ],
+            "description": "Skip launch checks and optionally restrict which language server starts. None does all launch checks and starts available language servers. Lean starts only Lean. Rocq starts only Rocq. All starts both."
           }
         }
       },

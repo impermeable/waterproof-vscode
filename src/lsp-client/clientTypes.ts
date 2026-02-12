@@ -34,6 +34,12 @@ export type LanguageClientProviderFactory = (
  
 export interface ILspClient extends TimeoutDisposable {
     /**
+     * Run pre-launch checks required before starting the LSP client.
+     * Returns a list of languages that the client(s) should be launched for, e.g., `["lean4", "rocq"]`.
+     */
+    prelaunchChecks(): Promise<string[]>;
+
+    /**
      * Check whether this client is running.
      */
     isRunning(): boolean;
@@ -55,7 +61,7 @@ export interface ILspClient extends TimeoutDisposable {
      * need to be forwarded to the * editor) and starts client.
      * Returns the language(s) of the client(s) that were started.
      */
-    startWithHandlers(webviewManager: WebviewManager): Promise<string[]>;
+    startWithHandlers(webviewManager: WebviewManager, allowedLanguages: string[]): Promise<string[]>;
 
     /**
      * Sends an LSP request to retrieve the symbols in the `activeDocument`.

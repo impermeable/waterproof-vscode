@@ -51,6 +51,13 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     }
 
     /**
+     * Run any pre-launch checks before starting this client.
+     */
+    async prelaunchChecks(): Promise<string[]> {
+        return this.language ? [this.language] : [];
+    }
+
+    /**
      * Language identifier of this client, e.g. 'rocq' or 'lean4'
      */
     readonly language: string | undefined;
@@ -256,7 +263,11 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         }, 250);
     }
 
-    async startWithHandlers(webviewManager: WebviewManager): Promise<string[]> {
+    async startWithHandlers(webviewManager: WebviewManager, allowedLanguages: string[]): Promise<string[]> {
+        if (!this.language || !allowedLanguages.includes(this.language)) {
+            return [];
+        }
+
         this.webviewManager = webviewManager;
 
         // after every document change, request symbols and send completions to the editor

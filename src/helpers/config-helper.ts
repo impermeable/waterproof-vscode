@@ -76,7 +76,7 @@ type WaterproofSettingTypes = {
     [WaterproofSetting.TeacherMode]: boolean;
     [WaterproofSetting.DetailedErrorsMode]: boolean;
     [WaterproofSetting.ShowLineNumbersInEditor]: boolean;
-    [WaterproofSetting.SkipLaunchChecks]: boolean;
+    [WaterproofSetting.SkipLaunchChecks]: "none" | "lean4" | "rocq" | "all";
     [WaterproofSetting.ShowMenuItemsInEditor]: boolean;
     [WaterproofSetting.EnforceCorrectNonInputArea]: boolean;
     [WaterproofSetting.EagerDiagnostics]: boolean;

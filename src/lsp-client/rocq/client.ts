@@ -1,10 +1,11 @@
-import { OutputChannel, Position, Range, TextDocument } from "vscode";
+import { ExtensionContext, OutputChannel, Position, Range, TextDocument } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
 import { RocqGoalAnswer, RocqGoalRequest, RocqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType } from "./requestTypes";
-import { WaterproofLogger as wpl } from "../../helpers";
+import { WaterproofLogger as wpl, WaterproofPackageJSON } from "../../helpers";
+import { VersionChecker } from "../../version-checker/version-checker";
 import { LspClient } from "../client";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
 import { findOccurrences, areInputAreasValid } from "../qedStatus";
@@ -13,12 +14,15 @@ import { LanguageClientProvider } from "../clientTypes";
 export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpString>> {
     language = "rocq";
 
+    private readonly context: ExtensionContext;
+
     /**
      * Initializes the client.
      * @param args the arguments for the base `LanguageClient`
      */
-    constructor(clientProvider: LanguageClientProvider, channel: OutputChannel) {
+    constructor(clientProvider: LanguageClientProvider, channel: OutputChannel, context: ExtensionContext) {
         super(clientProvider, channel);
+        this.context = context;
 
         // call each file progress component when the server has processed a part
         this.disposables.push(this.client.onNotification(coqFileProgressNotificationType, params => {
@@ -42,6 +46,19 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
                 }
             );
         }));
+    }
+
+    async prelaunchChecks(): Promise<string[]> {
+        const requiredCoqLspVersion = WaterproofPackageJSON.requiredCoqLspVersion(this.context);
+        const requiredCoqWaterproofVersion = WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
+        const versionChecker = new VersionChecker(this.context, requiredCoqLspVersion, requiredCoqWaterproofVersion);
+
+        const foundServer = await versionChecker.prelaunchChecks();
+        if (foundServer) {
+            versionChecker.run();
+        }
+
+        return foundServer ? [this.language] : [];
     }
 
     createGoalsRequestParameters(document: TextDocument, position: Position): RocqGoalRequest {

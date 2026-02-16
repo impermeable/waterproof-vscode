@@ -152,6 +152,12 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 Uri.joinPath(this.extensionUri, "node_modules", "@leanprover", "infoview", "dist")
             );
             const libPostfix = `.production.min.js`
+            // CSS style that hides all hypotheses from the infoview
+            const hideHypothesesStyle: string = `
+              div:has(~ [data-is-goal="true"]) {
+                display: none !important;
+              }
+            `;
             this._panel.webview.html = `
                 <!DOCTYPE html>
                 <html>
@@ -159,6 +165,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                     <meta charset="UTF-8" />
                     <meta http-equiv="Content-type" content="text/html;charset=utf-8">
                     <title>Infoview</title>
+                    <style>${hideHypothesesStyle}</style>
                     <link rel="stylesheet" href="${distBase}/index.css">
                 </head>
                 <body>

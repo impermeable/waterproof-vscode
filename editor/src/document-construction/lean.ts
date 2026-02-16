@@ -11,6 +11,8 @@ enum Kind {
     MathInline,
     MathDisplay,
     Newline,
+    MultileanOpen,
+    MultileanClose,
 }
 
 class Token {
@@ -54,15 +56,18 @@ class Token {
 }
 
 const regexes: [RegExp, Kind][] = [
-    [/^[\s\S]*#doc .*? =>\n/,             Kind.Preamble  ],
-    [/(?<=\n)```lean\n/,                  Kind.CodeOpen  ],
-    [/\n```(?=\n|$)/,                     Kind.CodeClose ],
-    [/(?<=\n):::input\n/,                 Kind.InputOpen ],
-    [/(?<=\n):::hint "([\s\S]*?)"(?=\n)/, Kind.HintOpen  ],
-    [/\n:::(?=\n|$)/,                     Kind.Close     ],
-    [/\$`[\s\S]*?`/,                      Kind.MathInline],
-    [/\$\$`[\s\S]*?`/,                    Kind.MathDisplay],
-    [/\n{1}?/,                            Kind.Newline   ],
+    [/^[\s\S]*#doc .*? =>\n/,             Kind.Preamble       ],
+    [/(?<=\n)```lean\n/,                  Kind.CodeOpen       ],
+    [/\n```(?=\n|$)/,                     Kind.CodeClose      ],
+    [/(?<=\n):::input\n/,                 Kind.InputOpen      ],
+    [/(?<=\n):::hint "([\s\S]*?)"(?=\n)/, Kind.HintOpen       ],
+    [/\n:::(?=\n|$)/,                     Kind.Close          ],
+    [/\$`[\s\S]*?`/,                      Kind.MathInline     ],
+    [/\$\$`[\s\S]*?`/,                    Kind.MathDisplay    ],
+    [/(?<=\n)::::multilean\n/,            Kind.MultileanOpen  ],
+    [/\n::::(?=\n|$)/,                    Kind.MultileanClose ],
+    // Match these last
+    [/\n{1}?/,                            Kind.Newline        ],
 ];
 const flags: string = 'g';
 const tokenRegex = new RegExp(regexes.map(([regex, toKind]) => {
@@ -175,6 +180,9 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
         blocks.push(new MathDisplayBlock(content, range, innerRange, token.line));
 
+        return token.next;
+    } else if (token.isOneOf([Kind.MultileanOpen, Kind.MultileanClose])) {
+        // We skip to the next token as we don't want the multilean tags to be shown in the editor.
         return token.next;
     } else {
         throw Error(`Unexpected token ${token.kind}`);

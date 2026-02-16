@@ -572,7 +572,7 @@ export class Waterproof implements Disposable {
 
         if (skipLaunchChecksSetting !== "none") {
             allowedLanguages = skipLaunchChecksSetting === "all" ? ["rocq", "lean4"] : [skipLaunchChecksSetting];
-            let reason = `Launch checks skipped by user, starting: ${allowedLanguages.join(", ")}.`;
+            const reason = `Launch checks skipped by user, starting: ${allowedLanguages.join(", ")}.`;
             wpl.log(`${reason} Attempting to launch client...`);
         } else {
             allowedLanguages = await this.client.prelaunchChecks();

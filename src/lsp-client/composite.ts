@@ -153,7 +153,13 @@ export class CompositeClient implements ILspClient {
     }
 
     async dispose(timeout?: number): Promise<void> {
-        await this.rocqClient.dispose(timeout);
-        await this.leanClient.dispose(timeout);
+        const disposePromises = [];
+        if (this.rocqClient.isRunning()) {
+            disposePromises.push(this.rocqClient.dispose(timeout));
+        }
+        if (this.leanClient.isRunning()) {
+            disposePromises.push(this.leanClient.dispose(timeout));
+        }
+        await Promise.all(disposePromises);
     }
 }

@@ -280,6 +280,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
             }
         }));
 
+        wpl.debug(`Starting ${this.language} client...`);
         await this.client.start();
         return [this.language ?? "unknown"];
     }

@@ -47,6 +47,7 @@ $$\`x^2 + y = z\`
 A list:
   1. *Italicized* text
   2. $\`y = z - x^2\`
+  3. \`Inline code\`
 `;
 
 
@@ -212,7 +213,7 @@ test("Parse top level blocks (Lean)", () => {
 
     expect(typeguards.isMarkdownBlock(md3)).toBe(true);
     expect(md3.stringContent)
-        .toBe("\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n");
+        .toBe("\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n  3. `Inline code`\n");
 })
 
 test("Parse and serialize document (Lean)", () => {

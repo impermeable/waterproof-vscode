@@ -6,7 +6,9 @@ import leanTactics from "../../completions/tacticsLean.json";
 import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
-import "@impermeable/waterproof-editor/styles.css"
+import "@impermeable/waterproof-editor/styles.css";
+// import the style sheet mapping waterproof style properties to vscode styles
+import "./vscodemapping.css";
 import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksLean } from "./document-construction/construct-document";

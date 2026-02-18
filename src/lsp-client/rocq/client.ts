@@ -3,7 +3,7 @@ import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
 import { RocqGoalAnswer, RocqGoalRequest, RocqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
-import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType } from "./requestTypes";
+import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType, executionInformationNotificationType } from "./requestTypes";
 import { WaterproofLogger as wpl } from "../../helpers";
 import { LspClient } from "../client";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
@@ -23,6 +23,22 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
         // call each file progress component when the server has processed a part
         this.disposables.push(this.client.onNotification(coqFileProgressNotificationType, params => {
             this.onFileProgress(params);
+        }));
+
+        this.disposables.push(this.client.onNotification(executionInformationNotificationType, info => {
+            const document = this.activeDocument;
+            const webviewManager = this.webviewManager;
+
+            if (document === undefined || webviewManager === undefined) return;
+
+            const { start, end } = info.range;
+            const from = document.offsetAt(new Position(start.line, start.character));
+            const to = document.offsetAt(new Position(end.line, end.character));
+
+            webviewManager.postMessage(document.uri.toString(), {
+                type: MessageType.executionInfo,
+                body: { from, to }
+            });
         }));
 
         this.disposables.push(this.client.onNotification(coqServerStatusNotificationType, params => {

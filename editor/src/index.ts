@@ -186,7 +186,14 @@ window.onload = () => {
 			case MessageType.progress:
 				{
 					const progressParams = msg.body;
-					editor.updateProgressBar(progressParams);
+					editor.updateProgressBar(progressParams);					if (progressParams.progress.length === 0) {
+						editor.removeBusyIndicators();
+					}					break;
+			}
+			case MessageType.executionInfo:
+				{
+					const range = msg.body;
+					editor.setBusyIndicator(range.from);
 					break;
 				}
 			case MessageType.diagnostics:

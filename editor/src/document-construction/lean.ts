@@ -9,8 +9,7 @@ enum Kind {
     HintOpen,
     Close,
     MathInline,
-    MathOpen,
-    MathClose,
+    MathDisplay,
     Newline,
     MultileanOpen,
     MultileanClose,
@@ -64,8 +63,7 @@ const regexes: [RegExp, Kind][] = [
     [/(?<=\n):::hint "([\s\S]*?)"(?=\n)/, Kind.HintOpen       ],
     [/\n:::(?=\n|$)/,                     Kind.Close          ],
     [/\$`[\s\S]*?`/,                      Kind.MathInline     ],
-    [/\$\$`/,                             Kind.MathOpen       ],
-    [/`/,                                 Kind.MathClose      ],
+    [/\$\$`[\s\S]*?`/,                    Kind.MathDisplay    ],
     [/(?<=\n)::::multilean\n/,            Kind.MultileanOpen  ],
     [/\n::::(?=\n|$)/,                    Kind.MultileanClose ],
     // Match these last
@@ -152,7 +150,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
             Kind.Close,
             Kind.Text,
             Kind.MathInline,
-            Kind.MathOpen,
+            Kind.MathDisplay,
             Kind.CodeOpen,
             Kind.Newline,
         ];
@@ -175,20 +173,15 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         }
 
         return head.next;
-    } else if (token.kind === Kind.MathOpen) {
-        let head = token;
-        do {
-            head = expect(head.next, [Kind.Text, Kind.Newline, Kind.MathClose]);
-        } while (head.kind != Kind.MathClose);
-
-        const range = { from: token.range.from, to: head.range.to };
-        const innerRange = { from: token.range.to, to: head.range.from };
+    } else if (token.kind === Kind.MathDisplay) {
+        const range = token.range;
+        const innerRange = { from: range.from + 3, to: range.to - 1 };
         const content = doc.substring(innerRange.from, innerRange.to);
 
         blocks.push(new MathDisplayBlock(content, range, innerRange, token.line));
 
-        return head.next;
-    }else if (token.isOneOf([Kind.MultileanOpen, Kind.MultileanClose])) {
+        return token.next;
+    } else if (token.isOneOf([Kind.MultileanOpen, Kind.MultileanClose])) {
         // We skip to the next token as we don't want the multilean tags to be shown in the editor.
         return token.next;
     } else {

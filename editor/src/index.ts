@@ -15,6 +15,7 @@ import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
+import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -52,7 +53,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 			formatConf = {
 				completions: leanTactics,
 				documentConstructor: topLevelBlocksLean,
-				toMarkdown: defaultToMarkdown,
+				toMarkdown: versoMarkdownToMarkdown,
 				markdownName: "Markdown",
 				tagConfiguration: tagConfigurationLean,
 				serializer: new LeanSerializer(),

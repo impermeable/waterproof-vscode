@@ -9,7 +9,7 @@ import {
     ConfigurationTarget,
     Uri,
 } from "vscode";
-import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
+import { LanguageClientOptions, RevealOutputChannelOn, VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
@@ -37,7 +37,7 @@ import { Hypothesis } from "./api";
 import { CompositeClient } from "./lsp-client/composite";
 import { CompositeGoalsPanel } from "./webviews/goalviews/compositeGoalsPanel";
 import { convertToString, GoalConfig } from "../lib/types";
-import { RunResult } from "./lsp-client/petanque";
+import { GetStateAtPosParams, getStateAtPosReq, ProofInfoAtPosParams, proofInfoAtPosReq, RunResult } from "./lsp-client/petanque";
 
 /**
  * Main extension class
@@ -201,6 +201,42 @@ export class Waterproof implements Disposable {
         // FIXME: Move command handlers to their own location.
 
         this.registerCommand("openTutorial", this.waterproofTutorialCommand);
+
+        this.registerCommand("testProofInfo", async () => {
+            if (!this.client.activeDocument || !this.client.activeCursorPosition) {
+                window.showErrorMessage("No active document or cursor position.");
+                return;
+            }
+
+            
+            const document = this.client.activeDocument;
+            const position = this.client.activeCursorPosition;
+            
+            const params1: GetStateAtPosParams = {
+                // Make sure that the position is **before** the dot, otherwise there is no node at the position.
+                position,
+                uri: document.uri.toString()
+            }
+
+            const stateRes = await this.client.activeClient.client.sendRequest(getStateAtPosReq, params1);
+            console.log(stateRes);
+
+            const params: ProofInfoAtPosParams = {
+                textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
+                position
+            };
+
+            try {
+                const result = await this.client.activeClient.client.sendRequest(proofInfoAtPosReq, params);
+                window.showInformationMessage(`Proof info at cursor: ${result.name}, statements: ${result.statements.join("; ")}`);
+                console.log(`Proof info at cursor: ${result.name}, statements: ${result.statements.join("; ")}`);
+                console.log("JSON result:\n\n", JSON.stringify(result));
+                
+            } catch (error) {
+                console.error(`Error fetching proof info at cursor: ${error}`);
+                window.showErrorMessage(`Error fetching proof info at cursor: ${error}`);
+            }
+        });
 
         this.registerCommand("pathSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.path");});
         this.registerCommand("argsSetting", () => {commands.executeCommand("workbench.action.openSettings", "waterproof.args");});

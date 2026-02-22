@@ -40,6 +40,9 @@ async function executeCommandBase(client: RocqLspClient, command: string) {
         const goalParams: GoalParams = { st: runRes.st };
         const goalsRes = await languageClient.sendRequest(goalsReq, goalParams);
 
+        const infoReq = await languageClient.sendRequest("petanque/proof_info", {st: stateRes.st});
+        console.log("Proof info: ", infoReq);
+
         return {
             goalsRes, runRes, document
         };

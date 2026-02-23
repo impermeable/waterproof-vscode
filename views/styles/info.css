@@ -1,16 +1,20 @@
-.error-browser {
-  flex: 1 1 0%;
-}
-
 .info-panel-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  gap: 8px;
+  min-height: 0;
   font-size: var(--vscode-editor-font-size);
   /* font-size: medium */
   font-family: var(--vscode-editor-font-family);
 }
 
 .info-panel {
+  overflow: auto;
+}
+
+.error-browser {
+  flex: 1 1 0%;
+  max-height: 30vh;
   overflow: auto;
 }

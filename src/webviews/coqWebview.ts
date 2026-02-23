@@ -210,6 +210,8 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
      * @returns boolean on whether message was sent successfully
      */
     public postMessage(msg: Message) : boolean {
+        if (!this._panel) return false;
+
         if (this.state != WebviewState.visible) {
             this.changeState(WebviewState.visible);
         }

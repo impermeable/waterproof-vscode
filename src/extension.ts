@@ -29,7 +29,6 @@ import { ExecutePanel } from "./webviews/standardviews/execute";
 import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
-import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
@@ -526,28 +525,6 @@ export class Waterproof implements Disposable {
     async initializeClient(): Promise<void> {
         wpl.log("Start of initializeClient");
 
-        // Whether the user has decided to skip the launch checks
-        const launchChecksDisabled = WaterproofConfigHelper.get(WaterproofSetting.SkipLaunchChecks);
-
-        if (launchChecksDisabled || this._isWeb) {
-            const reason = launchChecksDisabled ? "Launch checks disabled by user." : "Web extension, skipping launch checks.";
-            wpl.log(`${reason} Attempting to launch client...`);
-        } else {
-            // Run the version checker.
-            const requiredCoqLSPVersion = WaterproofPackageJSON.requiredCoqLspVersion(this.context);
-            const requiredCoqWaterproofVersion =  WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
-            const versionChecker = new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-
-            // Check whether we can find coq-lsp
-            const foundServer = await versionChecker.prelaunchChecks();
-            if (foundServer) {
-                // Only run the version checker after we know that there is a valid coq-lsp server
-                versionChecker.run();
-            } else {
-                this.statusBar.failed("LSP not found");
-            }
-        }
-
         if (this.client?.isRunning()) {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
@@ -581,12 +558,34 @@ export class Waterproof implements Disposable {
             window.createOutputChannel("Waterproof Rocq LSP Events (After Initialization)"),
             this.getLeanClientProvider(this.context, leanClientOptions, WaterproofConfigHelper.configuration),
             window.createOutputChannel("Waterproof Lean LSP Events (After Initialization)"),
+            this.context,
         );
-        return this.client.startWithHandlers(this.webviewManager).then(
-            () => {
+
+        // Whether the user has decided to skip the launch checks
+        let skipLaunchChecksSetting = WaterproofConfigHelper.get(WaterproofSetting.SkipLaunchChecks);
+        if (this._isWeb) {
+            // In the web version, we only support rocq
+            skipLaunchChecksSetting = "rocq";
+            wpl.log("Web version detected, automatically skipping launch checks for Rocq and not launching Lean client.");
+        }
+        let allowedLanguages: string[] = [];
+
+        if (skipLaunchChecksSetting !== "none") {
+            allowedLanguages = skipLaunchChecksSetting === "all" ? ["rocq", "lean4"] : [skipLaunchChecksSetting];
+            const reason = `Launch checks skipped by user, starting: ${allowedLanguages.join(", ")}.`;
+            wpl.log(`${reason} Attempting to launch client...`);
+        } else {
+            allowedLanguages = await this.client.prelaunchChecks();
+            if (allowedLanguages.length === 0) {
+                this.statusBar.failed("Prelaunch checks failed");
+                return;
+            }
+        }
+        return this.client.startWithHandlers(this.webviewManager, allowedLanguages).then(
+            (clients) => {
                 this.webviewManager.open("goals");
                 // show user that LSP is working
-                this.statusBar.update(true);
+                this.statusBar.update(clients);
                 this.clientRunning = true;
                 wpl.log("Client initialization complete.");
 
@@ -628,7 +627,7 @@ export class Waterproof implements Disposable {
         if (this.client.isRunning()) {
             await this.client.dispose(2000);
             this.clientRunning = false;
-            this.statusBar.update(false);
+            this.statusBar.update([]);
         } else {
             return Promise.resolve();
         }

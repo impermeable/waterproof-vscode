@@ -12,9 +12,9 @@ export interface IStatusComponent extends Disposable {
      * Update the status bar component to display current status
      * of client
      *
-     * @param clientRunning indicates whether the client is running
+     * @param clientsRunning indicates which clients are running
      */
-    update(clientRunning: boolean): void;
+    update(clientsRunning: string[]): void;
 
     /**
      * Update the status bar to indicate failure to start client

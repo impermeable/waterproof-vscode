@@ -2,7 +2,8 @@ import { LeanLspClient  } from "./lean";
 import { RocqLspClient } from "./rocq";
 import { convertToString } from "../../lib/types";
 import { ILspClient, LanguageClientProvider } from "./clientTypes";
-import { OutputChannel, Position, TextDocument } from "vscode";
+import { WaterproofLogger as wpl } from "../helpers";
+import { ExtensionContext, OutputChannel, Position, TextDocument } from "vscode";
 import { DocumentSymbol } from "vscode-languageserver-types";
 import { Hypothesis } from "../api";
 import { WebviewManager } from "../webviewManager";
@@ -19,8 +20,9 @@ export class CompositeClient implements ILspClient {
         rocqOutputChannel: OutputChannel,
         leanClientProvider: LanguageClientProvider,
         leanOutputChannel: OutputChannel,
+        context: ExtensionContext,
     ) {
-        this.rocqClient = new RocqLspClient(rocqClientProvider, rocqOutputChannel);
+        this.rocqClient = new RocqLspClient(rocqClientProvider, rocqOutputChannel, context);
         this.leanClient = new LeanLspClient(leanClientProvider, leanOutputChannel);
 
         this.lastClient = this.rocqClient;
@@ -106,20 +108,58 @@ export class CompositeClient implements ILspClient {
         return this.activeClient.requestSymbols(document);
     }
 
+    async prelaunchChecks(): Promise<string[]> {
+        const [rocqAllowed, leanAllowed] = await Promise.all([
+            this.rocqClient.prelaunchChecks(),
+            this.leanClient.prelaunchChecks(),
+        ]);
+
+        return [...rocqAllowed, ...leanAllowed];
+    }
+
     /**
      * Check if all clients are running.
      */
     isRunning(): boolean {
-        return this.rocqClient.isRunning() && this.leanClient.isRunning();
+        return this.rocqClient.isRunning() || this.leanClient.isRunning();
     }
 
-    async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
-        await this.rocqClient.startWithHandlers(webviewManager);
-        await this.leanClient.startWithHandlers(webviewManager);
+    async startWithHandlers(webviewManager: WebviewManager, allowedLanguages: string[]): Promise<string[]> {
+        const rocqAllowed = allowedLanguages.includes(this.rocqClient.language);
+        const leanAllowed = allowedLanguages.includes(this.leanClient.language);
+
+        if (!rocqAllowed) {
+            wpl.log("Skipping Rocq client start: prelaunch checks failed.");
+        }
+        if (!leanAllowed) {
+            wpl.log("Skipping Lean client start: prelaunch checks failed.");
+        }
+
+        const rocqStart = rocqAllowed
+            ? this.rocqClient.startWithHandlers(webviewManager, allowedLanguages).catch(err => {
+                wpl.log(`Failed to start Rocq client: ${err}`);
+                return [];
+            })
+            : Promise.resolve([]);
+
+        const leanStart = leanAllowed
+            ? this.leanClient.startWithHandlers(webviewManager, allowedLanguages).catch(err => {
+                wpl.log(`Failed to start Lean client: ${err}`);
+                return [];
+            })
+            : Promise.resolve([]);
+
+        return Promise.all([rocqStart, leanStart]).then(([rocqLangs, leanLangs]) => [...rocqLangs, ...leanLangs]);
     }
 
     async dispose(timeout?: number): Promise<void> {
-        await this.rocqClient.dispose(timeout);
-        await this.leanClient.dispose(timeout);
+        const disposePromises = [];
+        if (this.rocqClient.isRunning()) {
+            disposePromises.push(this.rocqClient.dispose(timeout));
+        }
+        if (this.leanClient.isRunning()) {
+            disposePromises.push(this.leanClient.dispose(timeout));
+        }
+        await Promise.all(disposePromises);
     }
 }

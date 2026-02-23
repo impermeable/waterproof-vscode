@@ -4,7 +4,7 @@ import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel 
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
 import { leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams } from "./requestTypes";
-import { WaterproofLogger as wpl } from "../../helpers";
+import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } from "../../helpers";
 import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
 import { findOccurrences } from "../qedStatus";
@@ -41,6 +41,35 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
             this.diagnosticsEmitter.fire({ uri: uri_, diagnostics: infoviewDiagnostics });
         };
+    }
+
+    async prelaunchChecks(): Promise<string[]> {
+        const lakePath = WaterproofConfigHelper.get(WaterproofSetting.LakePath);
+        if (!lakePath) {
+            wpl.log("Lean prelaunch check failed: lakePath is empty.");
+            return [];
+        }
+
+        const command = `${lakePath} --version`;
+        const ok = await this.execReturnsOk(command);
+        return ok ? [this.language] : [];
+    }
+
+    private async execReturnsOk(command: string): Promise<boolean> {
+        wpl.log(`Running command: ${command}`);
+        return new Promise(resolve => {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { exec } = require("child_process");
+            exec(command, (err: { message?: string } | null) => {
+                if (err) {
+                    const message = err.message ?? "Unknown error";
+                    wpl.log(`Lean prelaunch check failed: ${message}`);
+                    resolve(false);
+                } else {
+                    resolve(true);
+                }
+            });
+        });
     }
 
     protected async onFileProgress(progress: FileProgressParams) {
@@ -80,8 +109,8 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         // this is not currently used or supported by Lean
     }
 
-    async startWithHandlers(webviewManager: WebviewManager): Promise<void> {
-        await super.startWithHandlers(webviewManager);
+    async startWithHandlers(webviewManager: WebviewManager, allowedLanguages: string[]): Promise<string[]> {
+        const lang = await super.startWithHandlers(webviewManager, allowedLanguages);
 
         // Allows for any custom notifications to be handled by
         // forwarding to a custom notification emitter
@@ -92,6 +121,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.client.onNotification(starHandler as any, () => { });
+        return lang;
     }
 
     protected getInputAreas(document: TextDocument): Range[] | undefined {

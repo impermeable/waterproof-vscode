@@ -1,5 +1,5 @@
 import { ExtensionContext } from "vscode";
-import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
+import { LanguageClient, LanguageClientOptions} from "vscode-languageclient/node";
 import { Waterproof } from "./extension";
 import { LanguageClientProvider, LanguageClientProviderFactory } from "./lsp-client/clientTypes";
 import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
@@ -16,16 +16,19 @@ const getCoqClientProvider: LanguageClientProviderFactory = (
     _context: ExtensionContext,
     clientOptions: LanguageClientOptions
 ): LanguageClientProvider => {
-    const serverOptions: ServerOptions = {
-        command: WaterproofConfigHelper.get(WaterproofSetting.Path),
-        args: WaterproofConfigHelper.get(WaterproofSetting.Args),
-    };
-    return () => new LanguageClient(
+    return () => {
+        const command = WaterproofConfigHelper.get(WaterproofSetting.Path)
+        const args = WaterproofConfigHelper.get(WaterproofSetting.Args)
+        return new LanguageClient(
         "waterproof",
         "Waterproof Document Checker",
-        serverOptions,
+        {
+        command: command,
+        args: args,
+        },
         clientOptions,
     );
+    }
 };
 
 /**
@@ -39,20 +42,22 @@ const getLeanClientProvider: LanguageClientProviderFactory = (
     _context: ExtensionContext,
     clientOptions: LanguageClientOptions
 ): LanguageClientProvider => {
-    const serverOptions: ServerOptions = {
-        command: WaterproofConfigHelper.get(WaterproofSetting.LakePath),
-        args: WaterproofConfigHelper.get(WaterproofSetting.LakeArgs).concat(["serve"]),
-    };
-    return () => new LanguageClient(
+    return () => {
+        const command = WaterproofConfigHelper.get(WaterproofSetting.LakePath);
+        const args = WaterproofConfigHelper.get(WaterproofSetting.LakeArgs).concat(["serve"]);
+        return new LanguageClient(
         "waterproof",
         "Waterproof Document Checker",
-        serverOptions,
+        {
+        command: command,
+        args: args,
+        },
         clientOptions,
     );
+    }   
 };
 
 export function activate(context: ExtensionContext): WaterproofAPI {
-
     const extension = new Waterproof(context, getCoqClientProvider, getLeanClientProvider, false);
     context.subscriptions.push(extension);
     // start the lsp client

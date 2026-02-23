@@ -6,13 +6,16 @@ import leanTactics from "../../completions/tacticsLean.json";
 import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
-import "@impermeable/waterproof-editor/styles.css"
+import "@impermeable/waterproof-editor/styles.css";
+// import the style sheet mapping waterproof style properties to vscode styles
+import "./vscodemapping.css";
 import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
+import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -50,7 +53,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 			formatConf = {
 				completions: leanTactics,
 				documentConstructor: topLevelBlocksLean,
-				toMarkdown: defaultToMarkdown,
+				toMarkdown: versoMarkdownToMarkdown,
 				markdownName: "Markdown",
 				tagConfiguration: tagConfigurationLean,
 				serializer: new LeanSerializer(),
@@ -151,6 +154,12 @@ window.onload = () => {
 					}
 					break;
 				}
+			case MessageType.replaceRange:
+                {
+                    const { start, end, text } = msg.body;
+                    editor.replaceRange(start, end, text);
+                    break;
+                }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
 				editor.handleCompletions(msg.body);

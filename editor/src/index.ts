@@ -202,6 +202,9 @@ window.onload = () => {
 			case MessageType.themeUpdate:
 				editor.updateNodeViewThemes(msg.body.theme, msg.body.lang);
 				break;
+			case MessageType.semanticTokens:
+				editor.setSemanticTokens(msg.body.tokens);
+				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
 				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

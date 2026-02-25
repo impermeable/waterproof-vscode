@@ -13,7 +13,8 @@ import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
-import { highlight_dark, highlight_light, wpLanguageSupport } from "./lang-pack";
+import * as langWp from "@impermeable/codemirror-lang-waterproof";
+import * as langVerbose from "@impermeable/codemirror-lang-verbose";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
 import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
@@ -39,10 +40,10 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				markdownName: "Markdown",
 				tagConfiguration: markdown.configuration("coq"),
 				languageConfig: {
-					highlightDark: highlight_dark,
-					highlightLight: highlight_light,
-					languageSupport: wpLanguageSupport 
-				}
+					highlightDark: langWp.highlight_dark,
+					highlightLight: langWp.highlight_light,
+					languageSupport: langWp.waterproof(), 
+				},
 			}
 			break;
 		case FileFormat.RegularV:
@@ -63,6 +64,11 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				markdownName: "Markdown",
 				tagConfiguration: tagConfigurationLean,
 				serializer: new LeanSerializer(),
+				languageConfig: {
+					highlightDark: langVerbose.highlight_dark,
+					highlightLight: langVerbose.highlight_light,
+					languageSupport: langVerbose.verbose(),
+				},
 			}
 			break;
 	}

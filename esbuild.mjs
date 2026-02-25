@@ -146,3 +146,4 @@ viewBuild("./views/help/index.tsx");
 viewBuild("./views/search/index.tsx");
 viewBuild("./views/symbols/index.tsx");
 viewBuild("./views/tactics/index.tsx");
+viewBuild("./views/infoview/index.ts");

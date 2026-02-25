@@ -29,6 +29,8 @@ export enum WaterproofSetting {
     Debug,
     Path,
     Args,
+    LakePath,
+    LakeArgs,
     AdmitOnBadQed,
     UnicodeCompletion,
     UpdateIgnores,
@@ -58,6 +60,8 @@ export const WaterproofSettingMap: Record<WaterproofSetting, string> = {
     [WaterproofSetting.Debug]: "debug",
     [WaterproofSetting.Path]: "path",
     [WaterproofSetting.Args]: "args",
+    [WaterproofSetting.LakePath]: "lakePath",
+    [WaterproofSetting.LakeArgs]: "lakeArgs",
     [WaterproofSetting.AdmitOnBadQed]: "admitOnBadQed",
     [WaterproofSetting.UnicodeCompletion]: "unicodeCompletion",
     [WaterproofSetting.UpdateIgnores]: "updateIgnores",
@@ -72,7 +76,7 @@ type WaterproofSettingTypes = {
     [WaterproofSetting.TeacherMode]: boolean;
     [WaterproofSetting.DetailedErrorsMode]: boolean;
     [WaterproofSetting.ShowLineNumbersInEditor]: boolean;
-    [WaterproofSetting.SkipLaunchChecks]: boolean;
+    [WaterproofSetting.SkipLaunchChecks]: "none" | "lean4" | "rocq" | "all";
     [WaterproofSetting.ShowMenuItemsInEditor]: boolean;
     [WaterproofSetting.EnforceCorrectNonInputArea]: boolean;
     [WaterproofSetting.EagerDiagnostics]: boolean;
@@ -87,6 +91,8 @@ type WaterproofSettingTypes = {
     [WaterproofSetting.Debug]: boolean;
     [WaterproofSetting.Path]: string;
     [WaterproofSetting.Args]: string[];
+    [WaterproofSetting.LakePath]: string;
+    [WaterproofSetting.LakeArgs]: string[];
     [WaterproofSetting.AdmitOnBadQed]: boolean;
     [WaterproofSetting.UnicodeCompletion]: "off" | "normal" | "extended";
     [WaterproofSetting.UpdateIgnores]: boolean;

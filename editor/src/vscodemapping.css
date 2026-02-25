@@ -1,0 +1,50 @@
+/* These style names are inpsired by the properties from VSCode we originally used */
+:root {
+  --wp-buttonBackground: var(--vscode-button-background);
+  --wp-buttonBorder: var(--vscode-button-border);
+  --wp-buttonForeground: var(--vscode-button-foreground);
+  --wp-buttonHoverBackground: var(--vscode-button-hoverBackground);
+  --wp-buttonSecondaryBackground: var(--vscode-button-secondaryBackground);
+  --wp-dropdownBorder: var(--vscode-dropdown-border);
+  --wp-dropdownListBackground: var(--vscode-dropdown-listBackground);
+  --wp-editorBackground: var(--vscode-editor-background);
+  --wp-editorFontFamily: var(--vscode-editor-font-family);
+  --wp-editorFontSize: var(--vscode-editor-font-size);
+  --wp-editorFontWeight: var(--vscode-editor-font-weight);
+  --wp-editorHintForeground: var(--vscode-editorHint-foreground);
+  --wp-editorInlayHintBackground: var(--vscode-editorInlayHint-background);
+  --wp-editorInlayHintForeground: var(--vscode-editorInlayHint-foreground);
+  --wp-editorLightBulbForeground: var(--vscode-editorLightBulb-foreground);
+  --wp-editorLineHighlightBackground: var(--vscode-editor-lineHighlightBackground);
+  --wp-editorSelectionBackground: var(--vscode-editor-selectionBackground);
+  --wp-editorSelectionForeground: var(--vscode-editor-selectionForeground); /* Does not exist */
+  --wp-errorForeground: var(--vscode-errorForeground);
+  --wp-fontFamily: var(--vscode-font-family);
+  --wp-fontSize: var(--vscode-font-size);
+  --wp-fontWeight: var(--vscode-font-weight);
+  --wp-foreground: var(--vscode-foreground);
+  --wp-inputBackground: var(--vscode-input-background);
+  --wp-inputBorder: var(--vscode-input-border);
+  --wp-inputForeground: var(--vscode-input-foreground);
+  --wp-listActiveselectionBackground: var(--vscode-list-activeSelectionBackground);
+  --wp-listActiveselectionForeground: var(--vscode-list-activeSelectionForeground);
+  --wp-listDropBackground: var(--vscode-list-dropBackground);
+  --wp-listFilterWidgetBackground: var(--vscode-listFilterWidget-background);
+  --wp-listHighlightForeground: var(--vscode-list-highlightForeground);
+  --wp-menuBackground: var(--vscode-menu-background);
+  --wp-menuForeground: var(--vscode-menu-foreground);
+  --wp-menuSelectionBackground: var(--vscode-menu-selectionBackground);
+  --wp-menuSelectionBorder: var(--vscode-menu-selectionBorder); /* Does not exist */
+  --wp-menuSelectionForeground: var(--vscode-menu-selectionForeground);
+  --wp-menuSeparatorBackground: var(--vscode-menu-separatorBackground);
+  --wp-hintOutline: var(--vscode-minimap-findMatchHighlight);
+  --wp-notificationsBackground: var(--vscode-notifications-background);
+  --wp-notificationsForeground: var(--vscode-notifications-foreground);
+  --wp-quickInputBackground: var(--vscode-quickInput-background);
+  --wp-quickInputForeground: var(--vscode-quickInput-foreground);
+  --wp-terminalAnsiGreen: var(--vscode-terminal-ansiGreen);
+  --wp-terminalAnsiRed: var(--vscode-terminal-ansiRed);
+  --wp-terminalAnsiYellow: var(--vscode-terminal-ansiYellow);
+  --wp-textCodeBlockBackground: var(--vscode-textCodeBlock-background);
+  --wp-textSeparatorForeground: var(--vscode-textSeparator-foreground);
+}

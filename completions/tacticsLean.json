@@ -1,0 +1,335 @@
+[
+    {
+        "label": "help",
+        "type": "type",
+        "detail": "tactic",
+        "template": "help${}",
+        "description": "Asks for suggestions on how to proceed with the current goal or a specific hypothesis.",
+        "example": "help",
+        "boost": 5
+    },
+    {
+        "label": "Assume (*name*) : (*type*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Assume ${hP} : ${P}${}",
+        "description": "Introduce a hypothesis with a name and optional type.",
+        "example": "Assume hP : P",
+        "boost": 2
+    },
+    {
+        "label": "Assume that (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Assume that ${P}${}",
+        "description": "Assume a statement is true, letting Lean name the hypothesis.",
+        "example": "Assume that 0 < n",
+        "boost": 2
+    },
+    {
+        "label": "Assume for contradiction (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Assume for contradiction ${h} : ${0 = 1}${}",
+        "description": "Assume the negation of the goal for a proof by contradiction.",
+        "example": "Assume for contradiction h : 0 = 1",
+        "boost": 1
+    },
+    {
+        "label": "Fix (*name*) : (*type*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Fix ${n} : ${ℕ}${}",
+        "description": "Introduce a variable with a type.",
+        "example": "Fix n : ℕ",
+        "boost": 2
+    },
+    {
+        "label": "Fix (*name*) ∈ (*set*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Fix ${x} ∈ ${S}${}",
+        "description": "Introduce a variable belonging to a set.",
+        "example": "Fix x ∈ S",
+        "boost": 2
+    },
+    {
+        "label": "Fix (*name*) > (*bound*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Fix ${x} > ${0}${}",
+        "description": "Introduce a variable with a lower bound (works for >, ≥).",
+        "example": "Fix x > 0",
+        "boost": 2
+    },
+    {
+        "label": "Fix (*name*) < (*bound*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Fix ${x} < ${1}${}",
+        "description": "Introduce a variable with an upper bound (works for <, ≤).",
+        "example": "Fix x < 1",
+        "boost": 2
+    },
+    {
+        "label": "Let's prove that (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Let's prove that ${P}${}",
+        "description": "State explicitly what is to be proved next.",
+        "example": "Let's prove that 2 = 2",
+        "boost": 2
+    },
+    {
+        "label": "Let's first prove that (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Let's first prove that ${P}${}",
+        "description": "Split the goal (e.g. conjunction or equivalence) and prove the first part.",
+        "example": "Let's first prove that P",
+        "boost": 2
+    },
+    {
+        "label": "Let's now prove that (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Let's now prove that ${Q}${}",
+        "description": "After proving the first part of a split goal, state the next part.",
+        "example": "Let's now prove that Q",
+        "boost": 2
+    },
+    {
+        "label": "Let's prove by induction (*name*) : (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Let's prove by induction ${H} : ${∀ k, P k}${}",
+        "description": "Start a proof by induction.",
+        "example": "Let's prove by induction H : ∀ k, P k",
+        "boost": 1
+    },
+    {
+        "label": "Let's prove the contrapositive: (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Let's prove the contrapositive: ${P → Q}${}",
+        "description": "Switch to proving the contrapositive statement.",
+        "example": "Let's prove the contrapositive: ¬ Q → ¬ P",
+        "boost": 1
+    },
+    {
+        "label": "By (*hyp*) we get (*names*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "By ${h} we get ${h₁} ${h₂}${}",
+        "description": "Obtain consequences from a hypothesis (destructing it).",
+        "example": "By h we get (h₁ : n ≥ p) (h₂ : n ≥ q)",
+        "boost": 2
+    },
+    {
+        "label": "By (*hyp*) applied to (*args*) we get (*names*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "By ${h} applied to ${0} we get ${h₀}${}",
+        "description": "Apply a hypothesis to arguments to obtain a new fact.",
+        "example": "By h applied to 0 we get h₀",
+        "boost": 2
+    },
+    {
+        "label": "By (*hyp*) we choose (*name*) such that (*property*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "By ${h} we choose ${n} such that ${H}${}",
+        "description": "Extract an existentially quantified variable from a hypothesis.",
+        "example": "By h we choose n such that H",
+        "boost": 2
+    },
+    {
+        "label": "By (*hyp*) it suffices to prove (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "By ${h} it suffices to prove ${P}${}",
+        "description": "Reduce the goal using a hypothesis (backward reasoning).",
+        "example": "By h it suffices to prove P",
+        "boost": 2
+    },
+    {
+        "label": "Claim (*name*) : (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Claim ${H} : ${1 = 1}${}",
+        "description": "State and prove an intermediate claim.",
+        "example": "Claim H : 1 = 1 by rfl",
+        "boost": 2
+    },
+    {
+        "label": "Fact (*name*) : (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Fact ${H} : ${1 = 1}${}",
+        "description": "State and prove an intermediate fact (synonym for Claim).",
+        "example": "Fact H : 1 + 1 = 2 by computation",
+        "boost": 2
+    },
+    {
+        "label": "Since (*facts*) we get (*names*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since ${h} we get ${h'}${}",
+        "description": "Use existing facts to obtain new ones.",
+        "example": "Since P ∧ Q we get (hP : P) and (hQ : Q)",
+        "boost": 2
+    },
+    {
+        "label": "Since (*facts*) we conclude that (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since ${h} we conclude that ${P}${}",
+        "description": "Prove the goal directly using existing facts.",
+        "example": "Since x = y we conclude that f x ≤ f y",
+        "boost": 2
+    },
+    {
+        "label": "Since (*facts*) it suffices to prove that (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since ${h} it suffices to prove that ${P}${}",
+        "description": "Reduce the goal using derived facts.",
+        "example": "Since P → Q it suffices to prove that P",
+        "boost": 2
+    },
+    {
+        "label": "We discuss depending on whether (*A*) or (*B*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We discuss depending on whether ${P} or ${Q}${}",
+        "description": "Split the proof into cases.",
+        "example": "We discuss depending on whether x ≤ y or x > y",
+        "boost": 2
+    },
+    {
+        "label": "Set (*name*) := (*expression*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Set ${n} := ${0}${}",
+        "description": "Define a local variable with a specific value.",
+        "example": "Set n := max a b",
+        "boost": 2
+    },
+    {
+        "label": "We rewrite using (*lemma*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We rewrite using ${h}${}",
+        "description": "Rewrite the goal using an equality or equivalence.",
+        "example": "We rewrite using h",
+        "boost": 3
+    },
+    {
+        "label": "We rewrite using (*lemma*) at (*loc*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We rewrite using ${h} at ${h'}${}",
+        "description": "Rewrite a hypothesis using an equality or equivalence.",
+        "example": "We rewrite using h at h'",
+        "boost": 2
+    },
+    {
+        "label": "We conclude by (*proof*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We conclude by ${h}${}",
+        "description": "Finish the proof using a specific term or hypothesis.",
+        "example": "We conclude by h",
+        "boost": 3
+    },
+    {
+        "label": "We combine (*facts*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We combine ${h} and ${h'}${}",
+        "description": "Combine linear inequalities or equalities via arithmetic.",
+        "example": "We combine h and h'",
+        "boost": 2
+    },
+    {
+        "label": "We compute",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We compute${}",
+        "description": "Verify the goal by computation, simplification, or arithmetic.",
+        "example": "We compute",
+        "boost": 3
+    },
+    {
+        "label": "We apply (*lemma*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We apply ${h}${}",
+        "description": "Apply a lemma or hypothesis to the goal.",
+        "example": "We apply h",
+        "boost": 3
+    },
+    {
+        "label": "We apply (*lemma*) to (*args*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We apply ${h} to ${x}${}",
+        "description": "Specialize a hypothesis with specific arguments.",
+        "example": "We apply h to x",
+        "boost": 2
+    },
+    {
+        "label": "We contrapose",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We contrapose${}",
+        "description": "Switch to proving the contrapositive.",
+        "example": "We contrapose",
+        "boost": 1
+    },
+    {
+        "label": "We push the negation",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We push the negation${}",
+        "description": "Push negations deeper into the expression (e.g., ¬∀ becomes ∃¬).",
+        "example": "We push the negation",
+        "boost": 1
+    },
+    {
+        "label": "We reformulate (*name*) as (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We reformulate ${h} as ${P}${}",
+        "description": "Change the type of a hypothesis to a definitionally equal one.",
+        "example": "We reformulate h as 2 = 2",
+        "boost": 1
+    },
+    {
+        "label": "We rename (*old*) to (*new*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We rename ${n} to ${m}${}",
+        "description": "Rename a variable in the context.",
+        "example": "We rename n to m",
+        "boost": 1
+    },
+    {
+        "label": "We unfold (*name*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We unfold ${f}${}",
+        "description": "Unfold a definition in the goal.",
+        "example": "We unfold f",
+        "boost": 1
+    },
+    {
+        "label": "Calc (*steps*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Calc ${0 = 0} by ${computation}\n  _ = ${0} by ${computation}${}",
+        "description": "Perform a calculation step-by-step.",
+        "example": "Calc (a+b)^2 = a^2 + b^2 + 2*a*b by computation\n  _ = 2*a*b + (a^2 + b^2) by computatio",
+        "boost": 2
+    }
+]

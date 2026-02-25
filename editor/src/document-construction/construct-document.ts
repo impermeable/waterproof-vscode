@@ -1,9 +1,11 @@
-import { Block, HintBlock, InputAreaBlock, MarkdownBlock, utils } from "@impermeable/waterproof-editor";
+import { Block, HintBlock, InputAreaBlock, MarkdownBlock, utils, WaterproofDocument } from "@impermeable/waterproof-editor";
 import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks } from "./block-extraction";
 
+export { topLevelBlocksLean } from "./lean";
+
 // 0A. Extract the top level blocks from the input document.
-export function topLevelBlocksMV(inputDocument: string): Block[] {
-    // There are five different 'top level' blocks, 
+export function topLevelBlocksMV(inputDocument: string): WaterproofDocument {
+    // There are five different 'top level' blocks,
     // - hint
     // - input_area
     // - math_display
@@ -15,7 +17,7 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
     const inputAreaBlocks: InputAreaBlock[] = extractInputBlocks(inputDocument);
 
     // 0A.2 Mask the hint and input area blocks in the input document.
-    //     Done to make extraction of coq and math display easier, since 
+    //     Done to make extraction of coq and math display easier, since
     //     we don't have to worry about the hint and input area blocks.
     inputDocument = utils.maskInputAndHints(inputDocument, [...hintBlocks, ...inputAreaBlocks]);
 
@@ -29,7 +31,7 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
 
     // 0A.5 Extract the markdown blocks based on the ranges.
     const markdownBlocks = utils.extractBlocksUsingRanges<MarkdownBlock>(inputDocument, markdownRanges, MarkdownBlock);
-    
+
     // Note: Blocks parse their own inner blocks.
 
     // 0A.6 Prune empty blocks.
@@ -38,4 +40,3 @@ export function topLevelBlocksMV(inputDocument: string): Block[] {
     // 0A.6 Sort the blocks and return.
     return allBlocks;
 }
-

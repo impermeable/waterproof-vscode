@@ -39,7 +39,8 @@
   "activationEvents": [
     "onCommand:waterproof.toggle",
     "onLanguage:coq",
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onLanguage:lean4"
   ],
   "contributes": {
     "themes": [
@@ -69,7 +70,7 @@
         "displayName": "Waterproof Editor",
         "selector": [
           {
-            "filenamePattern": "*.{mv,v}"
+            "filenamePattern": "*.{mv,v,lean}"
           }
         ]
       }
@@ -94,6 +95,12 @@
         ],
         "extensions": [
           ".mv"
+        ]
+      },
+      {
+        "id": "lean4",
+        "extensions": [
+          ".lean"
         ]
       }
     ],
@@ -303,9 +310,21 @@
             "description": "Enable correctness checks for non input areas. Will enforce that the content outside of an input area never changes!"
           },
           "waterproof.skipLaunchChecks": {
-            "type": "boolean",
-            "default": false,
-            "description": "Disables the checks that happen when launching the extension. During those checks Waterproof checks whether Rocq, coq-lsp and coq-waterproof are installed. Use at your own risk!"
+            "type": "string",
+            "default": "none",
+            "enum": [
+              "none",
+              "lean4",
+              "rocq",
+              "all"
+            ],
+            "enumItemLabels": [
+              "None",
+              "Lean",
+              "Rocq",
+              "All"
+            ],
+            "description": "Skip launch checks and optionally restrict which language server starts. None does all launch checks and starts available language servers. Lean starts only Lean. Rocq starts only Rocq. All starts both."
           }
         }
       },
@@ -421,6 +440,19 @@
             },
             "default": [],
             "description": "Arguments to the coq-lsp server"
+          },
+          "waterproof.lakePath": {
+            "type": "string",
+            "default": "lake",
+            "description": "Path to the Lake executable used to run the Lean server, by default, search in PATH."
+          },
+          "waterproof.lakeArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Arguments passed to Lake to start the server (before 'serve')."
           }
         }
       },
@@ -501,7 +533,8 @@
     "@codemirror/state": "~6.5.2",
     "@codemirror/language": "6.12.1",
     "@codemirror/view": "6.38.8",
-    "@impermeable/waterproof-editor": "file:../waterproof-editor",
+    "@leanprover/infoview": "^0.10.0",
+    "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
     "@ocaml-wasm/4.12--num": "^1.4.0-0",
     "@ocaml-wasm/4.12--zarith": "^1.13.0-0",
@@ -524,7 +557,7 @@
     "vscode-uri": "3.1.0"
   },
   "main": "./out/src/mainNode.js",
-  "browser": "/out/src/mainBrowser.js",
+  "browser": "./out/src/mainBrowser.js",
   "scripts": {
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
     "esbuild": "node esbuild.mjs",
@@ -542,6 +575,7 @@
     "cypress-tests": "npx cypress run",
     "lint": "npx eslint .",
     "lint-fix": "npx eslint . --fix",
-    "test": "npm run unit-tests && npm run cypress-tests"
+    "test": "npm run unit-tests && npm run cypress-tests",
+    "install-extension": "npm run test-package && code --install-extension test_out/extension.vsix --force"
   }
 }

@@ -57,22 +57,35 @@ export interface OblsView {
 
 export type ProgramInfo = [Id, OblsView][];
 
-export interface GoalAnswer<Pp> {
+export interface GoalAnswer {
     textDocument: VersionedTextDocumentIdentifier;
     position: Position;
+}
+
+export interface RocqGoalAnswer<Pp> extends GoalAnswer {
     goals?: GoalConfig<Pp>;
     program?: ProgramInfo;
     messages: Pp[] | Message<Pp>[];
     error?: Pp;
 }
 
+export interface LeanGoalAnswer extends GoalAnswer {
+    rendered: string;
+    goals: string[];
+}
+
 export interface GoalRequest {
     textDocument: VersionedTextDocumentIdentifier;
     position: Position;
+}
+
+export interface RocqGoalRequest extends GoalRequest {
     pp_format?: "Pp" | "Str";
     command?: string;
     mode?: 'Prev' | 'After';
 }
+
+export type LeanGoalRequest = GoalRequest
 
 export type Pp =
     | ["Pp_empty"]
@@ -155,22 +168,22 @@ export interface DocumentPerfParams {
     timings: SentencePerfParams[];
 }
 
-export interface CoqBusyStatus {
+export interface RocqBusyStatus {
     status: "Busy";
     modname: string;
 }
 
-export interface CoqIdleStatus {
+export interface RocqIdleStatus {
     status: "Idle" | "Stopped";
 }
 
-export type CoqServerStatus = CoqBusyStatus | CoqIdleStatus;
+export type RocqServerStatus = RocqBusyStatus | RocqIdleStatus;
 
-function isBusyStatus(status: CoqServerStatus): status is CoqBusyStatus {
+function isBusyStatus(status: RocqServerStatus): status is RocqBusyStatus {
     return status.status === "Busy";
 }
 
-export function CoqServerStatusToServerStatus(status: CoqServerStatus): ServerStatus {
+export function RocqServerStatusToServerStatus(status: RocqServerStatus): ServerStatus {
     if (isBusyStatus(status)) {
         return { status: status.status, metadata: status.modname };
     }

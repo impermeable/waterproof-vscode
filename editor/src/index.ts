@@ -1,15 +1,22 @@
 import { FileFormat, Message, MessageType } from "../../shared";
 import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
-import tactics from "../../completions/tactics.json";
+import rocqTactics from "../../completions/tactics.json";
+import leanTactics from "../../completions/tacticsLean.json";
 import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
-import "@impermeable/waterproof-editor/styles.css"
+import "@impermeable/waterproof-editor/styles.css";
+// import the style sheet mapping waterproof style properties to vscode styles
+import "./vscodemapping.css";
 import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
+import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import { highlight_dark, highlight_light, wpLanguageSupport } from "./lang-pack";
+import { tagConfigurationLean } from "./leanFileConfiguration";
+import { LeanSerializer } from "./leanSerializer";
+import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -20,13 +27,55 @@ interface VSCodeAPI {
 }
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
+	let formatConf;
+
+	// Set format-specific configuration
+	switch (format) {
+		case FileFormat.MarkdownV:
+			formatConf = {
+				completions: rocqTactics,
+				documentConstructor: (v: string) => markdown.parse(v, {language: "coq"}),
+				toMarkdown: defaultToMarkdown,
+				markdownName: "Markdown",
+				tagConfiguration: markdown.configuration("coq"),
+				languageConfig: {
+					highlightDark: highlight_dark,
+					highlightLight: highlight_light,
+					languageSupport: wpLanguageSupport 
+				}
+			}
+			break;
+		case FileFormat.RegularV:
+			formatConf = {
+				completions: rocqTactics,
+				documentConstructor: vFileParser,
+				toMarkdown: coqdocToMarkdown,
+				markdownName: "coqdoc",
+				tagConfiguration: tagConfigurationV,
+				disableMarkdownFeatures: ["code"],
+			}
+			break;
+		case FileFormat.Lean:
+			formatConf = {
+				completions: leanTactics,
+				documentConstructor: topLevelBlocksLean,
+				toMarkdown: versoMarkdownToMarkdown,
+				markdownName: "Markdown",
+				tagConfiguration: tagConfigurationLean,
+				serializer: new LeanSerializer(),
+			}
+			break;
+	}
+
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
-		completions: tactics, 
+		// Include format-specific configuration
+		...formatConf,
+
 		symbols: symbols,
 		api: {
 			executeHelp() {
-				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
+				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime() } });
 			},
 			executeCommand(command: string, time: number) {
 				codeAPI.postMessage({ type: MessageType.command, body: { command, time } });
@@ -47,18 +96,6 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				codeAPI.postMessage({ type: MessageType.viewportHint, body: { start, end } });
 			}
 		},
-		// documentConstructor: format === FileFormat.MarkdownV ? topLevelBlocksMV : topLevelBlocksV,
-		documentConstructor: format === FileFormat.MarkdownV ? v => markdown.parse(v, { language: "coq" }) : vFileParser,
-		// documentConstructor: format === FileFormat.MarkdownV ? doc => markdownParser(doc, "coq") : vFileParser,
-		toMarkdown: format === FileFormat.MarkdownV ? defaultToMarkdown : coqdocToMarkdown,
-		markdownName: format === FileFormat.MarkdownV ? "Markdown" : "coqdoc",
-		tagConfiguration: format === FileFormat.MarkdownV ? markdown.configuration("coq") : tagConfigurationV,
-		disableMarkdownFeatures: format === FileFormat.RegularV ? ["code"] : [],
-		languageConfig: {
-			highlightDark: highlight_dark,
-			highlightLight: highlight_light,
-			languageSupport: wpLanguageSupport
-		}
 	}
 
 	return cfg;
@@ -77,7 +114,7 @@ window.onload = () => {
 		throw Error("Could not acquire the vscode api.");
 		// TODO: maybe sent some sort of test message?
 	}
-	const format = document.body.getAttribute("format") === "markdownv" ? FileFormat.MarkdownV : FileFormat.RegularV;
+	const format = document.body.getAttribute("format") as FileFormat;
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
 	const cfg = createConfiguration(format, codeAPI);
@@ -105,35 +142,46 @@ window.onload = () => {
 	window.addEventListener("message", (event: MessageEvent<Message>) => {
 		const msg = event.data;
 
-		switch(msg.type) {
+		switch (msg.type) {
 			case MessageType.init:
 				editor.init(msg.body.value, msg.body.version);
 				break;
 			case MessageType.insert:
 				// Insert symbol message, retrieve the symbol from the message.
 				{
-				const { symbolUnicode } = msg.body;
-				if (msg.body.type === "tactics") {
-					// `symbolUnicode` stores the tactic template.
-					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
-					const template = symbolUnicode;
-					editor.handleSnippet(template);
-				} else {
-					editor.insertSymbol(symbolUnicode);
+					const { symbolUnicode } = msg.body;
+					if (msg.body.type === "tactics") {
+						// `symbolUnicode` stores the tactic template.
+						if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
+						const template = symbolUnicode;
+						editor.handleSnippet(template);
+					} else {
+						editor.insertSymbol(symbolUnicode);
+					}
+					break;
 				}
-				break; }
+			case MessageType.replaceRange:
+                {
+                    const { start, end, text } = msg.body;
+                    editor.replaceRange(start, end, text);
+                    break;
+                }
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
 				editor.handleCompletions(msg.body);
 				break;
 			case MessageType.qedStatus:
-				{ const statuses = msg.body;  // one status for each input area, in order
-				editor.setInputAreaStatus(statuses);
-				break; }
+				{
+					const statuses = msg.body;  // one status for each input area, in order
+					editor.setInputAreaStatus(statuses);
+					break;
+				}
 			case MessageType.setShowLineNumbers:
-				{ const show = msg.body;
-				editor.setShowLineNumbers(show);
-				break; }
+				{
+					const show = msg.body;
+					editor.setShowLineNumbers(show);
+					break;
+				}
 			case MessageType.setShowMenuItems:
 				{ const show = msg.body; editor.setShowMenuItems(show); break; }
 			case MessageType.editorHistoryChange:
@@ -167,7 +215,7 @@ window.onload = () => {
 					break;
 				}
 			case MessageType.themeUpdate:
-				editor.updateNodeViewThemes(msg.body);
+				editor.updateNodeViewThemes(msg.body.theme, msg.body.lang);
 				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.
@@ -175,7 +223,7 @@ window.onload = () => {
 				break;
 		}
 	});
-	
+
 	let timeoutHandle: number | undefined;
 	window.addEventListener('scroll', (_event) => {
 		if (timeoutHandle === undefined) {
@@ -187,5 +235,5 @@ window.onload = () => {
 	});
 
 	// Start the editor
-	codeAPI.postMessage({type: MessageType.ready});
+	codeAPI.postMessage({ type: MessageType.ready });
 };

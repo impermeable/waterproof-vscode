@@ -157,7 +157,7 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
 
         // request goals and return conclusion based on them
         const response = await this.requestGoals(position.translate(0, -1));
-        return ("error" in response) ? InputAreaStatus.Incomplete : InputAreaStatus.Proven;
+        return ("error" in response) ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
     }
 
     /**

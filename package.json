@@ -527,7 +527,14 @@
     "typescript-eslint": "^8.20.0"
   },
   "dependencies": {
-    "@impermeable/waterproof-editor": "0.13.0",
+    "@codemirror/autocomplete": "6.18.1",
+    "@codemirror/commands": "6.6.2",
+    "@codemirror/language": "6.12.1",
+    "@codemirror/lint": "6.9.2",
+    "@codemirror/state": "~6.5.2",
+    "@codemirror/view": "6.38.8",
+    "@impermeable/codemirror-lang-verbose": "github:impermeable/codemirror-lang-verbose",
+    "@impermeable/codemirror-lang-waterproof": "github:impermeable/codemirror-lang-waterproof",
     "@leanprover/infoview": "^0.10.0",
     "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",

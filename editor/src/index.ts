@@ -13,6 +13,8 @@ import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
+import * as langWp from "@impermeable/codemirror-lang-waterproof";
+import * as langVerbose from "@impermeable/codemirror-lang-verbose";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
 import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
@@ -33,10 +35,15 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 		case FileFormat.MarkdownV:
 			formatConf = {
 				completions: rocqTactics,
-				documentConstructor: (v: string) => markdown.parse(v, "coq"),
+				documentConstructor: (v: string) => markdown.parse(v, {language: "coq"}),
 				toMarkdown: defaultToMarkdown,
 				markdownName: "Markdown",
 				tagConfiguration: markdown.configuration("coq"),
+				languageConfig: {
+					highlightDark: langWp.highlight_dark,
+					highlightLight: langWp.highlight_light,
+					languageSupport: langWp.waterproof(), 
+				},
 			}
 			break;
 		case FileFormat.RegularV:
@@ -57,6 +64,11 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				markdownName: "Markdown",
 				tagConfiguration: tagConfigurationLean,
 				serializer: new LeanSerializer(),
+				languageConfig: {
+					highlightDark: langVerbose.highlight_dark,
+					highlightLight: langVerbose.highlight_light,
+					languageSupport: langVerbose.verbose(),
+				},
 			}
 			break;
 	}
@@ -167,7 +179,7 @@ window.onload = () => {
 			case MessageType.qedStatus:
 				{
 					const statuses = msg.body;  // one status for each input area, in order
-					editor.updateQedStatus(statuses);
+					editor.setInputAreaStatus(statuses);
 					break;
 				}
 			case MessageType.setShowLineNumbers:
@@ -186,8 +198,13 @@ window.onload = () => {
 				break;
 			case MessageType.progress:
 				{
-					const progressParams = msg.body;
-					editor.updateProgressBar(progressParams);
+					const {numberOfLines, progress} = msg.body;
+					const at = progress[0].range.start.line + 1;
+					if (at === numberOfLines) {
+						editor.reportProgress(at, numberOfLines, "File verified");
+					} else {
+						editor.reportProgress(at, numberOfLines, `Verified file up to line: ${at}`);
+					}
 					break;
 				}
 			case MessageType.diagnostics:
@@ -195,8 +212,12 @@ window.onload = () => {
 				break; }
 			case MessageType.serverStatus:
 				{
-					const status = msg.body;
-					editor.updateServerStatus(status);
+					const {status} = msg.body;
+					if (status === "Busy") {
+						editor.startSpinner();
+					} else {
+						editor.stopSpinner();
+					}
 					break;
 				}
 			case MessageType.themeUpdate:

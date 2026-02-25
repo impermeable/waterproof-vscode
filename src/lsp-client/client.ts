@@ -5,9 +5,9 @@ import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 
-import { InputAreaStatus, OffsetDiagnostic, Severity, SimpleProgressParams, WaterproofCompletion } from "@impermeable/waterproof-editor";
+import { InputAreaStatus, OffsetDiagnostic, Severity, WaterproofCompletion } from "@impermeable/waterproof-editor";
 import { convertToSimple, FileProgressParams } from "./requestTypes";
-import { MessageType } from "../../shared";
+import { MessageType, SimpleProgressParams } from "../../shared";
 import { ILspClient, LanguageClient, LanguageClientProvider, WpDiagnostic } from "./clientTypes";
 import { GoalAnswer, GoalRequest } from "../../lib/types";
 
@@ -245,7 +245,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 const statuses = await Promise.all(inputAreas.map(a => {
                     if (this.viewPortBasedChecking && this.viewPortRange && a.intersection(this.viewPortRange) === undefined) {
                         // This input area is outside of the range that has been checked and thus we can't determine its status
-                        return Promise.resolve(InputAreaStatus.NotInView);
+                        return Promise.resolve(InputAreaStatus.OutOfView);
                     } else {
                         return this.determineProofStatus(document, a);
                     }

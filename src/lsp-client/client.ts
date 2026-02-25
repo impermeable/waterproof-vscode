@@ -1,4 +1,4 @@
-import { Position, TextDocument, Range, OutputChannel, languages, workspace, Disposable, DiagnosticSeverity } from "vscode";
+import { Position, TextDocument, Range, OutputChannel, languages, workspace, Disposable, DiagnosticSeverity, Diagnostic } from "vscode";
 import { DocumentSymbol, DocumentSymbolParams, DocumentSymbolRequest, LogTraceNotification, SymbolInformation } from "vscode-languageclient";
 import { SentenceManager } from "./sentenceManager";
 import { IFileProgressComponent } from "../components";
@@ -220,7 +220,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         this.computeInputAreaStatus(document);
     }
 
-    protected abstract determineProofStatus(document: TextDocument, inputArea: Range): Promise<InputAreaStatus>;
+    protected abstract determineProofStatus(document: TextDocument, inputArea: Range, diagnostics: Array<Diagnostic>): Promise<InputAreaStatus>;
 
     protected abstract getInputAreas(document: TextDocument): Range[] | undefined;
 
@@ -240,6 +240,8 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 throw new Error("Cannot check proof status; illegal input areas.");
             }
 
+            const diags = languages.getDiagnostics(document.uri);
+
             // for each input area, check the proof status
             try {
                 const statuses = await Promise.all(inputAreas.map(a => {
@@ -247,7 +249,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                         // This input area is outside of the range that has been checked and thus we can't determine its status
                         return Promise.resolve(InputAreaStatus.NotInView);
                     } else {
-                        return this.determineProofStatus(document, a);
+                        return this.determineProofStatus(document, a, diags);
                     }
                 }));
 

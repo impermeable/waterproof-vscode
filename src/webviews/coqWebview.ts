@@ -8,7 +8,6 @@ import {
 import { Disposable } from "vscode-languageclient";
 import type { Message, TacticsData } from "../../shared";
 import { WaterproofLogger as wpl } from "../helpers";
-import { HypVisibility } from "../../lib/types";
 
 /**
  * Defines the states of the webview
@@ -153,7 +152,6 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 Uri.joinPath(this.extensionUri, "node_modules", "@leanprover", "infoview", "dist")
             );
             const libPostfix = `.production.min.js`
-            
             this._panel.webview.html = `
                 <!DOCTYPE html>
                 <html>

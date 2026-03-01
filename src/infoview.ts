@@ -148,8 +148,8 @@ export class InfoProvider implements Disposable {
         return h;
     }
 
-    // Filters a list of hypotheses from an rpc response
-    private filterHypotheses(hypotheses: any[]): any[] {
+    /** Filters a list of hypotheses from an rpc response */
+    private filterHypothesesList(hypotheses: any[]): any[] {
         switch (WaterproofConfigHelper.get(WaterproofSetting.VisibilityOfHypotheses)) {
             // Keep all hypotheses
             case "all":
@@ -169,6 +169,23 @@ export class InfoProvider implements Disposable {
         }
     }
 
+    /** Filters hypotheses in an rpc response depending on visibility setting */
+    private filterHypotheses(response: any, params: any): any {
+        if (response !== null) {
+            switch (params.method) {
+                // Handling rpc requrest for all the goals
+                case "Lean.Widget.getInteractiveGoals":
+                    for (let goal of response.goals) {
+                        goal.hyps = this.filterHypothesesList(goal.hyps)
+                    }
+                    break;
+                // Handling rpc requrest for a specific goal
+                case "Lean.Widget.getInteractiveTermGoal":
+                    response.hyps = this.filterHypothesesList(result.hyps)
+            }
+        }
+        return response
+    }
 
     /** Api that is exposed to InfoView */
     private editorApi: EditorApi = {
@@ -189,22 +206,8 @@ export class InfoProvider implements Disposable {
             const client = this.client.client
             if (client) {
                 try {
-                    const result = await this.client.client.sendRequest(method, params)
-
-                    // Filter hypotheses in an rpc response depending on visibility setting
-                    if (result !== null) {
-                        switch (params.method) {
-                            // Handling rpc requrest for all the goals
-                            case "Lean.Widget.getInteractiveGoals":
-                                for (let goal of result.goals) {
-                                    goal.hyps = this.filterHypotheses(goal.hyps)
-                                }
-                                break;
-                            // Handling rpc requrest for a specific goal
-                            case "Lean.Widget.getInteractiveTermGoal":
-                                result.hyps = this.filterHypotheses(result.hyps)
-                        }
-                    }
+                    let result = await this.client.client.sendRequest(method, params)
+                    result = this.filterHypotheses(result, params)
 
                     return result
                 } catch (e) {

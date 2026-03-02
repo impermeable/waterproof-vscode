@@ -540,6 +540,7 @@
     "@codemirror/view": "6.38.8",
     "@impermeable/codemirror-lang-verbose": "github:impermeable/codemirror-lang-verbose",
     "@impermeable/codemirror-lang-waterproof": "github:impermeable/codemirror-lang-waterproof",
+    "@impermeable/waterproof-editor": "0.13.0",
     "@leanprover/infoview": "^0.10.0",
     "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",

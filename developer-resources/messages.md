@@ -97,6 +97,18 @@ This message does not have a body.
 errorGoals
 ```
 
+### `executionInfo`
+#### Description
+Sent by the extension to the editor to indicate the range of the sentence currently being checked by the language server. Used to display a busy indicator at the relevant position in the editor.
+
+#### Body
+```ts
+{
+    from: number, // Start offset of the sentence being executed
+    to: number    // End offset of the sentence being executed
+}
+```
+
 ### `init`
 
 #### Description

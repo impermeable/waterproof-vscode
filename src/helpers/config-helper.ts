@@ -36,6 +36,7 @@ export enum WaterproofSetting {
     UpdateIgnores,
     ContinuousChecking,
     LogDebugStatements,
+    SendExecInfo,
 }
 
 /**
@@ -67,6 +68,7 @@ export const WaterproofSettingMap: Record<WaterproofSetting, string> = {
     [WaterproofSetting.UpdateIgnores]: "updateIgnores",
     [WaterproofSetting.ContinuousChecking]: "ContinuousChecking",
     [WaterproofSetting.LogDebugStatements]: "LogDebugStatements",
+    [WaterproofSetting.SendExecInfo]: "sendExecInfo",
 };
 
 /**
@@ -98,6 +100,7 @@ type WaterproofSettingTypes = {
     [WaterproofSetting.UpdateIgnores]: boolean;
     [WaterproofSetting.ContinuousChecking]: boolean;
     [WaterproofSetting.LogDebugStatements]: boolean;
+    [WaterproofSetting.SendExecInfo]: boolean;
 };
 
 /**

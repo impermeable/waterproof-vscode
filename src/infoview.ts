@@ -158,7 +158,7 @@ export class InfoProvider implements Disposable {
             case "limited":
                 let filteredHyps = []
                 for (let hyp of hypotheses) {
-                    if ((hyp.type?.tag?.[1] !== undefined) && !('text' in hyp.type.tag[1])) {
+                    if ( !( (hyp.type?.tag?.[1] !== undefined) && ('text' in hyp.type.tag[1]) ) ) {
                         filteredHyps.push(hyp)
                     }
                 }

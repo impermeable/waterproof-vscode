@@ -199,12 +199,21 @@ window.onload = () => {
 			case MessageType.progress:
 				{
 					const {numberOfLines, progress} = msg.body;
+					if (progress.length === 0) {
+						editor.removeBusyIndicators();
+					}
 					const at = progress[0].range.start.line + 1;
 					if (at === numberOfLines) {
 						editor.reportProgress(at, numberOfLines, "File verified");
 					} else {
 						editor.reportProgress(at, numberOfLines, `Verified file up to line: ${at}`);
 					}
+					break;
+				}
+			case MessageType.executionInfo:
+				{
+					const range = msg.body;
+					editor.setBusyIndicator(range.from);
 					break;
 				}
 			case MessageType.diagnostics:
@@ -221,7 +230,7 @@ window.onload = () => {
 					break;
 				}
 			case MessageType.themeUpdate:
-				editor.updateNodeViewThemes(msg.body.theme, msg.body.lang);
+				editor.updateNodeViewThemes(msg.body.theme);
 				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.

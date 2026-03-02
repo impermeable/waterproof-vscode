@@ -298,6 +298,11 @@
             "type": "boolean",
             "default": false,
             "description": "Enables the menu items in the editor. Using these buttons you can add text, code and latex cells in input areas."
+          },
+          "waterproof.sendExecInfo": {
+            "type": "boolean",
+            "default": true,
+            "description": "Send execution information to the editor to show a busy indicator on the line currently being checked."
           }
         }
       },

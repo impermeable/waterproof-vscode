@@ -1,6 +1,6 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel } from "vscode";
+import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
 import { leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams } from "./requestTypes";
@@ -139,7 +139,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         });
     }
 
-    protected async determineProofStatus(document: TextDocument, inputArea: Range): Promise<InputAreaStatus> {
+    protected async determineProofStatus(document: TextDocument, inputArea: Range, diags: Array<Diagnostic>): Promise<InputAreaStatus> {
         const content = document.getText();
 
         const nextQed = content.indexOf("\nQed\n", document.offsetAt(inputArea.start));
@@ -148,6 +148,20 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         if (nextProof && nextQed >= nextProof) {
             return InputAreaStatus.Invalid;
         }
+
+        // We do an explicit check for the case where we have
+        // Fix b :
+        // QED
+        // As these cases are not covered by the empty goals statemement below.
+        const hasUnexpectedTokenError = diags.some(v => {
+            const intersection = inputArea.intersection(v.range);
+            return intersection !== undefined &&
+                !intersection.isEmpty &&
+                // This is the error that is emitted when doing something like Fix b : ... with QED on the next line.
+                v.message === "unexpected token 'QED'; expected term";
+        });
+        // If we have an unexpected token error we mark the input area as incorrect.
+        if (hasUnexpectedTokenError) return InputAreaStatus.Incomplete;
 
         // request goals and return conclusion based on them
         const response = await this.requestGoals(this.createGoalsRequestParameters(document, inputArea.end.translate(0, 0)));

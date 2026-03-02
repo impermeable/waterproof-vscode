@@ -7,12 +7,15 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri} from "vscode";
+    Uri,
+} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { CoqnitiveStatusBar } from "./components/enableButton";
-import { CoqLspClient, CoqLspClientConfig, CoqLspClientFactory, CoqLspServerConfig } from "./lsp-client/clientTypes";
+import { LanguageClientProviderFactory, LspClientConfig } from "./lsp-client/clientTypes";
+import { CoqLspServerConfig } from "./lsp-client/rocq";
+import { LeanLspServerConfig } from "./lsp-client/lean";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
@@ -26,13 +29,13 @@ import { ExecutePanel } from "./webviews/standardviews/execute";
 import { SymbolsPanel } from "./webviews/standardviews/symbols";
 import { TacticsPanel } from "./webviews/standardviews/tactics";
 
-import { VersionChecker } from "./version-checker";
 import { Utils } from "vscode-uri";
 import { WaterproofConfigHelper, WaterproofFileUtil, WaterproofPackageJSON, WaterproofSetting, WaterproofLogger as wpl } from "./helpers";
 
-
-import { convertToString, GoalConfig } from "../lib/types";
 import { Hypothesis } from "./api";
+import { CompositeClient } from "./lsp-client/composite";
+import { CompositeGoalsPanel } from "./webviews/goalviews/compositeGoalsPanel";
+import { convertToString, GoalConfig } from "../lib/types";
 import { RunResult } from "./lsp-client/petanque";
 
 /**
@@ -46,23 +49,29 @@ export class Waterproof implements Disposable {
     /** The resources that must be released when this extension is disposed of */
     private readonly disposables: Disposable[] = [];
 
-    /** The function that can create a new Coq LSP client */
-    private readonly clientFactory: CoqLspClientFactory;
+    /** The function that can create a new Coq language client provider */
+    private readonly getRocqClientProvider: LanguageClientProviderFactory;
+
+    /** The function that can create a new Lean language client provider */
+    private readonly getLeanClientProvider: LanguageClientProviderFactory;
 
     /** The manager for (communication between) webviews */
     public readonly webviewManager: WebviewManager;
 
     /**
-     * The client that communicates with the Coq LSP server.
+     * The client that communicates with the LSP server.
      * It's created by the `initializeClient` function.
      */
-    public client!: CoqLspClient;
+    public client!: CompositeClient;
 
     /** The status bar item that indicates whether this extension is running */
     private readonly statusBar: IStatusComponent;
 
     /** The components that display or process the goals and messages on the current line */
     private readonly goalsComponents: IGoalsComponent[] = [];
+
+    /** The tactics panel */
+    private readonly tacticsPanel: TacticsPanel;
 
     /** Main executor that allows for arbitrary execution */
     public readonly executorComponent: IExecutor;
@@ -76,13 +85,19 @@ export class Waterproof implements Disposable {
      *
      * @param context the extension context object
      */
-    constructor(context: ExtensionContext, clientFactory: CoqLspClientFactory, private readonly _isWeb = false) {
+    constructor(
+        context: ExtensionContext,
+        getCoqClientProvider: LanguageClientProviderFactory,
+        getLeanClientProvider: LanguageClientProviderFactory,
+        private readonly _isWeb = false
+    ) {
         wpl.log("Waterproof initialized");
         checkConflictingExtensions();
         excludeCoqFileTypes();
 
         this.context = context;
-        this.clientFactory = clientFactory;
+        this.getRocqClientProvider = getCoqClientProvider;
+        this.getLeanClientProvider = getLeanClientProvider;
 
         this.webviewManager = new WebviewManager();
         this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
@@ -110,7 +125,7 @@ export class Waterproof implements Disposable {
                 };
                 await waitForClient();
                 wpl.log("Client ready. Proceeding with focus event.");
-        	}
+            }
 
             wpl.log("Client state");
 
@@ -120,10 +135,10 @@ export class Waterproof implements Disposable {
                 this.client.activeDocument = document;
                 this.client.activeCursorPosition = undefined;
                 this.webviewManager.open("goals");
-                for (const g of this.goalsComponents) g.updateGoals(undefined);
-
+                for (const g of this.goalsComponents) g.updateGoals(this.client);
             }
 
+            this.tacticsPanel.update(this.client);
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
             // update active document and cursor
@@ -135,7 +150,7 @@ export class Waterproof implements Disposable {
             if (command == "createHelp") {
                 source.setResults(["createHelp"]);
             } else {
-                executeCommand(this.client, command).then(
+                executeCommand(this.client.rocqClient, command).then(
                     results => {
                         source.setResults(results);
                     },
@@ -151,8 +166,9 @@ export class Waterproof implements Disposable {
 
         // make relevant gui components
         this.statusBar = new CoqnitiveStatusBar();
-        const goalsPanel = new GoalsPanel(this.context.extensionUri, CoqLspClientConfig.create())
-        this.goalsComponents.push(goalsPanel);
+        const goalsPanel = new GoalsPanel(this.context.extensionUri, LspClientConfig.create())
+        const compositeGoalsPanel = new CompositeGoalsPanel(goalsPanel);
+        this.goalsComponents.push(compositeGoalsPanel);
         this.webviewManager.addToolWebview("goals", goalsPanel);
         this.webviewManager.open("goals");
         this.webviewManager.addToolWebview("symbols", new SymbolsPanel(this.context.extensionUri));
@@ -160,8 +176,9 @@ export class Waterproof implements Disposable {
         this.webviewManager.addToolWebview("help", new Help(this.context.extensionUri));
         const executorPanel = new ExecutePanel(this.context.extensionUri);
         this.webviewManager.addToolWebview("execute", executorPanel);
-        this.webviewManager.addToolWebview("tactics", new TacticsPanel(this.context.extensionUri));
-        const debug = new DebugPanel(this.context.extensionUri, CoqLspClientConfig.create());
+        this.tacticsPanel = new TacticsPanel(this.context.extensionUri);
+        this.webviewManager.addToolWebview("tactics", this.tacticsPanel);
+        const debug = new DebugPanel(this.context.extensionUri, LspClientConfig.create());
         this.webviewManager.addToolWebview("debug", debug);
         this.goalsComponents.push(debug);
 
@@ -283,30 +300,6 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Request the goals for the current document and cursor position.
-     */
-    public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
-        if (!this.client.activeDocument || !this.client.activeCursorPosition) { throw new Error("No active document or cursor position."); }
-
-        const document = this.client.activeDocument;
-        const position = this.client.activeCursorPosition;
-
-        const params = this.client.createGoalsRequestParameters(document, position);
-        const goalResponse = await this.client.requestGoals(params);
-
-        if (goalResponse.goals === undefined) {
-            throw new Error("Response contained no goals.");
-        }
-
-        // Convert goals and hypotheses to strings
-        const goalsAsStrings = goalResponse.goals.goals.map(g => convertToString(g.ty));
-        // Note: only taking hypotheses from the first goal
-        const hyps = goalResponse.goals.goals[0].hyps.map(h => { return {name: convertToString(h.names[0]), content: convertToString(h.ty)}; });
-
-        return {currentGoal: goalsAsStrings[0], hypotheses: hyps, otherGoals: goalsAsStrings.slice(1)};
-    }
-
-    /**
      * Get the currently active document in the editor.
      */
     public currentDocument(): TextDocument {
@@ -319,7 +312,7 @@ export class Waterproof implements Disposable {
      */
     public async help(): Promise<Array<string>> {
         // Execute command
-        const wpHelpResponse = await executeCommandFullOutput(this.client, "Help.");
+        const wpHelpResponse = await executeCommandFullOutput(this.client.rocqClient, "Help.");
         // Return the help messages. val[0] contains the levels, which we ignore.
         return wpHelpResponse.feedback.map(val => val[1]);
     }
@@ -330,7 +323,7 @@ export class Waterproof implements Disposable {
      */
     public async execCommand(cmd: string): Promise<GoalConfig<string> & RunResult<number>> {
         // Execute command and return output
-        return await executeCommandFullOutput(this.client, cmd);
+        return await executeCommandFullOutput(this.client.rocqClient, cmd);
     }
 
     /**
@@ -408,7 +401,7 @@ export class Waterproof implements Disposable {
      * usual `.` and space.
      */
     public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
-        const execResponse = await executeCommandFullOutput(this.client, steps);
+        const execResponse = await executeCommandFullOutput(this.client.rocqClient, steps);
         return {
             finished: execResponse.proof_finished,
             remainingGoals: execResponse.goals.map(g => convertToString(g.ty))
@@ -532,54 +525,70 @@ export class Waterproof implements Disposable {
     async initializeClient(): Promise<void> {
         wpl.log("Start of initializeClient");
 
-        // Whether the user has decided to skip the launch checks
-        const launchChecksDisabled = WaterproofConfigHelper.get(WaterproofSetting.SkipLaunchChecks);
-
-        if (launchChecksDisabled || this._isWeb) {
-            const reason = launchChecksDisabled ? "Launch checks disabled by user." : "Web extension, skipping launch checks.";
-            wpl.log(`${reason} Attempting to launch client...`);
-        } else {
-            // Run the version checker.
-            const requiredCoqLSPVersion = WaterproofPackageJSON.requiredCoqLspVersion(this.context);
-            const requiredCoqWaterproofVersion =  WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
-            const versionChecker = new VersionChecker(this.context, requiredCoqLSPVersion, requiredCoqWaterproofVersion);
-
-            // Check whether we can find coq-lsp
-            const foundServer = await versionChecker.prelaunchChecks();
-            if (foundServer) {
-                // Only run the version checker after we know that there is a valid coq-lsp server
-                versionChecker.run();
-            } else {
-                this.statusBar.failed("LSP not found");
-            }
-        }
-
         if (this.client?.isRunning()) {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
 
-        const serverOptions = CoqLspServerConfig.create(
+        const coqServerOptions = CoqLspServerConfig.create(
             // TODO: Support +coqversion versions.
             WaterproofPackageJSON.requiredCoqLspVersion(this.context).slice(2)
         );
 
-        const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "markdown" }, { language: "coq" }],  // both .mv and .v files
-            outputChannelName: "Waterproof LSP Events (Initial)",
+        const coqClientOptions: LanguageClientOptions = {
+            documentSelector: [{ language: "markdown" }, { language: "coq" }],  // .mv and .v files
+            outputChannelName: "Waterproof Rocq LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
-            initializationOptions: serverOptions,
+            initializationOptions: coqServerOptions,
+            markdown: { isTrusted: true, supportHtml: true },
+        };
+
+        const leanServerOptions = LeanLspServerConfig.create();
+
+        const leanClientOptions: LanguageClientOptions = {
+            documentSelector: [{ language: "lean4" }],
+            outputChannelName: "Waterproof Lean LSP Events (Initial)",
+            revealOutputChannelOn: RevealOutputChannelOn.Info,
+            initializationOptions: leanServerOptions,
             markdown: { isTrusted: true, supportHtml: true },
         };
 
         wpl.log("Initializing client...");
-        this.client = this.clientFactory(this.context, clientOptions, WaterproofConfigHelper.configuration);
-        return this.client.startWithHandlers(this.webviewManager).then(
-            () => {
+        this.client = new CompositeClient(
+            this.getRocqClientProvider(this.context, coqClientOptions, WaterproofConfigHelper.configuration),
+            window.createOutputChannel("Waterproof Rocq LSP Events (After Initialization)"),
+            this.getLeanClientProvider(this.context, leanClientOptions, WaterproofConfigHelper.configuration),
+            window.createOutputChannel("Waterproof Lean LSP Events (After Initialization)"),
+            this.context,
+        );
+
+        // Whether the user has decided to skip the launch checks
+        let skipLaunchChecksSetting = WaterproofConfigHelper.get(WaterproofSetting.SkipLaunchChecks);
+        if (this._isWeb) {
+            // In the web version, we only support rocq
+            skipLaunchChecksSetting = "rocq";
+            wpl.log("Web version detected, automatically skipping launch checks for Rocq and not launching Lean client.");
+        }
+        let allowedLanguages: string[] = [];
+
+        if (skipLaunchChecksSetting !== "none") {
+            allowedLanguages = skipLaunchChecksSetting === "all" ? ["rocq", "lean4"] : [skipLaunchChecksSetting];
+            const reason = `Launch checks skipped by user, starting: ${allowedLanguages.join(", ")}.`;
+            wpl.log(`${reason} Attempting to launch client...`);
+        } else {
+            allowedLanguages = await this.client.prelaunchChecks();
+            if (allowedLanguages.length === 0) {
+                this.statusBar.failed("Prelaunch checks failed");
+                return;
+            }
+        }
+        return this.client.startWithHandlers(this.webviewManager, allowedLanguages).then(
+            (clients) => {
                 this.webviewManager.open("goals");
                 // show user that LSP is working
-                this.statusBar.update(true);
+                this.statusBar.update(clients);
                 this.clientRunning = true;
                 wpl.log("Client initialization complete.");
+
             },
             reason => {
                 const message = reason.toString();
@@ -616,13 +625,19 @@ export class Waterproof implements Disposable {
      */
     private async stopClient(): Promise<void> {
         if (this.client.isRunning()) {
-            for (const g of this.goalsComponents) g.disable();
             await this.client.dispose(2000);
             this.clientRunning = false;
-            this.statusBar.update(false);
+            this.statusBar.update([]);
         } else {
             return Promise.resolve();
         }
+    }
+
+    /**
+     * Request the goals for the current document and cursor position.
+     */
+    public async goals(): Promise<{currentGoal: string, hypotheses: Array<Hypothesis>, otherGoals: string[]}> {
+        return this.client.goals();
     }
 
     /**
@@ -635,24 +650,13 @@ export class Waterproof implements Disposable {
             wpl.debug("Client is not running, cannot update goals.");
             return;
         }
-        const params = this.client.createGoalsRequestParameters(document, position);
         wpl.debug(`Requesting goals for components: ${this.goalsComponents}`);
-        this.client.requestGoals(params).then(
-            response => {
-                wpl.debug(`Received goals response: ${JSON.stringify(response)}`);
-                for (const g of this.goalsComponents) {
-                    wpl.debug(`Updating goals component: ${g.constructor.name}`);
-                    g.updateGoals(response)
-                }
-            },
-            reason => {
-                wpl.debug(`Failed for reason: ${reason}`);
-                for (const g of this.goalsComponents) {
-                    wpl.debug(`Failed to update goals component: ${g.constructor.name}`);
-                    g.failedGoals(reason);
-                }
-            }
-        );
+
+        for (const g of this.goalsComponents) {
+            // TODO: avoid requesting goals separately for each component?
+            //       (e.g. by caching requestGoals in LspClient)
+            g.updateGoals(this.client);
+        }
     }
 
     dispose() {
@@ -662,5 +666,4 @@ export class Waterproof implements Disposable {
             d.dispose();
         }
     }
-
 }

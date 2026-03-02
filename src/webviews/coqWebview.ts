@@ -6,7 +6,8 @@ import {
     window
 } from "vscode";
 import { Disposable } from "vscode-languageclient";
-import { Message } from "../../shared";
+import type { Message, TacticsData } from "../../shared";
+import { WaterproofLogger as wpl } from "../helpers";
 
 /**
  * Defines the states of the webview
@@ -81,7 +82,7 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
     protected create() {
         if (this.state != WebviewState.ready) return; // Error handling
 
-        const webviewOpts = { enableScripts: true, enableFindWidget: false };
+        const webviewOpts = { enableScripts: true, enableFindWidget: false, retainContextWhenHidden: this.name == "goals" };
         if (this.name == "help") {
             this._panel = window.createWebviewPanel(
                 this.name,
@@ -119,13 +120,60 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             this.emit(WebviewEvents.message, msg);
         });
 
+        this.showView(this.name);
+
+        this.disposables.push(this._panel.onDidDispose(() => {
+            // Once the panel has been disposed (for example when the user has closed the panel), we close (in terms of state) it here.
+            this.closePanel();
+        }));
+    }
+
+    /**
+     * Set the webview's content to the view with the given name,
+     * optionally passing `data` into window.extraData.
+     */
+    showView(name: string, data?: TacticsData) {
+        if (!this._panel) {
+            wpl.debug(`Could not show ${name}, WebviewPanel does not exist`);
+            return;
+        }
+
         const styleUri = this._panel.webview.asWebviewUri(
-            Uri.joinPath(this.extensionUri, "out", "views", this.name, "index.css")
+            Uri.joinPath(this.extensionUri, "out", "views", name, "index.css")
         );
 
         const scriptUri = this._panel.webview.asWebviewUri(
-            Uri.joinPath(this.extensionUri, "out", "views", this.name, "index.js")
+            Uri.joinPath(this.extensionUri, "out", "views", name, "index.js")
         );
+
+        // TODO: remove this workaround (inject/load necessary resources from views/infoview/index.ts)
+        if (name === 'infoview') {
+            const distBase = this._panel.webview.asWebviewUri(
+                Uri.joinPath(this.extensionUri, "node_modules", "@leanprover", "infoview", "dist")
+            );
+            const libPostfix = `.production.min.js`
+            this._panel.webview.html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8" />
+                    <meta http-equiv="Content-type" content="text/html;charset=utf-8">
+                    <title>Infoview</title>
+                    <link rel="stylesheet" href="${distBase}/index.css">
+                </head>
+                <body>
+                    <div id="root"></div>
+                    <script
+                        data-importmap-leanprover-infoview="${distBase}/index${libPostfix}"
+                        data-importmap-react="${distBase}/react${libPostfix}"
+                        data-importmap-react-jsx-runtime="${distBase}/react-jsx-runtime${libPostfix}"
+                        data-importmap-react-dom="${distBase}/react-dom${libPostfix}"
+                        src="${scriptUri}"></script>
+                </body>
+                </html>
+            `;
+            return;
+        }
 
         this._panel.webview.html = `
             <!DOCTYPE html>
@@ -134,6 +182,14 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link rel="stylesheet" type="text/css" href="${styleUri}">
+                <script>`
+                    /* Allow for passing custom parameters to views.
+                       This is used to pass the language-specific
+                       tactics data to the tactics panel.
+                     */
+                    + `
+                    window.extraData = ${JSON.stringify(data)};
+                </script>
                 <script src="${scriptUri}" type="module"></script>
                 <title>Coq's info panel</title>
             </head>
@@ -142,12 +198,6 @@ export abstract class CoqWebview extends EventEmitter implements Disposable {
             </body>
             </html>
         `;
-
-
-        this.disposables.push(this._panel.onDidDispose(() => {
-            // Once the panel has been disposed (for example when the user has closed the panel), we close (in terms of state) it here.
-            this.closePanel();
-        }));
     }
 
     /**

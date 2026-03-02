@@ -23,6 +23,7 @@ export function checkConflictingExtensions() {
     // this way of checking correctly ignores disabled extensions
     if (extensions.getExtension("ejgallego.coq-lsp")) conflicting.push("Coq LSP");
     if (extensions.getExtension("maximedenes.vscoq")) conflicting.push("VSCoq");
+    if (extensions.getExtension("leanprover.lean4")) conflicting.push("Lean 4");
 
     // show warning if any conflicting extensions are present
     if (conflicting.length) {

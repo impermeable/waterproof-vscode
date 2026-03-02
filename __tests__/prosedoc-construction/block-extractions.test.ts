@@ -1,15 +1,20 @@
+import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/document-construction/block-extraction";
 import { typeguards } from "@impermeable/waterproof-editor";
-import { extractCoqBlocks, extractCoqDoc, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/document-construction/block-extraction";
+import { topLevelBlocksMV } from "../../editor/src/document-construction/construct-document";
 
 test("Identify input blocks", () => {
     const document = "# Example\n<input-area>\n# Test input area\n</input-area>\n";
     const blocks = extractInputBlocks(document);
 
     expect(blocks.length).toBe(1);
-    expect(typeguards.isInputAreaBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("\n# Test input area\n");
-    expect(blocks[0].range.from).toBe(10);
-    expect(blocks[0].range.to).toBe(54);
+    const [b] = blocks;
+    expect(typeguards.isInputAreaBlock(b)).toBe(true);
+    expect(b.stringContent).toBe("\n# Test input area\n");
+    expect(b.range.from).toBe(10);
+    expect(b.range.to).toBe(54);
+
+    expect(b.innerRange.from).toBe(22);
+    expect(b.innerRange.to).toBe(41);
 });
 
 test("Identity input blocks #2", () => {
@@ -17,10 +22,36 @@ test("Identity input blocks #2", () => {
     const blocks = extractInputBlocks(document);
 
     expect(blocks.length).toBe(1);
-    expect(typeguards.isInputAreaBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("\n# Test input area\n");
-    expect(blocks[0].range.from).toBe(1);
-    expect(blocks[0].range.to).toBe(45);
+    const [b] = blocks;
+    expect(typeguards.isInputAreaBlock(b)).toBe(true);
+    expect(b.stringContent).toBe("\n# Test input area\n");
+    expect(b.range.from).toBe(1);
+    expect(b.range.to).toBe(45);
+    expect(b.innerRange.from).toBe(13);
+    expect(b.innerRange.to).toBe(32);
+
+});
+
+test("Identify input blocks #3", () => {
+    const document = "<input-area>First input area</input-area>\n<input-area>Second input area</input-area>";
+    const blocks = extractInputBlocks(document);
+
+    expect(blocks.length).toBe(2);
+    const [b1, b2] = blocks;
+    expect(typeguards.isInputAreaBlock(b1)).toBe(true);
+    expect(typeguards.isInputAreaBlock(b2)).toBe(true);
+
+    expect(b1.stringContent).toBe("First input area");
+    expect(b1.range.from).toBe(0);
+    expect(b1.range.to).toBe(41);
+    expect(b1.innerRange.from).toBe(12);
+    expect(b1.innerRange.to).toBe(28);
+    
+    expect(b2.stringContent).toBe("Second input area");
+    expect(b2.range.from).toBe(42);
+    expect(b2.range.to).toBe(document.length);
+    expect(b2.innerRange.from).toBe(54);
+    expect(b2.innerRange.to).toBe(71);
 });
 
 test("Identify hint blocks", () => {
@@ -33,6 +64,33 @@ test("Identify hint blocks", () => {
     expect(blocks[0].stringContent).toBe("\n# Test hint\n");
     expect(blocks[0].range.from).toBe(10);
     expect(blocks[0].range.to).toBe(60);
+    expect(blocks[0].innerRange.from).toBe(40);
+    expect(blocks[0].innerRange.to).toBe(53);
+});
+
+test("Identify hint blocks #2", () => {
+    const document = "# Example\n<hint title=\"hint-title-test\">\n# Test hint\n</hint><hint title=\"hint title 2\">Test</hint>";
+    const blocks = extractHintBlocks(document);
+
+    expect(blocks.length).toBe(2);
+
+    const [block1, block2] = blocks;
+
+    expect(typeguards.isHintBlock(block1)).toBe(true);
+    expect(block1.title).toBe("hint-title-test");
+    expect(block1.stringContent).toBe("\n# Test hint\n");
+    expect(block1.range.from).toBe(10);
+    expect(block1.range.to).toBe(60);
+    expect(block1.innerRange.from).toBe(40);
+    expect(block1.innerRange.to).toBe(53);
+
+    expect(typeguards.isHintBlock(block2)).toBe(true);
+    expect(block2.title).toBe("hint title 2");
+    expect(block2.stringContent).toBe("Test");
+    expect(block2.range.from).toBe(60);
+    expect(block2.range.to).toBe(98);
+    expect(block2.innerRange.from).toBe(87);
+    expect(block2.innerRange.to).toBe(91);
 });
 
 test("Parse Math Display blocks", () => {
@@ -65,41 +123,65 @@ test("Parse Coq blocks #1", () => {
     const document = "# Example\n```coq\nLemma trivial.\n```";
     const blocks = extractCoqBlocks(document);
 
-    expect(blocks.length).toBe(1);
-    expect(typeguards.isCoqBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("Lemma trivial.");
-    expect(blocks[0].range.from).toBe(9);
-    expect(blocks[0].range.to).toBe(35);
+    // NOTE: Mind that we are using `extractCoqBlocks` here.
+    expect(blocks.length).toBe(2);
+    const [nl, code] = blocks;
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(code.stringContent).toBe("Lemma trivial.");
+
+    // Outer ranges
+    expect(code.range.from).toBe(10);
+    expect(code.range.to).toBe(document.length);
+
+    // Inner ranges
+    expect(code.innerRange.from).toBe(17);
+    expect(code.innerRange.to).toBe(31);
+
 });
 
 test("Parse Coq blocks #2", () => {
     const document = "```coq\nRequire Import ZArith.\n```\n# Example\n```coq\nLemma trivial.\n```";
     const blocks = extractCoqBlocks(document);
 
-    expect(blocks.length).toBe(2);
-    expect(typeguards.isCoqBlock(blocks[0])).toBe(true);
-    expect(typeguards.isCoqBlock(blocks[1])).toBe(true);
-    expect(blocks[0].stringContent).toBe("Require Import ZArith.");
-    expect(blocks[1].stringContent).toBe("Lemma trivial.");
-    expect(blocks[0].range.from).toBe(0);
-    expect(blocks[0].range.to).toBe(34);
+    expect(blocks.length).toBe(4);
+    const [code, nl, nl2, code2] = blocks;
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(typeguards.isCodeBlock(code2)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
+    expect(code.stringContent).toBe("Require Import ZArith.");
+    expect(code2.stringContent).toBe("Lemma trivial.");
 
-    expect(blocks[1].range.from).toBe(43);
-    expect(blocks[1].range.to).toBe(69);
+    // Outer ranges first block
+    expect(code.range.from).toBe(0);
+    expect(code.range.to).toBe(33);
+
+    // Inner ranges first block
+    expect(code.innerRange.from).toBe(7);
+    expect(code.innerRange.to).toBe(29);
+
+    // Outer ranges second block
+    expect(code2.range.from).toBe(44);
+    expect(code2.range.to).toBe(document.length);
+
+    // Inner ranges second block
+    expect(code2.innerRange.from).toBe(51);
+    expect(code2.innerRange.to).toBe(65);
 });
 
-test("Extract coqdoc blocks", () => {
-    const input = `(** * Header in coqdoc comment *)\nCoq code\n(** $\\text{math display}$ *)\nMore Coq code\n`;
-    const blocks = extractCoqDoc(input);
 
-    // console.log(blocks);
+test("Parse Coq Blocks #3", () => {
+    const content = "```coq\nLemma test\n```";
+    const blocks = topLevelBlocksMV(content);
 
-    expect(blocks.length).toBe(2);
-    expect(typeguards.isCoqDocBlock(blocks[0])).toBe(true);
-    expect(typeguards.isCoqDocBlock(blocks[1])).toBe(true);
-
-    expect(blocks[0].stringContent).toBe("* Header in coqdoc comment ");
-    expect(blocks[1].stringContent).toBe("$\\text{math display}$ ");
+    expect(blocks.length).toBe(1);
+    expect(typeguards.isCodeBlock(blocks[0])).toBe(true);
+    expect(blocks[0].stringContent).toBe("Lemma test");
+    expect(blocks[0].range.from).toBe(0);
+    expect(blocks[0].range.to).toBe(content.length);
+    expect(blocks[0].innerRange.from).toBe(7);
+    expect(blocks[0].innerRange.to).toBe(content.length - "\n```".length);
 });
 
 test("Extract math display from inside coqdoc comment", () => {

@@ -1,8 +1,9 @@
 /* eslint-disable no-useless-escape */
 // Disable due to latex code in sample data
-import { MarkdownBlock, typeguards } from "@impermeable/waterproof-editor";
-import { blocksFromMV, blocksFromV } from "../../editor/src/document-construction/construct-document";
-import { expect } from '@jest/globals';
+
+import { BlockRange, MarkdownBlock, typeguards, constructDocument } from "@impermeable/waterproof-editor";
+import { topLevelBlocksMV, topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
+import { LeanSerializer } from "../../editor/src/leanSerializer";
 
 const inputDocumentMV = `# Example document
 <hint title="example hint (like for imports)">
@@ -27,11 +28,33 @@ Random Markdown list:
     3. $1 + 1$
 `;
 
+const inputDocumentLean = `import Some.Library
+#doc (Genre) "Title" =>
+# A Header
+::::multilean
+\`\`\`lean
+def fortyTwo :=
+  30 +
+\`\`\`
+:::input
+\`\`\`lean
+  12
+\`\`\`
+:::
+::::
+## Markdown Content
+$$\`x^2 + y = z\`
+A list:
+  1. *Italicized* text
+  2. $\`y = z - x^2\`
+  3. \`Inline code\`
+`;
+
 
 // FIXME: Add checks for prewhite and postwhite here.
 test("Parse top level blocks (MV)", () => {
-    const blocks = blocksFromMV(inputDocumentMV);
-    expect(blocks.length).toBe(8);
+    const blocks = topLevelBlocksMV(inputDocumentMV);
+    expect(blocks.length).toBe(10);
 
     expect(typeguards.isMarkdownBlock(blocks[0])).toBe(true);
     expect(blocks[0].stringContent).toBe("# Example document\n");
@@ -51,39 +74,174 @@ test("Parse top level blocks (MV)", () => {
     expect(typeguards.isMathDisplayBlock(blocks[5])).toBe(true);
     expect(blocks[5].stringContent).toBe(" \int_0^2 x dx ");
 
-    expect(typeguards.isCoqBlock(blocks[6])).toBe(true);
-    expect(blocks[6].stringContent).toBe("Compute 1 + 1.");
+    expect(typeguards.isNewlineBlock(blocks[6])).toBe(true);
 
-    expect(typeguards.isMarkdownBlock(blocks[7])).toBe(true);
-    expect(blocks[7].stringContent).toBe("Random Markdown list:\n    1. Item 3\n    2. Item 0\n    3. $1 + 1$\n");
+    expect(typeguards.isCodeBlock(blocks[7])).toBe(true);
+    expect(blocks[7].stringContent).toBe("Compute 1 + 1.");
+
+    expect(typeguards.isNewlineBlock(blocks[8])).toBe(true);
+
+    expect(typeguards.isMarkdownBlock(blocks[9])).toBe(true);
+    expect(blocks[9].stringContent).toBe("Random Markdown list:\n    1. Item 3\n    2. Item 0\n    3. $1 + 1$\n");
 });
 
-const inputDocumentV = `(** * Example v file *)
-(* begin hint : testing *)
-Compute 2 + 2.
-(* end hint *)
-(* begin input *)
-Lemma testing : True.
-Proof.
-exact I.
-Qed.
-(* Proof should now be finished *)
-(* end input *)
-(** *** End example v file *)
+test("Markdown and Code", () => {
+    const input = `Test
+\`\`\`coq
+Compute 3 + 3.
+\`\`\``;
+    const blocks = topLevelBlocksMV(input);
+    expect(blocks.length).toBe(3);
+
+    const [md, nl, code] = blocks;
+
+    expect(typeguards.isMarkdownBlock(md)).toBe(true);
+    expect(md.stringContent).toBe("Test");
+    expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 4 });
+    expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 4 });
+
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
+    expect(nl.stringContent).toBe("");
+    expect(nl.range).toStrictEqual<BlockRange>({ from: 4, to: 5 });
+    expect(nl.innerRange).toStrictEqual<BlockRange>({ from: 4, to: 5 });
+
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(code.stringContent).toBe("Compute 3 + 3.");
+    expect(code.range).toStrictEqual<BlockRange>({ from: 5, to:  input.length });
+    expect(code.innerRange).toStrictEqual<BlockRange>({ from: 12, to:  input.length - 4 });
+});
+
+test("1 input area with math and code", () => {
+    const input = `<input-area>$$a^2 + b^2 = c^2$$
+\`\`\`coq
+Lemma trivial : True.
+Proof. auto. Qed.
+\`\`\`
+</input-area>`;
+    const blocks = topLevelBlocksMV(input);
+    expect(blocks.length).toBe(1);
+    const [ia] = blocks;
+
+    expect(typeguards.isInputAreaBlock(ia)).toBe(true);
+    expect(ia.stringContent).toBe("$$a^2 + b^2 = c^2$$\n```coq\nLemma trivial : True.\nProof. auto. Qed.\n```\n");
+    expect(ia.range).toStrictEqual<BlockRange>({ from: 0, to: input.length });
+    expect(ia.innerRange).toStrictEqual<BlockRange>({ from: 12, to: input.length - "</input-area>".length });
+    expect(ia.innerBlocks).toBeDefined();
+    expect(ia.innerBlocks?.length).toBe(4);
+
+    const [math, nl, code, nl2] = ia.innerBlocks!;
+    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
+
+    expect(math.stringContent).toBe("a^2 + b^2 = c^2");
+    expect(math.range).toStrictEqual<BlockRange>({ from: 12, to: 12 + "$$a^2 + b^2 = c^2$$".length });
+    expect(math.innerRange).toStrictEqual<BlockRange>({ from: 12 + 2, to: 12 + "$$a^2 + b^2 = c^2$$".length - 2 });
+
+    expect(nl.range).toStrictEqual<BlockRange>({ from: 12 + "$$a^2 + b^2 = c^2$$".length, to: 12 + "$$a^2 + b^2 = c^2$$".length + 1 });
+    expect(nl.innerRange).toStrictEqual<BlockRange>({ from: 12 + "$$a^2 + b^2 = c^2$$".length, to: 12 + "$$a^2 + b^2 = c^2$$".length + 1 });
+
+    expect(code.stringContent).toBe("Lemma trivial : True.\nProof. auto. Qed.");
+    expect(code.range).toStrictEqual<BlockRange>({ from: 32, to: ia.range.to - "</input-area>".length - 1});
+    expect(code.innerRange).toStrictEqual<BlockRange>({ from: 32 + "```coq\n".length, to: ia.range.to - "</input-area>".length - "\n```\n".length });
+
+    expect(nl2.range).toStrictEqual<BlockRange>({ from: ia.range.to - "</input-area>".length - 1, to: ia.range.to - "</input-area>".length });
+    expect(nl2.innerRange).toStrictEqual<BlockRange>({ from: ia.range.to - "</input-area>".length - 1, to: ia.range.to - "</input-area>".length });
+});
+
+test("Markdown and input", () => {
+    const input = `# Header<input-area>
+\`\`\`coq
+Goal False.
+\`\`\`
+\`\`\`coq
+Goal True.
+\`\`\`
+</input-area>`;
+    const blocks = topLevelBlocksMV(input);
+
+    expect(blocks.length).toBe(2);
+    const [md, ia] = blocks;
+
+    expect(typeguards.isMarkdownBlock(md)).toBe(true);
+    expect(md.stringContent).toBe("# Header");
+    expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 8 });
+    expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 8 });
+
+    expect(typeguards.isInputAreaBlock(ia)).toBe(true);
+    expect(ia.stringContent).toBe("\n```coq\nGoal False.\n```\n```coq\nGoal True.\n```\n");
+    expect(ia.range).toStrictEqual<BlockRange>({ from: 8, to: input.length });
+    expect(ia.innerRange).toStrictEqual<BlockRange>({ from: 8 + "<input-area>".length, to: input.length - "</input-area>".length });
+    expect(ia.innerBlocks).toBeDefined();
+
+
+    expect(ia.innerBlocks?.length).toBe(5);
+
+
+});
+
+test("Parse top level blocks (Lean)", () => {
+    const blocks = topLevelBlocksLean(inputDocumentLean);
+    expect(blocks.length).toBe(8);
+
+    const [preamble, md1, code, nl2, input, md2, math, md3] = blocks;
+
+    expect(typeguards.isHintBlock(preamble)).toBe(true);
+    expect(preamble.stringContent).toBe("import Some.Library\n#doc (Genre) \"Title\" =>\n");
+
+    // TODO: After we have come up with a solution for the multilean tags,
+    // we should check the \n here very carefully.
+    expect(typeguards.isMarkdownBlock(md1)).toBe(true);
+    expect(md1.stringContent).toBe("# A Header\n");
+
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(code.stringContent).toBe("def fortyTwo :=\n  30 +");
+
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
+
+    expect(typeguards.isInputAreaBlock(input)).toBe(true);
+    expect(input.stringContent).toBe("```lean\n  12\n```");
+
+    // TODO: After we have come up with a solution for the multilean tags,
+    // we should check the \n here very carefully.
+    expect(typeguards.isMarkdownBlock(md2)).toBe(true);
+    expect(md2.stringContent).toBe("\n## Markdown Content\n");
+
+    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+    expect(math.stringContent).toBe("x^2 + y = z");
+
+    expect(typeguards.isMarkdownBlock(md3)).toBe(true);
+    expect(md3.stringContent)
+        .toBe("\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n  3. `Inline code`\n");
+})
+
+// TODO: The serialization logic should account for the multilean tags, which it doesnt at the moment.
+test("Parse and serialize document (Lean)", () => {
+    const doc = constructDocument(topLevelBlocksLean(inputDocumentLean));
+    const out = new LeanSerializer().serializeDocument(doc);
+
+    const outputDocumentLean = `import Some.Library
+#doc (Genre) "Title" =>
+# A Header
+\`\`\`lean
+def fortyTwo :=
+  30 +
+\`\`\`
+:::input
+\`\`\`lean
+  12
+\`\`\`
+:::
+## Markdown Content
+$$\`x^2 + y = z\`
+A list:
+  1. *Italicized* text
+  2. $\`y = z - x^2\`
+  3. \`Inline code\`
 `;
 
-test("Parse top level blocks (V)", () => {
-    const blocks = blocksFromV(inputDocumentV);
-    // coqblock, hint, input, coqblock
-
-    expect(blocks.length).toBe(4);
-    expect(typeguards.isCoqBlock(blocks[0])).toBe(true);
-    expect(typeguards.isHintBlock(blocks[1])).toBe(true);
-    expect(typeguards.isInputAreaBlock(blocks[2])).toBe(true);
-    expect(typeguards.isCoqBlock(blocks[3])).toBe(true);
-
-    expect(blocks[0].stringContent).toBe("(** * Example v file *)\n");
-    expect(blocks[1].stringContent).toBe("```coq\nCompute 2 + 2.\n```");
-    expect(blocks[2].stringContent).toBe("```coq\nLemma testing : True.\nProof.\nexact I.\nQed.\n(* Proof should now be finished *)\n```");
-    expect(blocks[3].stringContent).toBe("\n(** *** End example v file *)\n");
-});
+    // We would want this operation to be the identity, i.e.
+    // expect(out).toBe(inputDocumentLean);
+    expect(out).toBe(outputDocumentLean);
+})

@@ -1,10 +1,10 @@
-import { FileFormat } from "../../../shared";
-import { Block, CoqBlock, HintBlock, InputAreaBlock, MathDisplayBlock, CoqDocBlock } from "@impermeable/waterproof-editor";
-import { createCoqDocInnerBlocks, createCoqInnerBlocks, createInputAndHintInnerBlocks } from "./inner-blocks";
+import { InputAreaBlock, HintBlock, MathDisplayBlock, CodeBlock, NewlineBlock } from "@impermeable/waterproof-editor";
+import { createInputAndHintInnerBlocks } from "./inner-blocks";
+
 
 const regexes = {
     // coq: /```coq\n([\s\S]*?)\n```/g,
-    coq: /(\r\n|\n)?^```coq(\r\n|\n)([^]*?)(\r\n|\n)?^```$(\r\n|\n)?/gm,
+    coq: /(\n)?^```coq\n([^]*?)\n?^```$(\n)?/gm,
     math_display: /\$\$([\s\S]*?)\$\$/g,
     input_area: /<input-area>([\s\S]*?)<\/input-area>/g,
     input_areaV: /\(\* begin input \*\)\n([\s\S]*?)\n\(\* end input \*\)/gm,
@@ -19,12 +19,12 @@ const regexes = {
  * - `<input-area>` and `</input-area>` tags (mv files)
  * - `(* begin input *)` and `(* end input *)` (v files)
  */
-export function extractInputBlocks(document: string, fileFormat: FileFormat = FileFormat.MarkdownV) {
-    if (fileFormat === FileFormat.RegularV) {
-        return extractInputBlocksV(document);
-    }
+export function extractInputBlocks(document: string) {
     return extractInputBlocksMV(document);
 }
+
+const inputAreaTagOpenLength = "<input-area>".length;
+const inputAreaTagCloseLength = "</input-area>".length;
 
 function extractInputBlocksMV(document: string) {
     const input_areas = document.matchAll(regexes.input_area);
@@ -32,19 +32,8 @@ function extractInputBlocksMV(document: string) {
     const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
         if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
         const range = { from: input_area.index, to: input_area.index + input_area[0].length };
-        return new InputAreaBlock(input_area[1], range, createInputAndHintInnerBlocks);
-    });
-
-    return inputAreaBlocks;
-}
-
-function extractInputBlocksV(document: string) {
-    const input_areas = document.matchAll(regexes.input_areaV);
-
-    const inputAreaBlocks = Array.from(input_areas).map((input_area) => {
-        if (input_area.index === undefined) throw new Error("Index of input_area is undefined");
-        const range = { from: input_area.index, to: input_area.index + input_area[0].length };
-        return new InputAreaBlock("```coq\n" + input_area[1] + "\n```", range, createInputAndHintInnerBlocks);
+        const innerRange = { from: range.from + inputAreaTagOpenLength, to: range.to - inputAreaTagCloseLength }
+        return new InputAreaBlock(input_area[1], range, innerRange, 0, createInputAndHintInnerBlocks(input_area[1], innerRange));
     });
 
     return inputAreaBlocks;
@@ -57,34 +46,22 @@ function extractInputBlocksV(document: string) {
  * - `<hint title=[hint title]>` and `</hint>` tags (mv files)
  * - `(* begin hint : [hint title] *)` and `(* end hint *)` (v files)
  */
-export function extractHintBlocks(document: string, fileFormat: (FileFormat.MarkdownV | FileFormat.RegularV) = FileFormat.MarkdownV): HintBlock[] {
-
-    if (fileFormat === FileFormat.RegularV) {
-        return extractHintBlocksV(document);
-    }
+export function extractHintBlocks(document: string): HintBlock[] {
     return extractHintBlocksMV(document);
 }
+
+const hintTagOpenLength = "<hint title=\"\">".length;
+const hintTagCloseLength = "</hint>".length;
 
 function extractHintBlocksMV(document: string) {
     const hints = document.matchAll(regexes.hint);
 
     const hintBlocks = Array.from(hints).map((hint) => {
         if (hint.index === undefined) throw new Error("Index of hint is undefined");
+        const title = hint[1];
         const range = { from: hint.index, to: hint.index + hint[0].length };
-        return new HintBlock(hint[2], hint[1], range, createInputAndHintInnerBlocks);
-    });
-
-    return hintBlocks;
-}
-
-function extractHintBlocksV(document: string) {
-    const hints = document.matchAll(regexes.hintV);
-
-    const hintBlocks = Array.from(hints).map((hint) => {
-        if (hint.index === undefined) throw new Error("Index of hint is undefined");
-        const range = { from: hint.index, to: hint.index + hint[0].length };
-        // This is incorrect as we should wrap the content part in a coqblock.
-        return new HintBlock(`\`\`\`coq\n${hint[2]}\n\`\`\``, hint[1], range, createInputAndHintInnerBlocks);
+        const innerRange = { from: range.from + hintTagOpenLength + title.length, to: range.to - hintTagCloseLength };
+        return new HintBlock(hint[2], title, range, innerRange, 0, createInputAndHintInnerBlocks(hint[2], innerRange));
     });
 
     return hintBlocks;
@@ -95,91 +72,60 @@ function extractHintBlocksV(document: string) {
  *
  * Uses regexes to search for `$$`.
  */
-export function extractMathDisplayBlocks(inputDocument: string) {
+export function extractMathDisplayBlocks(inputDocument: string, parentOffset: number = 0) {
     const math_display = inputDocument.matchAll(regexes.math_display);
     const mathDisplayBlocks = Array.from(math_display).map((math) => {
         if (math.index === undefined) throw new Error("Index of math is undefined");
-        const range = { from: math.index, to: math.index + math[0].length };
-        return new MathDisplayBlock(math[1], range);
+        const range = { from: math.index + parentOffset, to: math.index + math[0].length + parentOffset };
+        const innerRange = { from: range.from + "$$".length, to: range.to - "$$".length}
+        return new MathDisplayBlock(math[1], range, innerRange, 0);
     });
     return mathDisplayBlocks;
 }
 
+const coqOpenLength = "```coq\n".length;
+const coqCloseLength = "\n```".length;
+
 /**
  * Create coq blocks from document string.
  *
- * Uses regexes to search for ```coq and ``` markers.
+ * Uses regexes to search for ` ```coq ` and ` ```  ` markers.
  */
-export function extractCoqBlocks(inputDocument: string) {
+export function extractCoqBlocks(inputDocument: string, parentOffset: number = 0): Array<CodeBlock | NewlineBlock> {
     const coq_code = Array.from(inputDocument.matchAll(regexes.coq));
 
-    const coqBlocks = coq_code.map((coq) => {
+    const blocks = coq_code.flatMap((coq) => {
         if (coq.index === undefined) throw new Error("Index of coq is undefined");
-        const range = { from: coq.index, to: coq.index + coq[0].length };
-        // TODO: Documentation for this:
+        
         // - coq[0] the match;
-        // - coq[1] capture group 1, prePreWhite;
-        // - coq[2] ..., prePostWhite;
-        // - coq[3] ..., the content of the coq block;
-        // - coq[4] ..., postPreWhite;
-        // - coq[5] ..., postPostWhite;
+        // - coq[1] capture group 1, newline before the ```coq (if any);
+        // - coq[2] ..., the content of the coq block;
+        // - coq[3] ..., newline after the ``` (if any).
         // console.log(`==========\nprePreWhite: '${coq[1] == "\n"}'\nprePostWhite: '${coq[2] == "\n"}'\ncontent: '${coq[3]}'\npostPreWhite: '${coq[4] == "\n"}'\npostPostWhite: '${coq[5] == "\n"}'\n==========\n`)
-        const content = coq[3];
-        const prePreWhite = coq[1] == "\n" ? "newLine" : "";
-        const prePostWhite = coq[2] == "\n" ? "newLine" : "";
-        const postPreWhite = coq[4] == "\n" ? "newLine" : "";
-        const postPostWhite = coq[5] == "\n" ? "newLine" : "";
+        const content = coq[2];
+        const newlineBefore = coq[1] == "\n";
+        const newlineAfter = coq[3] == "\n";
 
-        return new CoqBlock(content, prePreWhite, prePostWhite, postPreWhite, postPostWhite, range, createCoqInnerBlocks);
-    });
-    return coqBlocks;
-}
+        // Range of the whole coq block including the ```coq and ``` markers, but without the newlines before/after if any.
+        const range = { from: coq.index + parentOffset + (newlineBefore ? 1 : 0), to: coq.index + parentOffset + (newlineBefore ? 1 : 0) + coq[2].length + coqOpenLength + coqCloseLength };
 
-/**
- * Create blocks based on ranges.
- *
- * Extracts the text content of the ranges and creates blocks from them.
- */
-export function extractBlocksUsingRanges<BlockType extends Block>(
-    inputDocument: string,
-    ranges: {from: number, to: number}[],
-    BlockConstructor: new (content: string, range: { from: number, to: number }) => BlockType ): BlockType[]
-{
-    const blocks = ranges.map((range) => {
-        const content = inputDocument.slice(range.from, range.to);
-        return new BlockConstructor(content, range);
-    }).filter(block => {
-        return block.range.from !== block.range.to;
+        // Range of the inner content of the coq block, excluding the ```coq and ``` markers.
+        const innerRange = {from: range.from + coqOpenLength, to: range.to - coqCloseLength };
+
+        const coqBlock = new CodeBlock(content, range, innerRange, 0);
+
+        if (newlineBefore && !newlineAfter) {
+            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, 0), coqBlock];
+        } else if (!newlineBefore && newlineAfter) {
+            return [coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1}, 0)];
+        } else if (newlineBefore && newlineAfter) {
+            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, 0), coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1}, 0)];
+        } else {
+            return [coqBlock];
+        }
     });
+
     return blocks;
-}
-
-
-// Regex used for extracting the coqdoc comments from the coqdoc block.
-// Info: https://coq.inria.fr/doc/refman/using/tools/coqdoc.html
-// FIXME: This regex needs some attention. I'm especially unsure of the space before the closing `*)`.
-// const coqdocRegex = /\(\*\*(?: |\n)([\s\S]*?)\*\)/g;
-const coqdocRegex = /(\r\n|\n)?^\(\*\* ([^]*?)\*\)$(\r\n|\n)?/gm
-export function extractCoqDoc(input: string): CoqDocBlock[] {
-    const comments = Array.from(input.matchAll(coqdocRegex));
-    const coqDocBlocks = Array.from(comments).map((comment) => {
-        if (comment.index === undefined) throw new Error("Index of math is undefined");
-        const range = { from: comment.index, to: comment.index + comment[0].length};
-
-        const content = comment[2];
-        const preWhite = comment[1] == "\n" ? "newLine" : "";
-        const postWhite = comment[3] == "\n" ? "newLine" : "";
-
-        return new CoqDocBlock(content, preWhite, postWhite, range, createCoqDocInnerBlocks);
-    });
-
-
-    // TODO: Is there a better location for this?
-    const pruned = coqDocBlocks.filter(block => {
-        return block.range.from !== block.range.to;
-    });
-
-    return pruned;
 }
 
 // Regex for extracting the math display blocks from the coqdoc comments.
@@ -191,7 +137,8 @@ export function extractMathDisplayBlocksCoqDoc(input: string): MathDisplayBlock[
     const mathDisplayBlocks = Array.from(mathDisplay).map((math) => {
         if (math.index === undefined) throw new Error("Index of math is undefined");
         const range = { from: math.index, to: math.index + math[0].length};
-        return new MathDisplayBlock(math[1], range);
+        const innerRange = { from: range.from + "$$".length, to: range.to - "$$".length};
+        return new MathDisplayBlock(math[1], range, innerRange, 0);
     });
     return mathDisplayBlocks;
 }

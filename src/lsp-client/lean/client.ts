@@ -161,12 +161,12 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
                 v.message === "unexpected token 'QED'; expected term";
         });
         // If we have an unexpected token error we mark the input area as incorrect.
-        if (hasUnexpectedTokenError) return InputAreaStatus.Incomplete;
+        if (hasUnexpectedTokenError) return InputAreaStatus.Incorrect;
 
         // request goals and return conclusion based on them
         const response = await this.requestGoals(this.createGoalsRequestParameters(document, inputArea.end.translate(0, 0)));
 
-        return response?.goals.length ? InputAreaStatus.Incomplete : InputAreaStatus.Proven;
+        return response?.goals.length ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
     }
 
     // Emitters for infoview

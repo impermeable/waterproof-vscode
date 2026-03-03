@@ -1,9 +1,9 @@
-import { ServerStatus } from "@impermeable/waterproof-editor";
 import {
     Position,
     Range,
     VersionedTextDocumentIdentifier,
 } from "vscode-languageserver-types";
+import { ServerStatus } from "../shared";
 
 export interface Hyp<Pp> {
     names: Pp[];

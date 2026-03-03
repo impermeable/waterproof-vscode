@@ -1,7 +1,7 @@
 import { Range } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
-import { CoqFileProgressKind, SimpleProgressInfo } from "@impermeable/waterproof-editor";
+import { CoqFileProgressKind, SimpleProgressInfo } from "../../shared";
 
 export interface FileProgressProcessingInfo {
     /** Range for which the processing info was reported. */

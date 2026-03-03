@@ -2,7 +2,7 @@
 
 ## Overview
 
-Waterproof is a VS Code extension that helps students learn to write mathematical proofs. It provides a rich ProseMirror-based editor for exercise sheets communicates with a Language Server Protocol (LSP) backend for proof checking, diagnostics, and completions.
+Waterproof is a VS Code extension that helps students learn to write mathematical proofs. It provides a rich ProseMirror-based editor for exercise sheets and communicates with a Language Server Protocol (LSP) backend for proof checking, diagnostics, and completions.
 
 The system is composed of four main components:
 
@@ -103,7 +103,7 @@ graph TB
         WP_EXT --- SIDE_PANELS
     end
 
-    subgraph "Rocq Installation (opam)"
+    subgraph "Rocq Installation (opam / installer)"
         direction TB
         COQ_LSP["coq-lsp<br/><small>Language Server</small>"]
         COQ_WP["coq-waterproof<br/><small>Proof automation library<br/>included in local Rocq install</small>"]
@@ -113,7 +113,7 @@ graph TB
         COQ_LSP --- COQ_STDLIB
     end
 
-    subgraph "Lean Installation"
+    subgraph "Lean Installation (elan)"
         direction TB
         LEAN_LSP["lake serve<br/><small>Lean Language Server</small>"]
     end
@@ -176,8 +176,9 @@ Before starting the Lean client, a prelaunch check verifies that `lake --version
 
 The Lean project folder must contain:
 
-- **`lakefile.lean`** or **`lakefile.toml`** — declares project dependencies. Lake pulls required packages from remote Git repositories into the `.lake/packages/` directory. A depedency on the Waterproof Genre is necessary. This provides LSP support
-on markdown-esque files through Verso, as well as a GoalWidget for better goal display.
+- **`lakefile.lean`** or **`lakefile.toml`** — declares project dependencies. Lake pulls required packages from remote Git repositories into the `.lake/packages/` directory. A dependency on the Waterproof Genre is necessary. This provides LSP support
+on markdown-esque files through Verso, as well as a GoalWidget for better goal display. A dependency on Verbose Lean, which provides proof language support,
+is required (unless the exercise sheet is plain Lean).
 - **`lean-toolchain`** — pins the Lean version for the project.
 - **`lake-manifest.json`** — locks dependency versions for reproducible builds.
 

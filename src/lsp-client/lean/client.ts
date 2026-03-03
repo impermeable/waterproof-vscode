@@ -9,8 +9,9 @@ import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
 import { findOccurrences } from "../qedStatus";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
-import { ServerStoppedReason } from "@leanprover/infoview-api";
+import { LeanFileProgressKind, ServerStoppedReason } from "@leanprover/infoview-api";
 import { DidChangeTextDocumentParams, DidCloseTextDocumentParams } from "vscode-languageclient";
+import { MessageType } from "../../../shared";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
@@ -75,6 +76,22 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     protected async onFileProgress(progress: FileProgressParams) {
         if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
             this.computeInputAreaStatus(this.activeDocument);
+
+            const firstProcessing = progress.processing.find(
+                p => p.kind === undefined || p.kind === LeanFileProgressKind.Processing
+            );
+            if (firstProcessing && this.webviewManager) {
+                const { line, character } = firstProcessing.range.start;
+                const from = this.activeDocument.offsetAt(new Position(line, character));
+                const to   = this.activeDocument.offsetAt(new Position(
+                    firstProcessing.range.end.line,
+                    firstProcessing.range.end.character,
+                ));
+                this.webviewManager.postMessage(progress.textDocument.uri, {
+                    type: MessageType.executionInfo,
+                    body: { from, to },
+                });
+            }
         }
 
         super.onFileProgress(progress);

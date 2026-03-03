@@ -6,8 +6,12 @@ import { CoqFileProgressKind, SimpleProgressInfo } from "../../shared";
 export interface FileProgressProcessingInfo {
     /** Range for which the processing info was reported. */
     range: Range;
-    /** Kind of progress that was reported. */
-    kind?: CoqFileProgressKind;
+    /**
+     * Kind of progress that was reported.
+     * Typed as `number` because it is a raw LSP wire value shared between
+     * the Rocq and Lean clients (both use Processing = 1, FatalError = 2).
+     */
+    kind?: number;
 }
 
 export interface FileProgressParams {
@@ -33,6 +37,6 @@ export function convertToSimple(info: FileProgressProcessingInfo): SimpleProgres
             start: { line: r.start.line, character: r.start.character },
             end:   { line: r.end.line,   character: r.end.character   }
         },
-        kind: info.kind
+        kind: info.kind as CoqFileProgressKind | undefined
     }
 }

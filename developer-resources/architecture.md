@@ -53,7 +53,7 @@ graph LR
         WVM --- PROV
     end
 
-    subgraph "LSP (Black Box)"
+    subgraph "LSP"
         direction TB
         COQ_LSP["coq-lsp<br/><small>Rocq Language Server</small>"]
         LEAN_LSP["lake serve<br/><small>Lean Language Server</small>"]

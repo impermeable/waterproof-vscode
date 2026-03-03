@@ -116,9 +116,6 @@ graph TB
     subgraph "Lean Installation"
         direction TB
         LEAN_LSP["lake serve<br/><small>Lean Language Server</small>"]
-        LEAN_TOOLCHAIN["lean-toolchain<br/><small>pins Lean version</small>"]
-
-        LEAN_LSP --- LEAN_TOOLCHAIN
     end
 
     subgraph "Local Folder (Rocq Project)"
@@ -133,10 +130,14 @@ graph TB
         LAKE_MANIFEST["lake-manifest.json<br/><small>version pinning</small>"]
         LAKE_PKGS[".lake/packages/<br/><small>dependencies pulled by Lake</small>"]
         WP_GENRE["Waterproof Genre<br/><small>Verso-based file support<br/>and GoalWidget</small>"]
+        VERBOSE_LEAN["Verbose Lean<br/><small>Proof language support</small>"]
+
+        LEAN_TOOLCHAIN["lean-toolchain<br/><small>pins Lean version</small>"]
 
         LAKE_CFG --- LAKE_PKGS
         LAKE_CFG --- LAKE_MANIFEST
         LAKE_PKGS --- WP_GENRE
+        LAKE_PKGS --- VERBOSE_LEAN
     end
 
     WP_EXT -- "LSP (JSON-RPC / stdio)" --> COQ_LSP
@@ -144,6 +145,7 @@ graph TB
     COQ_LSP -- "reads" --> MV_FILES
     LEAN_LSP -- "reads" --> LEAN_FILES
     LEAN_LSP -- "reads" --> LAKE_CFG
+    LEAN_LSP -- "reads" --> LEAN_TOOLCHAIN
     WP_EXT -- "File I/O" --> MV_FILES
     WP_EXT -- "File I/O" --> LEAN_FILES
 
@@ -164,6 +166,9 @@ For Rocq-based projects, the language server is **coq-lsp**. The extension commu
 
 
 ### Lean Deployment
+
+To run Lean projects, Lean must be installed through `elan`. This provides access
+to the `lake` command, which is used to manage dependencies.
 
 For Lean-based projects, the language server is started via **`lake serve`**. The extension runs `lake serve` as the LSP server process, configured through the `waterproof.lakePath` setting (defaults to `lake` on PATH) and optional `waterproof.lakeArgs` arguments.
 

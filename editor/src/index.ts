@@ -1,8 +1,9 @@
 import { FileFormat, Message, MessageType } from "../../shared";
 import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
-import rocqTactics from "../../completions/tactics.json";
+import waterproofTactics from "../../completions/tactics.json";
 import leanTactics from "../../completions/tacticsLean.json";
+import rocqTactics from "../../completions/tacticsRocq.json"
 import symbols from "../../completions/symbols.json";
 
 // import style sheet and fonts from waterproof-editor
@@ -15,6 +16,7 @@ import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import * as langWp from "@impermeable/codemirror-lang-waterproof";
 import * as langVerbose from "@impermeable/codemirror-lang-verbose";
+import * as langRocq from "@impermeable/codemirror-lang-rocq";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
 import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
@@ -28,13 +30,14 @@ interface VSCodeAPI {
 }
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
-	let formatConf;
+	let formatConf: Pick<WaterproofEditorConfig, 
+		"completions" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" >;
 
 	// Set format-specific configuration
 	switch (format) {
 		case FileFormat.MarkdownV:
 			formatConf = {
-				completions: rocqTactics,
+				completions: waterproofTactics,
 				documentConstructor: (v: string) => markdown.parse(v, {language: "coq"}),
 				toMarkdown: defaultToMarkdown,
 				markdownName: "Markdown",
@@ -51,9 +54,14 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				completions: rocqTactics,
 				documentConstructor: vFileParser,
 				toMarkdown: coqdocToMarkdown,
-				markdownName: "coqdoc",
+				markdownName: "Rocq doc",
 				tagConfiguration: tagConfigurationV,
 				disableMarkdownFeatures: ["code"],
+				languageConfig: {
+					languageSupport: langRocq.rocq(),
+					highlightDark: langRocq.highlight_dark,
+					highlightLight: langRocq.highlight_light
+				}
 			}
 			break;
 		case FileFormat.Lean:

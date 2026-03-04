@@ -77,6 +77,8 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
             this.computeInputAreaStatus(this.activeDocument);
 
+            // --- busy-indicator (Lean edition) ---
+            // Find the first processing range, where we want to add the busy-indicator to.
             const firstProcessing = progress.processing.find(
                 p => p.kind === undefined || p.kind === LeanFileProgressKind.Processing
             );
@@ -87,6 +89,8 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
                     firstProcessing.range.end.line,
                     firstProcessing.range.end.character,
                 ));
+
+                // Send message to add the busy indicator
                 this.webviewManager.postMessage(progress.textDocument.uri, {
                     type: MessageType.executionInfo,
                     body: { from, to },

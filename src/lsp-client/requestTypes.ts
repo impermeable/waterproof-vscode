@@ -1,7 +1,7 @@
 import { Range } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
-import { CoqFileProgressKind, SimpleProgressInfo } from "../../shared";
+import { SimpleProgressInfo } from "../../shared";
 
 export interface FileProgressProcessingInfo {
     /** Range for which the processing info was reported. */
@@ -37,6 +37,6 @@ export function convertToSimple(info: FileProgressProcessingInfo): SimpleProgres
             start: { line: r.start.line, character: r.start.character },
             end:   { line: r.end.line,   character: r.end.character   }
         },
-        kind: info.kind as CoqFileProgressKind | undefined
+        kind: info.kind
     }
 }

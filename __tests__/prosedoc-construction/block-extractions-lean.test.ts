@@ -70,7 +70,7 @@ test("Identify hint blocks (Lean)", () => {
     expect(hintBlocks.length).toBe(1);
 
     expect(typeguards.isHintBlock(hintBlocks[0])).toBe(true);
-    // Note: title assertion removed — see "BUG: Lean parser does not extract hint titles" below.
+    expect(hintBlocks[0].title).toBe("hint-title-test");
     expect(hintBlocks[0].stringContent).toContain("# Test hint");
 });
 
@@ -85,10 +85,11 @@ test("Identify hint blocks (Lean) #2", () => {
     const [block1, block2] = hintBlocks;
 
     expect(typeguards.isHintBlock(block1)).toBe(true);
-    // Note: title assertions removed — see "BUG: Lean parser does not extract hint titles" below.
+    expect(block1.title).toBe("hint-title-test");
     expect(block1.stringContent).toContain("# Test hint");
 
     expect(typeguards.isHintBlock(block2)).toBe(true);
+    expect(block2.title).toBe("hint title 2");
     expect(block2.stringContent).toContain("Test");
 });
 
@@ -191,24 +192,10 @@ test("Parse Lean code blocks #3", () => {
 
 // --- Failing test demonstrating parser bug ---
 
-test("BUG: Lean parser does not extract hint titles", () => {
-    // This test documents a bug in editor/src/document-construction/lean.ts line 169.
-    //
-    // The tokenizer builds a combined regex from named groups:
-    //   (?<Preamble>...)|(?<CodeOpen>...)|...|(?<HintOpen>(?<=\n):::hint "([\s\S]*?)"(?=\n))|...
-    //
-    // When HintOpen matches, Array.from(regexMatch) produces:
-    //   [0] full match
-    //   [1] Preamble (undefined)
-    //   [2] CodeOpen  (undefined)
-    //   [3] CodeClose (undefined)
-    //   [4] InputOpen (undefined)
-    //   [5] HintOpen  (the full :::hint "..." match)
-    //   [6] the inner capture ([\s\S]*?) — THIS IS THE TITLE
-    //   ...
-    //
-    // But the handler reads `token.groups[1]` for the title, which is always
-    // undefined (it points to the Preamble group). It should read groups[6].
+test("Lean parser extracts hint titles", () => {
+    // Regression test for a bug in editor/src/document-construction/lean.ts
+    // where the hint title was read from the wrong capture group index.
+    // See also: "Identify hint blocks (Lean)" tests above.
 
     const document = '# Example\n:::hint "my title"\nSome content\n:::\n';
     const blocks = topLevelBlocksLean(document);
@@ -216,6 +203,5 @@ test("BUG: Lean parser does not extract hint titles", () => {
     const hintBlocks = blocks.filter(b => typeguards.isHintBlock(b));
     expect(hintBlocks.length).toBe(1);
 
-    // This assertion FAILS because of the bug: title is undefined instead of "my title".
     expect(hintBlocks[0].title).toBe("my title");
 });

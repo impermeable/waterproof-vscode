@@ -4,6 +4,7 @@
     "esModuleInterop": true,
     "module": "commonjs",
     "moduleResolution": "node",
+    "target": "ESNext",
     "lib": ["ESNext", "DOM"],
     "noEmit": true,
     "skipLibCheck": true,

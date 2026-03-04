@@ -92,8 +92,6 @@ test("Inner input area with markdown only (Lean) #3", () => {
 
 test("Inner hint blocks (Lean)", () => {
     // Test that hint blocks properly parse inner blocks.
-    // Note: hint title assertion removed — see the dedicated bug test in
-    // block-extractions-lean.test.ts ("BUG: Lean parser does not extract hint titles").
     const document = "# Header\n:::hint \"Show hint\"\n$$`E = mc^2`\nhello\n:::\n";
     const blocks = topLevelBlocksLean(document);
 
@@ -101,6 +99,7 @@ test("Inner hint blocks (Lean)", () => {
     expect(hintBlocks.length).toBe(1);
 
     const [hint] = hintBlocks;
+    expect(hint.title).toBe("Show hint");
     expect(hint.innerBlocks).toBeDefined();
 
     // Inner blocks should contain math and markdown

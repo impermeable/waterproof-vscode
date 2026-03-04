@@ -4,7 +4,7 @@ import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEd
 import waterproofTactics from "../../completions/tactics.json";
 import leanTactics from "../../completions/tacticsLean.json";
 import rocqTactics from "../../completions/tacticsRocq.json"
-import symbols from "../../completions/symbols.json";
+import symbols from "../../completions/symbols+lean.json";
 
 // import style sheet and fonts from waterproof-editor
 import "@impermeable/waterproof-editor/styles.css";

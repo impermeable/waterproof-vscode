@@ -190,8 +190,6 @@ test("Parse Lean code blocks #3", () => {
     expect(codeBlocks[0].innerRange.to).toBe(content.length - "\n```".length);
 });
 
-// --- Failing test demonstrating parser bug ---
-
 test("Lean parser extracts hint titles", () => {
     // Regression test for a bug in editor/src/document-construction/lean.ts
     // where the hint title was read from the wrong capture group index.
@@ -204,4 +202,147 @@ test("Lean parser extracts hint titles", () => {
     expect(hintBlocks.length).toBe(1);
 
     expect(hintBlocks[0].title).toBe("my title");
+});
+
+// --- Multilean directive tests ---
+// The ::::multilean / :::: directives should be skipped (no blocks produced),
+// but all blocks inside should have their ranges reflect their true positions
+// in the original document string.
+// TODO: Update these tests when multilean becomes editable.
+
+test("Empty multilean wrapper produces no content blocks", () => {
+    const document = "\n::::multilean\n\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+    // The multilean open/close markers should be skipped entirely
+    expect(blocks.length).toBe(0);
+});
+
+test("Multilean wrapper with markdown content", () => {
+    // "\n::::multilean\n" occupies positions 0–14, so "# Hello" starts at 15
+    const document = "\n::::multilean\n# Hello\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
+    expect(mdBlocks.length).toBe(1);
+    expect(mdBlocks[0].stringContent).toBe("# Hello");
+    expect(mdBlocks[0].range.from).toBe(15);
+    expect(mdBlocks[0].range.to).toBe(22);
+});
+
+test("Multilean wrapper with a code block", () => {
+    // MultileanOpen "::::multilean\n" at 1–15
+    // CodeOpen "```lean\n" at 15–23, inner content at 23–33, CodeClose "\n```" at 33–37
+    const document = "\n::::multilean\n```lean\ndef x := 1\n```\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const codeBlocks = blocks.filter(b => typeguards.isCodeBlock(b));
+    expect(codeBlocks.length).toBe(1);
+
+    const code = codeBlocks[0];
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(code.stringContent).toBe("def x := 1");
+    expect(code.range.from).toBe(15);
+    expect(code.range.to).toBe(37);
+    expect(code.innerRange.from).toBe(23);
+    expect(code.innerRange.to).toBe(33);
+});
+
+test("Multilean wrapper with an input area", () => {
+    // MultileanOpen at 1–15, InputOpen ":::input\n" at 15–24
+    // Inner content "# Help" at 24–30, Close "\n:::" at 30–34
+    const document = "\n::::multilean\n:::input\n# Help\n:::\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const inputBlocks = blocks.filter(b => typeguards.isInputAreaBlock(b));
+    expect(inputBlocks.length).toBe(1);
+
+    const input = inputBlocks[0];
+    expect(typeguards.isInputAreaBlock(input)).toBe(true);
+    expect(input.stringContent).toContain("# Help");
+    expect(input.range.from).toBe(15);
+    expect(input.range.to).toBe(34);
+    expect(input.innerRange.from).toBe(24);
+    expect(input.innerRange.to).toBe(30);
+});
+
+test("Multilean wrapper with a math display block", () => {
+    // MultileanOpen at 1–15, MathDisplay "$$`\\frac{1}{2}`" at 15–30
+    const document = "\n::::multilean\n$$`\\frac{1}{2}`\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const mathBlocks = blocks.filter(b => typeguards.isMathDisplayBlock(b));
+    expect(mathBlocks.length).toBe(1);
+
+    const math = mathBlocks[0];
+    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+    expect(math.stringContent).toBe("\\frac{1}{2}");
+    expect(math.range.from).toBe(15);
+    expect(math.range.to).toBe(30);
+});
+
+test("Multilean wrapper with a hint block", () => {
+    // MultileanOpen at 1–15, HintOpen at 15–30, content 30–38, Close 38–42
+    const document = '\n::::multilean\n:::hint "title"\nContent\n:::\n::::\n';
+    const blocks = topLevelBlocksLean(document);
+
+    const hintBlocks = blocks.filter(b => typeguards.isHintBlock(b));
+    expect(hintBlocks.length).toBe(1);
+
+    const hint = hintBlocks[0];
+    expect(typeguards.isHintBlock(hint)).toBe(true);
+    expect(hint.title).toBe("title");
+    expect(hint.stringContent).toContain("Content");
+    expect(hint.range.from).toBe(15);
+    expect(hint.range.to).toBe(42);
+});
+
+test("Multilean wrapper with multiple block types", () => {
+    // Markdown, a newline separator, and a code block inside multilean
+    const document = "\n::::multilean\n## Title\n```lean\ndef x := 1\n```\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
+    const codeBlocks = blocks.filter(b => typeguards.isCodeBlock(b));
+
+    expect(mdBlocks.length).toBe(1);
+    expect(codeBlocks.length).toBe(1);
+
+    expect(mdBlocks[0].stringContent).toBe("## Title");
+    expect(mdBlocks[0].range.from).toBe(15);
+
+    expect(codeBlocks[0].stringContent).toBe("def x := 1");
+    // Code block starts after "## Title\n"
+    expect(codeBlocks[0].range.from).toBe(24);
+});
+
+test("Multilean wrapper mimicking WaterproofDocument.lean structure", () => {
+    // Simplified version of the ATC-003 pattern from WaterproofDocument.lean:
+    // preamble-like text, then multilean containing markdown + code + input + code
+    const document =
+        "\n::::multilean\n" +
+        "## ATC - 003\n" +
+        "```lean\nExample\n```\n" +
+        ":::input\n```lean\nFix a\n```\n:::\n" +
+        "```lean\nQED\n```\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
+    const codeBlocks = blocks.filter(b => typeguards.isCodeBlock(b));
+    const inputBlocks = blocks.filter(b => typeguards.isInputAreaBlock(b));
+
+    expect(mdBlocks.length).toBe(1);
+    expect(mdBlocks[0].stringContent).toBe("## ATC - 003");
+
+    expect(codeBlocks.length).toBe(2);
+    expect(codeBlocks[0].stringContent).toBe("Example");
+    expect(codeBlocks[1].stringContent).toBe("QED");
+
+    expect(inputBlocks.length).toBe(1);
+    expect(inputBlocks[0].stringContent).toContain("Fix a");
+
+    // All block positions should be offset by the multilean open tag
+    for (const block of blocks) {
+        expect(block.range.from).toBeGreaterThanOrEqual(15);
+    }
 });

@@ -245,3 +245,70 @@ A list:
     // expect(out).toBe(inputDocumentLean);
     expect(out).toBe(outputDocumentLean);
 })
+
+test("Markdown and Code (Lean)", () => {
+    // Lean equivalent of "Markdown and Code" (Coq)
+    const input = `Test\n\`\`\`lean\nCompute 3 + 3.\n\`\`\``;
+    const blocks = topLevelBlocksLean(input);
+    expect(blocks.length).toBe(3);
+
+    const [md, nl, code] = blocks;
+
+    expect(typeguards.isMarkdownBlock(md)).toBe(true);
+    expect(md.stringContent).toBe("Test");
+    expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 4 });
+    expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 4 });
+
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
+    expect(nl.range).toStrictEqual<BlockRange>({ from: 4, to: 5 });
+
+    expect(typeguards.isCodeBlock(code)).toBe(true);
+    expect(code.stringContent).toBe("Compute 3 + 3.");
+    expect(code.range).toStrictEqual<BlockRange>({ from: 5, to: input.length });
+    expect(code.innerRange).toStrictEqual<BlockRange>({ from: 13, to: input.length - 4 });
+});
+
+test("1 input area with math and code (Lean)", () => {
+    // Lean equivalent of "1 input area with math and code" (Coq)
+    const input = `\n:::input\n\$\$\`a^2 + b^2 = c^2\`\n\`\`\`lean\ndef trivial := True\n\`\`\`\n:::`;
+    const blocks = topLevelBlocksLean(input);
+
+    const inputBlocks = blocks.filter(b => typeguards.isInputAreaBlock(b));
+    expect(inputBlocks.length).toBe(1);
+    const [ia] = inputBlocks;
+
+    expect(typeguards.isInputAreaBlock(ia)).toBe(true);
+    expect(ia.innerBlocks).toBeDefined();
+
+    // Inner blocks should contain math, code (and possibly newlines)
+    const innerMath = ia.innerBlocks!.filter(b => typeguards.isMathDisplayBlock(b));
+    const innerCode = ia.innerBlocks!.filter(b => typeguards.isCodeBlock(b));
+    expect(innerMath.length).toBe(1);
+    expect(innerCode.length).toBe(1);
+
+    expect(innerMath[0].stringContent).toBe("a^2 + b^2 = c^2");
+    expect(innerCode[0].stringContent).toBe("def trivial := True");
+});
+
+test("Markdown and input (Lean)", () => {
+    // Lean equivalent of "Markdown and input" (Coq)
+    const input = `# Header\n:::input\n\`\`\`lean\nGoal False.\n\`\`\`\n\`\`\`lean\nGoal True.\n\`\`\`\n:::`;
+    const blocks = topLevelBlocksLean(input);
+
+    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
+    const inputBlocks = blocks.filter(b => typeguards.isInputAreaBlock(b));
+
+    expect(mdBlocks.length).toBeGreaterThanOrEqual(1);
+    expect(inputBlocks.length).toBe(1);
+
+    expect(mdBlocks[0].stringContent).toBe("# Header");
+
+    const [ia] = inputBlocks;
+    expect(typeguards.isInputAreaBlock(ia)).toBe(true);
+    expect(ia.innerBlocks).toBeDefined();
+
+    const innerCode = ia.innerBlocks!.filter(b => typeguards.isCodeBlock(b));
+    expect(innerCode.length).toBe(2);
+    expect(innerCode[0].stringContent).toBe("Goal False.");
+    expect(innerCode[1].stringContent).toBe("Goal True.");
+});

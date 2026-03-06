@@ -5,7 +5,7 @@ export type SimpleProgressInfo = {
         end: { line: number, character: number },
     };
     /** Kind of progress that was reported. */
-    kind?: CoqFileProgressKind;
+    kind?: FileProgressKind;
 }
 
 export type SimpleProgressParams = {
@@ -13,7 +13,8 @@ export type SimpleProgressParams = {
     progress: SimpleProgressInfo[];
 }
 
-export enum CoqFileProgressKind {
+
+export enum FileProgressKind {
     Processing = 1,
-    FatalError
+    FatalError = 2
 }

@@ -9,9 +9,9 @@ import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
 import { findOccurrences } from "../qedStatus";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
-import { LeanFileProgressKind, ServerStoppedReason } from "@leanprover/infoview-api";
+import { ServerStoppedReason } from "@leanprover/infoview-api";
 import { DidChangeTextDocumentParams, DidCloseTextDocumentParams } from "vscode-languageclient";
-import { MessageType } from "../../../shared";
+import { FileProgressKind, MessageType } from "../../../shared";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
@@ -80,7 +80,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             // --- busy-indicator (Lean edition) ---
             // Find the first processing range, where we want to add the busy-indicator to.
             const firstProcessing = progress.processing.find(
-                p => p.kind === undefined || p.kind === LeanFileProgressKind.Processing
+                p => p.kind === undefined || p.kind === FileProgressKind.Processing
             );
             if (firstProcessing && this.webviewManager) {
                 const { line, character } = firstProcessing.range.start;

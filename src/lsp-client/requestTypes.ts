@@ -1,17 +1,13 @@
 import { Range } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
-import { SimpleProgressInfo } from "../../shared";
+import { FileProgressKind, SimpleProgressInfo } from "../../shared";
 
 export interface FileProgressProcessingInfo {
     /** Range for which the processing info was reported. */
     range: Range;
-    /**
-     * Kind of progress that was reported.
-     * Typed as `number` because it is a raw LSP wire value shared between
-     * the Rocq and Lean clients (both use Processing = 1, FatalError = 2).
-     */
-    kind?: number;
+    /** Kind of progress that was reported. */
+    kind?: FileProgressKind;
 }
 
 export interface FileProgressParams {
@@ -26,7 +22,7 @@ export interface FileProgressParams {
 }
 
 /**
- * Converts `CoqFileProgressProcessingInfo` into `SimpleProgressInfo`. This is necessary(?) because
+ * Converts `FileProgressProcessingInfo` into `SimpleProgressInfo`. This is necessary(?) because
  * `vscode.Range.start` (and `end`) is secretly a function, which isn't retained when sent as a
  * message.
  */

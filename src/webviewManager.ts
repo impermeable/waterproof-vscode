@@ -112,7 +112,7 @@ export class WebviewManager extends EventEmitter {
         webview.on(WebviewEvents.message, (msg: Message) => {
             this.onToolsMessage(name, msg);
         });
-
+        
         webview.on(WebviewEvents.change, (state) => {
             if (state == WebviewState.focus && webview.supportInsert) this._active.insert(name);
             // Emit generic tool state change event for panels
@@ -274,8 +274,8 @@ export class WebviewManager extends EventEmitter {
                 }
             case MessageType.command:
                 // We intercept the `command` type message here, since it can be fired from within the editor (rmb -> Help)
-                this.onToolsMessage("help", { type: MessageType.command, body: { command: "createHelp" } });
-                setTimeout(() => this.onToolsMessage("help", { type: MessageType.command, body: { command: "Help." } }), 250);
+                this.onToolsMessage("goals", {type: MessageType.command, body: { command: "createHelp" }});
+                setTimeout(() => this.onToolsMessage("goals", {type: MessageType.command, body: { command: "Help." }}), 250);
                 break;
             case MessageType.viewportHint:
                 wpl.debug(`[WEBVIEW] ViewportHint message received: start=${message.body.start}, end=${message.body.end}`);

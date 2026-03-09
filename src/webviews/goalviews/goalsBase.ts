@@ -13,8 +13,8 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
 
     protected config: LspClientConfig;
 
-    constructor(extensionUri: Uri, config: LspClientConfig, name: string) {
-        super(extensionUri,name);
+    constructor(extensionUri: Uri, config: LspClientConfig, name: string, supportInsert: boolean = false) {
+        super(extensionUri, name, supportInsert);
         this.config = config;
     }
 
@@ -23,7 +23,7 @@ export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
     }
 
     //sends message for renderGoals
-    async updateGoals(client: RocqLspClient): Promise<void> {
+    async updateGoals(client: RocqLspClient) : Promise<void> {
         let goals: RocqGoalAnswer<PpString>;
         try {
             goals = await this.getGoals(client);

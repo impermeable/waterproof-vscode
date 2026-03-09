@@ -536,7 +536,7 @@
     "@codemirror/commands": "6.6.2",
     "@codemirror/language": "6.12.2",
     "@codemirror/lint": "6.9.2",
-    "@codemirror/state": "~6.5.2",
+    "@codemirror/state": "6.5.3",
     "@codemirror/view": "6.38.8",
     "@impermeable/codemirror-lang-rocq": "github:impermeable/codemirror-lang-rocq",
     "@impermeable/codemirror-lang-verbose": "github:impermeable/codemirror-lang-verbose",

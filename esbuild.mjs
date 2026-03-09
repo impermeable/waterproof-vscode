@@ -134,7 +134,6 @@ async function viewBuild(file) {
 viewBuild("./views/goals/index.tsx");
 viewBuild("./views/execute/index.tsx");
 viewBuild("./views/debug/index.tsx");
-viewBuild("./views/help/index.tsx");
 viewBuild("./views/search/index.tsx");
 viewBuild("./views/symbols/index.tsx");
 viewBuild("./views/tactics/index.tsx");

@@ -83,7 +83,7 @@ graph LR
 
 5. **Goal display**: When the cursor moves, the editor sends a `cursorChange` message. The `CompositeClient` delegates to the active client, which queries its language server for goals at that position. For Rocq, goals are returned as structured `PpString` objects; for Lean, goals are returned as plain strings via the `$/lean/plainGoal` request. Results are rendered in the Goals side panel.
 
-6. **Input area status**: Both clients determine proof status within input areas. In Rocq files, input areas are delimited by `<input-area>` tags. In Lean files, input areas use `:::input` / `:::` delimiters. The `LeanLspClient` checks proof status by requesting goals at the end of each input area; an empty goals list indicates a correct proof.
+6. **Input area status**: Both clients determine proof status within input areas. In `.mv` files, input areas are delimited by `<input-area>` tags. In Lean files, input areas use `:::input` / `:::` delimiters. The `LeanLspClient` checks proof status by requesting goals at the end of each input area; an empty goals list indicates a correct proof.
 
 7. **Commands**: Help commands originate from side panels, flow through the `WebviewManager`, and are executed via the LSP client. Note: the Lean client does not currently support viewport hints or arbitrary command execution.
 
@@ -160,8 +160,8 @@ graph TB
 
 For Rocq-based projects, the language server is **coq-lsp**. The extension communicates with it over JSON-RPC. The required libraries are part of the local Rocq/opam installation:
 
-- **coq-lsp** is installed via opam (e.g. `opam install coq-lsp.0.2.4+9.0`).
-- **coq-waterproof** is a Rocq plugin that provides proof automation tactics tailored for Waterproof. It is installed into the same opam switch (`opam install coq-waterproof`), making it available to coq-lsp at runtime.
+- **coq-lsp** is installed via opam
+- **coq-waterproof** is a Rocq plugin that provides proof automation tactics tailored for Waterproof. It is installed into the same opam switch, making it available to coq-lsp at runtime.
 - On Windows, a bundled installer can set up all Rocq dependencies in a self-contained folder.
 
 

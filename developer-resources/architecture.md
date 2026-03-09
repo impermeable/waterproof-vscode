@@ -13,7 +13,7 @@ The system is composed of four main components:
 3. **VS Code** — The host application providing the extension API, webview infrastructure, text document model, command palette, and UI chrome (status bar, side panels, themes).
 
 4. **LSP (Language Servers)** — Two external language server processes run concurrently (note that students will generally use just one in practice):
-   - **coq-lsp** for Rocq (`.mv` and `.v` files) — provides proof checking, diagnostics, goal information, completions, and command execution.
+   - **rocq-lsp** for Rocq (`.mv` and `.v` files) — provides proof checking, diagnostics, goal information, completions, and command execution.
    - **Lean Language Server** via `lake serve` for Lean (`.lean` files) — provides proof checking, diagnostics, and goal information.
 
 ## Component Diagram
@@ -105,12 +105,12 @@ graph TB
 
     subgraph "Rocq Installation (opam / installer)"
         direction TB
-        COQ_LSP["coq-lsp<br/><small>Language Server</small>"]
+        ROCQ_LSP["rocq-lsp<br/><small>Language Server</small>"]
         COQ_WP["coq-waterproof<br/><small>Proof automation library<br/>included in local Rocq install</small>"]
         COQ_STDLIB["Rocq Standard Library"]
 
-        COQ_LSP --- COQ_WP
-        COQ_LSP --- COQ_STDLIB
+        ROCQ_LSP --- COQ_WP
+        ROCQ_LSP --- COQ_STDLIB
     end
 
     subgraph "Lean Installation (elan)"
@@ -142,7 +142,7 @@ graph TB
 
     WP_EXT -- "LSP (JSON-RPC / stdio)" --> COQ_LSP
     WP_EXT -- "LSP (JSON-RPC / stdio)" --> LEAN_LSP
-    COQ_LSP -- "reads" --> MV_FILES
+    ROCQ_LSP -- "reads" --> MV_FILES
     LEAN_LSP -- "reads" --> LEAN_FILES
     LEAN_LSP -- "reads" --> LAKE_CFG
     LEAN_LSP -- "reads" --> LEAN_TOOLCHAIN
@@ -158,7 +158,7 @@ graph TB
 
 ### Rocq Deployment
 
-For Rocq-based projects, the language server is **coq-lsp**. The extension communicates with it over JSON-RPC. The required libraries are part of the local Rocq/opam installation:
+For Rocq-based projects, the language server is **rocq-lsp**. The extension communicates with it over JSON-RPC. The required libraries are part of the local Rocq/opam installation:
 
 - **coq-lsp** is installed via opam (e.g. `opam install coq-lsp.0.2.4+9.0`).
 - **coq-waterproof** is a Rocq plugin that provides proof automation tactics tailored for Waterproof. It is installed into the same opam switch (`opam install coq-waterproof`), making it available to coq-lsp at runtime.

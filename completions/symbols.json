@@ -576,6 +576,12 @@
         "symbolPanelCategory": 2
     },
     {
+        "label": "\\subproof",
+        "type": "symbol",
+        "apply": "·",
+        "symbolPanelCategory": 2
+    },
+    {
         "label": "\\^1",
         "type": "symbol",
         "apply": "¹",

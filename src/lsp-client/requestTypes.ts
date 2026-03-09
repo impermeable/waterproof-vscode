@@ -1,13 +1,13 @@
 import { Range } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 
-import { CoqFileProgressKind, SimpleProgressInfo } from "../../shared";
+import { FileProgressKind, SimpleProgressInfo } from "../../shared";
 
 export interface FileProgressProcessingInfo {
     /** Range for which the processing info was reported. */
     range: Range;
     /** Kind of progress that was reported. */
-    kind?: CoqFileProgressKind;
+    kind?: FileProgressKind;
 }
 
 export interface FileProgressParams {
@@ -22,7 +22,7 @@ export interface FileProgressParams {
 }
 
 /**
- * Converts `CoqFileProgressProcessingInfo` into `SimpleProgressInfo`. This is necessary(?) because
+ * Converts `FileProgressProcessingInfo` into `SimpleProgressInfo`. This is necessary(?) because
  * `vscode.Range.start` (and `end`) is secretly a function, which isn't retained when sent as a
  * message.
  */

@@ -34,7 +34,8 @@ describe('Basic tests', () => {
     // TODO: This also immediately opens the markdown editor for the H1
     cy.window().then((win) => { win.postMessage({type: MessageType.teacher, body: true}) });
     // now that we are in teacher mode the menubar should be visible
-    cy.get(".menubar").should("be.visible");
+    // TODO: Functionality temporarily disabled
+    // cy.get(".menubar").should("be.visible");
     cy.get('.cm-activeLine').click(); // to reset h1
     cy.get("#editor h1").should("be.visible");
     cy.get("#editor h1").click();

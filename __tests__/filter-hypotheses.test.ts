@@ -14,10 +14,11 @@ afterEach(() => {
 
 // Mocks the function that returns visibilityOfHypotheses setting to return the wanted value
 function setMockVisibility(visibility: string) {
-    jest.spyOn(WaterproofConfigHelper, 'get').mockImplementation(<T extends WaterproofSetting>(setting: T) => {
+    jest.spyOn(WaterproofConfigHelper, 'get').mockImplementation((setting: WaterproofSetting) => {
         if (setting == WaterproofSetting.VisibilityOfHypotheses) {
             return visibility
         }
+        return 'none'
     })
 }
 

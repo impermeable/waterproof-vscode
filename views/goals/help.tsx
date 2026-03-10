@@ -1,11 +1,11 @@
 import { VSCodeButton, VSCodeDivider } from '@vscode/webview-ui-toolkit/react';
 import React from "react";
-import { GoalAnswer, PpString } from "../../lib/types";
+import { PpString, RocqGoalAnswer } from "../../lib/types";
 import "../styles/execute.css";
 import { Messages } from '../goals/Messages';
 
 type HelpParams = {
-  helpInfo?: string[] | GoalAnswer<PpString>;
+  helpInfo?: string[] | RocqGoalAnswer<PpString>;
   isLoading: boolean;
   onRequestHelp: () => void;
 };

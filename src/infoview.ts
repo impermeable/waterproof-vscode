@@ -149,33 +149,37 @@ export class InfoProvider implements Disposable {
     }
 
     /** Filters a list of hypotheses from an rpc response */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static filterHypothesesList(hypotheses: any[]): any[] {
+        const hyps = []
         switch (WaterproofConfigHelper.get(WaterproofSetting.VisibilityOfHypotheses)) {
             // Keep all hypotheses
             case 'all':
-                return hypotheses
+                hyps.push(...hypotheses)
+                break;
             // Remove the hypotheses which type is simple 'text', in contrast to compound type which are arrays.
             case 'limited':
-                let filteredHyps = []
-                for (let hyp of hypotheses) {
+                for (const hyp of hypotheses) {
                     if ( !( (hyp.type?.tag?.[1] !== undefined) && ('text' in hyp.type.tag[1]) ) ) {
-                        filteredHyps.push(hyp)
+                        hyps.push(hyp)
                     }
                 }
-                return filteredHyps
+                break;
             // Remove all hypotheses
             case 'none':
-                return []
+                break;
         }
+        return hyps
     }
 
     /** Filters hypotheses in an rpc response depending on visibility setting */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static filterHypotheses(response: any, params: any): any {
         if (response !== null) {
             switch (params.method) {
                 // Handling rpc requrest for all the goals
                 case 'Lean.Widget.getInteractiveGoals':
-                    for (let goal of response.goals) {
+                    for (const goal of response.goals) {
                         goal.hyps = this.filterHypothesesList(goal.hyps)
                     }
                     break;

@@ -1,7 +1,5 @@
 import { InfoProvider } from '../src/infoview';
 import { WaterproofConfigHelper, WaterproofSetting } from '../src/helpers';
-import { LeanLspClient } from '../src/lsp-client/lean';
-import { GoalsPanel } from '../src/webviews/goalviews/goalsPanel';
 
 /*
     This test file aims at testing the filtering lean infoview hyptoheses functionality for different visibility settings.
@@ -24,34 +22,34 @@ function setMockVisibility(visibility: string) {
 }
 
 // Simplified version of a hypotheses list from an rpc response. Has two simple hypotheses with text (a, e), two "compound" hypotheses (b, c), and one ill formatted hypothesis d.
-let hyps1 =
+const hyps1 =
     [{ type: { tag: [{}, { text: 'P' }] }, trace: 'a'},
      { type: { tag: [{}, { append: [{ test: 'List' }, {}] }] }, trace: 'b' },
      { type: { tag: [{}, { append: [] }] }, trace: 'c' },
      { something: 'Strange format hypothesis', trace: 'd' },
      { type: { tag: [{}, { text: 'Q' }] }, trace: 'e'}]
 
-let goal1 = { hyps: hyps1 }
+const goal1 = { hyps: hyps1 }
 
-let hyps2 =
+const hyps2 =
     [{ type: { tag: [{}, { text: 'A' }] }, trace: 'f' },
      { type: { tag: [{}, { append: [{ text: 'Complicated' }, {}] }] }, trace: 'g' }]
 
-let goal2 = { hyps: hyps2 }
+const goal2 = { hyps: hyps2 }
 
-let response = { goals: [goal1, goal2] }
+const response = { goals: [goal1, goal2] }
 
 
 describe('Testing InfoProvider.filterHypothesesList() function', () => {
     it('should not change the list of hypotheses when visibility is "all"', () => {
         setMockVisibility('all')
-        let result = InfoProvider.filterHypothesesList(hyps1.slice())
+        const result = InfoProvider.filterHypothesesList(hyps1.slice())
         expect(result).toEqual(hyps1)
     })
 
     it('should remove hypotheses that have text field in .type.tag[1] (simple hypotheses) when visibility is "limited"', () => {
         setMockVisibility('limited')
-        let result = InfoProvider.filterHypothesesList(hyps1.slice())
+        const result = InfoProvider.filterHypothesesList(hyps1.slice())
         expect(result).toHaveLength(3)
         expect(result[0].trace).toBe('b')
         expect(result[1].trace).toBe('c')
@@ -60,24 +58,24 @@ describe('Testing InfoProvider.filterHypothesesList() function', () => {
 
     it('should remove all hypotheses when visibility is "none"', () => {
         setMockVisibility('none')
-        let result = InfoProvider.filterHypothesesList(hyps1.slice())
+        const result = InfoProvider.filterHypothesesList(hyps1.slice())
         expect(result).toHaveLength(0)
     })
 })
 
 
 describe('Testing InfoProvider.filterHypotheses() function when rpc method is getInteractiveGoals', () => {
-    let params1 = { method : 'Lean.Widget.getInteractiveGoals' }
+    const params1 = { method : 'Lean.Widget.getInteractiveGoals' }
 
     it('should not change the response when visibility is "all"', () => {
         setMockVisibility('all')
-        let result = InfoProvider.filterHypotheses(structuredClone(response), params1)
+        const result = InfoProvider.filterHypotheses(structuredClone(response), params1)
         expect(result).toEqual(response)
     })
 
     it('should remove hypotheses that have text field in .type.tag[1] (simple hypotheses) from all goals when visibility is "limited"', () => {
         setMockVisibility('limited')
-        let result = InfoProvider.filterHypotheses(structuredClone(response), params1)
+        const result = InfoProvider.filterHypotheses(structuredClone(response), params1)
         expect(result.goals[0].hyps).toHaveLength(3)
         expect(result.goals[1].hyps).toHaveLength(1)
         expect(result.goals[0].hyps[0].trace).toBe('b')
@@ -88,7 +86,7 @@ describe('Testing InfoProvider.filterHypotheses() function when rpc method is ge
 
     it('should remove all hypotheses from all goals when visibility is "none"', () => {
         setMockVisibility('none')
-        let result = InfoProvider.filterHypotheses(structuredClone(response), params1)
+        const result = InfoProvider.filterHypotheses(structuredClone(response), params1)
         expect(result.goals[0].hyps).toHaveLength(0)
         expect(result.goals[1].hyps).toHaveLength(0)
     })
@@ -96,17 +94,17 @@ describe('Testing InfoProvider.filterHypotheses() function when rpc method is ge
 
 
 describe('Testing InfoProvider.filterHypotheses() function when rpc method is getInteractiveTermGoal', () => {
-    let params2 = { method : 'Lean.Widget.getInteractiveTermGoal' }
+    const params2 = { method : 'Lean.Widget.getInteractiveTermGoal' }
 
     it('should not change the response when visibility is "all"', () => {
         setMockVisibility('all')
-        let result = InfoProvider.filterHypotheses(structuredClone(goal1), params2)
+        const result = InfoProvider.filterHypotheses(structuredClone(goal1), params2)
         expect(result).toEqual(goal1)
     })
 
     it('should remove hypotheses that have text field in .type.tag[1] (simple hypotheses) when visibility is "limited"', () => {
         setMockVisibility('limited')
-        let result = InfoProvider.filterHypotheses(structuredClone(goal1), params2)
+        const result = InfoProvider.filterHypotheses(structuredClone(goal1), params2)
         expect(result.hyps).toHaveLength(3)
         expect(result.hyps[0].trace).toBe('b')
         expect(result.hyps[1].trace).toBe('c')
@@ -115,7 +113,7 @@ describe('Testing InfoProvider.filterHypotheses() function when rpc method is ge
 
     it('should remove all hypotheses from the goal when visibility is "none"', () => {
         setMockVisibility('none')
-        let result = InfoProvider.filterHypotheses(structuredClone(goal1), params2)
+        const result = InfoProvider.filterHypotheses(structuredClone(goal1), params2)
       expect(result.hyps).toHaveLength(0)
     })
 })

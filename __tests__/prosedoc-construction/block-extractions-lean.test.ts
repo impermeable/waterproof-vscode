@@ -1,4 +1,4 @@
-import { BlockRange, typeguards } from "@impermeable/waterproof-editor";
+import { typeguards } from "@impermeable/waterproof-editor";
 import { topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
 
 /**

@@ -34,5 +34,4 @@ export class GoalsPanel extends GoalsBase implements IExecutor {
             this.postMessage({ type: MessageType.setData, body: this.data })
         }
     }
-
 }

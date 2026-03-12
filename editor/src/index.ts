@@ -31,7 +31,7 @@ interface VSCodeAPI {
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 	let formatConf: Pick<WaterproofEditorConfig, 
-		"completions" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" >;
+		"completions" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" | "disableMarkdownFeatures" | "serializer" >;
 
 	// Set format-specific configuration
 	switch (format) {

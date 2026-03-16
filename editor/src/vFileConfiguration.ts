@@ -26,5 +26,9 @@ export const tagConfigurationV: TagConfiguration = {
 	math: {
 		openTag: "$", closeTag: "$",
 		openRequiresNewline: false, closeRequiresNewline: false,
-	}
+	},
+	codeGroup: {
+		openTag: "", closeTag: "",
+		openRequiresNewline: false, closeRequiresNewline: false,
+	},
 }

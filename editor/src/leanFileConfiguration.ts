@@ -26,5 +26,9 @@ export const tagConfigurationLean: TagConfiguration = {
 	math: {
 		openTag: "$$`", closeTag: "`",
 		openRequiresNewline: false, closeRequiresNewline: false,
-	}
+	},
+	codeGroup: {
+		openTag: "::::multilean\n", closeTag: "\n::::",
+		openRequiresNewline: true, closeRequiresNewline: true,
+	},
 }

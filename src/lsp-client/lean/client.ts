@@ -301,16 +301,31 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
     private static mapLspTokenType(lspType: string): SemanticTokenType | undefined {
         switch (lspType) {
-            case "keyword":
-                return SemanticTokenType.Keyword;
-            case "variable":
-                return SemanticTokenType.Variable;
-            case "property":
-                return SemanticTokenType.Property;
-            case "function":
-                return SemanticTokenType.Function;
-            default:
-                return undefined;
+            case "keyword":       return SemanticTokenType.Keyword;
+            case "variable":      return SemanticTokenType.Variable;
+            case "property":      return SemanticTokenType.Property;
+            case "function":      return SemanticTokenType.Function;
+            case "namespace":     return SemanticTokenType.Namespace;
+            case "type":          return SemanticTokenType.Type;
+            case "class":         return SemanticTokenType.Class;
+            case "enum":          return SemanticTokenType.Enum;
+            case "interface":     return SemanticTokenType.Interface;
+            case "struct":        return SemanticTokenType.Struct;
+            case "typeParameter": return SemanticTokenType.TypeParameter;
+            case "parameter":     return SemanticTokenType.Parameter;
+            case "enumMember":    return SemanticTokenType.EnumMember;
+            case "event":         return SemanticTokenType.Event;
+            case "method":        return SemanticTokenType.Method;
+            case "macro":         return SemanticTokenType.Macro;
+            case "modifier":      return SemanticTokenType.Modifier;
+            case "comment":       return SemanticTokenType.Comment;
+            case "string":        return SemanticTokenType.String;
+            case "number":        return SemanticTokenType.Number;
+            case "regexp":        return SemanticTokenType.Regexp;
+            case "operator":      return SemanticTokenType.Operator;
+            case "decorator":     return SemanticTokenType.Decorator;
+            case "leanSorryLike": return SemanticTokenType.LeanSorryLike;
+            default:              return undefined;
         }
     }
 }

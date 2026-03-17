@@ -42,6 +42,9 @@
   --wp-notificationsForeground: var(--vscode-notifications-foreground);
   --wp-quickInputBackground: var(--vscode-quickInput-background);
   --wp-quickInputForeground: var(--vscode-quickInput-foreground);
+  /* TODO: remove after using the actual theme */
+  --wp-terminalAnsiBlue: var(--vscode-terminal-ansiBlue);
+  --wp-terminalAnsiCyan: var(--vscode-terminal-ansiCyan);
   --wp-terminalAnsiGreen: var(--vscode-terminal-ansiGreen);
   --wp-terminalAnsiRed: var(--vscode-terminal-ansiRed);
   --wp-terminalAnsiYellow: var(--vscode-terminal-ansiYellow);

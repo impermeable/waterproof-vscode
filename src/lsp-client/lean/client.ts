@@ -199,12 +199,13 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         const goalsParams = this.createGoalsRequestParameters(document, goalsPosition);
         const response = await this.requestGoals(goalsParams);
 
-        // It might seem like you can remove this check, since it won't give a type error
-        // when you do so, but doing so would break everything.
+        /** It might seem like you can remove this check, since it won't give a type error
+        * when you do so, but doing so would break everything.
+        * this happens because {@link leanGoalRequestType} is typed wrong. 
+        */
         if (!response) {
             return InputAreaStatus.Incorrect;
         }
-
         
         const status = response.goals.length > 0 ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
         return status;

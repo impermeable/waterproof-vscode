@@ -105,6 +105,8 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
                     type: MessageType.executionInfo,
                     body: { from, to },
                 });
+            } else {
+                this.isBusy = false;
             }
             this.computeInputAreaStatus(this.activeDocument);
         }

@@ -1,4 +1,4 @@
-import { Block, BlockRange, CodeBlock, CodeGroupBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
+import { Block, BlockRange, CodeBlock, ContainerBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
 
 enum Kind {
     Text,
@@ -196,7 +196,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         const range = { from: token.range.from, to: head.range.to };
         const innerRange = { from: token.range.to, to: head.range.from };
         const content = doc.substring(innerRange.from, innerRange.to);
-        blocks.push(new CodeGroupBlock(content, range, innerRange, token.line, innerBlocks));
+        blocks.push(new ContainerBlock(content, "multilean", range, innerRange, token.line, innerBlocks));
         return head.next;
     } else {
         throw Error(`Unexpected token ${token.kind}`);

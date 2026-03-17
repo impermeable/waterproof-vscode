@@ -27,8 +27,9 @@ export const tagConfigurationLean: TagConfiguration = {
 		openTag: "$$`", closeTag: "`",
 		openRequiresNewline: false, closeRequiresNewline: false,
 	},
-	codeGroup: {
-		openTag: "::::multilean\n", closeTag: "\n::::",
+	container: {
+		openTag: (name: string) => `::::${name}\n`,
+		closeTag: (_name: string) => "\n::::",
 		openRequiresNewline: true, closeRequiresNewline: true,
 	},
 }

@@ -185,7 +185,7 @@ test("Parse top level blocks (Lean)", () => {
     const blocks = topLevelBlocksLean(inputDocumentLean);
     expect(blocks.length).toBe(8);
 
-    const [preamble, md1, nl1, codeGroup, nl2, md2, math, md3] = blocks;
+    const [preamble, md1, nl1, container, nl2, md2, math, md3] = blocks;
 
     expect(typeguards.isHintBlock(preamble)).toBe(true);
     expect(preamble.stringContent).toBe("import Some.Library\n#doc (Genre) \"Title\" =>\n");
@@ -195,9 +195,9 @@ test("Parse top level blocks (Lean)", () => {
 
     expect(typeguards.isNewlineBlock(nl1)).toBe(true);
 
-    expect(typeguards.isCodeGroupBlock(codeGroup)).toBe(true);
-    expect(codeGroup.innerBlocks!.length).toBe(3);
-    const [innerCode, innerNl, innerInput] = codeGroup.innerBlocks!;
+    expect(typeguards.isContainerBlock(container)).toBe(true);
+    expect(container.innerBlocks!.length).toBe(3);
+    const [innerCode, innerNl, innerInput] = container.innerBlocks!;
     expect(typeguards.isCodeBlock(innerCode)).toBe(true);
     expect(innerCode.stringContent).toBe("def fortyTwo :=\n  30 +");
     expect(typeguards.isNewlineBlock(innerNl)).toBe(true);

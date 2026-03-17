@@ -206,30 +206,30 @@ test("Lean parser extracts hint titles", () => {
 });
 
 // --- Multilean directive tests ---
-// The ::::multilean / :::: directives produce a CodeGroupBlock wrapping the
+// The ::::multilean / :::: directives produce a ContainerBlock wrapping the
 // inner blocks. Blocks inside multilean have their ranges reflecting their true
 // positions in the original document string.
 
-test("Empty multilean wrapper produces a CodeGroupBlock with no inner blocks", () => {
+test("Empty multilean wrapper produces a ContainerBlock with no inner blocks", () => {
     const document = "\n::::multilean\n\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     expect(cg.innerBlocks.length).toBe(0);
 });
 
-test("Multilean wrapper produces a CodeGroupBlock at top level", () => {
+test("Multilean wrapper produces a ContainerBlock at top level", () => {
     const document = "\n::::multilean\n# Hello\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
-    expect(typeguards.isCodeGroupBlock(cg)).toBe(true);
+    const cg = containerBlocks[0];
+    expect(typeguards.isContainerBlock(cg)).toBe(true);
     // The inner block should be the markdown
     const innerMd = cg.innerBlocks.filter(b => typeguards.isMarkdownBlock(b));
     expect(innerMd.length).toBe(1);
@@ -238,14 +238,14 @@ test("Multilean wrapper produces a CodeGroupBlock at top level", () => {
     expect(innerMd[0].range.to).toBe(22);
 });
 
-test("Multilean CodeGroupBlock range and innerRange are correct", () => {
+test("Multilean ContainerBlock range and innerRange are correct", () => {
     // MultileanOpen "::::multilean\n" starts at 1 (after leading \n), length 14 → {from:1, to:15}
     // MultileanClose "\n::::" at position 22, length 5 → {from:22, to:27}
-    // So CodeGroupBlock range = {from:1, to:27}, innerRange = {from:15, to:22}
+    // So ContainerBlock range = {from:1, to:27}, innerRange = {from:15, to:22}
     const document = "\n::::multilean\n# Hello\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const cg = blocks.find(b => typeguards.isCodeGroupBlock(b))!;
+    const cg = blocks.find(b => typeguards.isContainerBlock(b))!;
     expect(cg.range.from).toBe(1);
     expect(cg.range.to).toBe(27);
     expect(cg.innerRange.from).toBe(15);
@@ -258,10 +258,10 @@ test("Multilean wrapper with a code block", () => {
     const document = "\n::::multilean\n```lean\ndef x := 1\n```\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
     expect(innerCode.length).toBe(1);
 
@@ -279,10 +279,10 @@ test("Multilean wrapper with an input area", () => {
     const document = "\n::::multilean\n:::input\n# Help\n:::\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     const innerInput = cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b));
     expect(innerInput.length).toBe(1);
 
@@ -300,10 +300,10 @@ test("Multilean wrapper with a math display block", () => {
     const document = "\n::::multilean\n$$`\\frac{1}{2}`\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     const innerMath = cg.innerBlocks.filter(b => typeguards.isMathDisplayBlock(b));
     expect(innerMath.length).toBe(1);
 
@@ -317,10 +317,10 @@ test("Multilean wrapper with a hint block", () => {
     const document = '\n::::multilean\n:::hint "title"\nContent\n:::\n::::\n';
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     const innerHint = cg.innerBlocks.filter(b => typeguards.isHintBlock(b));
     expect(innerHint.length).toBe(1);
 
@@ -335,10 +335,10 @@ test("Multilean wrapper with multiple block types", () => {
     const document = "\n::::multilean\n## Title\n```lean\ndef x := 1\n```\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     const innerMd = cg.innerBlocks.filter(b => typeguards.isMarkdownBlock(b));
     const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
 
@@ -365,10 +365,10 @@ test("Multilean wrapper mimicking WaterproofDocument.lean structure", () => {
         "::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     const innerMd = cg.innerBlocks.filter(b => typeguards.isMarkdownBlock(b));
     const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
     const innerInput = cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b));
@@ -402,10 +402,10 @@ test("Typical exercise pattern: code + input + code inside multilean", () => {
         "::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
     const innerInput = cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b));
     const innerNewlines = cg.innerBlocks.filter(b => typeguards.isNewlineBlock(b));
@@ -431,8 +431,8 @@ test("Exercise pattern: code before input only (no trailing code block)", () => 
         "::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const cg = blocks.find(b => typeguards.isCodeGroupBlock(b))!;
-    expect(typeguards.isCodeGroupBlock(cg)).toBe(true);
+    const cg = blocks.find(b => typeguards.isContainerBlock(b))!;
+    expect(typeguards.isContainerBlock(cg)).toBe(true);
 
     const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
     const innerInput = cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b));
@@ -443,16 +443,16 @@ test("Exercise pattern: code before input only (no trailing code block)", () => 
     expect(innerInput[0].innerBlocks.filter(b => typeguards.isCodeBlock(b))[0].stringContent).toBe("  trivial");
 });
 
-test("Two consecutive multilean blocks produce two CodeGroupBlocks", () => {
+test("Two consecutive multilean blocks produce two ContainerBlocks", () => {
     const document =
         "\n::::multilean\n```lean\nblock1\n```\n::::\n" +
         "::::multilean\n```lean\nblock2\n```\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
-    expect(codeGroupBlocks.length).toBe(2);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(2);
 
-    const [cg1, cg2] = codeGroupBlocks;
+    const [cg1, cg2] = containerBlocks;
     const code1 = cg1.innerBlocks.filter(b => typeguards.isCodeBlock(b));
     const code2 = cg2.innerBlocks.filter(b => typeguards.isCodeBlock(b));
 
@@ -472,13 +472,13 @@ test("Content before and after multilean block", () => {
     const blocks = topLevelBlocksLean(document);
 
     const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
-    const codeGroupBlocks = blocks.filter(b => typeguards.isCodeGroupBlock(b));
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
 
-    expect(codeGroupBlocks.length).toBe(1);
+    expect(containerBlocks.length).toBe(1);
     expect(mdBlocks.length).toBeGreaterThanOrEqual(1);
     expect(mdBlocks[0].stringContent).toContain("# Introduction");
 
-    const cg = codeGroupBlocks[0];
+    const cg = containerBlocks[0];
     expect(cg.innerBlocks.filter(b => typeguards.isCodeBlock(b)).length).toBe(2);
     expect(cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b)).length).toBe(1);
 
@@ -487,12 +487,12 @@ test("Content before and after multilean block", () => {
     expect(lastMd.stringContent).toContain("## Conclusion");
 });
 
-test("CodeGroupBlock stringContent matches the inner document slice", () => {
+test("ContainerBlock stringContent matches the inner document slice", () => {
     // stringContent = doc.substring(innerRange.from, innerRange.to)
     const document = "\n::::multilean\n```lean\ndef x := 1\n```\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const cg = blocks.find(b => typeguards.isCodeGroupBlock(b))!;
+    const cg = blocks.find(b => typeguards.isContainerBlock(b))!;
     // innerRange excludes the ::::multilean\n and \n:::: tags
     expect(cg.stringContent).toBe("```lean\ndef x := 1\n```");
     expect(document.substring(cg.innerRange.from, cg.innerRange.to)).toBe(cg.stringContent);

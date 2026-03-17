@@ -51,10 +51,10 @@ export class LeanSerializer extends DocumentSerializer {
         return this.tagSerializer.serializeMath(mathNode);
     }
 
-    serializeCodeGroup(
-        codeGroupNode: Node, _parentNode: string | null,
+    serializeContainer(
+        containerNode: Node, _parentNode: string | null,
         _neighbors: (skipNewlines: boolean) => Neighborhood
     ): string {
-        return this.tagSerializer.serializeCodeGroup(codeGroupNode);
+        return this.tagSerializer.serializeContainer(containerNode);
     }
 }

@@ -92,6 +92,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
                 p => p.kind === undefined || p.kind === FileProgressKind.Processing
             );
             if (firstProcessing && this.webviewManager) {
+                this.isBusy = true;
                 const { line, character } = firstProcessing.range.start;
                 const from = this.activeDocument.offsetAt(new Position(line, character));
                 const to   = this.activeDocument.offsetAt(new Position(
@@ -105,7 +106,6 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
                     body: { from, to },
                 });
             }
-            this.isBusy = processingRanges.length > 0;
             this.computeInputAreaStatus(this.activeDocument);
         }
     }

@@ -183,4 +183,16 @@ describe("LeanLspClient.determineProofStatus", () => {
         expect(await call(instance)).toBe(InputAreaStatus.Correct);
     });
 
+    it("returns Incorrect when requestGoals resolves with null", async () => {
+        const instance = makeClient();
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue(null);
+        expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
+    });
+
+    it("returns Incorrect when requestGoals resolves with undefined", async () => {
+        const instance = makeClient();
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue(undefined);
+        expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
+    });
+
 });

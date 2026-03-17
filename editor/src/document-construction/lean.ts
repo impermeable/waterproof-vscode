@@ -27,6 +27,7 @@ class Token {
         public readonly range: BlockRange,
         public readonly line: number,
         public readonly groups: string[],
+        public readonly namedGroups?: Record<string, string>,
     ) {
         this.index = list.length;
         list.push(this);
@@ -60,7 +61,7 @@ const regexes: [RegExp, Kind][] = [
     [/(?<=\n)```lean\n/,                  Kind.CodeOpen       ],
     [/\n```(?=\n|$)/,                     Kind.CodeClose      ],
     [/(?<=\n):::input\n/,                 Kind.InputOpen      ],
-    [/(?<=\n):::hint "([\s\S]*?)"(?=\n)/, Kind.HintOpen       ],
+    [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"(?=\n)/, Kind.HintOpen       ],
     [/\n:::(?=\n|$)/,                     Kind.Close          ],
     [/\$`[\s\S]*?`/,                      Kind.MathInline     ],
     [/\$\$`[\s\S]*?`/,                    Kind.MathDisplay    ],
@@ -166,7 +167,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         const content = doc.substring(innerRange.from, innerRange.to);
 
         if (token.kind === Kind.HintOpen) {
-            const title = token.groups[1];
+            const title = token.namedGroups?.HintTitle ?? "";
             blocks.push(new HintBlock(content, title, range, innerRange, token.line, innerBlocks));
         } else {
             blocks.push(new InputAreaBlock(content, range, innerRange, token.line, innerBlocks));
@@ -227,7 +228,7 @@ function tokenize(inputDocument: string): Token | undefined {
         for (const [_, toKind] of regexes) {
             if (m.groups && m.groups[Kind[toKind]]) {
                 const range = { from: m.index as number, to: m.index as number + m[0].length };
-                const tok = new Token(tokens, toKind, range, newlines, Array.from(m));
+                const tok = new Token(tokens, toKind, range, newlines, Array.from(m), m.groups as Record<string, string> | undefined);
                 newlines += numOfNewlines(tok.range);
             }
         }

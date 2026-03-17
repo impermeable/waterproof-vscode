@@ -13,6 +13,15 @@ export const coqGoalRequestType = new RequestType<RocqGoalRequest, RocqGoalAnswe
 export const coqFileProgressNotificationType = new NotificationType<FileProgressParams>("$/coq/fileProgress");
 
 /**
+ * LSP notification regarding the execution information of the sentence currently being checked.
+ */
+export type ExecutionInformationParams = {
+    textDocument: { uri: string; version: number };
+    range: { start: { line: number; character: number }; end: { line: number; character: number } };
+};
+export const executionInformationNotificationType = new NotificationType<ExecutionInformationParams>("$/coq/executionInformation");
+
+/**
  * Notification type for the coq-lsp specific `serverStatus` notification. Returns a `CoqServerStatus` object that
  * can be either Busy or Idle.
  */

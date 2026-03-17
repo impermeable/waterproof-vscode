@@ -1,9 +1,10 @@
 import { FileFormat, Message, MessageType } from "../../shared";
 import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
-import rocqTactics from "../../completions/tactics.json";
+import waterproofTactics from "../../completions/tactics.json";
 import leanTactics from "../../completions/tacticsLean.json";
-import symbols from "../../completions/symbols.json";
+import rocqTactics from "../../completions/tacticsRocq.json"
+import symbols from "../../completions/symbols+lean.json";
 
 // import style sheet and fonts from waterproof-editor
 import "@impermeable/waterproof-editor/styles.css";
@@ -13,6 +14,9 @@ import { vFileParser } from "./document-construction/vFile";
 import { coqdocToMarkdown } from "./coqdoc";
 import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
+import * as langWp from "@impermeable/codemirror-lang-waterproof";
+import * as langVerbose from "@impermeable/codemirror-lang-verbose";
+import * as langRocq from "@impermeable/codemirror-lang-rocq";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
 import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
@@ -26,17 +30,23 @@ interface VSCodeAPI {
 }
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
-	let formatConf;
+	let formatConf: Pick<WaterproofEditorConfig, 
+		"completions" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" | "disableMarkdownFeatures" | "serializer" >;
 
 	// Set format-specific configuration
 	switch (format) {
 		case FileFormat.MarkdownV:
 			formatConf = {
-				completions: rocqTactics,
-				documentConstructor: (v: string) => markdown.parse(v, "coq"),
+				completions: waterproofTactics,
+				documentConstructor: (v: string) => markdown.parse(v, {language: "coq"}),
 				toMarkdown: defaultToMarkdown,
 				markdownName: "Markdown",
 				tagConfiguration: markdown.configuration("coq"),
+				languageConfig: {
+					highlightDark: langWp.highlight_dark,
+					highlightLight: langWp.highlight_light,
+					languageSupport: langWp.waterproof(), 
+				},
 			}
 			break;
 		case FileFormat.RegularV:
@@ -44,9 +54,14 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				completions: rocqTactics,
 				documentConstructor: vFileParser,
 				toMarkdown: coqdocToMarkdown,
-				markdownName: "coqdoc",
+				markdownName: "Rocq doc",
 				tagConfiguration: tagConfigurationV,
 				disableMarkdownFeatures: ["code"],
+				languageConfig: {
+					languageSupport: langRocq.rocq(),
+					highlightDark: langRocq.highlight_dark,
+					highlightLight: langRocq.highlight_light
+				}
 			}
 			break;
 		case FileFormat.Lean:
@@ -57,6 +72,11 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				markdownName: "Markdown",
 				tagConfiguration: tagConfigurationLean,
 				serializer: new LeanSerializer(),
+				languageConfig: {
+					highlightDark: langVerbose.highlight_dark,
+					highlightLight: langVerbose.highlight_light,
+					languageSupport: langVerbose.verbose(),
+				},
 			}
 			break;
 	}
@@ -167,7 +187,7 @@ window.onload = () => {
 			case MessageType.qedStatus:
 				{
 					const statuses = msg.body;  // one status for each input area, in order
-					editor.updateQedStatus(statuses);
+					editor.setInputAreaStatus(statuses);
 					break;
 				}
 			case MessageType.setShowLineNumbers:
@@ -186,8 +206,22 @@ window.onload = () => {
 				break;
 			case MessageType.progress:
 				{
-					const progressParams = msg.body;
-					editor.updateProgressBar(progressParams);
+					const {numberOfLines, progress} = msg.body;
+					if (progress.length === 0) {
+						editor.removeBusyIndicators();
+					}
+					const at = progress[0].range.start.line + 1;
+					if (at === numberOfLines) {
+						editor.reportProgress(at, numberOfLines, "File verified");
+					} else {
+						editor.reportProgress(at, numberOfLines, `Verified file up to line: ${at}`);
+					}
+					break;
+				}
+			case MessageType.executionInfo:
+				{
+					const range = msg.body;
+					editor.setBusyIndicator(range.from);
 					break;
 				}
 			case MessageType.diagnostics:
@@ -195,12 +229,16 @@ window.onload = () => {
 				break; }
 			case MessageType.serverStatus:
 				{
-					const status = msg.body;
-					editor.updateServerStatus(status);
+					const {status} = msg.body;
+					if (status === "Busy") {
+						editor.startSpinner();
+					} else {
+						editor.stopSpinner();
+					}
 					break;
 				}
 			case MessageType.themeUpdate:
-				editor.updateNodeViewThemes(msg.body.theme, msg.body.lang);
+				editor.updateNodeViewThemes(msg.body.theme);
 				break;
 			case MessageType.semanticTokens:
 				editor.setSemanticTokens(msg.body.tokens);

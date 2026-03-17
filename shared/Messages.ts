@@ -1,6 +1,8 @@
-import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, SimpleProgressParams, ServerStatus, ThemeStyle, OffsetDiagnostic, OffsetSemanticToken } from "@impermeable/waterproof-editor";
+import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, ThemeStyle, OffsetDiagnostic, OffsetSemanticToken } from "@impermeable/waterproof-editor";
 import { RocqGoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
+import { ServerStatus } from "./ServerStatus";
+import { SimpleProgressParams } from "./ProgressInfo";
 
 
 /** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)
@@ -30,6 +32,7 @@ export type Message =
     | MessageBase<MessageType.editorHistoryChange, HistoryChange>
     | MessageBase<MessageType.editorReady>
     | MessageBase<MessageType.errorGoals, unknown>
+    | MessageBase<MessageType.executionInfo, { from: number, to: number }>
     | MessageBase<MessageType.init, { value: string, version: number }>
     | MessageBase<MessageType.insert, { symbolUnicode: string, type: "symbol" | "tactics", time: number }>
     | MessageBase<MessageType.replaceRange, { start: number, end: number, text: string }>
@@ -66,6 +69,8 @@ export const enum MessageType {
     editorHistoryChange,
     editorReady,
     errorGoals,
+    executionInfo,
+    flash,
     init,
     insert,
     replaceRange,
@@ -82,7 +87,6 @@ export const enum MessageType {
     setShowMenuItems,
     teacher,
     themeUpdate,
-    flash,
     viewportHint,
     infoviewRpc,
     semanticTokens

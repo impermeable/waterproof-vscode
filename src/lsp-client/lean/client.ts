@@ -1,6 +1,6 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { CancellationTokenSource, EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel } from "vscode";
+import { CancellationTokenSource, EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
 import { leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams } from "./requestTypes";
@@ -11,7 +11,7 @@ import { findOccurrences } from "../qedStatus";
 import { InputAreaStatus, OffsetSemanticToken, SemanticTokenType } from "@impermeable/waterproof-editor";
 import { ServerStoppedReason } from "@leanprover/infoview-api";
 import { DidChangeTextDocumentParams, DidCloseTextDocumentParams, SemanticTokensRegistrationType } from "vscode-languageclient";
-import { MessageType } from "../../../shared";
+import { FileProgressKind, MessageType } from "../../../shared";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
@@ -78,7 +78,6 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     protected async onFileProgress(progress: FileProgressParams) {
         if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
             this.computeInputAreaStatus(this.activeDocument);
-            this.requestSemanticTokensDebounced(this.activeDocument);
         }
 
         super.onFileProgress(progress);
@@ -143,7 +142,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         });
     }
 
-    protected async determineProofStatus(document: TextDocument, inputArea: Range): Promise<InputAreaStatus> {
+    protected async determineProofStatus(document: TextDocument, inputArea: Range, diags: Array<Diagnostic>): Promise<InputAreaStatus> {
         const content = document.getText();
 
         const nextQed = content.indexOf("\nQed\n", document.offsetAt(inputArea.start));
@@ -153,10 +152,24 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             return InputAreaStatus.Invalid;
         }
 
+        // We do an explicit check for the case where we have
+        // Fix b :
+        // QED
+        // As these cases are not covered by the empty goals statemement below.
+        const hasUnexpectedTokenError = diags.some(v => {
+            const intersection = inputArea.intersection(v.range);
+            return intersection !== undefined &&
+                !intersection.isEmpty &&
+                // This is the error that is emitted when doing something like Fix b : ... with QED on the next line.
+                v.message === "unexpected token 'QED'; expected term";
+        });
+        // If we have an unexpected token error we mark the input area as incorrect.
+        if (hasUnexpectedTokenError) return InputAreaStatus.Incorrect;
+
         // request goals and return conclusion based on them
         const response = await this.requestGoals(this.createGoalsRequestParameters(document, inputArea.end.translate(0, 0)));
 
-        return response?.goals.length ? InputAreaStatus.Incomplete : InputAreaStatus.Proven;
+        return response?.goals.length ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
     }
 
     // Emitters for infoview

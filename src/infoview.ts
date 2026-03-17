@@ -19,7 +19,7 @@ import {
 import { LeanLspClient } from './lsp-client/lean';
 import { DocumentUri, WorkspaceEdit, Location } from 'vscode-languageserver-protocol';
 import { GoalsPanel } from './webviews/goalviews/goalsPanel';
-import { WaterproofLogger as wpl } from './helpers';
+import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } from './helpers';
 import { WebviewEvents } from './webviews/coqWebview';
 
 const keepAlivePeriodMs = 10000
@@ -148,6 +148,49 @@ export class InfoProvider implements Disposable {
         return h;
     }
 
+    /** Filters a list of hypotheses from an rpc response */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static filterHypothesesList(hypotheses: any[]): any[] {
+        const hyps = []
+        switch (WaterproofConfigHelper.get(WaterproofSetting.VisibilityOfHypotheses)) {
+            // Keep all hypotheses
+            case 'all':
+                hyps.push(...hypotheses)
+                break;
+            // Remove the hypotheses which type is simple 'text', in contrast to compound type which are arrays.
+            case 'limited':
+                for (const hyp of hypotheses) {
+                    if ( !( (hyp.type?.tag?.[1] !== undefined) && ('text' in hyp.type.tag[1]) ) ) {
+                        hyps.push(hyp)
+                    }
+                }
+                break;
+            // Remove all hypotheses
+            case 'none':
+                break;
+        }
+        return hyps
+    }
+
+    /** Filters hypotheses in an rpc response depending on visibility setting */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static filterHypotheses(response: any, params: any): any {
+        if (response !== null) {
+            switch (params.method) {
+                // Handling rpc requrest for all the goals
+                case 'Lean.Widget.getInteractiveGoals':
+                    for (const goal of response.goals) {
+                        goal.hyps = this.filterHypothesesList(goal.hyps)
+                    }
+                    break;
+                // Handling rpc requrest for a specific goal
+                case 'Lean.Widget.getInteractiveTermGoal':
+                    response.hyps = this.filterHypothesesList(response.hyps)
+            }
+        }
+        return response
+    }
+
     /** Api that is exposed to InfoView */
     private editorApi: EditorApi = {
         saveConfig: async (config: InfoviewConfig) => {
@@ -167,7 +210,9 @@ export class InfoProvider implements Disposable {
             const client = this.client.client
             if (client) {
                 try {
-                    const result = await this.client.client.sendRequest(method, params)
+                    let result = await this.client.client.sendRequest(method, params)
+                    result = InfoProvider.filterHypotheses(result, params)
+
                     return result
                 } catch (e) {
                     wpl.log(`[InfoProvider] Failed to send client request: ${e}`)

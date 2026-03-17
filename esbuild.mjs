@@ -42,6 +42,14 @@ const editorConfig = {
 		".ttf": fontLoader,
     ".grammar": "file"
 	},
+  alias: {
+    '@codemirror/autocomplete': './node_modules/@codemirror/autocomplete',
+    '@codemirror/commands': './node_modules/@codemirror/commands',
+    '@codemirror/language': './node_modules/@codemirror/language',
+    '@codemirror/lint': './node_modules/@codemirror/lint',
+    '@codemirror/state': './node_modules/@codemirror/state',
+    '@codemirror/view': './node_modules/@codemirror/view',
+  },
   minify,
   plugins: [watchPlugin("editor")]
 };
@@ -134,7 +142,6 @@ async function viewBuild(file) {
 viewBuild("./views/goals/index.tsx");
 viewBuild("./views/execute/index.tsx");
 viewBuild("./views/debug/index.tsx");
-viewBuild("./views/help/index.tsx");
 viewBuild("./views/search/index.tsx");
 viewBuild("./views/symbols/index.tsx");
 viewBuild("./views/tactics/index.tsx");

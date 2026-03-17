@@ -16,6 +16,12 @@ import { FileProgressKind, MessageType } from "../../../shared";
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
 
+    /**
+    * Whether the Lean server is still processing the document.
+    * Used to avoid marking a proof as complete before checking has finished.
+    */
+    private isBusy: boolean = true; 
+
     constructor(clientProvider: LanguageClientProvider, channel: OutputChannel) {
         super(clientProvider, channel);
 
@@ -227,5 +233,9 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     async dispose(timeout?: number): Promise<void> {
         await super.dispose(timeout);
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
+    }
+
+    protected onDocumentChanged(): void {
+        this.isBusy = true;
     }
 }

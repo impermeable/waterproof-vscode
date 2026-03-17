@@ -31,13 +31,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     private _client?: LanguageClient;
 
     /**
-     * Gets or sets whether the lsp is busy. Currently only used be the lean client. 
-     * NOTE: This is never set to false by the rocq client.
-     * However, it currently never uses this property anyway.
-     */
-    protected isBusy: boolean = true; 
-
-    /**
      * Gets the underlying VS Code language client.
      * Initializes one if necessary.
      */
@@ -285,7 +278,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 webviewManager.has(event.document.uri.toString())
                 && event.document.languageId === this.language
             ) {
-                this.isBusy = true;
+                this.onDocumentChanged();
 
                 this.updateCompletions(event.document);
             }
@@ -307,6 +300,12 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     abstract requestGoals(position: Position): Promise<GoalAnswerT>;
     /** Sends an LSP request to retrieve the goals at the active cursor position. */
     abstract requestGoals(): Promise<GoalAnswerT>;
+
+    /**
+     * Called when the active document changes. Subclasses can use this to
+     * update any state that depends on the document being up to date.
+     */
+    protected abstract onDocumentChanged(): void;
 
     async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
         // use active document if no document is given

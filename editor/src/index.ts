@@ -82,9 +82,9 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI, editorRef: 
 						title: "M...",
 						hoverText: "Wrap selection in a container (groups math evaluation)",
 						callback: () => {
-							editorRef.current?.executeProsemirrorCommand(wrapInContainer(tagConfigurationLean));
+							editorRef.current?.executeProsemirrorCommand(wrapInContainer(tagConfigurationLean, "multilean"));
 						},
-						isActive: (state) => wrapInContainer(tagConfigurationLean)(state, undefined),
+						isActive: (state) => wrapInContainer(tagConfigurationLean, "multilean")(state, undefined),
 						buttonVisibility: { teacherModeOnly: true },
 					}
 				],

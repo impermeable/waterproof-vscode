@@ -61,7 +61,7 @@ const regexes: [RegExp, Kind][] = [
     [/(?<=\n)```lean\n/,                  Kind.CodeOpen       ],
     [/\n```(?=\n|$)/,                     Kind.CodeClose      ],
     [/(?<=\n):::input\n/,                 Kind.InputOpen      ],
-    [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"(?=\n)/, Kind.HintOpen       ],
+    [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"\n/,     Kind.HintOpen       ],
     [/\n:::(?=\n|$)/,                     Kind.Close          ],
     [/\$`[\s\S]*?`/,                      Kind.MathInline     ],
     [/\$\$`[\s\S]*?`/,                    Kind.MathDisplay    ],

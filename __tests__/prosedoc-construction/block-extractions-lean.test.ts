@@ -510,3 +510,91 @@ test("Serialization round-trip of typical exercise pattern is identity", () => {
     const out = new LeanSerializer().serializeDocument(doc);
     expect(out).toBe(document);
 });
+
+// ============================================================
+// Regression tests for feature/codegroup bugs
+// ============================================================
+
+// T7 — Regression: isSignificantNewline must treat a newline immediately after
+// MultileanClose as significant (so it becomes a NewlineBlock, not stripped).
+// Bug: MultileanClose was missing from the significance check initially.
+test("Newline between multilean close and following code block is significant (not stripped)", () => {
+    // Structure: \n (significant) | container | \n (significant, between ::::\n and ```lean\n) | code
+    const document =
+        "\n::::multilean\n" +
+        "```lean\ndef a := 1\n```\n" +
+        "::::\n" +
+        "```lean\ndef b := 2\n```";
+    const blocks = topLevelBlocksLean(document);
+
+    const containers = blocks.filter(b => typeguards.isContainerBlock(b));
+    const codes = blocks.filter(b => typeguards.isCodeBlock(b));
+    expect(containers.length).toBe(1);
+    expect(codes.length).toBe(1);
+
+    // The newline token whose prev is MultileanClose must be preserved as a NewlineBlock.
+    const containerIdx = blocks.indexOf(containers[0]);
+    const codeIdx = blocks.indexOf(codes[0]);
+    expect(codeIdx).toBeGreaterThan(containerIdx);
+
+    const blocksBetween = blocks.slice(containerIdx + 1, codeIdx);
+    const newlinesBetween = blocksBetween.filter(b => typeguards.isNewlineBlock(b));
+    expect(newlinesBetween.length).toBe(1);
+});
+
+// T8 — Serialization round-trip: multilean containing a hint block is identity.
+test("Serialization round-trip: multilean containing a hint block is identity", () => {
+    const document =
+        "\n::::multilean\n" +
+        ":::hint \"tip\"\nSome hint content\n:::\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+    const doc = constructDocument(blocks);
+    const out = new LeanSerializer().serializeDocument(doc);
+    expect(out).toBe(document);
+});
+
+// T9 — Serialization round-trip: multilean as first block (after leading newline, no preceding content).
+test("Serialization round-trip: multilean at start of document body is identity", () => {
+    const document =
+        "\n::::multilean\n" +
+        "## Introduction\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+    const doc = constructDocument(blocks);
+    const out = new LeanSerializer().serializeDocument(doc);
+    expect(out).toBe(document);
+});
+
+// T10 — Serialization round-trip: two consecutive multilean blocks.
+// The parse-only version of this test already exists; this adds the round-trip assertion.
+test("Serialization round-trip: two consecutive multilean blocks is identity", () => {
+    const document =
+        "\n::::multilean\n" +
+        "```lean\nblock1\n```\n" +
+        "::::\n" +
+        "::::multilean\n" +
+        "```lean\nblock2\n```\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+    const doc = constructDocument(blocks);
+    const out = new LeanSerializer().serializeDocument(doc);
+    expect(out).toBe(document);
+});
+
+// T11 — Range correctness: innerRange must not include the ::::multilean\n or \n:::: delimiters.
+// This is a focused assertion on top of the existing range tests.
+test("ContainerBlock innerRange excludes ::::multilean and :::: delimiters", () => {
+    const document = "\n::::multilean\n# Hello\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const cg = blocks.find(b => typeguards.isContainerBlock(b))!;
+    const inner = document.substring(cg.innerRange.from, cg.innerRange.to);
+
+    // The inner slice must not contain any :::: markers
+    expect(inner).not.toContain("::::");
+    // And it must match the block's stringContent
+    expect(inner).toBe(cg.stringContent);
+    // Sanity: actual content is only the inner markdown
+    expect(inner).toBe("# Hello");
+});

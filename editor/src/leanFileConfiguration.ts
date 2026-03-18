@@ -6,7 +6,7 @@ export const tagConfigurationLean: TagConfiguration = {
 		openRequiresNewline: true, closeRequiresNewline: true
 	},
 	hint: {
-		openTag: (title) => `:::hint ${title}\n`,
+		openTag: (title) => `:::hint "${title}"\n`,
 		closeTag: "\n:::",
 		openRequiresNewline: true,
 		closeRequiresNewline: true,

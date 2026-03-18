@@ -79,8 +79,8 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI, editorRef: 
 				},
 				menubarEntries: [
 					{
-						title: "multilean",
-						hoverText: "Wrap selection in a multilean block (groups Lean execution).",
+						title: "M...",
+						hoverText: "Wrap selection in a container (groups math evaluation)",
 						callback: () => {
 							editorRef.current?.executeProsemirrorCommand(wrapInContainer(tagConfigurationLean));
 						},

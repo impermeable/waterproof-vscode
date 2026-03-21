@@ -81,7 +81,7 @@ export class CompositeClient implements ILspClient {
         if (client instanceof LeanLspClient) {
             const goalResponse = await client.requestGoals(params);
 
-            if (goalResponse.goals === undefined) {
+            if (goalResponse?.goals === undefined) {
                 throw new Error("Response contained no goals.");
             }
 

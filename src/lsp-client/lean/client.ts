@@ -125,7 +125,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         };
     }
 
-    async requestGoals(params?: LeanGoalRequest | Position): Promise<LeanGoalAnswer> {
+    async requestGoals(params?: LeanGoalRequest | Position): Promise<LeanGoalAnswer | null> {
         if (!params || "line" in params) {  // if `params` is not a `GoalRequest` ...
             params ??= this.activeCursorPosition;
             if (!this.activeDocument || !params) {
@@ -199,10 +199,6 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         const goalsParams = this.createGoalsRequestParameters(document, goalsPosition);
         const response = await this.requestGoals(goalsParams);
 
-        /** It might seem like you can remove this check, since it won't give a type error
-        * when you do so, but doing so would break everything.
-        * this happens because {@link leanGoalRequestType} is typed wrong. 
-        */
         if (!response) {
             return InputAreaStatus.Incorrect;
         }

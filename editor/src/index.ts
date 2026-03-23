@@ -113,6 +113,9 @@ window.onload = () => {
 					editor.insertSymbol(symbolUnicode);
 				}
 				break; }
+			case MessageType.refreshDocument:
+				editor.refreshDocument(msg.body.value, msg.body.version);
+				break;
 			case MessageType.setAutocomplete:
 				// Handle autocompletion
 				editor.handleCompletions(msg.body);

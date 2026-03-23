@@ -32,6 +32,7 @@ export type Message =
     | MessageBase<MessageType.errorGoals, unknown>
     | MessageBase<MessageType.init, { value: string, version: number }>
     | MessageBase<MessageType.insert, { symbolUnicode: string, type: "symbol" | "tactics", time: number }>
+    | MessageBase<MessageType.refreshDocument, { value: string, version: number }>
     | MessageBase<MessageType.lineNumbers, LineNumber>
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
@@ -62,6 +63,7 @@ export const enum MessageType {
     editorReady,
     errorGoals,
     init,
+    refreshDocument,
     insert,
     lineNumbers,
     progress,

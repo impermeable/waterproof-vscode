@@ -173,6 +173,13 @@ export class ProseMirrorWebview extends EventEmitter {
         const styleUri = this._panel.webview.asWebviewUri(Uri.joinPath(
             extensionUri, 'editor_output', 'index.css'));
 
+        // Register listener for when the document is saved, to trigger a refresh of the editor content.
+        this._disposables.push(workspace.onDidSaveTextDocument(e => {
+            if (e.uri.toString() === this._document.uri.toString()) {
+                this.refreshOnSave();
+            }
+        }));
+
         // Register various listeners
         this._disposables.push(workspace.onDidChangeTextDocument(e => {
             if (!e.reason) return;
@@ -303,6 +310,19 @@ export class ProseMirrorWebview extends EventEmitter {
 
         this.updateLineNumberStatusInEditor();
 
+        // send any cached messages
+        for (const m of this._cachedMessages.values()) this.postMessage(m);
+    }
+
+    private refreshOnSave() {
+        this.postMessage({
+            type: MessageType.refreshDocument,
+            body: {
+                value: this._document.getText(),
+                version: this._document.version,
+            }
+        });
+        this.updateLineNumberStatusInEditor();
         // send any cached messages
         for (const m of this._cachedMessages.values()) this.postMessage(m);
     }

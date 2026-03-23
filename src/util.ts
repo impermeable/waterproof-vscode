@@ -1,4 +1,4 @@
-import { extensions, window, workspace } from "vscode";
+import { extensions, window, commands, workspace } from "vscode";
 import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
 
 /**
@@ -23,7 +23,6 @@ export function checkConflictingExtensions() {
     // this way of checking correctly ignores disabled extensions
     if (extensions.getExtension("ejgallego.coq-lsp")) conflicting.push("Coq LSP");
     if (extensions.getExtension("maximedenes.vscoq")) conflicting.push("VSCoq");
-
     // show warning if any conflicting extensions are present
     if (conflicting.length) {
         window.showErrorMessage(
@@ -49,6 +48,26 @@ export function excludeCoqFileTypes() {
             "**/*.aux": true,
             "**/*.glob": true,
             ...fexc,
+        });
+    }
+}
+
+/**
+ * Checks whether the user has enabled the setting `trimTrailingWhitespace`, and warns the
+ * user in that case.
+ */
+export function checkTrimmingWhitespace() {
+    const config = workspace.getConfiguration('files');
+    const isTrimTrailingWhitespaceEnabled = config.get<boolean>('trimTrailingWhitespace');
+    if (isTrimTrailingWhitespaceEnabled) {
+        window.showWarningMessage(
+            "The setting `Trim Trailing Whitespace` is enabled. This may cause unexpected behaviour, and is strongly suggested to turned off.",
+            "Open Settings",
+            "Dismiss"
+        ).then((selection: string | undefined) => {
+            if (selection === "Open Settings") {
+                commands.executeCommand('workbench.action.openSettings', 'Trim Trailing Whitespace');
+            }
         });
     }
 }

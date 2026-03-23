@@ -1,6 +1,6 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic } from "vscode";
+import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
 import { leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams } from "./requestTypes";
@@ -15,6 +15,12 @@ import { FileProgressKind, MessageType } from "../../../shared";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
+
+    /**
+    * Whether the Lean server is still processing the document.
+    * Used to avoid marking a proof as complete before checking has finished.
+    */
+    private isBusy: boolean = true; 
 
     constructor(clientProvider: LanguageClientProvider, channel: OutputChannel) {
         super(clientProvider, channel);
@@ -74,15 +80,19 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     }
 
     protected async onFileProgress(progress: FileProgressParams) {
-        if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
-            this.computeInputAreaStatus(this.activeDocument);
 
+        // Call super first so LSP ranges are converted to VSCode Ranges before we store/use them.
+        super.onFileProgress(progress);
+
+        if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
+            
             // --- busy-indicator (Lean edition) ---
             // Find the first processing range, where we want to add the busy-indicator to.
             const firstProcessing = progress.processing.find(
                 p => p.kind === undefined || p.kind === FileProgressKind.Processing
             );
             if (firstProcessing && this.webviewManager) {
+                this.isBusy = true;
                 const { line, character } = firstProcessing.range.start;
                 const from = this.activeDocument.offsetAt(new Position(line, character));
                 const to   = this.activeDocument.offsetAt(new Position(
@@ -95,10 +105,11 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
                     type: MessageType.executionInfo,
                     body: { from, to },
                 });
+            } else {
+                this.isBusy = false;
             }
+            this.computeInputAreaStatus(this.activeDocument);
         }
-
-        super.onFileProgress(progress);
     }
 
     createGoalsRequestParameters(document: TextDocument, position: Position): LeanGoalRequest {
@@ -114,7 +125,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         };
     }
 
-    async requestGoals(params?: LeanGoalRequest | Position): Promise<LeanGoalAnswer> {
+    async requestGoals(params?: LeanGoalRequest | Position): Promise<LeanGoalAnswer | null> {
         if (!params || "line" in params) {  // if `params` is not a `GoalRequest` ...
             params ??= this.activeCursorPosition;
             if (!this.activeDocument || !params) {
@@ -161,33 +172,39 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     }
 
     protected async determineProofStatus(document: TextDocument, inputArea: Range, diags: Array<Diagnostic>): Promise<InputAreaStatus> {
-        const content = document.getText();
 
-        const nextQed = content.indexOf("\nQed\n", document.offsetAt(inputArea.start));
-        const nextProof = content.indexOf("\nProof:\n", document.offsetAt(inputArea.start));
-
-        if (nextProof && nextQed >= nextProof) {
-            return InputAreaStatus.Invalid;
+        // If Lean hasn't finished processing up to the end of this input area, an empty goals
+        // response simply means "not checked yet" rather than "proof complete".  Guard against
+        // that to prevent the bar from turning green prematurely (e.g. while typing "We ap" or
+        // when the proof has invalid syntax like "Help\n• Fix a : ℝ\n" without a closing Qed).
+        if (this.isBusy) {
+            return InputAreaStatus.Incorrect;
         }
 
-        // We do an explicit check for the case where we have
-        // Fix b :
-        // QED
-        // As these cases are not covered by the empty goals statemement below.
-        const hasUnexpectedTokenError = diags.some(v => {
+        const diagsInArea = diags.filter(v => {
             const intersection = inputArea.intersection(v.range);
-            return intersection !== undefined &&
-                !intersection.isEmpty &&
-                // This is the error that is emitted when doing something like Fix b : ... with QED on the next line.
-                v.message === "unexpected token 'QED'; expected term";
+            return intersection !== undefined && !intersection.isEmpty;
         });
-        // If we have an unexpected token error we mark the input area as incorrect.
-        if (hasUnexpectedTokenError) return InputAreaStatus.Incorrect;
 
-        // request goals and return conclusion based on them
-        const response = await this.requestGoals(this.createGoalsRequestParameters(document, inputArea.end.translate(0, 0)));
+        // If there are any error-level diagnostics inside the input area, the proof is wrong.
+        // This catches cases like an incomplete tactic keyword (e.g. just "We") which can make
+        // Lean report empty goals at the query position while still being invalid.
+        const hasErrorDiagnostic = diagsInArea.some(d => d.severity === DiagnosticSeverity.Error);
+        if (hasErrorDiagnostic) {
+            return InputAreaStatus.Incorrect;
+        }
+ 
+        const goalsPosition = inputArea.end.translate(0, 0);
+        
+        const goalsParams = this.createGoalsRequestParameters(document, goalsPosition);
+        const response = await this.requestGoals(goalsParams);
 
-        return response?.goals.length ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
+        if (!response) {
+            return InputAreaStatus.Incorrect;
+        }
+        
+        const status = response.goals.length > 0 ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
+        return status;
     }
 
     // Emitters for infoview
@@ -221,5 +238,9 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     async dispose(timeout?: number): Promise<void> {
         await super.dispose(timeout);
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
+    }
+
+    protected onDocumentChanged(): void {
+        this.isBusy = true;
     }
 }

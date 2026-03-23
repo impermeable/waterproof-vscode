@@ -5,7 +5,7 @@ import { FileProgressParams } from "../requestTypes";
 /**
  * LSP request to obtain the goals at a specific point in the doc.
  */
-export const leanGoalRequestType = new RequestType<LeanGoalRequest, LeanGoalAnswer, void>("$/lean/plainGoal");
+export const leanGoalRequestType = new RequestType<LeanGoalRequest, LeanGoalAnswer | null, void>("$/lean/plainGoal");
 
 /**
  * LSP notification regarding the progress on processing the document server side

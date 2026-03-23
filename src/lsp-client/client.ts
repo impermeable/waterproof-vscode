@@ -278,6 +278,8 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 webviewManager.has(event.document.uri.toString())
                 && event.document.languageId === this.language
             ) {
+                this.onDocumentChanged();
+
                 this.updateCompletions(event.document);
             }
         }));
@@ -293,11 +295,17 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     abstract createGoalsRequestParameters(document: TextDocument, position: Position): GoalRequestT;
 
     /** Sends an LSP request with the specified parameters to retrieve the goals. */
-    abstract requestGoals(parameters: GoalRequestT): Promise<GoalAnswerT>;
+    abstract requestGoals(parameters: GoalRequestT): Promise<GoalAnswerT | null>;
     /** Sends an LSP request to retrieve the goals at `position` in the active document. */
-    abstract requestGoals(position: Position): Promise<GoalAnswerT>;
+    abstract requestGoals(position: Position): Promise<GoalAnswerT | null>;
     /** Sends an LSP request to retrieve the goals at the active cursor position. */
-    abstract requestGoals(): Promise<GoalAnswerT>;
+    abstract requestGoals(): Promise<GoalAnswerT | null>;
+
+    /**
+     * Called when the active document changes. Subclasses can use this to
+     * update any state that depends on the document being up to date.
+     */
+    protected abstract onDocumentChanged(): void;
 
     async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
         // use active document if no document is given

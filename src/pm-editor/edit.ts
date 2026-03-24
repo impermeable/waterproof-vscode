@@ -27,7 +27,6 @@ export class SequentialEditor {
         if (this.queue.length) {
             this.apply(this.queue.shift()!);
         } else {
-            console.log("SequentialEditor done applying")
             this.inProgress = false;
             this.finishListener?.();
         }

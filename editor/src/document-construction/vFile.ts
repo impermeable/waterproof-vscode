@@ -50,7 +50,7 @@ export function vFileParser(document: string): WaterproofDocument {
 	const inputOpen = '(* begin input *)\n', inputOpenLength = inputOpen.length;
 	const inputClose = '\n(* end input *)', inputCloseLength = inputClose.length;
 	const markdownOpen = '(** ', markdownOpenLength = markdownOpen.length;
-	const markdownClose = ' *)', markdownCloseLength = markdownClose.length;
+	const markdownClose = '*)', markdownCloseLength = markdownClose.length;
 	const mathOpen = '$', mathOpenLength = mathOpen.length;
 	const mathClose = '$', mathCloseLength = mathClose.length;
 

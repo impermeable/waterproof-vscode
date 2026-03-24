@@ -83,7 +83,6 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
     protected async onFileProgress(progress: FileProgressParams) {
         if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
-          this.computeInputAreaStatus(this.activeDocument);
           this.requestSemanticTokensDebounced(this.activeDocument);
         }
 
@@ -266,10 +265,10 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         const provider = feature.getProvider(document);
         if (!provider?.full) return;
 
-        const tokens = await Promise.resolve(provider.full.provideDocumentSemanticTokens(
-            document,
-            new CancellationTokenSource().token
-        )).catch(() => undefined);
+        const cts = new CancellationTokenSource();
+        const tokens = await Promise.resolve(
+            provider.full.provideDocumentSemanticTokens(document, cts.token)
+        ).catch(() => undefined).finally(() => cts.dispose());
 
         if (!tokens?.data?.length) return;
 
@@ -292,13 +291,16 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             type: MessageType.semanticTokens,
             body: {tokens: offsetTokens},
         });
-    };
+    }
 
     private static decodeLspTokens(data: Uint32Array): Array<{ line: number; char: number; length: number; tokenTypeIndex: number }> {
+        if (data.length % 5 !== 0) {
+            wpl.debug(`[SemanticTokens] Malformed token data: length ${data.length} is not a multiple of 5`);
+        }
         const tokens = [];
         let line = 0;
         let char = 0;
-        for (let i = 0; i < data.length; i += 5) {
+        for (let i = 0; i + 4 < data.length; i += 5) {
             const deltaLine = data[i];
             const deltaStartChar = data[i + 1];
             if (deltaLine > 0) {

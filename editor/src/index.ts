@@ -146,6 +146,10 @@ window.onload = () => {
 			default: throw Error("Invalid theme encountered");
 		}
 	})();
+	for (const [key, value] of Object.entries(getSemanticColors(themeStyle))) {
+		document.documentElement.style.setProperty(key, value);
+	}
+
 	const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
 
 	//@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.

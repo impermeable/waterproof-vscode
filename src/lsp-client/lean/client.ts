@@ -241,6 +241,9 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     public clientStopped = this.clientStoppedEmitter.event;
 
     async dispose(timeout?: number): Promise<void> {
+        if (this.semanticTokenTimer) {
+            clearTimeout(this.semanticTokenTimer);
+        }
         await super.dispose(timeout);
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
     }

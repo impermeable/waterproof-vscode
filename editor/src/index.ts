@@ -74,8 +74,6 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				tagConfiguration: tagConfigurationLean,
 				serializer: new LeanSerializer(),
 				languageConfig: {
-					highlightDark: langVerbose.highlight_dark,
-					highlightLight: langVerbose.highlight_light,
 					languageSupport: langVerbose.verbose(),
 				},
 			}

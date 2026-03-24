@@ -1,4 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
+import { getSemanticColors } from "./semanticColors";
 import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import waterproofTactics from "../../completions/tactics.json";
@@ -237,9 +238,13 @@ window.onload = () => {
 					}
 					break;
 				}
-			case MessageType.themeUpdate:
+			case MessageType.themeUpdate: {
 				editor.updateNodeViewThemes(msg.body.theme);
+				for (const [key, value] of Object.entries(getSemanticColors(msg.body.theme))) {
+					document.documentElement.style.setProperty(key, value);
+				}
 				break;
+			}
 			case MessageType.semanticTokens:
 				editor.setSemanticTokens(msg.body.tokens);
 				break;

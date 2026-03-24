@@ -294,7 +294,6 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         });
     };
 
-    // TODO increase code quality
     private static decodeLspTokens(data: Uint32Array): Array<{ line: number; char: number; length: number; tokenTypeIndex: number }> {
         const tokens = [];
         let line = 0;

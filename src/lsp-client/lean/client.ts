@@ -8,10 +8,10 @@ import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } fr
 import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
 import { findOccurrences } from "../qedStatus";
-import { InputAreaStatus } from "@impermeable/waterproof-editor";
+import { InputAreaStatus, FileProgressKind } from "@impermeable/waterproof-editor";
 import { ServerStoppedReason } from "@leanprover/infoview-api";
 import { DidChangeTextDocumentParams, DidCloseTextDocumentParams } from "vscode-languageclient";
-import { FileProgressKind, MessageType } from "../../../shared";
+import { MessageType } from "../../../shared";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";

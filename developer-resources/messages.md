@@ -135,6 +135,19 @@ Send by the extension to inform the editor that a symbol should be inserted.
     type: "symbol" | "tactics", // The type of the insertion ("symbol" for symbols (like alpha), "tactics" for tactics)
     time: number                // Time that the command was executed
 }
+
+```
+### `refreshDocument`
+
+#### Description
+Send by the extension to refresh the webview editor, includes the updated content of the document in the body, as well as the documnet's version.
+
+#### Body
+```ts
+{
+    value: string,        // Updated content of the document
+    version: number       // Current version of the document
+}
 ```
 
 #### Body

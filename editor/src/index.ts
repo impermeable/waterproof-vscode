@@ -174,6 +174,9 @@ window.onload = () => {
 					}
 					break;
 				}
+			case MessageType.refreshDocument:
+				editor.refreshDocument(msg.body.value, msg.body.version);
+				break;
 			case MessageType.replaceRange:
                 {
                     const { start, end, text } = msg.body;

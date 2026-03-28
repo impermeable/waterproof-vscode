@@ -34,6 +34,7 @@ export type Message =
     | MessageBase<MessageType.errorGoals, unknown>
     | MessageBase<MessageType.executionInfo, { from: number, to: number }>
     | MessageBase<MessageType.init, { value: string, version: number }>
+    | MessageBase<MessageType.refreshDocument, { value: string, version: number }>
     | MessageBase<MessageType.insert, { symbolUnicode: string, type: "symbol" | "tactics", time: number }>
     | MessageBase<MessageType.replaceRange, { start: number, end: number, text: string }>
     | MessageBase<MessageType.progress, SimpleProgressParams>
@@ -71,6 +72,7 @@ export const enum MessageType {
     executionInfo,
     flash,
     init,
+    refreshDocument,
     insert,
     replaceRange,
     progress,

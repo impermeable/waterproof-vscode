@@ -211,7 +211,7 @@ window.onload = () => {
 						editor.removeBusyIndicators();
 						editor.reportProgress(numberOfLines, numberOfLines, "File verified");
 					} else {
-						const at = progress[0].range.start.line + 1; 
+						const at = progress[0].range.start.line + 1;
 						editor.reportProgress(at, numberOfLines, `Verified file up to line: ${at}`);
 					}
 					break;

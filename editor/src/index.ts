@@ -209,11 +209,9 @@ window.onload = () => {
 					const {numberOfLines, progress} = msg.body;
 					if (progress.length === 0) {
 						editor.removeBusyIndicators();
-					}
-					const at = progress[0].range.start.line + 1;
-					if (at === numberOfLines) {
-						editor.reportProgress(at, numberOfLines, "File verified");
+						editor.reportProgress(numberOfLines, numberOfLines, "File verified");
 					} else {
+						const at = progress[0].range.start.line + 1; 
 						editor.reportProgress(at, numberOfLines, `Verified file up to line: ${at}`);
 					}
 					break;

@@ -5,9 +5,9 @@ import { IFileProgressComponent } from "../components";
 import { WebviewManager } from "../webviewManager";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofSetting, WaterproofLogger as wpl } from "../helpers";
 
-import { InputAreaStatus, OffsetDiagnostic, Severity, WaterproofCompletion } from "@impermeable/waterproof-editor";
+import { InputAreaStatus, OffsetDiagnostic, Severity, WaterproofCompletion, SimpleProgressParams } from "@impermeable/waterproof-editor";
 import { convertToSimple, FileProgressParams } from "./requestTypes";
-import { MessageType, SimpleProgressParams } from "../../shared";
+import { MessageType } from "../../shared";
 import { ILspClient, LanguageClient, LanguageClientProvider, WpDiagnostic } from "./clientTypes";
 import { GoalAnswer, GoalRequest } from "../../lib/types";
 

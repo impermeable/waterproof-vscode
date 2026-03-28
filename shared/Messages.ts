@@ -1,8 +1,7 @@
-import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
+import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, ThemeStyle, OffsetDiagnostic, SimpleProgressParams } from "@impermeable/waterproof-editor";
 import { RocqGoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 import { ServerStatus } from "./ServerStatus";
-import { SimpleProgressParams } from "./ProgressInfo";
 
 
 /** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)

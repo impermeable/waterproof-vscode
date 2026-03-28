@@ -206,20 +206,12 @@ window.onload = () => {
 				break;
 			case MessageType.progress:
 				{
-					const {numberOfLines, progress} = msg.body;
-					if (progress.length === 0) {
-						editor.removeBusyIndicators();
-						editor.reportProgress(numberOfLines, numberOfLines, "File verified");
-					} else {
-						const at = progress[0].range.start.line + 1;
-						editor.reportProgress(at, numberOfLines, `Verified file up to line: ${at}`);
-					}
+					editor.handleProgressUpdate(msg.body);
 					break;
 				}
 			case MessageType.executionInfo:
 				{
-					const range = msg.body;
-					editor.setBusyIndicator(range.from);
+					editor.handleExecutionInfo(msg.body);
 					break;
 				}
 			case MessageType.diagnostics:

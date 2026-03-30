@@ -67,16 +67,25 @@ jest.mock("vscode-languageserver-types", () => ({
 
 jest.mock("../../../shared",        () => ({ MessageType: {}, FileProgressKind: { Processing: 1 } }), { virtual: true });
 jest.mock("../../../lib/types",     () => ({}), { virtual: true });
-jest.mock("../../helpers",          () => ({
+jest.mock("../../../src/helpers",   () => ({
     WaterproofConfigHelper: { get: jest.fn(() => false) },
     WaterproofLogger:       { log: jest.fn(), debug: jest.fn() },
     WaterproofSetting:      {},
     qualifiedSettingName:   jest.fn(s => s),
-}), { virtual: true });
+}));
 jest.mock("../sentenceManager",     () => ({ SentenceManager: class { onProgress() {} dispose() {} } }), { virtual: true });
 jest.mock("../clientTypes",         () => ({}), { virtual: true });
 jest.mock("../requestTypes",        () => ({ convertToSimple: jest.fn() }), { virtual: true });
-jest.mock("../qedStatus",           () => ({ findOccurrences: jest.fn(() => []) }), { virtual: true });
+jest.mock("../qedStatus",           () => ({
+    findOccurrences: jest.fn((substr: string, str: string) => {
+        const indices: number[] = [];
+        const substrLen = substr.length;
+        for (let i = 0; (i = str.indexOf(substr, i)) >= 0; i += substrLen) {
+            indices.push(i);
+        }
+        return indices;
+    }),
+}), { virtual: true });
 jest.mock("./requestTypes",         () => ({
     leanFileProgressNotificationType: "$/lean/fileProgress",
     leanGoalRequestType:              "$/lean/plainGoal",
@@ -149,6 +158,13 @@ const messageDiag = (message: string, startLine: number, startCharacter = 0) => 
         new Position(startLine, startCharacter),
     ),
 });
+
+const makeDocument = (content: string) => ({
+    ...FAKE_DOCUMENT,
+    getText:    () => content,
+    positionAt: (offset: number) => new Position(0, offset),
+    offsetAt:   (pos: any) => pos.character,
+}) as any;
 
 // ===========================================================================
 // Tests
@@ -272,6 +288,138 @@ describe("LeanLspClient.earlyProofStatus", () => {
         expect(earlyProofStatus([
             messageDiag("Try these:\n  exact h\n\ndeclaration uses 'sorry'", 4),
         ])).toBe(InputAreaStatus.Incorrect);
+    });
+});
+
+describe("LeanLspClient.getInputAreas ordering", () => {
+    it("returns input areas in source order", () => {
+        const instance = makeClient();
+        const content = [
+            "before",
+            ":::input",
+            "first",
+            ":::",
+            "between",
+            ":::input",
+            "second",
+            ":::",
+            "",
+        ].join("\n");
+        const document = makeDocument(content);
+
+        // @ts-expect-error protected
+        const areas = instance.getInputAreas(document) as Range[];
+        expect(areas).toHaveLength(2);
+
+        const starts = areas.map(area => document.offsetAt(area.start));
+        const firstOpen = content.indexOf(":::input\n");
+        const secondOpen = content.indexOf(":::input\n", firstOpen + 1);
+
+        expect(starts).toEqual([firstOpen, secondOpen]);
+        expect(starts).toEqual([...starts].sort((a, b) => a - b));
+    });
+
+    it("keeps consecutive areas monotonic for lower-bound logic", () => {
+        const instance = makeClient();
+        const content = [
+            ":::input",
+            "a",
+            ":::",
+            ":::input",
+            "b",
+            ":::",
+            ":::input",
+            "c",
+            ":::",
+            "",
+        ].join("\n");
+        const document = makeDocument(content);
+
+        // @ts-expect-error protected
+        const areas = instance.getInputAreas(document) as Range[];
+        expect(areas).toHaveLength(3);
+
+        const starts = areas.map(area => document.offsetAt(area.start));
+        const ends = areas.map(area => document.offsetAt(area.end));
+
+        for (let i = 1; i < areas.length; i++) {
+            expect(starts[i]).toBeGreaterThan(starts[i - 1]);
+            expect(ends[i - 1]).toBeLessThanOrEqual(starts[i]);
+        }
+    });
+
+    it("stays sorted on production-like multilean content", () => {
+        const instance = makeClient();
+        const content = [
+            "#doc (WaterproofGenre) \"Index\" =>",
+            "",
+            "::::multilean",
+            "",
+            "## ATC - 003",
+            "```lean",
+            "Example \"ATC - 003\"",
+            "  Given:",
+            "  Assume:",
+            "  Conclusion: ∀ a : ℝ, ∀ b > 5, ∃ c, c > b - a",
+            "Proof:",
+            "```",
+            ":::input",
+            "```lean",
+            "",
+            "```",
+            ":::",
+            "",
+            "## ATC - 009",
+            ":::hint \"Show hint\"",
+            "  hello",
+            ":::",
+            "```lean",
+            "Example \"ATC - 009\"",
+            "  Given:",
+            "  Assume:",
+            "  Conclusion: ∀ a : ℝ, ∀ b > 5, ∃ c, c > b - a",
+            "Proof:",
+            "```",
+            ":::input",
+            "```lean",
+            "",
+            "```",
+            ":::",
+            "",
+            "## ATC - 014",
+            "```lean",
+            "Example \"ATC - 014\"",
+            "  Given: (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ)",
+            "  Assume: (hu : u converges to x₀) (hf : f is continuous at x₀)",
+            "  Conclusion: (f ∘ u) converges to f x₀",
+            "Proof:",
+            "```",
+            ":::input",
+            "```lean",
+            "  Fix ε > 0",
+            "  By hf applied to ε using that ε > 0 we get δ such that",
+            "    (δ_pos : δ > 0) and (Hf : ∀ x, |x - x₀| ≤ δ ⇒ |f x - f x₀| ≤ ε)",
+            "```",
+            ":::",
+            "",
+            "::::",
+            "",
+        ].join("\n");
+        const document = makeDocument(content);
+
+        // @ts-expect-error protected
+        const areas = instance.getInputAreas(document) as Range[];
+        expect(areas.length).toBeGreaterThan(2);
+
+        const starts = areas.map(area => document.offsetAt(area.start));
+
+        const expectedOpenOffsets: number[] = [];
+        for (let i = 0; (i = content.indexOf(":::input\n", i)) >= 0; i += ":::input\n".length) {
+            expectedOpenOffsets.push(i);
+        }
+
+        expect(starts).toEqual(expectedOpenOffsets);
+        expect(starts).toEqual([...starts].sort((a, b) => a - b));
     });
 });
 

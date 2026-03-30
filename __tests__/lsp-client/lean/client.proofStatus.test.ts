@@ -214,51 +214,64 @@ describe("LeanLspClient.determineProofStatus", () => {
 
 });
 
-describe("LeanLspClient.shouldMarkInvalid", () => {
+describe("LeanLspClient.earlyProofStatus", () => {
     const lowerBound = new Position(2, 0);
     const inputArea = new Range(new Position(2, 0), new Position(6, 0));
 
-    const shouldMarkInvalid = (diags: any[]) => {
+    const earlyProofStatus = (diags: any[]) => {
         const instance = makeClient();
-        //@ts-expect-error private
-        return instance.shouldMarkInvalid(diags, lowerBound, inputArea);
+        // @ts-expect-error protected
+        return instance.earlyProofStatus(diags, lowerBound, inputArea);
     };
 
-    it("returns true for a sorry diagnostic inside bounds", () => {
-        expect(shouldMarkInvalid([
+    it("returns Invalid for a sorry diagnostic inside bounds", () => {
+        expect(earlyProofStatus([
             messageDiag("declaration uses 'sorry'", 4),
-        ])).toBe(true);
+        ])).toBe(InputAreaStatus.Invalid);
     });
 
-    it("returns true for a Try these hint inside bounds", () => {
-        expect(shouldMarkInvalid([
+    it("returns Incorrect for a Try these hint inside bounds", () => {
+        expect(earlyProofStatus([
             messageDiag("Try these:\n  exact h", 4),
-        ])).toBe(true);
+        ])).toBe(InputAreaStatus.Incorrect);
     });
 
-    it("returns false when matching diagnostic is at lowerBound", () => {
-        expect(shouldMarkInvalid([
+    it("returns null when matching diagnostic is at lowerBound", () => {
+        expect(earlyProofStatus([
             messageDiag("declaration uses 'sorry'", 2, 0),
-        ])).toBe(false);
+        ])).toBeNull();
     });
 
-    it("returns false when matching diagnostic is after input area end", () => {
-        expect(shouldMarkInvalid([
+    it("returns null when matching diagnostic is after input area end", () => {
+        expect(earlyProofStatus([
             messageDiag("Try these:\n  simp", 7),
-        ])).toBe(false);
+        ])).toBeNull();
     });
 
-    it("returns false for non-matching messages", () => {
-        expect(shouldMarkInvalid([
+    it("returns null for non-matching messages", () => {
+        expect(earlyProofStatus([
             messageDiag("type mismatch", 4),
-        ])).toBe(false);
+        ])).toBeNull();
     });
 
-    it("returns true when any diagnostic matches among mixed diagnostics", () => {
-        expect(shouldMarkInvalid([
+    it("returns Invalid when only sorry matches among mixed diagnostics", () => {
+        expect(earlyProofStatus([
             messageDiag("type mismatch", 4),
             messageDiag("declaration uses 'sorry'", 5),
-        ])).toBe(true);
+        ])).toBe(InputAreaStatus.Invalid);
+    });
+
+    it("prioritizes Hint over sorry when both messages are present", () => {
+        expect(earlyProofStatus([
+            messageDiag("declaration uses 'sorry'", 4),
+            messageDiag("Try these:\n  exact h", 5),
+        ])).toBe(InputAreaStatus.Incorrect);
+    });
+
+    it("prioritizes Hint over sorry even within the same diagnostic message", () => {
+        expect(earlyProofStatus([
+            messageDiag("Try these:\n  exact h\n\ndeclaration uses 'sorry'", 4),
+        ])).toBe(InputAreaStatus.Incorrect);
     });
 });
 

@@ -252,8 +252,9 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                     
                     // Check if there are errors before the input area.
                     // e.g. when using `sorry` in Lean. 
-                    if (this.shouldMarkInvalid(diags, lowerBound, area)) {
-                        return Promise.resolve(InputAreaStatus.Invalid);
+                    const earlyStatus = this.earlyProofStatus(diags, lowerBound, area);
+                    if (earlyStatus !== null) {
+                        return Promise.resolve(earlyStatus);
                     }
 
                     if (this.viewPortBasedChecking && this.viewPortRange && area.intersection(this.viewPortRange) === undefined) {
@@ -282,17 +283,17 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
      * the diagnostics, the lower boundary (end of the previous input area),
      * and the current area's range.
      *
-     * Default returns false (no early-out).
+     * Default returns null (no early-out).
      * @param diags Diagnostics for the whole document.
      * @param lowerBound The end position of the previous input area, or (0, 0) for the first input area.
      * @param inputArea The range of the current input area.
      */
-    protected shouldMarkInvalid(
+    protected earlyProofStatus(
         _diags: Diagnostic[],
         _lowerBound: Position,
         _inputArea: Range
-    ): boolean {
-        return false;
+    ): InputAreaStatus | null {
+        return null;
     }
 
     async startWithHandlers(webviewManager: WebviewManager, allowedLanguages: string[]): Promise<string[]> {

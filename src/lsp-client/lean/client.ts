@@ -207,20 +207,25 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         return status;
     }
 
-    private static readonly SORRY_HINT_RE = /declaration uses 'sorry'|^Try these:/m;
+    private static readonly SORRY_RE = /declaration uses 'sorry'/m;
+    private static readonly HINT_RE = /^Try these:/m;
 
-    protected shouldMarkInvalid(
+    protected earlyProofStatus(
         diags: Diagnostic[],
         lowerBound: Position,
         inputArea: Range
-    ): boolean {
-        // Is there a `sorry` or a `hint` error after the end of the previous input area
-        // and before the end of the current input area?
-        return diags.some(d =>
-            LeanLspClient.SORRY_HINT_RE.test(d.message) &&
+    ): InputAreaStatus | null {
+        const inRange = (d: Diagnostic) =>
             d.range.start.isAfter(lowerBound) &&
-            !d.range.start.isAfter(inputArea.end)
-        );
+            !d.range.start.isAfter(inputArea.end);
+
+        if (diags.some(d => LeanLspClient.HINT_RE.test(d.message) && inRange(d)))
+            return InputAreaStatus.Incorrect;
+
+        if (diags.some(d => LeanLspClient.SORRY_RE.test(d.message) && inRange(d)))
+            return InputAreaStatus.Invalid;
+
+        return null;
     }
 
     // Emitters for infoview

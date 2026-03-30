@@ -76,16 +76,7 @@ jest.mock("../../../src/helpers",   () => ({
 jest.mock("../sentenceManager",     () => ({ SentenceManager: class { onProgress() {} dispose() {} } }), { virtual: true });
 jest.mock("../clientTypes",         () => ({}), { virtual: true });
 jest.mock("../requestTypes",        () => ({ convertToSimple: jest.fn() }), { virtual: true });
-jest.mock("../qedStatus",           () => ({
-    findOccurrences: jest.fn((substr: string, str: string) => {
-        const indices: number[] = [];
-        const substrLen = substr.length;
-        for (let i = 0; (i = str.indexOf(substr, i)) >= 0; i += substrLen) {
-            indices.push(i);
-        }
-        return indices;
-    }),
-}), { virtual: true });
+
 jest.mock("./requestTypes",         () => ({
     leanFileProgressNotificationType: "$/lean/fileProgress",
     leanGoalRequestType:              "$/lean/plainGoal",
@@ -159,12 +150,46 @@ const messageDiag = (message: string, startLine: number, startCharacter = 0) => 
     ),
 });
 
-const makeDocument = (content: string) => ({
-    ...FAKE_DOCUMENT,
-    getText:    () => content,
-    positionAt: (offset: number) => new Position(0, offset),
-    offsetAt:   (pos: any) => pos.character,
-}) as any;
+function makeDocument(content: string) {
+    const lines = content.split("\n");
+ 
+    const positionAt = (offset: number): { line: number; character: number } => {
+        let remaining = offset;
+        for (let i = 0; i < lines.length; i++) {
+            // +1 for the newline that split() consumed
+            const lineLen = lines[i].length + 1;
+            if (remaining < lineLen) return new Position(i, remaining);
+            remaining -= lineLen;
+        }
+        // offset == content.length → end of last line
+        return new Position(lines.length - 1, lines[lines.length - 1].length);
+    };
+ 
+    const offsetAt = (pos: { line: number; character: number }): number => {
+        let offset = 0;
+        for (let i = 0; i < pos.line; i++) offset += lines[i].length + 1;
+        return offset + pos.character;
+    };
+ 
+    return {
+        ...FAKE_DOCUMENT,
+        getText:    () => content,
+        lineCount:  lines.length,
+        positionAt,
+        offsetAt,
+    } as any;
+}
+
+function posOf(content: string, needle: string, fromOffset = 0) {
+    const idx = content.indexOf(needle, fromOffset);
+    if (idx === -1) throw new Error(`"${needle}" not found after offset ${fromOffset}`);
+    const before = content.slice(0, idx);
+    const line = before.split("\n").length - 1;
+    const character = idx - before.lastIndexOf("\n") - 1;
+    return { line, character, offset: idx };
+}
+ 
+ 
 
 // ===========================================================================
 // Tests
@@ -291,8 +316,61 @@ describe("LeanLspClient.earlyProofStatus", () => {
     });
 });
 
-describe("LeanLspClient.getInputAreas ordering", () => {
-    it("returns input areas in source order", () => {
+describe("LeanLspClient.getInputAreas", () => {
+ 
+    it("returns an empty array when there are no input areas", () => {
+        const instance = makeClient();
+        const content = "no input areas here\n";
+        const document = makeDocument(content);
+ 
+        const areas = (instance as any).getInputAreas(document) as Range[];
+ 
+        expect(areas).toHaveLength(0);
+    });
+ 
+    it("returns a single range whose start is the :::input tag and end is the ::: closing tag", () => {
+        const instance = makeClient();
+        const content = [
+            "before",
+            ":::input",
+            "proof goes here",
+            ":::",
+            "after",
+        ].join("\n");
+        const document = makeDocument(content);
+ 
+        const areas = (instance as any).getInputAreas(document) as Range[];
+ 
+        expect(areas).toHaveLength(1);
+ 
+        const openPos  = posOf(content, ":::input\n");
+        const closePos = posOf(content, ":::\n");
+ 
+        expect(areas[0].start).toEqual(new Position(openPos.line,  openPos.character));
+        expect(areas[0].end  ).toEqual(new Position(closePos.line, closePos.character));
+    });
+ 
+    it("correctly locates the closing ::: even when the body contains text", () => {
+        const instance = makeClient();
+        const content = [
+            ":::input",
+            "  By h we get x",
+            "  We conclude",
+            ":::",
+            "",
+        ].join("\n");
+        const document = makeDocument(content);
+ 
+        const areas = (instance as any).getInputAreas(document) as Range[];
+ 
+        expect(areas).toHaveLength(1);
+ 
+        // Start must be line 0 (the :::input line), end must be line 3 (the ::: line)
+        expect(areas[0].start.line).toBe(0);
+        expect(areas[0].end.line  ).toBe(3);
+    });
+
+    it("returns two areas in document order for a file with two input blocks", () => {
         const instance = makeClient();
         const content = [
             "before",
@@ -306,20 +384,26 @@ describe("LeanLspClient.getInputAreas ordering", () => {
             "",
         ].join("\n");
         const document = makeDocument(content);
-
-        // @ts-expect-error protected
-        const areas = instance.getInputAreas(document) as Range[];
+ 
+        const areas = (instance as any).getInputAreas(document) as Range[];
+ 
         expect(areas).toHaveLength(2);
-
-        const starts = areas.map(area => document.offsetAt(area.start));
-        const firstOpen = content.indexOf(":::input\n");
-        const secondOpen = content.indexOf(":::input\n", firstOpen + 1);
-
-        expect(starts).toEqual([firstOpen, secondOpen]);
-        expect(starts).toEqual([...starts].sort((a, b) => a - b));
+ 
+        const firstOpen  = posOf(content, ":::input\n");
+        const firstClose = posOf(content, ":::\n");
+        const secondOpen = posOf(content, ":::input\n", firstOpen.offset + 1);
+        const secondClose = posOf(content, ":::\n", firstClose.offset + 1);
+ 
+        // First area
+        expect(areas[0].start).toEqual(new Position(firstOpen.line,   firstOpen.character));
+        expect(areas[0].end  ).toEqual(new Position(firstClose.line,  firstClose.character));
+ 
+        // Second area
+        expect(areas[1].start).toEqual(new Position(secondOpen.line,  secondOpen.character));
+        expect(areas[1].end  ).toEqual(new Position(secondClose.line, secondClose.character));
     });
-
-    it("keeps consecutive areas monotonic for lower-bound logic", () => {
+ 
+    it("each area starts after the previous area ends (areas do not overlap)", () => {
         const instance = makeClient();
         const content = [
             ":::input",
@@ -334,21 +418,19 @@ describe("LeanLspClient.getInputAreas ordering", () => {
             "",
         ].join("\n");
         const document = makeDocument(content);
-
+        
         // @ts-expect-error protected
         const areas = instance.getInputAreas(document) as Range[];
         expect(areas).toHaveLength(3);
-
-        const starts = areas.map(area => document.offsetAt(area.start));
-        const ends = areas.map(area => document.offsetAt(area.end));
-
+ 
         for (let i = 1; i < areas.length; i++) {
-            expect(starts[i]).toBeGreaterThan(starts[i - 1]);
-            expect(ends[i - 1]).toBeLessThanOrEqual(starts[i]);
+            const prevEndOffset  = document.offsetAt(areas[i - 1].end);
+            const currStartOffset = document.offsetAt(areas[i].start);
+            expect(currStartOffset).toBeGreaterThan(prevEndOffset);
         }
     });
-
-    it("stays sorted on production-like multilean content", () => {
+ 
+    it("finds exactly three areas in realistic multilean content at the correct offsets", () => {
         const instance = makeClient();
         const content = [
             "#doc (WaterproofGenre) \"Index\" =>",
@@ -358,16 +440,13 @@ describe("LeanLspClient.getInputAreas ordering", () => {
             "## ATC - 003",
             "```lean",
             "Example \"ATC - 003\"",
-            "  Given:",
-            "  Assume:",
-            "  Conclusion: ∀ a : ℝ, ∀ b > 5, ∃ c, c > b - a",
             "Proof:",
             "```",
-            ":::input",
+            ":::input",      // line 9  - first open
             "```lean",
             "",
             "```",
-            ":::",
+            ":::",            // line 13 - first close
             "",
             "## ATC - 009",
             ":::hint \"Show hint\"",
@@ -375,51 +454,67 @@ describe("LeanLspClient.getInputAreas ordering", () => {
             ":::",
             "```lean",
             "Example \"ATC - 009\"",
-            "  Given:",
-            "  Assume:",
-            "  Conclusion: ∀ a : ℝ, ∀ b > 5, ∃ c, c > b - a",
             "Proof:",
             "```",
-            ":::input",
+            ":::input",      // line 23 - second open
             "```lean",
             "",
             "```",
-            ":::",
+            ":::",            // line 27 - second close
             "",
             "## ATC - 014",
             "```lean",
             "Example \"ATC - 014\"",
-            "  Given: (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ)",
-            "  Assume: (hu : u converges to x₀) (hf : f is continuous at x₀)",
-            "  Conclusion: (f ∘ u) converges to f x₀",
             "Proof:",
             "```",
-            ":::input",
+            ":::input",      // line 34 - third open
             "```lean",
             "  Fix ε > 0",
-            "  By hf applied to ε using that ε > 0 we get δ such that",
-            "    (δ_pos : δ > 0) and (Hf : ∀ x, |x - x₀| ≤ δ ⇒ |f x - f x₀| ≤ ε)",
             "```",
-            ":::",
+            ":::",            // line 38 - third close
             "",
             "::::",
             "",
         ].join("\n");
         const document = makeDocument(content);
-
+ 
         // @ts-expect-error protected
         const areas = instance.getInputAreas(document) as Range[];
-        expect(areas.length).toBeGreaterThan(2);
-
-        const starts = areas.map(area => document.offsetAt(area.start));
-
-        const expectedOpenOffsets: number[] = [];
-        for (let i = 0; (i = content.indexOf(":::input\n", i)) >= 0; i += ":::input\n".length) {
-            expectedOpenOffsets.push(i);
+ 
+        expect(areas).toHaveLength(3);
+ 
+        // Collect the ground-truth positions by scanning the content string directly
+        // so this test does not depend on line-number constants staying in sync with
+        // the content array above.
+        const openPositions: { line: number; character: number }[] = [];
+        const closePositions: { line: number; character: number }[] = [];
+ 
+        let searchFrom = 0;
+        while (true) {
+            const found = posOf(content, ":::input\n", searchFrom);
+            if (found.offset === -1) break;
+            openPositions.push({ line: found.line, character: found.character });
+            searchFrom = found.offset + ":::input\n".length;
+            if (openPositions.length === 3) break;
         }
-
-        expect(starts).toEqual(expectedOpenOffsets);
-        expect(starts).toEqual([...starts].sort((a, b) => a - b));
+ 
+        searchFrom = 0;
+        // Each closing ::: comes after its matching :::input; collect them in order
+        // by scanning after each open position we already found.
+        for (const open of openPositions) {
+            const openOffset = document.offsetAt(open);
+            const found = posOf(content, ":::\n", openOffset + ":::input\n".length);
+            closePositions.push({ line: found.line, character: found.character });
+        }
+ 
+        for (let i = 0; i < 3; i++) {
+            expect(areas[i].start).toEqual(new Position(openPositions[i].line,  openPositions[i].character));
+            expect(areas[i].end  ).toEqual(new Position(closePositions[i].line, closePositions[i].character));
+        }
+ 
+        // Sanity: areas are in strictly ascending order
+        const startOffsets = areas.map(a => document.offsetAt(a.start));
+        expect(startOffsets).toEqual([...startOffsets].sort((a, b) => a - b));
     });
 });
 

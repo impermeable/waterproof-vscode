@@ -4,6 +4,10 @@ jest.mock("vscode", () => {
         translate(lineDelta: number, charDelta: number) {
             return new Position(this.line + lineDelta, this.character + charDelta);
         }
+        isAfter(other: InstanceType<typeof Position>) {
+            return this.line > other.line
+                || (this.line === other.line && this.character > other.character);
+        }
     };
 
     const Range = class {
@@ -120,6 +124,11 @@ function makeClient(isBusy = false) {
         { appendLine: jest.fn() } as any,
     );
     (instance as any).activeDocument = FAKE_DOCUMENT;
+    (instance as any).webviewManager = {
+        postMessage: jest.fn(),
+        postAndCacheMessage: jest.fn(),
+        has: jest.fn(() => true),
+    };
     (instance as any).isBusy = isBusy;
     return instance;
 }
@@ -131,6 +140,14 @@ const diag = (startLine: number, endLine: number, severity: number) => ({
     message:  "test",
     severity,
     range: new Range(new Position(startLine, 0), new Position(endLine, 0)),
+});
+
+const messageDiag = (message: string, startLine: number, startCharacter = 0) => ({
+    message,
+    range: new Range(
+        new Position(startLine, startCharacter),
+        new Position(startLine, startCharacter),
+    ),
 });
 
 // ===========================================================================
@@ -195,4 +212,129 @@ describe("LeanLspClient.determineProofStatus", () => {
         expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
     });
 
+});
+
+describe("LeanLspClient.shouldMarkInvalid", () => {
+    const lowerBound = new Position(2, 0);
+    const inputArea = new Range(new Position(2, 0), new Position(6, 0));
+
+    const shouldMarkInvalid = (diags: any[]) => {
+        const instance = makeClient();
+        //@ts-expect-error private
+        return instance.shouldMarkInvalid(diags, lowerBound, inputArea);
+    };
+
+    it("returns true for a sorry diagnostic inside bounds", () => {
+        expect(shouldMarkInvalid([
+            messageDiag("declaration uses 'sorry'", 4),
+        ])).toBe(true);
+    });
+
+    it("returns true for a Try these hint inside bounds", () => {
+        expect(shouldMarkInvalid([
+            messageDiag("Try these:\n  exact h", 4),
+        ])).toBe(true);
+    });
+
+    it("returns false when matching diagnostic is at lowerBound", () => {
+        expect(shouldMarkInvalid([
+            messageDiag("declaration uses 'sorry'", 2, 0),
+        ])).toBe(false);
+    });
+
+    it("returns false when matching diagnostic is after input area end", () => {
+        expect(shouldMarkInvalid([
+            messageDiag("Try these:\n  simp", 7),
+        ])).toBe(false);
+    });
+
+    it("returns false for non-matching messages", () => {
+        expect(shouldMarkInvalid([
+            messageDiag("type mismatch", 4),
+        ])).toBe(false);
+    });
+
+    it("returns true when any diagnostic matches among mixed diagnostics", () => {
+        expect(shouldMarkInvalid([
+            messageDiag("type mismatch", 4),
+            messageDiag("declaration uses 'sorry'", 5),
+        ])).toBe(true);
+    });
+});
+
+describe("LeanLspClient.isBusy lifecycle", () => {
+    const progress = (processing: any[], uri = "file:///test.lean") => ({
+        textDocument: { uri, version: 1 },
+        processing,
+    });
+
+    const processingRange = () => [{
+        range: new Range(new Position(1, 0), new Position(2, 0)),
+    }];
+
+    it("sets isBusy to true on document changes", () => {
+        const instance = makeClient(false);
+
+        // @ts-expect-error protected
+        instance.onDocumentChanged();
+
+        expect((instance as any).isBusy).toBe(true);
+    });
+
+    it("sets isBusy to true when file progress reports processing", async () => {
+        const instance = makeClient(false);
+        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
+
+        // @ts-expect-error protected
+        await instance.onFileProgress(progress(processingRange()));
+
+        expect((instance as any).isBusy).toBe(true);
+    });
+
+    it("sets isBusy to false when file progress has no processing ranges", async () => {
+        const instance = makeClient(true);
+        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
+
+        // @ts-expect-error protected
+        await instance.onFileProgress(progress([]));
+
+        expect((instance as any).isBusy).toBe(false);
+    });
+
+    it("does not change isBusy for progress notifications of another document", async () => {
+        const instance = makeClient(true);
+        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
+
+        // @ts-expect-error protected
+        await instance.onFileProgress(progress([], "file:///other.lean"));
+
+        expect((instance as any).isBusy).toBe(true);
+    });
+
+    it("clears isBusy when checking completes", async () => {
+        const instance = makeClient(true);
+        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
+
+        // @ts-expect-error protected
+        await instance.onCheckingCompleted();
+
+        expect((instance as any).isBusy).toBe(false);
+    });
+
+    it("does not get stuck busy after edit -> processing -> done sequence", async () => {
+        const instance = makeClient(false);
+        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
+
+        // @ts-expect-error protected
+        instance.onDocumentChanged();
+        expect((instance as any).isBusy).toBe(true);
+
+        // @ts-expect-error protected
+        await instance.onFileProgress(progress(processingRange()));
+        expect((instance as any).isBusy).toBe(true);
+
+        // @ts-expect-error protected
+        await instance.onCheckingCompleted();
+        expect((instance as any).isBusy).toBe(false);
+    });
 });

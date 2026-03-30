@@ -207,6 +207,22 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         return status;
     }
 
+    private static readonly SORRY_HINT_RE = /declaration uses 'sorry'|^Try these:/m;
+
+    protected shouldMarkInvalid(
+        diags: Diagnostic[],
+        lowerBound: Position,
+        inputArea: Range
+    ): boolean {
+        // Is there a `sorry` or a `hint` error after the end of the previous input area
+        // and before the end of the current input area?
+        return diags.some(d =>
+            LeanLspClient.SORRY_HINT_RE.test(d.message) &&
+            d.range.start.isAfter(lowerBound) &&
+            !d.range.start.isAfter(inputArea.end)
+        );
+    }
+
     // Emitters for infoview
     private didChangeEmitter = new EventEmitter<DidChangeTextDocumentParams>();
     public didChange(cb: (params: DidChangeTextDocumentParams) => void): Disposable {
@@ -242,5 +258,10 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
     protected onDocumentChanged(): void {
         this.isBusy = true;
+    }
+
+    protected override async onCheckingCompleted(): Promise<void> {
+        this.isBusy = false;
+        await super.onCheckingCompleted();
     }
 }

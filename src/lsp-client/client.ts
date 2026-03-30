@@ -227,7 +227,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     // This setTimeout creates a NodeJS.Timeout object, but in the browser it is just a number.
     computeInputAreaStatusTimer?: NodeJS.Timeout | number;
 
-    protected async computeInputAreaStatus(document: TextDocument) {
+    protected async computeInputAreaStatus(document: TextDocument): Promise<void> {
         if (this.computeInputAreaStatusTimer) {
             clearTimeout(this.computeInputAreaStatusTimer);
         }
@@ -244,13 +244,24 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
 
             // for each input area, check the proof status
             try {
-                const statuses = await Promise.all(inputAreas.map(a => {
-                    if (this.viewPortBasedChecking && this.viewPortRange && a.intersection(this.viewPortRange) === undefined) {
+                const statuses = await Promise.all(inputAreas.map((area, i) => {
+                    // compute lower bound for this input area: end of previous input area, or (0, 0) for the first one
+                    const lowerBound = i === 0
+                        ? new Position(0, 0)
+                        : inputAreas[i - 1].end;
+                    
+                    // Check if there are errors before the input area.
+                    // e.g. when using `sorry` in Lean. 
+                    if (this.shouldMarkInvalid(diags, lowerBound, area)) {
+                        return Promise.resolve(InputAreaStatus.Invalid);
+                    }
+
+                    if (this.viewPortBasedChecking && this.viewPortRange && area.intersection(this.viewPortRange) === undefined) {
                         // This input area is outside of the range that has been checked and thus we can't determine its status
                         return Promise.resolve(InputAreaStatus.OutOfView);
-                    } else {
-                        return this.determineProofStatus(document, a, diags);
                     }
+
+                    return this.determineProofStatus(document, area, diags);
                 }));
 
                 // forward statuses to corresponding ProseMirror editor
@@ -263,6 +274,25 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 console.log("[computeInputAreaStatus] The catch block caught an error that we don't classify as 'cancelled by server':", reason);
             }
         }, 250);
+    }
+
+    /**
+     * Override in subclasses to short-circuit proof checking with Invalid
+     * before the LSP goals request is made. Called once per input area with
+     * the diagnostics, the lower boundary (end of the previous input area),
+     * and the current area's range.
+     *
+     * Default returns false (no early-out).
+     * @param diags Diagnostics for the whole document.
+     * @param lowerBound The end position of the previous input area, or (0, 0) for the first input area.
+     * @param inputArea The range of the current input area.
+     */
+    protected shouldMarkInvalid(
+        _diags: Diagnostic[],
+        _lowerBound: Position,
+        _inputArea: Range
+    ): boolean {
+        return false;
     }
 
     async startWithHandlers(webviewManager: WebviewManager, allowedLanguages: string[]): Promise<string[]> {

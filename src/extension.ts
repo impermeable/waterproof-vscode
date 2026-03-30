@@ -37,7 +37,7 @@ import { CompositeClient } from "./lsp-client/composite";
 import { CompositeGoalsPanel } from "./webviews/goalviews/compositeGoalsPanel";
 import { convertToString, GoalConfig } from "../lib/types";
 import { RunResult } from "./lsp-client/petanque";
-import { exportExerciseSheet } from "../scripts/export_exercise_sheet";
+import { processWaterproofContent } from "./helpers/exerciseSheet";
 
 /**
  * Main extension class
@@ -193,7 +193,7 @@ export class Waterproof implements Disposable {
         this.registerCommand("toggle", this.toggleClient);
         this.registerCommand("stop", this.stopClient);
         // Remove solutions from document and open save dialog for the solution-less file.
-        this.registerCommand("exportExerciseSheet", () => {exportExerciseSheet(this.client.activeDocument);});
+        this.registerCommand("exportExerciseSheet", this.exportExerciseSheet);
 
         // Register the new Waterproof Document command
         this.registerCommand("newWaterproofDocument", this.newFileCommand);
@@ -500,6 +500,29 @@ export class Waterproof implements Disposable {
     private registerCommand(name: string, handler: (...args: unknown[]) => void, editorCommand: boolean = false) {
         const register = editorCommand ? commands.registerTextEditorCommand : commands.registerCommand;
         this.disposables.push(register("waterproof." + name, handler, this));
+    }
+
+    /**
+     * Remove solutions from document and open save dialog for the solution-less file.
+     */
+    async exportExerciseSheet() {
+        const document = this.client.activeDocument;
+        try {
+            if (document) {
+                let content: string = document.getText();
+                const fileName = document.fileName;
+                const fileExtension: string = fileName.substring(fileName.lastIndexOf('.'));
+                content = processWaterproofContent(content, fileExtension);
+                const fileUri = await window.showSaveDialog();
+                if (fileUri) {
+                    await workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
+                    window.showInformationMessage(`Saved to: ${fileUri.fsPath}`);
+                }
+            }
+        } catch (error) {
+            window.showErrorMessage(`Error saving as exercise sheet: ${error}`);
+            console.error(`Error saving as exercise sheet: ${error}`);
+        }
     }
 
     /**

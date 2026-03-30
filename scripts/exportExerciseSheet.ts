@@ -4,6 +4,11 @@ import { Command } from 'commander';
 import { processWaterproofContent } from '../src/helpers/exerciseSheet.ts';
 
 
+/**
+ * Get paths of all .mv and .lean files inside a folder recursively.
+ *
+ * @param folder - Path to the folder
+ */
 function getAllFiles(folder: string): string[] {
     let allFilePaths: string[] = [];
     const fileNames = fs.readdirSync(folder);
@@ -23,6 +28,15 @@ function getAllFiles(folder: string): string[] {
     return allFilePaths;
 }
 
+/**
+ * Process a single .mv/.lean file and return processed content.
+ *
+ * @param filePath - Path to the .mv/.lean file
+ * @return Processed content with solutions removed
+ *
+ * @throws {Error} If the file doesn't exist
+ *
+ */
 function processSingleFile(filePath: string): string {
     if (!fs.existsSync(filePath)) {
         throw new Error(`File not found: ${filePath}`);
@@ -33,6 +47,15 @@ function processSingleFile(filePath: string): string {
     return processWaterproofContent(content, fileExtension);
 }
 
+/**
+ * Process all .mv and .lean files in inputFolder and save to outputFolder,
+ * preserving directory structure.
+ *
+ * @param inputFolder - Source directory containing .mv files
+ * @param outputFolder - Destination directory for processed files
+ *
+ * @throws {Error} If input folder is not a directory
+ */
 function processDirectory(inputFolder: any, outputFolder: any) {
     if (!fs.statSync(inputFolder).isDirectory()) {
         throw new Error(`Input folder is not a directory: ${inputFolder}`);
@@ -76,6 +99,7 @@ function processDirectory(inputFolder: any, outputFolder: any) {
 }
 
 
+// Defining a parser for script arguments
 const program = new Command();
 program
     .argument('[file]', 'Single .mv file to process (output goes to stdout)')
@@ -101,4 +125,5 @@ program
         }
     });
 
+// Executing the script
 program.parse(process.argv);

@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { Command } from 'commander';
-import { processWaterproofContent } from '../src/helpers/exerciseSheet';
+import { processWaterproofContent } from '../src/helpers/exerciseSheet.ts';
 
 
 function getAllFiles(folder: string): string[] {

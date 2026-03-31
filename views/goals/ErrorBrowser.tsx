@@ -1,5 +1,5 @@
 import { PpString } from "../../lib/types";
-import { CoqPp } from "../goals/CoqPp";
+import { RocqPp } from "../goals/RocqPp";
 import React from "react";
 
 //error PpString type
@@ -10,7 +10,7 @@ export function ErrorBrowser({ error }: ErrorBrowserParams) {
   return (
     <>
       <header>Errors:</header>
-      <CoqPp content={error} inline={true} />;
+      <RocqPp content={error} inline={true} />;
     </>
   );
 }

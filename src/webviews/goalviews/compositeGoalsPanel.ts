@@ -4,7 +4,7 @@ import { IGoalsComponent } from "../../components";
 import { LeanLspClient } from "../../lsp-client/lean";
 import { InfoProvider } from "../../infoview";
 import { Location } from "vscode-languageserver-types";
-import { WebviewEvents, WebviewState } from "../coqWebview";
+import { WebviewEvents, WebviewState } from "../waterproofPanel";
 
 export class CompositeGoalsPanel implements IGoalsComponent {
     protected lastClient?: CompositeClient;

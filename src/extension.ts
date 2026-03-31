@@ -12,12 +12,12 @@ import {
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
-import { CoqnitiveStatusBar } from "./components/enableButton";
+import { WaterproofStatusBar } from "./components/enableButton";
 import { LanguageClientProviderFactory, LspClientConfig } from "./lsp-client/clientTypes";
 import { CoqLspServerConfig } from "./lsp-client/rocq";
 import { LeanLspServerConfig } from "./lsp-client/lean";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
-import { CoqEditorProvider } from "./pm-editor";
+import { WaterproofEditorProvider } from "./pm-editor";
 import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
@@ -161,11 +161,11 @@ export class Waterproof implements Disposable {
             }
         });
 
-        this.disposables.push(CoqEditorProvider.register(context, this.webviewManager));
+        this.disposables.push(WaterproofEditorProvider.register(context, this.webviewManager));
 
 
         // make relevant gui components
-        this.statusBar = new CoqnitiveStatusBar();
+        this.statusBar = new WaterproofStatusBar();
         const goalsPanel = new GoalsPanel(this.context.extensionUri, LspClientConfig.create())
         const compositeGoalsPanel = new CompositeGoalsPanel(goalsPanel);
         this.goalsComponents.push(compositeGoalsPanel);

@@ -5,7 +5,7 @@ import "../styles/coqpp.css";
 
 
 //function that can display a Pp string in the correct format
-export function CoqPp({
+export function RocqPp({
   content,
   inline,
 }: {

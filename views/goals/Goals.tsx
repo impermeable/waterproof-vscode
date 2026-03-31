@@ -3,7 +3,7 @@ import { PropsWithChildren, useLayoutEffect, useRef } from "react";
 import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 import { convertToString, Goal, GoalConfig, Hyp, HypVisibility, PpString } from "../../lib/types";
 import { Box } from "./Box";
-import { CoqPp } from "./CoqPp";
+import { RocqPp } from "./RocqPp";
 import { HypEl } from "../debug/Hypothesis"
 import { MessageType } from "../../shared";
 import vscode from "./vscode";
@@ -63,7 +63,7 @@ function Goal({ goal}: GoalP) {
   return (
     <div className="coq-goal-env" ref={ref}>
       <div style={{ marginLeft: "1ex" }} ref={tyRef}>
-        <CoqPp content={goal.ty} inline={false} />
+        <RocqPp content={goal.ty} inline={false} />
         {
           options.map((option, index) => (
           <div key={index}>
@@ -137,7 +137,7 @@ function GoalsList({
       return (
         <Box summary="Proof finished" pos={pos} textDox={textDoc}>{bullet_msg ? (
           <div className="aside">
-            <CoqPp content={bullet_msg} inline={true} />
+            <RocqPp content={bullet_msg} inline={true} />
           </div>
         ) : null}</Box>
       );
@@ -187,7 +187,7 @@ function GoalsRemaining({
       return (
         <Box summary="Proof finished" pos={pos} textDox={textDoc}>{bullet_msg ? (
           <div className="aside">
-            <CoqPp content={bullet_msg} inline={true} />
+            <RocqPp content={bullet_msg} inline={true} />
           </div>
         ) : null}</Box>
       );

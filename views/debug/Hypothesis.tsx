@@ -4,7 +4,7 @@ import { PropsWithChildren, useLayoutEffect, useRef } from "react";
 import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 import { GoalConfig, Hyp, PpString } from "../../lib/types";
 import { Box } from "../goals/Box";
-import { CoqPp } from "../goals/CoqPp";
+import { RocqPp } from "../goals/RocqPp";
 
 import React from "react";
 import {
@@ -21,11 +21,11 @@ export function HypEl({ hyp: { names, def, ty } }: { hyp: Hyp<PpString> }) {
   const className = "coq-hypothesis" + (def ? " coq-has-def" : "");
   //a label for the hypothesis
   const mkLabel = (id: CoqId) => <label key={objectHash(id)}>{id}</label>;
-  //this converts the PpString to a CoqPp component
+  //this converts the PpString to a RocqPp component
   const mkdef = (pp?: PpString) =>
     pp ? (
       <span className="def">
-        <CoqPp content={pp} inline={true} />
+        <RocqPp content={pp} inline={true} />
       </span>
     ) : null;
 
@@ -35,9 +35,9 @@ export function HypEl({ hyp: { names, def, ty } }: { hyp: Hyp<PpString> }) {
       {/* //mapping the names to labels */}
       {names.map(mkLabel)}
       {mkdef(def)}
-      {/* displaying the actual contect as a CoqPp component */}
+      {/* displaying the actual contect as a RocqPp component */}
       <div>
-        <CoqPp content={ty} inline={true} />
+        <RocqPp content={ty} inline={true} />
       </div>
     </div>
   );

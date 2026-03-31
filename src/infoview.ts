@@ -20,7 +20,7 @@ import { LeanLspClient } from './lsp-client/lean';
 import { DocumentUri, WorkspaceEdit, Location } from 'vscode-languageserver-protocol';
 import { GoalsPanel } from './webviews/goalviews/goalsPanel';
 import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } from './helpers';
-import { WebviewEvents } from './webviews/coqWebview';
+import { WebviewEvents } from './webviews/waterproofPanel';
 
 const keepAlivePeriodMs = 10000
 

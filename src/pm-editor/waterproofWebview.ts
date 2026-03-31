@@ -2,18 +2,18 @@ import { EventEmitter } from "events";
 import { ColorThemeKind, Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
 
 import { getNonce } from "../util";
-import { WebviewEvents, WebviewState } from "../webviews/coqWebview";
+import { WebviewEvents, WebviewState } from "../webviews/waterproofPanel";
 import { SequentialEditor } from "./edit";
 import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
 import { qualifiedSettingName, WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger, WaterproofSetting } from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
-import { CoqEditorProvider } from "./coqEditor";
+import { WaterproofEditorProvider } from "./waterproofEditor";
 import { FileFormat, Message, MessageType } from "../../shared";
 import { DocChange, HistoryChange, ThemeStyle, WrappingDocChange } from "@impermeable/waterproof-editor";
 
-export class ProseMirrorWebview extends EventEmitter {
+export class WaterproofWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
     private _panel: WebviewPanel;
 
@@ -33,7 +33,7 @@ export class ProseMirrorWebview extends EventEmitter {
     private _enforceCorrectNonInputArea: boolean;
     private _lastCorrectDocString: string;
 
-    private _provider: CoqEditorProvider;
+    private _provider: WaterproofEditorProvider;
 
     private _showLineNrsInEditor: boolean = WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
     private _showMenuItemsInEditor: boolean = WaterproofConfigHelper.get(WaterproofSetting.ShowMenuItemsInEditor);
@@ -70,7 +70,7 @@ export class ProseMirrorWebview extends EventEmitter {
         this.sendHistoryChangeToEditor(HistoryChange.Redo);
     };
 
-    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
+    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: WaterproofEditorProvider) {
         super();
 
         this._provider = provider;
@@ -116,7 +116,7 @@ export class ProseMirrorWebview extends EventEmitter {
     }
 
     /** Create a prosemirror webview */
-    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
+    public static async createWaterproofView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: WaterproofEditorProvider) {
         // Check if the line endings of file are windows
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
@@ -132,7 +132,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 window.showErrorMessage("Failed to open document for conversion");
             }
         }
-        return new ProseMirrorWebview(webview, extensionUri, doc, provider);
+        return new WaterproofWebview(webview, extensionUri, doc, provider);
     }
 
     /**

@@ -600,7 +600,7 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Restarts the Coq LSP client.
+     * Restarts the Rocq LSP client.
      */
     private async restartClient(): Promise<void> {
         await this.stopClient();
@@ -608,7 +608,7 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Toggles the state of the Coq LSP client. That is, stop the client if it's running and
+     * Toggles the state of the Rocq LSP client. That is, stop the client if it's running and
      * otherwise initialize it.
      */
     private toggleClient(): Promise<void> {
@@ -620,7 +620,7 @@ export class Waterproof implements Disposable {
     }
 
     /**
-     * Disposes of the Coq LSP client.
+     * Disposes of the Rocq LSP client.
      */
     private async stopClient(): Promise<void> {
         if (this.client.isRunning()) {

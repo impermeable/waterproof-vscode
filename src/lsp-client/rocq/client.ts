@@ -177,7 +177,7 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
     }
 
     /**
-     * Returns the end position of the currently selected sentence, i.e., the Coq sentence in the
+     * Returns the end position of the currently selected sentence, i.e., the Rocq sentence in the
      * active document in which the text cursor is located. Only returns `undefined` if no sentences
      * are known.
      */
@@ -187,7 +187,7 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
     }
 
     /**
-     * Returns the beginning position of the currently selected sentence, i.e., the Coq sentence in the
+     * Returns the beginning position of the currently selected sentence, i.e., the Rocq sentence in the
      * active document in which the text cursor is located. Only returns `undefined` if no sentences
      * are known. This is really just the end position of the previous sentence.
      */

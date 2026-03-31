@@ -1,4 +1,4 @@
-// This is the script that is loaded by Coq's webview
+// This is the script that is loaded by Waterproof's webview
 
 import React from "react";
 import { createRoot } from "react-dom/client";

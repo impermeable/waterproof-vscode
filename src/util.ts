@@ -35,7 +35,7 @@ export function checkConflictingExtensions() {
 }
 
 /**
- * Checks whether the user wants to ignore Coq object files and adjusts the workspace
+ * Checks whether the user wants to ignore Rocq object files and adjusts the workspace
  * configuration accordingly.
  */
 export function excludeRocqFileTypes() {

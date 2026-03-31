@@ -184,7 +184,7 @@ export abstract class WaterproofPanel extends EventEmitter implements Disposable
                     window.extraData = ${JSON.stringify(data)};
                 </script>
                 <script src="${scriptUri}" type="module"></script>
-                <title>Coq's info panel</title>
+                <title>Rocq's info panel</title>
             </head>
             <body>
                 <div id="root"></div>

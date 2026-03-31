@@ -1,7 +1,7 @@
 import { WaterproofConfigHelper, WaterproofSetting } from "../../helpers";
 
 /**
- * The Coq LSP server configuration
+ * The Rocq LSP server configuration
  */
 export interface RocqLspServerConfig {
     client_version: string;

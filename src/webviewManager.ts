@@ -69,7 +69,7 @@ export class WebviewManager extends EventEmitter {
     // Tool webviews (UI such as panels), stores the view based on name
     private readonly _toolWebviews: Map<string, WaterproofPanel> = new Map<string, WaterproofPanel>;
 
-    // ProseMirror webviews, stores the view based on Doc uri
+    // Waterproof webviews, stores the view based on Doc uri
     private readonly _waterproofWebviews: Map<string, WaterproofWebview> = new Map<string, WaterproofWebview>;
     // RequestId of request response
     private _requestId: number;
@@ -121,11 +121,11 @@ export class WebviewManager extends EventEmitter {
     }
 
     /**
-     * Add a ProseMirror webview to manager
+     * Add a Waterproof webview to manager
      * @param webview object associated with document
      */
     public addWaterproofWebview(webview: WaterproofWebview) {
-        console.log("Adding ProseMirror webview", webview.document);
+        console.log("Adding Waterproof webview", webview.document);
         if (this.has(webview.document)) {
             throw new Error(" Webview already registered!  THIS SHOULD NOT HAPPEN! ");
         }
@@ -196,7 +196,7 @@ export class WebviewManager extends EventEmitter {
     }
 
     /**
-     * Sends `message` to the ProseMirror webview identified by `documentUri`. The webview caches
+     * Sends `message` to the Waterproof webview identified by `documentUri`. The webview caches
      * this message, which means it's sent again when the editor reinitializes.
      */
     public postAndCacheMessage(documentUri: string | Uri | TextDocument, message: Message) {
@@ -205,7 +205,7 @@ export class WebviewManager extends EventEmitter {
             documentUri = documentUri.toString();
         }
         const webview = this._waterproofWebviews.get(documentUri);
-        if (!webview) throw new Error("There is no ProseMirror webview with URI: " + documentUri);
+        if (!webview) throw new Error("There is no Waterproof webview with URI: " + documentUri);
         webview.postMessage(message, true);
     }
 

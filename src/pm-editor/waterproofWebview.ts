@@ -154,7 +154,7 @@ export class WaterproofWebview extends EventEmitter {
     }
 
     /**
-     * Initialize the ProseMirror webview
+     * Initialize the Waterproof webview
      *
      * @param extensionUri
      */

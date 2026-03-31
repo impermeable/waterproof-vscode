@@ -19,10 +19,10 @@ function populatePPTable() {
     ppTable.set("~",    "¬");
 }
 
-export function translateCoqDoc(coqdoc: string) {
+export function translateRocqDoc(rocqdoc: string) {
     populatePPTable();
 
-    let commentInside = coqdoc;
+    let commentInside = rocqdoc;
 
     /**
      * Replace headers according to
@@ -30,13 +30,13 @@ export function translateCoqDoc(coqdoc: string) {
      * 
      * The order here matters so go from more * to less. 
      */
-    // Replace all H4 headers inside the coqdoc comment with markdown header.
+    // Replace all H4 headers inside the rocqdoc comment with markdown header.
     commentInside = commentInside.replaceAll(/^\*{4}\s+([^\n\r]+)/gm, "#### $1");
-    // Replace all H3 headers inside the coqdoc comment with markdown header.
+    // Replace all H3 headers inside the rocqdoc comment with markdown header.
     commentInside = commentInside.replaceAll(/^\*{3}\s+([^\n\r]+)/gm, "### $1");
-    // Replace all H2 headers inside the coqdoc comment with markdown header.
+    // Replace all H2 headers inside the rocqdoc comment with markdown header.
     commentInside = commentInside.replaceAll(/^\*{2}\s+([^\n\r]+)/gm, "## $1");
-    // Replace all H1 headers inside the coqdoc comment with markdown header.
+    // Replace all H1 headers inside the rocqdoc comment with markdown header.
     commentInside = commentInside.replaceAll(/^\*{1}\s+([^\n\r]+)/gm, "# $1");
 
     // List (-)
@@ -63,8 +63,8 @@ export function translateCoqDoc(coqdoc: string) {
      */
     commentInside = commentInside.replaceAll(/\[{2}\n([^]+)\n\]{2}/g, `\`\`\`\n$1\n\`\`\``);
 
-    /** 
-     * Replace quoted coq according to: 
+    /**
+     * Replace quoted rocq according to:
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#coq-material-inside-documentation
      */
     commentInside = replaceCode(commentInside);
@@ -115,6 +115,6 @@ function toMathInline(input: string): string {
     return input.replaceAll(/%(.*?)%/g, "<math-inline>$1</math-inline>");
 }
 
-export function coqdocToMarkdown(coqdoc: string): string {
-    return toMathInline(translateCoqDoc(coqdoc));
+export function rocqdocToMarkdown(rocqdoc: string): string {
+    return toMathInline(translateRocqDoc(rocqdoc));
 }

@@ -61,7 +61,7 @@ function Goal({ goal}: GoalP) {
   };
 
   return (
-    <div className="coq-goal-env" ref={ref}>
+    <div className="rocq-goal-env" ref={ref}>
       <div style={{ marginLeft: "1ex" }} ref={tyRef}>
         <RocqPp content={goal.ty} inline={false} />
         {

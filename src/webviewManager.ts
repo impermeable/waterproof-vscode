@@ -226,7 +226,7 @@ export class WebviewManager extends EventEmitter {
     /**
      * Called when a message from the webview panel is received.
      *
-     * @param document The `coqEditorDocument` the message originated from.
+     * @param document The `waterproofEditorDocument` the message originated from.
      * @param message The message.
      */
     private onProseMessage(document: TextDocument, message: Message) {

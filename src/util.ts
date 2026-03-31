@@ -38,7 +38,7 @@ export function checkConflictingExtensions() {
  * Checks whether the user wants to ignore Coq object files and adjusts the workspace
  * configuration accordingly.
  */
-export function excludeCoqFileTypes() {
+export function excludeRocqFileTypes() {
     const updateIgnores = WaterproofConfigHelper.get(WaterproofSetting.UpdateIgnores);
     if (updateIgnores) {
         const config = workspace.getConfiguration();

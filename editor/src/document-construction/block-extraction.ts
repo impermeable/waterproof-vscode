@@ -83,56 +83,56 @@ export function extractMathDisplayBlocks(inputDocument: string, parentOffset: nu
     return mathDisplayBlocks;
 }
 
-const coqOpenLength = "```coq\n".length;
-const coqCloseLength = "\n```".length;
+const rocqOpenLength = "```coq\n".length;
+const rocqCloseLength = "\n```".length;
 
 /**
- * Create coq blocks from document string.
+ * Create rocq blocks from document string.
  *
  * Uses regexes to search for ` ```coq ` and ` ```  ` markers.
  */
-export function extractCoqBlocks(inputDocument: string, parentOffset: number = 0): Array<CodeBlock | NewlineBlock> {
-    const coq_code = Array.from(inputDocument.matchAll(regexes.coq));
+export function extractRocqBlocks(inputDocument: string, parentOffset: number = 0): Array<CodeBlock | NewlineBlock> {
+    const rocq_code = Array.from(inputDocument.matchAll(regexes.coq));
 
-    const blocks = coq_code.flatMap((coq) => {
-        if (coq.index === undefined) throw new Error("Index of coq is undefined");
-        
-        // - coq[0] the match;
-        // - coq[1] capture group 1, newline before the ```coq (if any);
-        // - coq[2] ..., the content of the coq block;
-        // - coq[3] ..., newline after the ``` (if any).
-        // console.log(`==========\nprePreWhite: '${coq[1] == "\n"}'\nprePostWhite: '${coq[2] == "\n"}'\ncontent: '${coq[3]}'\npostPreWhite: '${coq[4] == "\n"}'\npostPostWhite: '${coq[5] == "\n"}'\n==========\n`)
-        const content = coq[2];
-        const newlineBefore = coq[1] == "\n";
-        const newlineAfter = coq[3] == "\n";
+    const blocks = rocq_code.flatMap((rocq) => {
+        if (rocq.index === undefined) throw new Error("Index of rocq is undefined");
 
-        // Range of the whole coq block including the ```coq and ``` markers, but without the newlines before/after if any.
-        const range = { from: coq.index + parentOffset + (newlineBefore ? 1 : 0), to: coq.index + parentOffset + (newlineBefore ? 1 : 0) + coq[2].length + coqOpenLength + coqCloseLength };
+        // - rocq[0] the match;
+        // - rocq[1] capture group 1, newline before the ```coq (if any);
+        // - rocq[2] ..., the content of the rocq block;
+        // - rocq[3] ..., newline after the ``` (if any).
+        // console.log(`==========\nprePreWhite: '${rocq[1] == "\n"}'\nprePostWhite: '${rocq[2] == "\n"}'\ncontent: '${rocq[3]}'\npostPreWhite: '${rocq[4] == "\n"}'\npostPostWhite: '${rocq[5] == "\n"}'\n==========\n`)
+        const content = rocq[2];
+        const newlineBefore = rocq[1] == "\n";
+        const newlineAfter = rocq[3] == "\n";
 
-        // Range of the inner content of the coq block, excluding the ```coq and ``` markers.
-        const innerRange = {from: range.from + coqOpenLength, to: range.to - coqCloseLength };
+        // Range of the whole rocq block including the ```coq and ``` markers, but without the newlines before/after if any.
+        const range = { from: rocq.index + parentOffset + (newlineBefore ? 1 : 0), to: rocq.index + parentOffset + (newlineBefore ? 1 : 0) + rocq[2].length + rocqOpenLength + rocqCloseLength };
 
-        const coqBlock = new CodeBlock(content, range, innerRange, 0);
+        // Range of the inner content of the rocq block, excluding the ```coq and ``` markers.
+        const innerRange = {from: range.from + rocqOpenLength, to: range.to - rocqCloseLength };
+
+        const rocqBlock = new CodeBlock(content, range, innerRange, 0);
 
         if (newlineBefore && !newlineAfter) {
-            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, 0), coqBlock];
+            return [new NewlineBlock({from: rocq.index + parentOffset, to: rocq.index + 1 + parentOffset}, {from: rocq.index + parentOffset, to: rocq.index + 1 + parentOffset}, 0), rocqBlock];
         } else if (!newlineBefore && newlineAfter) {
-            return [coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1}, 0)];
+            return [rocqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1}, 0)];
         } else if (newlineBefore && newlineAfter) {
-            return [new NewlineBlock({from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, {from: coq.index + parentOffset, to: coq.index + 1 + parentOffset}, 0), coqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1}, 0)];
+            return [new NewlineBlock({from: rocq.index + parentOffset, to: rocq.index + 1 + parentOffset}, {from: rocq.index + parentOffset, to: rocq.index + 1 + parentOffset}, 0), rocqBlock, new NewlineBlock({from: range.to, to: range.to + 1}, {from: range.to, to: range.to + 1}, 0)];
         } else {
-            return [coqBlock];
+            return [rocqBlock];
         }
     });
 
     return blocks;
 }
 
-// Regex for extracting the math display blocks from the coqdoc comments.
-// We need a different regex here, since coq markdown uses single dollar signs for math display :)
+// Regex for extracting the math display blocks from the rocqdoc comments.
+// We need a different regex here, since rocq markdown uses single dollar signs for math display :)
 const regexMathDisplay = /\$([\S\s]*?)\$/g;
 
-export function extractMathDisplayBlocksCoqDoc(input: string): MathDisplayBlock[] {
+export function extractMathDisplayBlocksRocqDoc(input: string): MathDisplayBlock[] {
     const mathDisplay = Array.from(input.matchAll(regexMathDisplay));
     const mathDisplayBlocks = Array.from(mathDisplay).map((math) => {
         if (math.index === undefined) throw new Error("Index of math is undefined");

@@ -1,36 +1,36 @@
 /* previously named .coq-env in jsCoq */
-.coq-goal-env hr {
+.rocq-goal-env hr {
   margin: 0.5em 0;
   border: 1px inset;
 }
 
-.coq-hypothesis {
+.rocq-hypothesis {
   margin-bottom: 2px;
 }
 
-.coq-hypothesis > label {
+.rocq-hypothesis > label {
   font-weight: normal; /* override bootstrap */
   margin: 0;
 }
 
-.coq-hypothesis > label::after {
+.rocq-hypothesis > label::after {
   content: ",";
   margin-right: 0.25em;
 }
 
-.coq-hypothesis > label:last-of-type::after,
-.coq-hypothesis > span.def::after {
+.rocq-hypothesis > label:last-of-type::after,
+.rocq-hypothesis > span.def::after {
   content: ":";
   margin: 0 0.5em;
 }
 
-.coq-hypothesis.coq-has-def > label:last-of-type::after {
+.rocq-hypothesis.rocq-has-def > label:last-of-type::after {
   content: ":=";
   margin: 0 0.5em;
   color: #777;
 }
 
-.coq-hypothesis > label ~ div {
+.rocq-hypothesis > label ~ div {
   display: inline-table; /* this is used to indent hypothesis at their labels */
   table-layout: fixed;
 }
@@ -47,14 +47,14 @@ p.num-goals + p.aside {
   margin-bottom: 1em;
 }
 
-.coq-goal-env {
+.rocq-goal-env {
   padding-top: 1ex;
   padding-bottom: 1ex;
   white-space: pre;
   font-size: var(--vscode-editor-font-size);
 }
 
-.coq-goal-env + .coq-goal-env {
+.rocq-goal-env + .rocq-goal-env {
   border-style: solid none none none;
 }
 

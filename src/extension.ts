@@ -14,11 +14,11 @@ import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languagecli
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
 import { WaterproofStatusBar } from "./components/enableButton";
 import { LanguageClientProviderFactory, LspClientConfig } from "./lsp-client/clientTypes";
-import { CoqLspServerConfig } from "./lsp-client/rocq";
+import { RocqLspServerConfig } from "./lsp-client/rocq";
 import { LeanLspServerConfig } from "./lsp-client/lean";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { WaterproofEditorProvider } from "./pm-editor";
-import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
+import { checkConflictingExtensions, excludeRocqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
@@ -49,7 +49,7 @@ export class Waterproof implements Disposable {
     /** The resources that must be released when this extension is disposed of */
     private readonly disposables: Disposable[] = [];
 
-    /** The function that can create a new Coq language client provider */
+    /** The function that can create a new Rocq language client provider */
     private readonly getRocqClientProvider: LanguageClientProviderFactory;
 
     /** The function that can create a new Lean language client provider */
@@ -87,16 +87,16 @@ export class Waterproof implements Disposable {
      */
     constructor(
         context: ExtensionContext,
-        getCoqClientProvider: LanguageClientProviderFactory,
+        getRocqClientProvider: LanguageClientProviderFactory,
         getLeanClientProvider: LanguageClientProviderFactory,
         private readonly _isWeb = false
     ) {
         wpl.log("Waterproof initialized");
         checkConflictingExtensions();
-        excludeCoqFileTypes();
+        excludeRocqFileTypes();
 
         this.context = context;
-        this.getRocqClientProvider = getCoqClientProvider;
+        this.getRocqClientProvider = getRocqClientProvider;
         this.getLeanClientProvider = getLeanClientProvider;
 
         this.webviewManager = new WebviewManager();
@@ -528,16 +528,16 @@ export class Waterproof implements Disposable {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
 
-        const coqServerOptions = CoqLspServerConfig.create(
+        const rocqServerOptions = RocqLspServerConfig.create(
             // TODO: Support +coqversion versions.
             WaterproofPackageJSON.requiredCoqLspVersion(this.context).slice(2)
         );
 
-        const coqClientOptions: LanguageClientOptions = {
+        const rocqClientOptions: LanguageClientOptions = {
             documentSelector: [{ language: "markdown" }, { language: "coq" }],  // .mv and .v files
             outputChannelName: "Waterproof Rocq LSP Events (Initial)",
             revealOutputChannelOn: RevealOutputChannelOn.Info,
-            initializationOptions: coqServerOptions,
+            initializationOptions: rocqServerOptions,
             markdown: { isTrusted: true, supportHtml: true },
         };
 
@@ -553,7 +553,7 @@ export class Waterproof implements Disposable {
 
         wpl.log("Initializing client...");
         this.client = new CompositeClient(
-            this.getRocqClientProvider(this.context, coqClientOptions, WaterproofConfigHelper.configuration),
+            this.getRocqClientProvider(this.context, rocqClientOptions, WaterproofConfigHelper.configuration),
             window.createOutputChannel("Waterproof Rocq LSP Events (After Initialization)"),
             this.getLeanClientProvider(this.context, leanClientOptions, WaterproofConfigHelper.configuration),
             window.createOutputChannel("Waterproof Lean LSP Events (After Initialization)"),

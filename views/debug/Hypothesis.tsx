@@ -13,14 +13,14 @@ import {
 } from "vscode-languageserver-types";
 import "../styles/goals.css";
 
-type CoqId = PpString;
+type RocqId = PpString;
 
 //displays the hypothesis as a pp string
 export function HypEl({ hyp: { names, def, ty } }: { hyp: Hyp<PpString> }) {
   //className to give the right css to the hypothesis, definition or not
-  const className = "coq-hypothesis" + (def ? " coq-has-def" : "");
+  const className = "rocq-hypothesis" + (def ? " rocq-has-def" : "");
   //a label for the hypothesis
-  const mkLabel = (id: CoqId) => <label key={objectHash(id)}>{id}</label>;
+  const mkLabel = (id: RocqId) => <label key={objectHash(id)}>{id}</label>;
   //this converts the PpString to a RocqPp component
   const mkdef = (pp?: PpString) =>
     pp ? (
@@ -84,7 +84,7 @@ export function Hypothesis({ goals, pos, textDoc }: GoalsParams) {
   //if a goal does exist the Box component is used to display them
   //the list of hypothesis is mapped to display all hypothesis that are connected to a goal
   return (
-    <div className="coq-goal-env" ref={ref}>
+    <div className="rocq-goal-env" ref={ref}>
     <Box summary={'Hypothesis'} pos={pos} textDox={textDoc}>
       {goals.goals.map((value, _idx) => {
         const key = objectHash(value);

@@ -572,7 +572,7 @@
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
     "generate-symbols": "node scripts/generate-symbols.mjs",
     "esbuild": "npm run generate-symbols && node esbuild.mjs",
-    "typecheck": "tsc -b",
+    "typecheck": "npm run generate-symbols && tsc -b",
     "compile": "npm run esbuild",
     "watch": "npm run esbuild -- --watch",
     "test-package": "node_modules/.bin/vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",

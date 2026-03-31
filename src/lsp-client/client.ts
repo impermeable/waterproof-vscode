@@ -220,7 +220,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         this.computeInputAreaStatus(document);
     }
 
-    protected abstract determineProofStatus(document: TextDocument, inputArea: Range, diagnostics: Array<Diagnostic>): Promise<InputAreaStatus>;
+    protected abstract determineProofStatus(document: TextDocument, inputArea: Range, diagnostics: Array<Diagnostic>, lowerBound: Position): Promise<InputAreaStatus>;
 
     protected abstract getInputAreas(document: TextDocument): Range[] | undefined;
 
@@ -249,20 +249,13 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                     const lowerBound = i === 0
                         ? new Position(0, 0)
                         : inputAreas[i - 1].end;
-                    
-                    // Check if there are errors before the input area.
-                    // e.g. when using `sorry` in Lean. 
-                    const earlyStatus = this.earlyProofStatus(diags, lowerBound, area);
-                    if (earlyStatus !== null) {
-                        return Promise.resolve(earlyStatus);
-                    }
 
                     if (this.viewPortBasedChecking && this.viewPortRange && area.intersection(this.viewPortRange) === undefined) {
                         // This input area is outside of the range that has been checked and thus we can't determine its status
                         return Promise.resolve(InputAreaStatus.OutOfView);
                     }
 
-                    return this.determineProofStatus(document, area, diags);
+                    return this.determineProofStatus(document, area, diags, lowerBound);
                 }));
 
                 // forward statuses to corresponding ProseMirror editor
@@ -275,25 +268,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 console.log("[computeInputAreaStatus] The catch block caught an error that we don't classify as 'cancelled by server':", reason);
             }
         }, 250);
-    }
-
-    /**
-     * Override in subclasses to short-circuit proof checking with Invalid
-     * before the LSP goals request is made. Called once per input area with
-     * the diagnostics, the lower boundary (end of the previous input area),
-     * and the current area's range.
-     *
-     * Default returns null (no early-out).
-     * @param diags Diagnostics for the whole document.
-     * @param lowerBound The end position of the previous input area, or (0, 0) for the first input area.
-     * @param inputArea The range of the current input area.
-     */
-    protected earlyProofStatus(
-        _diags: Diagnostic[],
-        _lowerBound: Position,
-        _inputArea: Range
-    ): InputAreaStatus | null {
-        return null;
     }
 
     async startWithHandlers(webviewManager: WebviewManager, allowedLanguages: string[]): Promise<string[]> {

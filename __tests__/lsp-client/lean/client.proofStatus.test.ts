@@ -8,6 +8,9 @@ jest.mock("vscode", () => {
             return this.line > other.line
                 || (this.line === other.line && this.character > other.character);
         }
+        isBeforeOrEqual(other: InstanceType<typeof Position>) {
+            return !this.isAfter(other);
+        }
     };
 
     const Range = class {
@@ -93,7 +96,8 @@ import { LeanLspClient } from "../../../src/lsp-client/lean/client";
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-const INPUT_AREA = new Range(new Position(0, 0), new Position(5, 0));
+const INPUT_AREA   = new Range(new Position(2, 0), new Position(6, 0));
+const LOWER_BOUND  = new Position(2, 0);
 
 const FAKE_DOCUMENT = {
     uri:        { toString: () => "file:///test.lean", path: "/test.lean" },
@@ -133,21 +137,25 @@ function makeClient(isBusy = false) {
     return instance;
 }
 
-const call = (instance: LeanLspClient, diags: any[] = [], area = INPUT_AREA) =>
-    (instance as any).determineProofStatus(FAKE_DOCUMENT, area, diags);
+const call = (
+    instance:   LeanLspClient,
+    diags:      any[]    = [],
+    area:       Range    = INPUT_AREA,
+    lower:      Position = LOWER_BOUND,
+) => (instance as any).determineProofStatus(FAKE_DOCUMENT, area, diags, lower);
 
+/** Creates a diagnostic with a given line range and severity. */
 const diag = (startLine: number, endLine: number, severity: number) => ({
     message:  "test",
     severity,
     range: new Range(new Position(startLine, 0), new Position(endLine, 0)),
 });
 
-const messageDiag = (message: string, startLine: number, startCharacter = 0) => ({
+/** Creates a diagnostic with a specific message (used for sorry / hint tests). */
+const msgDiag = (message: string, line: number, character = 0) => ({
     message,
-    range: new Range(
-        new Position(startLine, startCharacter),
-        new Position(startLine, startCharacter),
-    ),
+    severity: DiagnosticSeverity.Warning,      // severity is irrelevant for message checks
+    range: new Range(new Position(line, character), new Position(line, character)),
 });
 
 function makeDocument(content: string) {
@@ -188,7 +196,7 @@ function posOf(content: string, needle: string, fromOffset = 0) {
     const character = idx - before.lastIndexOf("\n") - 1;
     return { line, character, offset: idx };
 }
- 
+
  
 
 // ===========================================================================
@@ -196,40 +204,68 @@ function posOf(content: string, needle: string, fromOffset = 0) {
 // ===========================================================================
 describe("LeanLspClient.determineProofStatus", () => {
 
-    it("returns Incorrect when isBusy", async () => {
+    // ---- busy guard --------------------------------------------------------
+
+    it("returns Incorrect immediately when isBusy is true (no goal request made)", async () => {
         const instance = makeClient(true);
+        const requestGoals = jest.spyOn(instance, "requestGoals" as any);
+
         expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
+        expect(requestGoals).not.toHaveBeenCalled();
     });
 
-    it("returns Incorrect for an Error diagnostic inside the area", async () => {
+    // ---- error diagnostics -------------------------------------------------
+
+    it("returns Incorrect when there is an Error diagnostic fully inside the area", async () => {
         const instance = makeClient();
         jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
-        expect(await call(instance, [diag(1, 3, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Incorrect);
+
+        expect(await call(instance, [diag(3, 5, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Incorrect);
     });
 
-    it("returns Incorrect for an Error diagnostic on the area boundary", async () => {
+    it("returns Incorrect when an Error diagnostic overlaps the area boundary", async () => {
         const instance = makeClient();
         jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
-        expect(await call(instance, [diag(4, 5, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Incorrect);
+
+        // range [5,7] intersects area [2,6]
+        expect(await call(instance, [diag(5, 7, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Incorrect);
     });
 
-    it("ignores an Error diagnostic outside the area", async () => {
+    it("ignores an Error diagnostic that lies entirely outside the area", async () => {
         const instance = makeClient();
         jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
-        expect(await call(instance, [diag(10, 11, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Correct);
+
+        expect(await call(instance, [diag(10, 12, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Correct);
     });
 
-    it("does not treat Warning/Info/Hint diagnostics as blocking", async () => {
+    it("does not treat Warning, Information, or Hint diagnostics as blocking", async () => {
         const instance = makeClient();
         jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+
         expect(await call(instance, [
-            diag(1, 2, DiagnosticSeverity.Warning),
-            diag(2, 3, DiagnosticSeverity.Information),
-            diag(3, 4, DiagnosticSeverity.Hint),
+            diag(3, 4, DiagnosticSeverity.Warning),
+            diag(4, 5, DiagnosticSeverity.Information),
+            diag(5, 6, DiagnosticSeverity.Hint),
         ])).toBe(InputAreaStatus.Correct);
     });
 
-    it("returns Incorrect when goals are non-empty", async () => {
+    // ---- goal response -----------------------------------------------------
+
+    it("returns Incorrect when the goals response is null", async () => {
+        const instance = makeClient();
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue(null);
+
+        expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
+    });
+
+    it("returns Incorrect when the goals response is undefined", async () => {
+        const instance = makeClient();
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue(undefined);
+
+        expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
+    });
+
+    it("returns Incorrect when the goals array is non-empty", async () => {
         const instance = makeClient();
         jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [{ type: "⊢ False" }] });
         expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
@@ -241,78 +277,59 @@ describe("LeanLspClient.determineProofStatus", () => {
         expect(await call(instance)).toBe(InputAreaStatus.Correct);
     });
 
-    it("returns Incorrect when requestGoals resolves with null", async () => {
+    // ---- sorry detection (Invalid) -----------------------------------------
+
+    it("returns Invalid when goals are empty but a sorry diagnostic is inside the area", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue(null);
-        expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+
+        // line 4 is strictly inside [lowerBound=2, areaEnd=6]
+        expect(await call(instance, [msgDiag("declaration uses 'sorry'", 4)])).toBe(InputAreaStatus.Invalid);
     });
 
-    it("returns Incorrect when requestGoals resolves with undefined", async () => {
+    it("returns Correct when a sorry diagnostic sits exactly on lowerBound (not strictly after)", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue(undefined);
-        expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+
+        // line 2 == lowerBound.line, character 0 == lowerBound.character → not after → ignored
+        expect(await call(instance, [msgDiag("declaration uses 'sorry'", 2, 0)])).toBe(InputAreaStatus.Correct);
     });
 
-});
-
-describe("LeanLspClient.earlyProofStatus", () => {
-    const lowerBound = new Position(2, 0);
-    const inputArea = new Range(new Position(2, 0), new Position(6, 0));
-
-    const earlyProofStatus = (diags: any[]) => {
+    it("returns Correct when a sorry diagnostic is after the area end", async () => {
         const instance = makeClient();
-        // @ts-expect-error protected
-        return instance.earlyProofStatus(diags, lowerBound, inputArea);
-    };
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
 
-    it("returns Invalid for a sorry diagnostic inside bounds", () => {
-        expect(earlyProofStatus([
-            messageDiag("declaration uses 'sorry'", 4),
-        ])).toBe(InputAreaStatus.Invalid);
+        // line 7 > area end line 6
+        expect(await call(instance, [msgDiag("declaration uses 'sorry'", 7)])).toBe(InputAreaStatus.Correct);
     });
 
-    it("returns Incorrect for a Try these hint inside bounds", () => {
-        expect(earlyProofStatus([
-            messageDiag("Try these:\n  exact h", 4),
-        ])).toBe(InputAreaStatus.Incorrect);
+    it("returns Correct when a non-sorry message matches neither sorry nor hints", async () => {
+        const instance = makeClient();
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+
+        expect(await call(instance, [msgDiag("type mismatch", 4)])).toBe(InputAreaStatus.Correct);
     });
 
-    it("returns null when matching diagnostic is at lowerBound", () => {
-        expect(earlyProofStatus([
-            messageDiag("declaration uses 'sorry'", 2, 0),
-        ])).toBeNull();
+    // ---- interaction between error diags and sorry -------------------------
+
+    it("returns Incorrect (not Invalid) when there is both an Error diag and a sorry diag in the area", async () => {
+        const instance = makeClient();
+        // requestGoals should not even be reached when an error diag is present
+        const requestGoals = jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+
+        const result = await call(instance, [
+            diag(3, 5, DiagnosticSeverity.Error),
+            msgDiag("declaration uses 'sorry'", 4),
+        ]);
+
+        expect(result).toBe(InputAreaStatus.Incorrect);
+        expect(requestGoals).not.toHaveBeenCalled();
     });
 
-    it("returns null when matching diagnostic is after input area end", () => {
-        expect(earlyProofStatus([
-            messageDiag("Try these:\n  simp", 7),
-        ])).toBeNull();
-    });
-
-    it("returns null for non-matching messages", () => {
-        expect(earlyProofStatus([
-            messageDiag("type mismatch", 4),
-        ])).toBeNull();
-    });
-
-    it("returns Invalid when only sorry matches among mixed diagnostics", () => {
-        expect(earlyProofStatus([
-            messageDiag("type mismatch", 4),
-            messageDiag("declaration uses 'sorry'", 5),
-        ])).toBe(InputAreaStatus.Invalid);
-    });
-
-    it("prioritizes Hint over sorry when both messages are present", () => {
-        expect(earlyProofStatus([
-            messageDiag("declaration uses 'sorry'", 4),
-            messageDiag("Try these:\n  exact h", 5),
-        ])).toBe(InputAreaStatus.Incorrect);
-    });
-
-    it("prioritizes Hint over sorry even within the same diagnostic message", () => {
-        expect(earlyProofStatus([
-            messageDiag("Try these:\n  exact h\n\ndeclaration uses 'sorry'", 4),
-        ])).toBe(InputAreaStatus.Incorrect);
+    it("returns Invalid when a sorry diagnostic sits exactly on inputArea.end (isBeforeOrEqual includes the boundary)", async () => {
+        const instance = makeClient();
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        expect(await call(instance, [msgDiag("declaration uses 'sorry'", 6, 0)])).toBe(InputAreaStatus.Invalid);
     });
 });
 

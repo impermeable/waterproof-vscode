@@ -171,7 +171,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         });
     }
 
-    protected async determineProofStatus(document: TextDocument, inputArea: Range, diags: Array<Diagnostic>): Promise<InputAreaStatus> {
+    protected async determineProofStatus(document: TextDocument, inputArea: Range, diags: Array<Diagnostic>, lowerBound: Position,): Promise<InputAreaStatus> {
 
         // If Lean hasn't finished processing up to the end of this input area, an empty goals
         // response simply means "not checked yet" rather than "proof complete".  Guard against
@@ -181,6 +181,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             return InputAreaStatus.Incorrect;
         }
 
+        // Get diagnostics that intersect with the input area, and check if any of them are error-level.
         const diagsInArea = diags.filter(v => {
             const intersection = inputArea.intersection(v.range);
             return intersection !== undefined && !intersection.isEmpty;
@@ -194,6 +195,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             return InputAreaStatus.Incorrect;
         }
  
+        // Request goals
         const goalsPosition = inputArea.end.translate(0, 0);
         
         const goalsParams = this.createGoalsRequestParameters(document, goalsPosition);
@@ -203,29 +205,18 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             return InputAreaStatus.Incorrect;
         }
         
-        const status = response.goals.length > 0 ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
-        return status;
-    }
+        // return incorrect if there are still goals remaining
+        if (response.goals.length > 0) return InputAreaStatus.Incorrect;
 
-    private static readonly SORRY_RE = /declaration uses 'sorry'/m;
-    private static readonly HINT_RE = /^Try these:/m;
+        // Goals are empty, proof looks complete, but check for sorry
+        const SORRY_RE = /declaration uses 'sorry'/m;
 
-    protected earlyProofStatus(
-        diags: Diagnostic[],
-        lowerBound: Position,
-        inputArea: Range
-    ): InputAreaStatus | null {
-        const inRange = (d: Diagnostic) =>
+        const hasSorry = diags.some(d =>
             d.range.start.isAfter(lowerBound) &&
-            !d.range.start.isAfter(inputArea.end);
-
-        if (diags.some(d => LeanLspClient.HINT_RE.test(d.message) && inRange(d)))
-            return InputAreaStatus.Incorrect;
-
-        if (diags.some(d => LeanLspClient.SORRY_RE.test(d.message) && inRange(d)))
-            return InputAreaStatus.Invalid;
-
-        return null;
+            d.range.start.isBeforeOrEqual(inputArea.end) &&
+            SORRY_RE.test(d.message)
+        );
+        return hasSorry ? InputAreaStatus.Invalid : InputAreaStatus.Correct;
     }
 
     // Emitters for infoview

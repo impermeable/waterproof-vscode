@@ -13,3 +13,4 @@ __tests_output__/
 ExampleFiles/
 /cypress/screenshots/
 coverage/
+completions/symbols+lean.json

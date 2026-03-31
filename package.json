@@ -505,6 +505,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
+    "@leanprover/unicode-input": "0.1.9",
     "@lezer/generator": "^1.2.3",
     "@types/jest": "29.1.0",
     "@types/jquery": "^3.5.16",
@@ -569,7 +570,8 @@
   "browser": "./out/src/mainBrowser.js",
   "scripts": {
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
-    "esbuild": "node esbuild.mjs",
+    "generate-symbols": "node scripts/generate-symbols.mjs",
+    "esbuild": "npm run generate-symbols && node esbuild.mjs",
     "typecheck": "tsc -b",
     "compile": "npm run esbuild",
     "watch": "npm run esbuild -- --watch",

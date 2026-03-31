@@ -14,9 +14,6 @@
  * Usage:
  *   node generate-symbols.mjs           # merge and write
  *   node generate-symbols.mjs --test    # merge, write, then compare against base
- *
- * Update Lean table:
- *   bash symbols.sh
  */
 
 import fs from "fs";

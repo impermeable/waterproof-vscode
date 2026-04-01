@@ -101,7 +101,7 @@ function expect(token: Token | undefined, kinds?: Kind[]): Token {
 function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     const isSignificantNewline = (token: Token) =>
         token.kind === Kind.Newline
-        && (token.prev?.isOneOf([Kind.Close, Kind.MultileanClose])
+        && (token.prev?.isOneOf([Kind.Close, Kind.CodeClose, Kind.MultileanClose])
             || token.next?.isOneOf([Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen, Kind.MultileanOpen]));
 
     if (token.kind === Kind.Preamble) {

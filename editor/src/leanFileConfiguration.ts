@@ -6,7 +6,7 @@ export const tagConfigurationLean: TagConfiguration = {
 		openRequiresNewline: true, closeRequiresNewline: true
 	},
 	hint: {
-		openTag: (title) => `:::hint ${title}\n`,
+		openTag: (title) => `:::hint "${title}"\n`,
 		closeTag: "\n:::",
 		openRequiresNewline: true,
 		closeRequiresNewline: true,
@@ -26,5 +26,10 @@ export const tagConfigurationLean: TagConfiguration = {
 	math: {
 		openTag: "$$`", closeTag: "`",
 		openRequiresNewline: false, closeRequiresNewline: false,
-	}
+	},
+	container: {
+		openTag: (name: string) => `::::${name}\n`,
+		closeTag: (_name: string) => "\n::::",
+		openRequiresNewline: true, closeRequiresNewline: true,
+	},
 }

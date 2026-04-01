@@ -1,4 +1,4 @@
-import { Block, BlockRange, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
+import { Block, BlockRange, CodeBlock, ContainerBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
 
 enum Kind {
     Text,
@@ -61,7 +61,7 @@ const regexes: [RegExp, Kind][] = [
     [/(?<=\n)```lean\n/,                  Kind.CodeOpen       ],
     [/\n```(?=\n|$)/,                     Kind.CodeClose      ],
     [/(?<=\n):::input\n/,                 Kind.InputOpen      ],
-    [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"(?=\n)/, Kind.HintOpen       ],
+    [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"\n/,     Kind.HintOpen       ],
     [/\n:::(?=\n|$)/,                     Kind.Close          ],
     [/\$`[\s\S]*?`/,                      Kind.MathInline     ],
     [/\$\$`[\s\S]*?`/,                    Kind.MathDisplay    ],
@@ -101,8 +101,8 @@ function expect(token: Token | undefined, kinds?: Kind[]): Token {
 function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     const isSignificantNewline = (token: Token) =>
         token.kind === Kind.Newline
-        && (token.prev?.isOneOf([Kind.Close])
-            || token.next?.isOneOf([Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen]));
+        && (token.prev?.isOneOf([Kind.Close, Kind.MultileanClose])
+            || token.next?.isOneOf([Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen, Kind.MultileanOpen]));
 
     if (token.kind === Kind.Preamble) {
         const range = token.range;
@@ -182,9 +182,22 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         blocks.push(new MathDisplayBlock(content, range, innerRange, token.line));
 
         return token.next;
-    } else if (token.isOneOf([Kind.MultileanOpen, Kind.MultileanClose])) {
-        // We skip to the next token as we don't want the multilean tags to be shown in the editor.
-        return token.next;
+    } else if (token.kind === Kind.MultileanOpen) {
+        const expected: Kind[] = [
+            Kind.MultileanClose,
+            Kind.Text, Kind.MathInline, Kind.MathDisplay,
+            Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen, Kind.Newline,
+        ];
+        let head: Token = expect(token.next, expected);
+        const innerBlocks: Block[] = [];
+        while (head && head.kind !== Kind.MultileanClose) {
+            head = expect(handle(doc, head, innerBlocks));
+        }
+        const range = { from: token.range.from, to: head.range.to };
+        const innerRange = { from: token.range.to, to: head.range.from };
+        const content = doc.substring(innerRange.from, innerRange.to);
+        blocks.push(new ContainerBlock(content, "multilean", range, innerRange, token.line, innerBlocks));
+        return head.next;
     } else {
         throw Error(`Unexpected token ${token.kind}`);
     }

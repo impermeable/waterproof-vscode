@@ -50,4 +50,11 @@ export class LeanSerializer extends DocumentSerializer {
     ): string {
         return this.tagSerializer.serializeMath(mathNode);
     }
+
+    serializeContainer(
+        containerNode: Node, _parentNode: string | null,
+        _neighbors: (skipNewlines: boolean) => Neighborhood
+    ): string {
+        return this.tagSerializer.serializeContainer(containerNode);
+    }
 }

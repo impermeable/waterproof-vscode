@@ -29,7 +29,7 @@ export const tagConfigurationLean: TagConfiguration = {
 	},
 	container: {
 		openTag: (name: string) => `::::${name}\n`,
-		closeTag: (_name: string) => "\n::::",
+		closeTag: "\n::::",
 		openRequiresNewline: true, closeRequiresNewline: true,
 	},
 }

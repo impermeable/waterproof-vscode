@@ -29,7 +29,7 @@ export const tagConfigurationV: TagConfiguration = {
 	},
 	container: {
 		openTag: (_name: string) => "",
-		closeTag: (_name: string) => "",
+		closeTag: "",
 		openRequiresNewline: false, closeRequiresNewline: false,
 	},
 }

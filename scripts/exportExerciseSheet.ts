@@ -1,3 +1,22 @@
+/**
+ * Waterproof Exercise Sheet Processor
+ * A CLI tool to export exercise sheets from .mv or .lean files by removing 
+ * solution content from input cells and substituting it with an empty code block.
+ * Supports single-file processing via stdout or recursive directory batch processing.
+ *
+ * * Usage:
+ * Process a single file (file.mv or file.lean) and output to terminal
+ * npx tsx exportExerciseSheet.ts file.mv
+ * or
+ * npx tsx exportExerciseSheet.ts file.lean
+ *
+ * Process an entire directory (input_dir) with .mv and .lean files, and store processed files in another directory (output_dir) preserving the directory file structure.
+ * npx tsx exportExerciseSheet.ts -i input_dir -o output_dir
+ *
+ * View help
+ * npx tsx exportExerciseSheet.ts --help
+ */
+
 import * as path from 'path';
 import * as fs from 'fs';
 import { Command } from 'commander';

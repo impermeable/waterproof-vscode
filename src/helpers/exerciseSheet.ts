@@ -1,6 +1,7 @@
 /**
  * Process Waterproof Rocq or Lean file content by removing solutions from input-area blocks.
- * Finds input area blocks of the form and replaces the content with empty code blocks.
+ * Finds input cell and replaces the content with empty code blocks.
+ * Even if an input cell has several code blocks inside, the contents will be substituted with one empty code block. 
  *
  * For rocq an input area has the following form:
  * <input-area>

@@ -5,16 +5,29 @@
  * Supports single-file processing via stdout or recursive directory batch processing.
  *
  * * Usage:
+ *
+ * To run from waterproof-vscode project with dependencies installed, use
+ * npx ts-node-esm exportExerciseSheet.ts ...
+ * as shown in the examples below.
+ * 
+ * To run from a clean waterproof-vscode project, without installing all the dependencies of the project, first install needed dependencies using
+ * npm install typescript @types/node ts-node commander
+ * and then run the script with
+ * npx ts-node-esm --skipProject exportExerciseSheet.ts ...
+ * as shown in the examples below, but adding --skipProject.
+ *
+ * * Usage examples:
+ *
  * Process a single file (file.mv or file.lean) and output to terminal
- * npx tsx exportExerciseSheet.ts file.mv
+ * npx ts-node-esm exportExerciseSheet.ts file.mv
  * or
- * npx tsx exportExerciseSheet.ts file.lean
+ * npx ts-node-esm exportExerciseSheet.ts file.lean
  *
  * Process an entire directory (input_dir) with .mv and .lean files, and store processed files in another directory (output_dir) preserving the directory file structure.
- * npx tsx exportExerciseSheet.ts -i input_dir -o output_dir
+ * npx ts-node-esm exportExerciseSheet.ts -i input_dir -o output_dir
  *
  * View help
- * npx tsx exportExerciseSheet.ts --help
+ * npx ts-node-esm exportExerciseSheet.ts --help
  */
 
 import * as path from 'path';
@@ -24,7 +37,7 @@ import { processWaterproofContent } from '../src/helpers/exerciseSheet.ts';
 
 
 /**
- * Get paths of all .mv and .lean files inside a folder recursively.
+ * Get paths of all .mv and .lean files inside a folder recursively, excluding files inside the .lake folder which are lean build files and dependencies.
  *
  * @param folder - Path to the folder
  */

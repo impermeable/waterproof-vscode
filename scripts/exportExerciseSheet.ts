@@ -42,6 +42,11 @@ import { processWaterproofContent } from '../src/helpers/exerciseSheet.ts';
  * @param folder - Path to the folder
  */
 function getAllFiles(folder: string): string[] {
+    // Do not process files inside the .lake folder
+    if (path.basename(folder) === ".lake") {
+        return [];    
+    }
+
     let allFilePaths: string[] = [];
     const fileNames = fs.readdirSync(folder);
 

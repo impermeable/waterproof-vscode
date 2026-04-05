@@ -1,9 +1,9 @@
 /**
- * Process Waterproof Rocq or Lean file content by removing solutions from input-area blocks.
- * Finds input cell and replaces the content with empty code blocks.
+ * Process Waterproof Rocq or Lean file content by removing solutions from input cells.
+ * Finds input cells and replaces the content with empty code blocks.
  * Even if an input cell has several code blocks inside, the contents will be substituted with one empty code block. 
  *
- * For rocq an input area has the following form:
+ * For rocq an input cell has the following form:
  * <input-area>
  * ```coq
  *
@@ -12,7 +12,7 @@
  * ```
  * </input-area>
  *
- * For lean an input area has the following form:
+ * For lean an input cell has the following form:
  * :::input
  * ```lean
  *
@@ -24,7 +24,7 @@
  * @param content - The raw content of a .mv or .lean file
  * @returns Processed content with solutions removed
  */
-export function processWaterproofContent(content: string, extension: string): string {
+export function clearInputCells(content: string, extension: string): string {
     let pattern: RegExp;
     let replacement: string;
     switch (extension) {

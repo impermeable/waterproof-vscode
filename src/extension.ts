@@ -37,7 +37,7 @@ import { CompositeClient } from "./lsp-client/composite";
 import { CompositeGoalsPanel } from "./webviews/goalviews/compositeGoalsPanel";
 import { convertToString, GoalConfig } from "../lib/types";
 import { RunResult } from "./lsp-client/petanque";
-import { processWaterproofContent } from "./helpers/exerciseSheet";
+import { clearInputCells } from "./helpers/exerciseSheet";
 
 /**
  * Main extension class
@@ -512,7 +512,7 @@ export class Waterproof implements Disposable {
                 let content: string = document.getText();
                 const fileName = document.fileName;
                 const fileExtension: string = fileName.substring(fileName.lastIndexOf('.'));
-                content = processWaterproofContent(content, fileExtension);
+                content = clearInputCells(content, fileExtension);
                 const fileUri = await window.showSaveDialog();
                 if (fileUri) {
                     await workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));

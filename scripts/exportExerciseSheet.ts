@@ -33,7 +33,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { Command } from 'commander';
-import { processWaterproofContent } from '../src/helpers/exerciseSheet.ts';
+import { clearInputCells } from '../src/helpers/exerciseSheet.ts';
 
 
 /**
@@ -81,7 +81,7 @@ function processSingleFile(filePath: string): string {
     let fileExtension: string = path.extname(filePath);
     let content = fs.readFileSync(filePath, 'utf-8');
 
-    return processWaterproofContent(content, fileExtension);
+    return clearInputCells(content, fileExtension);
 }
 
 /**

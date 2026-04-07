@@ -252,12 +252,5 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
     }
 
-    protected onDocumentChanged(): void {
-        this.isBusy = true;
-    }
 
-    protected override async onCheckingCompleted(): Promise<void> {
-        this.isBusy = false;
-        await super.onCheckingCompleted();
-    }
 }

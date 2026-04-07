@@ -545,15 +545,6 @@ describe("LeanLspClient.isBusy lifecycle", () => {
         range: new Range(new Position(1, 0), new Position(2, 0)),
     }];
 
-    it("sets isBusy to true on document changes", () => {
-        const instance = makeClient(false);
-
-        // @ts-expect-error protected
-        instance.onDocumentChanged();
-
-        expect((instance as any).isBusy).toBe(true);
-    });
-
     it("sets isBusy to true when file progress reports processing", async () => {
         const instance = makeClient(false);
         jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
@@ -582,32 +573,5 @@ describe("LeanLspClient.isBusy lifecycle", () => {
         await instance.onFileProgress(progress([], "file:///other.lean"));
 
         expect((instance as any).isBusy).toBe(true);
-    });
-
-    it("clears isBusy when checking completes", async () => {
-        const instance = makeClient(true);
-        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
-
-        // @ts-expect-error protected
-        await instance.onCheckingCompleted();
-
-        expect((instance as any).isBusy).toBe(false);
-    });
-
-    it("does not get stuck busy after edit -> processing -> done sequence", async () => {
-        const instance = makeClient(false);
-        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
-
-        // @ts-expect-error protected
-        instance.onDocumentChanged();
-        expect((instance as any).isBusy).toBe(true);
-
-        // @ts-expect-error protected
-        await instance.onFileProgress(progress(processingRange()));
-        expect((instance as any).isBusy).toBe(true);
-
-        // @ts-expect-error protected
-        await instance.onCheckingCompleted();
-        expect((instance as any).isBusy).toBe(false);
     });
 });

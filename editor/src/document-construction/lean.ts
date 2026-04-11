@@ -57,7 +57,7 @@ class Token {
 }
 
 const regexes: [RegExp, Kind][] = [
-    [/^[\s\S]*#doc .*? =>\n/,             Kind.Preamble       ],
+    [/^[\s\S]*#doc .*? =>/,             Kind.Preamble       ],
     [/(?<=\n)```lean\n/,                  Kind.CodeOpen       ],
     [/\n```(?=\n|$)/,                     Kind.CodeClose      ],
     [/(?<=\n):::input\n/,                 Kind.InputOpen      ],
@@ -106,10 +106,11 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
     if (token.kind === Kind.Preamble) {
         const range = token.range;
-        const content = doc.substring(range.from, range.to);
+        const innerRange = { from: token.range.from, to: doc.indexOf('#doc') - 1 };
+        const content = doc.substring(innerRange.from, innerRange.to);
 
-        const child = new CodeBlock(content, range, range, token.line);
-        blocks.push(new HintBlock(content, "🛠 Technical details", range, range, token.line, [child]));
+        const child = new CodeBlock(content, range, innerRange, token.line);
+        blocks.push(new HintBlock(content, "🛠 Technical details", range, innerRange, token.line, [child]));
 
         return token.next;
     } else if (isSignificantNewline(token)) {

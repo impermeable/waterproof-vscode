@@ -209,12 +209,13 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         if (response.goals.length > 0) return InputAreaStatus.Incorrect;
 
         // Goals are empty, proof looks complete, but check for sorry
-        const SORRY_RE = /declaration uses 'sorry'/m;
+        const SORRY_RE = "declaration uses 'sorry'";
 
         const hasSorry = diags.some(d =>
+            d.severity === DiagnosticSeverity.Warning &&
             d.range.start.isAfter(lowerBound) &&
             d.range.start.isBeforeOrEqual(inputArea.end) &&
-            SORRY_RE.test(d.message)
+            SORRY_RE === d.message
         );
         return hasSorry ? InputAreaStatus.Invalid : InputAreaStatus.Correct;
     }

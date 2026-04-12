@@ -331,6 +331,19 @@ describe("LeanLspClient.determineProofStatus", () => {
         jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
         expect(await call(instance, [msgDiag("declaration uses 'sorry'", 6, 0)])).toBe(InputAreaStatus.Invalid);
     });
+
+    it("returns Correct when a 'declaration uses sorry' diagnostic is Information severity (not Warning), prevents the user from doing: \"#check declaration uses 'sorry'\"", async () => {
+        const instance = makeClient();
+        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        
+        const infoSorryDiag = {
+            message:  "declaration uses 'sorry'",
+            severity: DiagnosticSeverity.Information,
+            range: new Range(new Position(4, 0), new Position(4, 0)),
+        };
+    
+        expect(await call(instance, [infoSorryDiag])).toBe(InputAreaStatus.Correct);
+    });
 });
 
 describe("LeanLspClient.getInputAreas", () => {

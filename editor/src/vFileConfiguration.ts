@@ -3,7 +3,7 @@ import { TagConfiguration } from "@impermeable/waterproof-editor";
 export const tagConfigurationV: TagConfiguration = {
 	code: {
 		openTag: "", closeTag: "",
-		openRequiresNewline: false, closeRequiresNewline: false
+		openRequiresNewline: true, closeRequiresNewline: true
 	},
 	hint: {
 		openTag: (title) => `(* begin details : ${title} *)\n`,

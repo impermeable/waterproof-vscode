@@ -42,7 +42,7 @@ Qed.
 ```
 ### Try it yourself:
 
-**Note**: Note sure how to continue? You can always write the sentence `Help.` in your proof to ask for help. Please remove the sentence from your final proof.
+**Note**: Not sure how to continue? You can always write the sentence `Help.` in your proof to ask for help. Please remove the sentence from your final proof.
 ```coq
 Lemma exercise_reflexivity :
   3 = 3.

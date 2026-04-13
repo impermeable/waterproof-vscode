@@ -1,6 +1,5 @@
 import { PpString } from "../../lib/types";
 import { RocqPp } from "../goals/RocqPp";
-import React from "react";
 
 //error PpString type
 export type ErrorBrowserParams = { error: PpString };

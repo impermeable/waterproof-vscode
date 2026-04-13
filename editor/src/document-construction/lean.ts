@@ -61,7 +61,7 @@ class Token {
 }
 
 const regexes: [RegExp, Kind][] = [
-    [/^[\s\S]*#doc .*? =>/,             Kind.Preamble       ],
+    [/^[\s\S]*#doc .*? =>\n/,             Kind.Preamble       ],
     [/(?<=\n)```lean\n/,                  Kind.CodeOpen       ],
     [/\n```(?=\n|$)/,                     Kind.CodeClose      ],
     [/(?<=\n):::input\n/,                 Kind.InputOpen      ],

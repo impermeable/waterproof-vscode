@@ -42,7 +42,7 @@ describe('Basic tests', () => {
     cy.get(".markdown-view").should("be.visible");
   });
 
-  it("Make basic edits to md and coq", () => {
+  it("Make basic edits to md and rocq", () => {
     cy.window().then((win) => { win.postMessage({type: MessageType.teacher, body: true}) });
     cy.get(".markdown-view").type("\n## Hello World");
     cy.get(".markdown-view").should("contain.text", "Hello World");

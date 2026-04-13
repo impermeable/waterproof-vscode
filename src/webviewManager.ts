@@ -3,8 +3,8 @@ import { EventEmitter } from "events";
 import { Message, MessageType } from "../shared";
 import { ILineNumberComponent } from "./components";
 import { LineStatusBar } from "./components/lineNumber";
-import { ProseMirrorWebview } from "./pm-editor/pmWebview";
-import { CoqWebview, WebviewEvents, WebviewState } from "./webviews/coqWebview";
+import { WaterproofWebview } from "./pm-editor/waterproofWebview";
+import { WaterproofPanel, WebviewEvents, WebviewState } from "./webviews/waterproofPanel";
 import { WaterproofLogger as wpl } from "./helpers";
 
 export enum WebviewManagerEvents {
@@ -67,10 +67,10 @@ class ActiveWebviews {
  */
 export class WebviewManager extends EventEmitter {
     // Tool webviews (UI such as panels), stores the view based on name
-    private readonly _toolWebviews: Map<string, CoqWebview> = new Map<string, CoqWebview>;
+    private readonly _toolWebviews: Map<string, WaterproofPanel> = new Map<string, WaterproofPanel>;
 
-    // ProseMirror webviews, stores the view based on Doc uri
-    private readonly _pmWebviews: Map<string, ProseMirrorWebview> = new Map<string, ProseMirrorWebview>;
+    // Waterproof webviews, stores the view based on Doc uri
+    private readonly _waterproofWebviews: Map<string, WaterproofWebview> = new Map<string, WaterproofWebview>;
     // RequestId of request response
     private _requestId: number;
 
@@ -95,8 +95,8 @@ export class WebviewManager extends EventEmitter {
 
     public has(obj: string | TextDocument) {
         return typeof obj === "object"
-            ? this._pmWebviews.has(obj.uri.toString())
-            : this._pmWebviews.has(obj) || this._toolWebviews.has(obj);
+            ? this._waterproofWebviews.has(obj.uri.toString())
+            : this._waterproofWebviews.has(obj) || this._toolWebviews.has(obj);
     }
 
     /**
@@ -104,7 +104,7 @@ export class WebviewManager extends EventEmitter {
      * @param name of the webview
      * @param webview object associated with tool
      */
-    public addToolWebview(name: string, webview: CoqWebview) {
+    public addToolWebview(name: string, webview: WaterproofPanel) {
         if (this.has(name)) {
             throw new Error(" Webview already registered!  THIS SHOULD NOT HAPPEN! ");
         }
@@ -121,18 +121,18 @@ export class WebviewManager extends EventEmitter {
     }
 
     /**
-     * Add a ProseMirror webview to manager
+     * Add a Waterproof webview to manager
      * @param webview object associated with document
      */
-    public addProseMirrorWebview(webview: ProseMirrorWebview) {
-        console.log("Adding ProseMirror webview", webview.document);
+    public addWaterproofWebview(webview: WaterproofWebview) {
+        console.log("Adding Waterproof webview", webview.document);
         if (this.has(webview.document)) {
             throw new Error(" Webview already registered!  THIS SHOULD NOT HAPPEN! ");
         }
-        this._pmWebviews.set(webview.document.uri.toString(), webview);
+        this._waterproofWebviews.set(webview.document.uri.toString(), webview);
 
         webview.on(WebviewEvents.dispose, () => {
-            this._pmWebviews.delete(webview.document.uri.toString());
+            this._waterproofWebviews.delete(webview.document.uri.toString());
         });
         webview.on(WebviewEvents.message, (msg) => {
             this.onProseMessage(webview.document, msg);
@@ -187,8 +187,8 @@ export class WebviewManager extends EventEmitter {
      * @param panelName a URI to refer to a ProseMirror panel, or a name to refer to a tool panel
      */
     public postMessage(panelName: string, message: Message) {
-        if (this._pmWebviews.has(panelName))
-            this._pmWebviews.get(panelName)?.postMessage(message);
+        if (this._waterproofWebviews.has(panelName))
+            this._waterproofWebviews.get(panelName)?.postMessage(message);
         else if (this._toolWebviews.has(panelName))
             this._toolWebviews.get(panelName)?.postMessage(message);
         else
@@ -196,7 +196,7 @@ export class WebviewManager extends EventEmitter {
     }
 
     /**
-     * Sends `message` to the ProseMirror webview identified by `documentUri`. The webview caches
+     * Sends `message` to the Waterproof webview identified by `documentUri`. The webview caches
      * this message, which means it's sent again when the editor reinitializes.
      */
     public postAndCacheMessage(documentUri: string | Uri | TextDocument, message: Message) {
@@ -204,8 +204,8 @@ export class WebviewManager extends EventEmitter {
             if ("uri" in documentUri) documentUri = documentUri.uri;
             documentUri = documentUri.toString();
         }
-        const webview = this._pmWebviews.get(documentUri);
-        if (!webview) throw new Error("There is no ProseMirror webview with URI: " + documentUri);
+        const webview = this._waterproofWebviews.get(documentUri);
+        if (!webview) throw new Error("There is no Waterproof webview with URI: " + documentUri);
         webview.postMessage(message, true);
     }
 
@@ -226,7 +226,7 @@ export class WebviewManager extends EventEmitter {
     /**
      * Called when a message from the webview panel is received.
      *
-     * @param document The `coqEditorDocument` the message originated from.
+     * @param document The `waterproofEditorDocument` the message originated from.
      * @param message The message.
      */
     private onProseMessage(document: TextDocument, message: Message) {
@@ -252,7 +252,7 @@ export class WebviewManager extends EventEmitter {
                     const pos = document.positionAt(message.body);
                     this._lineStatus.update(pos);
                     // Update goals components
-                    const webview = this._pmWebviews.get(document.uri.toString());
+                    const webview = this._waterproofWebviews.get(document.uri.toString());
                     if (!webview) break;
                     if (webview.documentIsUpToDate) {
                         this.emit(WebviewManagerEvents.cursorChange, document, pos);

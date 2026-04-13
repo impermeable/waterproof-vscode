@@ -1,7 +1,7 @@
 import objectHash from "object-hash";
 import { isMessage, Message } from "../../lib/types";
 import { PpString } from "../../lib/types";
-import { CoqPp } from "./CoqPp";
+import { RocqPp } from "./RocqPp";
 
 //message component that takes in a message as a PpString
 export function Message({
@@ -22,12 +22,12 @@ export function Message({
   // Filter out the correct messages
   if (isMessage(message) && message.level !== 4) return;
 
-  //every message is displayed as a CoqPp component
+  //every message is displayed as a RocqPp component
   if (Array.isArray(text)) {
     // Pp case
     return (
       <li key={key}>
-        <CoqPp content={text} inline={true} />
+        <RocqPp content={text} inline={true} />
       </li>
     );
   } else {
@@ -53,7 +53,7 @@ export function Message({
 
     // If this is not a special message we just render as we normally would.
     return (<li key={key}>
-      <CoqPp content={text} inline={true} />
+      <RocqPp content={text} inline={true} />
       </li>);
   }
 }

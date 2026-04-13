@@ -24,9 +24,9 @@ declare namespace Cypress {
       inputAreas : () => Chainable<Element>
       /** Command to find the nth Waterproof input-area */
       nthInputArea : (n : number) => Chainable<Element>
-      /** Command to find all Waterproof coq code blocks (CodeMirror instances). */ 
+      /** Command to find all Waterproof rocq code blocks (CodeMirror instances). */
       code : () => Chainable<Element>
-      /** Command to find the nth Waterproof coq code block (CodeMirror instance). */
+      /** Command to find the nth Waterproof rocq code block (CodeMirror instance). */
       nthCode : (n: number) => Chainable<Element>
     }
   }

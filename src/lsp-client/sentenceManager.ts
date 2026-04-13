@@ -7,7 +7,7 @@ import { FileProgressParams } from "./requestTypes";
 export class SentenceManager implements IFileProgressComponent {
 
     /**
-     * The positions in the current document where a Coq sentence ends.
+     * The positions in the current document where a Rocq sentence ends.
      * Invariant: This array is sorted.
      * TODO: clear when switching document
      */

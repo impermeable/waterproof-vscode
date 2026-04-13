@@ -17,7 +17,7 @@ async function executeCommandBase(client: RocqLspClient, command: string) {
     // We execute the command at the end of the previous sentence.
     const commandPosition = client.getBeginningOfCurrentSentence();
     if (!commandPosition) {
-        throw new Error("Cannot execute command; the document contains no Coq code.");
+        throw new Error("Cannot execute command; the document contains no Rocq code.");
     }
 
     const pos = { line: commandPosition.line, character: commandPosition.character - 1 };

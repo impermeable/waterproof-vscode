@@ -1,11 +1,11 @@
 import { PpString } from "../../lib/types";
 import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 
-import "../styles/coqpp.css";
+import "../styles/rocqpp.css";
 
 
 //function that can display a Pp string in the correct format
-export function CoqPp({
+export function RocqPp({
   content,
   inline,
 }: {

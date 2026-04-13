@@ -3,7 +3,7 @@ import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
 import { RocqGoalAnswer, RocqGoalRequest, RocqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
-import { coqFileProgressNotificationType, coqGoalRequestType, coqServerStatusNotificationType, executionInformationNotificationType } from "./requestTypes";
+import { rocqFileProgressNotificationType, rocqGoalRequestType, rocqServerStatusNotificationType, executionInformationNotificationType } from "./requestTypes";
 import { WaterproofLogger as wpl, WaterproofPackageJSON } from "../../helpers";
 import { VersionChecker } from "../../version-checker/version-checker";
 import { LspClient } from "../client";
@@ -25,7 +25,7 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
         this.context = context;
 
         // call each file progress component when the server has processed a part
-        this.disposables.push(this.client.onNotification(coqFileProgressNotificationType, params => {
+        this.disposables.push(this.client.onNotification(rocqFileProgressNotificationType, params => {
             this.onFileProgress(params);
         }));
 
@@ -45,7 +45,7 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
             });
         }));
 
-        this.disposables.push(this.client.onNotification(coqServerStatusNotificationType, params => {
+        this.disposables.push(this.client.onNotification(rocqServerStatusNotificationType, params => {
             const document = this.activeDocument;
             if (!document) return;
 
@@ -99,7 +99,7 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
             params = this.createGoalsRequestParameters(this.activeDocument, params);
         }
         wpl.debug(`Sending request for goals with params: ${JSON.stringify(params)}`);
-        return this.client.sendRequest(coqGoalRequestType, params);
+        return this.client.sendRequest(rocqGoalRequestType, params);
     }
 
     async sendViewportHint(document: TextDocument, start: number, end: number): Promise<void> {
@@ -177,7 +177,7 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
     }
 
     /**
-     * Returns the end position of the currently selected sentence, i.e., the Coq sentence in the
+     * Returns the end position of the currently selected sentence, i.e., the Rocq sentence in the
      * active document in which the text cursor is located. Only returns `undefined` if no sentences
      * are known.
      */
@@ -187,7 +187,7 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
     }
 
     /**
-     * Returns the beginning position of the currently selected sentence, i.e., the Coq sentence in the
+     * Returns the beginning position of the currently selected sentence, i.e., the Rocq sentence in the
      * active document in which the text cursor is located. Only returns `undefined` if no sentences
      * are known. This is really just the end position of the previous sentence.
      */

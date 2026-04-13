@@ -1,4 +1,4 @@
-import { extractCoqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksCoqDoc } from "../../editor/src/document-construction/block-extraction";
+import { extractRocqBlocks, extractHintBlocks, extractInputBlocks, extractMathDisplayBlocks, extractMathDisplayBlocksRocqDoc } from "../../editor/src/document-construction/block-extraction";
 import { typeguards } from "@impermeable/waterproof-editor";
 import { topLevelBlocksMV } from "../../editor/src/document-construction/construct-document";
 
@@ -119,11 +119,11 @@ test("Parse Math Display blocks #2", () => {
     expect(blocks[1].range.to).toBe(45);
 });
 
-test("Parse Coq blocks #1", () => {
+test("Parse Rocq blocks #1", () => {
     const document = "# Example\n```coq\nLemma trivial.\n```";
-    const blocks = extractCoqBlocks(document);
+    const blocks = extractRocqBlocks(document);
 
-    // NOTE: Mind that we are using `extractCoqBlocks` here.
+    // NOTE: Mind that we are using `extractRocqBlocks` here.
     expect(blocks.length).toBe(2);
     const [nl, code] = blocks;
     expect(typeguards.isNewlineBlock(nl)).toBe(true);
@@ -140,9 +140,9 @@ test("Parse Coq blocks #1", () => {
 
 });
 
-test("Parse Coq blocks #2", () => {
+test("Parse Rocq blocks #2", () => {
     const document = "```coq\nRequire Import ZArith.\n```\n# Example\n```coq\nLemma trivial.\n```";
-    const blocks = extractCoqBlocks(document);
+    const blocks = extractRocqBlocks(document);
 
     expect(blocks.length).toBe(4);
     const [code, nl, nl2, code2] = blocks;
@@ -171,7 +171,7 @@ test("Parse Coq blocks #2", () => {
 });
 
 
-test("Parse Coq Blocks #3", () => {
+test("Parse Rocq Blocks #3", () => {
     const content = "```coq\nLemma test\n```";
     const blocks = topLevelBlocksMV(content);
 
@@ -184,9 +184,9 @@ test("Parse Coq Blocks #3", () => {
     expect(blocks[0].innerRange.to).toBe(content.length - "\n```".length);
 });
 
-test("Extract math display from inside coqdoc comment", () => {
+test("Extract math display from inside rocqdoc comment", () => {
     const input = `(** $\\text{math display}$ *)`;
-    const blocks = extractMathDisplayBlocksCoqDoc(input);
+    const blocks = extractMathDisplayBlocksRocqDoc(input);
 
     // console.log(blocks);
 

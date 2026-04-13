@@ -21,7 +21,7 @@ enum VNestedState {
 }
 
 /**
- * Parser for .v (Coq) files.
+ * Parser for .v (Rocq) files.
  * Recognizes code, hint, and input area blocks.
  *
  * - Code is the default state.

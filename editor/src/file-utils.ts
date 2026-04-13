@@ -3,7 +3,7 @@ import { Message, MessageType } from "../../shared";
 
 
 /**
-	 * If the file starts with a coqblock or ends with a coqblock this function adds a newline to the start for
+	 * If the file starts with a rocqblock or ends with a rocqblock this function adds a newline to the start for
 	 * insertion purposes
 	 * @param content the content of the file
 	 */

@@ -27,9 +27,11 @@ export function handleEditorMessage(editor: MessageHandlerEditor, msg: Message):
 			editor.init(msg.body.value, msg.body.version);
 			break;
 		case MessageType.insert:
+			// Insert symbol message, retrieve the symbol from the message.
 			{
 				const { symbolUnicode } = msg.body;
 				if (msg.body.type === "tactics") {
+					// `symbolUnicode` stores the tactic template.
 					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
 					editor.handleSnippet(symbolUnicode);
 				} else {
@@ -44,11 +46,12 @@ export function handleEditorMessage(editor: MessageHandlerEditor, msg: Message):
 				break;
 			}
 		case MessageType.setAutocomplete:
+			// Handle autocompletion
 			editor.handleCompletions(msg.body);
 			break;
 		case MessageType.qedStatus:
 			{
-				const statuses = msg.body;
+				const statuses = msg.body; // one status for each input area, in order
 				editor.setInputAreaStatus(statuses);
 				break;
 			}
@@ -109,6 +112,7 @@ export function handleEditorMessage(editor: MessageHandlerEditor, msg: Message):
 			editor.updateNodeViewThemes(msg.body.theme);
 			break;
 		default:
+			// If we reach this 'default' case, then we have encountered an unknown message type.
 			console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
 			break;
 	}

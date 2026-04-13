@@ -20,6 +20,7 @@ import * as langRocq from "@impermeable/codemirror-lang-rocq";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
 import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
+import { handleEditorMessage } from "./messageHandler";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -156,93 +157,7 @@ window.onload = () => {
 	window.addEventListener("message", (event: MessageEvent<Message>) => {
 		const msg = event.data;
 
-		switch (msg.type) {
-			case MessageType.init:
-				editor.init(msg.body.value, msg.body.version);
-				break;
-			case MessageType.insert:
-				// Insert symbol message, retrieve the symbol from the message.
-				{
-					const { symbolUnicode } = msg.body;
-					if (msg.body.type === "tactics") {
-						// `symbolUnicode` stores the tactic template.
-						if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
-						const template = symbolUnicode;
-						editor.handleSnippet(template);
-					} else {
-						editor.insertSymbol(symbolUnicode);
-					}
-					break;
-				}
-			case MessageType.replaceRange:
-                {
-                    const { start, end, text } = msg.body;
-                    editor.replaceRange(start, end, text);
-                    break;
-                }
-			case MessageType.setAutocomplete:
-				// Handle autocompletion
-				editor.handleCompletions(msg.body);
-				break;
-			case MessageType.qedStatus:
-				{
-					const statuses = msg.body;  // one status for each input area, in order
-					editor.setInputAreaStatus(statuses);
-					break;
-				}
-			case MessageType.setShowLineNumbers:
-				{
-					const show = msg.body;
-					editor.setShowLineNumbers(show);
-					break;
-				}
-			case MessageType.setShowMenuItems:
-				{ const show = msg.body; editor.setShowMenuItems(show); break; }
-			case MessageType.editorHistoryChange:
-				editor.handleHistoryChange(msg.body);
-				break;
-			case MessageType.teacher:
-				editor.updateLockingState(msg.body);
-				break;
-			case MessageType.progress:
-				{
-					const { numberOfLines, progress } = msg.body;
-					if (progress.length === 0) {
-						editor.removeBusyIndicators();
-						editor.reportProgress(numberOfLines, numberOfLines, "File verified");
-					} else {
-						const at = progress[0].range.start.line + 1;
-						editor.reportProgress(at, numberOfLines, `Verified file up to line: ${at}`);
-					}
-					break;
-				}
-			case MessageType.executionInfo:
-				{
-					const range = msg.body;
-					editor.setBusyIndicator(range.from);
-					break;
-				}
-			case MessageType.diagnostics:
-				{ editor.setActiveDiagnostics(msg.body.positionedDiagnostics);
-				break; }
-			case MessageType.serverStatus:
-				{
-					const {status} = msg.body;
-					if (status === "Busy") {
-						editor.startSpinner();
-					} else {
-						editor.stopSpinner();
-					}
-					break;
-				}
-			case MessageType.themeUpdate:
-				editor.updateNodeViewThemes(msg.body.theme);
-				break;
-			default:
-				// If we reach this 'default' case, then we have encountered an unknown message type.
-				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
-				break;
-		}
+		handleEditorMessage(editor, msg);
 	});
 
 	let timeoutHandle: number | undefined;

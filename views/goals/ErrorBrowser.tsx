@@ -10,7 +10,7 @@ export function ErrorBrowser({ error }: ErrorBrowserParams) {
   return (
     <>
       <header>Errors:</header>
-      <RocqPp content={error} inline={true} />;
+      <RocqPp content={error} inline={true} />
     </>
   );
 }

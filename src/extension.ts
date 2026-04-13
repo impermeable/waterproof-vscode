@@ -37,6 +37,7 @@ import { CompositeClient } from "./lsp-client/composite";
 import { CompositeGoalsPanel } from "./webviews/goalviews/compositeGoalsPanel";
 import { convertToString, GoalConfig } from "../lib/types";
 import { RunResult } from "./lsp-client/petanque";
+import { clearInputCells } from "./helpers/exerciseSheet";
 
 /**
  * Main extension class
@@ -191,6 +192,7 @@ export class Waterproof implements Disposable {
         this.registerCommand("restart", this.restartClient);
         this.registerCommand("toggle", this.toggleClient);
         this.registerCommand("stop", this.stopClient);
+        // Remove solutions from document and open save dialog for the solution-less file.
         this.registerCommand("exportExerciseSheet", this.exportExerciseSheet);
 
         // Register the new Waterproof Document command
@@ -505,16 +507,21 @@ export class Waterproof implements Disposable {
      */
     async exportExerciseSheet() {
         const document = this.client.activeDocument;
-        if (document) {
-            let content = document.getText();
-            const pattern = /<input-area>\s*```coq([\s\S]*?)\s*```\s<\/input-area>/g;
-            const replacement = `<input-area>\n\`\`\`coq\n\n\`\`\`\n</input-area>`;
-            content = content.replace(pattern, replacement);
-            const fileUri = await window.showSaveDialog();
-            if (fileUri) {
-                await workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
-                window.showInformationMessage(`Saved to: ${fileUri.fsPath}`);
+        try {
+            if (document) {
+                let content: string = document.getText();
+                const fileName = document.fileName;
+                const fileExtension: string = fileName.substring(fileName.lastIndexOf('.'));
+                content = clearInputCells(content, fileExtension);
+                const fileUri = await window.showSaveDialog();
+                if (fileUri) {
+                    await workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
+                    window.showInformationMessage(`Saved to: ${fileUri.fsPath}`);
+                }
             }
+        } catch (error) {
+            window.showErrorMessage(`Error saving as exercise sheet: ${error}`);
+            console.error(`Error saving as exercise sheet: ${error}`);
         }
     }
 

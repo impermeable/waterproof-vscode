@@ -1,6 +1,6 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity } from "vscode";
+import { CancellationTokenSource, EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity} from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
 import { leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams } from "./requestTypes";
@@ -8,19 +8,21 @@ import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } fr
 import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
 import { findOccurrences } from "../qedStatus";
-import { InputAreaStatus } from "@impermeable/waterproof-editor";
+import { InputAreaStatus, OffsetSemanticToken, SemanticTokenType } from "@impermeable/waterproof-editor";
 import { ServerStoppedReason } from "@leanprover/infoview-api";
-import { DidChangeTextDocumentParams, DidCloseTextDocumentParams } from "vscode-languageclient";
+import { DidChangeTextDocumentParams, DidCloseTextDocumentParams, SemanticTokensRegistrationType } from "vscode-languageclient";
 import { FileProgressKind, MessageType } from "../../../shared";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
 
+    private semanticTokenTimer?: NodeJS.Timeout | number;
+
     /**
     * Whether the Lean server is still processing the document.
     * Used to avoid marking a proof as complete before checking has finished.
     */
-    private isBusy: boolean = true; 
+    private isBusy: boolean = true;
 
     constructor(clientProvider: LanguageClientProvider, channel: OutputChannel) {
         super(clientProvider, channel);
@@ -80,12 +82,15 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     }
 
     protected async onFileProgress(progress: FileProgressParams) {
+        if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
+          this.requestSemanticTokensDebounced(this.activeDocument);
+        }
 
         // Call super first so LSP ranges are converted to VSCode Ranges before we store/use them.
         super.onFileProgress(progress);
 
         if (this.activeDocument?.uri.toString() === progress.textDocument.uri) {
-            
+
             // --- busy-indicator (Lean edition) ---
             // Find the first processing range, where we want to add the busy-indicator to.
             const firstProcessing = progress.processing.find(
@@ -193,16 +198,16 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         if (hasErrorDiagnostic) {
             return InputAreaStatus.Incorrect;
         }
- 
+
         const goalsPosition = inputArea.end.translate(0, 0);
-        
+
         const goalsParams = this.createGoalsRequestParameters(document, goalsPosition);
         const response = await this.requestGoals(goalsParams);
 
         if (!response) {
             return InputAreaStatus.Incorrect;
         }
-        
+
         const status = response.goals.length > 0 ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
         return status;
     }
@@ -236,8 +241,116 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     public clientStopped = this.clientStoppedEmitter.event;
 
     async dispose(timeout?: number): Promise<void> {
+        if (this.semanticTokenTimer) {
+            clearTimeout(this.semanticTokenTimer);
+        }
         await super.dispose(timeout);
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
+    }
+
+    private requestSemanticTokensDebounced(document: TextDocument) {
+        if (this.semanticTokenTimer) {
+            clearTimeout(this.semanticTokenTimer);
+        }
+        this.semanticTokenTimer = setTimeout(() => {
+            this.requestAndForwardSemanticTokens(document).catch(err => {
+                wpl.debug(`Semantic token request failed: ${err}`)
+        });
+        }, 300);
+    }
+
+    private async requestAndForwardSemanticTokens(document: TextDocument): Promise<void> {
+        if (!this.client.isRunning() || !this.webviewManager) return;
+
+        const feature = this.client.getFeature(SemanticTokensRegistrationType.method);
+        if (!feature) return;
+
+        const provider = feature.getProvider(document);
+        if (!provider?.full) return;
+
+        const cts = new CancellationTokenSource();
+        const tokens = await Promise.resolve(
+            provider.full.provideDocumentSemanticTokens(document, cts.token)
+        ).catch(() => undefined).finally(() => cts.dispose());
+
+        if (!tokens?.data?.length) return;
+
+        const tokenLegend = this.client.initializeResult?.capabilities.semanticTokensProvider?.legend;
+        if (!tokenLegend) return;
+
+        const offsetTokens: Array<OffsetSemanticToken> = LeanLspClient.decodeLspTokens(tokens.data).flatMap(t => {
+            const tokenType = LeanLspClient.mapLspTokenType(tokenLegend.tokenTypes[t.tokenTypeIndex]);
+            if (tokenType === undefined) return [];
+
+            const startOffset = document.offsetAt(new Position(t.line, t.char));
+            return [{
+                startOffset,
+                endOffset: startOffset + t.length,
+                type: tokenType,
+            }];
+        });
+
+        this.webviewManager.postMessage(document.uri.toString(), {
+            type: MessageType.semanticTokens,
+            body: {tokens: offsetTokens},
+        });
+    }
+
+    private static decodeLspTokens(data: Uint32Array): Array<{ line: number; char: number; length: number; tokenTypeIndex: number }> {
+        if (data.length % 5 !== 0) {
+            wpl.debug(`[SemanticTokens] Malformed token data: length ${data.length} is not a multiple of 5`);
+        }
+        const tokens = [];
+        let line = 0;
+        let char = 0;
+        for (let i = 0; i + 4 < data.length; i += 5) {
+            const deltaLine = data[i];
+            const deltaStartChar = data[i + 1];
+            if (deltaLine > 0) {
+                line += deltaLine;
+                char = deltaStartChar;
+            } else {
+                char += deltaStartChar;
+            }
+            tokens.push({
+                line,
+                char,
+                length: data[i + 2],
+                tokenTypeIndex: data[i + 3],
+                // data[i + 4] is tokenModifiers (unused)
+            });
+        }
+        return tokens;
+    }
+
+    private static mapLspTokenType(lspType: string): SemanticTokenType | undefined {
+        switch (lspType) {
+            case "keyword":       return SemanticTokenType.Keyword;
+            case "variable":      return SemanticTokenType.Variable;
+            case "property":      return SemanticTokenType.Property;
+            case "function":      return SemanticTokenType.Function;
+            case "namespace":     return SemanticTokenType.Namespace;
+            case "type":          return SemanticTokenType.Type;
+            case "class":         return SemanticTokenType.Class;
+            case "enum":          return SemanticTokenType.Enum;
+            case "interface":     return SemanticTokenType.Interface;
+            case "struct":        return SemanticTokenType.Struct;
+            case "typeParameter": return SemanticTokenType.TypeParameter;
+            case "parameter":     return SemanticTokenType.Parameter;
+            case "enumMember":    return SemanticTokenType.EnumMember;
+            case "event":         return SemanticTokenType.Event;
+            case "method":        return SemanticTokenType.Method;
+            case "macro":         return SemanticTokenType.Macro;
+            case "modifier":      return SemanticTokenType.Modifier;
+            case "comment":       return SemanticTokenType.Comment;
+            case "string":        return SemanticTokenType.String;
+            case "number":        return SemanticTokenType.Number;
+            case "regexp":        return SemanticTokenType.Regexp;
+            case "operator":      return SemanticTokenType.Operator;
+            case "decorator":     return SemanticTokenType.Decorator;
+            case "leanSorryLike": return SemanticTokenType.LeanSorryLike;
+            default:              return undefined;
+        }
     }
 
     protected onDocumentChanged(): void {

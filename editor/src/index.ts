@@ -1,4 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
+import { getSemanticColors } from "./semanticColors";
 import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import waterproofTactics from "../../completions/tactics.json";
@@ -73,8 +74,6 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 				tagConfiguration: tagConfigurationLean,
 				serializer: new LeanSerializer(),
 				languageConfig: {
-					highlightDark: langVerbose.highlight_dark,
-					highlightLight: langVerbose.highlight_light,
 					languageSupport: langVerbose.verbose(),
 				},
 			}
@@ -147,6 +146,10 @@ window.onload = () => {
 			default: throw Error("Invalid theme encountered");
 		}
 	})();
+	for (const [key, value] of Object.entries(getSemanticColors(themeStyle))) {
+		document.documentElement.style.setProperty(key, value);
+	}
+
 	const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
 
 	//@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.
@@ -237,8 +240,15 @@ window.onload = () => {
 					}
 					break;
 				}
-			case MessageType.themeUpdate:
+			case MessageType.themeUpdate: {
 				editor.updateNodeViewThemes(msg.body.theme);
+				for (const [key, value] of Object.entries(getSemanticColors(msg.body.theme))) {
+					document.documentElement.style.setProperty(key, value);
+				}
+				break;
+			}
+			case MessageType.semanticTokens:
+				editor.setSemanticTokens(msg.body.tokens);
 				break;
 			default:
 				// If we reach this 'default' case, then we have encountered an unknown message type.

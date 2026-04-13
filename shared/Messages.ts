@@ -1,4 +1,4 @@
-import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
+import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, ThemeStyle, OffsetDiagnostic, OffsetSemanticToken } from "@impermeable/waterproof-editor";
 import { RocqGoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
 import { ServerStatus } from "./ServerStatus";
@@ -53,6 +53,7 @@ export type Message =
     // The payload is forwarded to an InfoView instance, so its type does not concern us
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | MessageBase<MessageType.infoviewRpc, { payload: any }>
+    | MessageBase<MessageType.semanticTokens, { tokens: Array<OffsetSemanticToken> }>
     ;
 
 /**
@@ -87,5 +88,6 @@ export const enum MessageType {
     teacher,
     themeUpdate,
     viewportHint,
-    infoviewRpc
+    infoviewRpc,
+    semanticTokens
 }

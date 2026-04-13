@@ -26,7 +26,7 @@ export function translateRocqDoc(rocqdoc: string) {
 
     /**
      * Replace headers according to
-     * https://coq.inria.fr/refman/using/tools/coqdoc.html#sections
+     * https://rocq-prover.org/refman/using/tools/coqdoc.html#sections
      * 
      * The order here matters so go from more * to less. 
      */
@@ -65,7 +65,7 @@ export function translateRocqDoc(rocqdoc: string) {
 
     /**
      * Replace quoted rocq according to:
-     * https://coq.inria.fr/refman/using/tools/coqdoc.html#coq-material-inside-documentation
+     * https://rocq-prover.org/refman/using/tools/coqdoc.html#rocq-material-inside-documentation
      */
     commentInside = replaceCode(commentInside);
 

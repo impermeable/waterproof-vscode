@@ -1,3 +1,8 @@
+// These tests focus on logic related to determining the proof status of an input area in the LeanLspClient.
+// These include the main logic of determineProofStatus, which combines diagnostic information and goal responses to classify an input area as Correct, Incorrect, or Invalid.
+// We also test the `getInputAreas` and `this.isBusy` logic since it is a key dependency of determineProofStatus, and the proof status logic relies on the areas being returned in document order.
+// The tests use a lot of mocking and test doubles since we want to isolate the logic of determineProofStatus and not depend on the full behavior of the LanguageClient or actual LSP communication.
+
 jest.mock("vscode", () => {
     const Position = class {
         constructor(public line: number, public character: number) {}
@@ -346,6 +351,8 @@ describe("LeanLspClient.determineProofStatus", () => {
     });
 });
 
+// The most important test is the order in which the input areas are returned, since the proof status logic assumes they are in document order. 
+// The other tests just verify that the getInputAreas logic correctly identifies the start and end of input areas in various scenarios.
 describe("LeanLspClient.getInputAreas", () => {
  
     it("returns an empty array when there are no input areas", () => {

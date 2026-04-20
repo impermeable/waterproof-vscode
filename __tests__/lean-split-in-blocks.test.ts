@@ -59,8 +59,10 @@ notation:50 f:80 " is continuous at " x₀ => continuous_function_at f x₀
 notation:50 u:80 " converges to " l => sequence_tendsto u l
 `;
 
-it('should put preamble ending with "#doc ... =>" as the first block, but without the "#doc ... =>" line itself', () => {
+it('should put preamble ending with "#doc ... =>" as the first block, but "#doc ... =>" line should not be visible', () => {
     const outputDocument = topLevelBlocksLean(input);
+    // Check that the visible part of the first block is preamble without "#doc ... =>"
     expect(outputDocument[0].stringContent).toBe(firstBlock);
+    // Check that the second block does not contain "#doc ... =>" line either
     expect(outputDocument[1].stringContent).not.toContain('#doc (WaterproofGenre) "Index" =>');
 })

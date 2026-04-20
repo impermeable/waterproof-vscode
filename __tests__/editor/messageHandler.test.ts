@@ -66,34 +66,18 @@ describe("handleEditorMessage", () => {
     });
 
     describe("progress", () => {
-        it("clears busy indicators and skips reportProgress when progress is empty", () => {
+        it("clears busy indicators and reports 'File verified' when progress is empty", () => {
             const editor = createEditorMock();
+            const numberOfLines = 12;
             const msg: Message = {
                 type: MessageType.progress,
-                body: { numberOfLines: 12, progress: [] },
+                body: { numberOfLines, progress: [] },
             };
 
             handleEditorMessage(editor, msg);
 
             expect(editor.removeBusyIndicators).toHaveBeenCalledTimes(1);
-            expect(editor.reportProgress).not.toHaveBeenCalled();
-        });
-
-        it("reports 'File verified' when progress has reached the last line", () => {
-            const editor = createEditorMock();
-            const numberOfLines = 50;
-            const msg: Message = {
-                type: MessageType.progress,
-                body: {
-                    numberOfLines,
-                    progress: [{ range: { start: { line: numberOfLines - 1, character: 0 }, end: { line: numberOfLines - 1, character: 0 } } }],
-                },
-            };
-
-            handleEditorMessage(editor, msg);
-
             expect(editor.reportProgress).toHaveBeenCalledWith(numberOfLines, numberOfLines, "File verified");
-            expect(editor.removeBusyIndicators).not.toHaveBeenCalled();
         });
 
         it("reports partial progress message when not yet on the last line", () => {

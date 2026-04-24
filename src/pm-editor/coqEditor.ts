@@ -19,6 +19,10 @@ export class CoqEditorProvider implements vscode.CustomTextEditorProvider {
     _redoCommand: vscode.Disposable | undefined = undefined;
     _lastRegistered: ProseMirrorWebview | undefined = undefined;
 
+    /**
+     * Creates waterproof editor provider instance and registers it as custom editor provider in vscode.
+     * Called when the waterproof extension is activated.
+     */
     public static register(context: vscode.ExtensionContext, manager: WebviewManager): vscode.Disposable {
         const provider = new CoqEditorProvider(context, manager);
         const providerRegistration = vscode.window.registerCustomEditorProvider(CoqEditorProvider.viewType, provider, {
@@ -35,7 +39,13 @@ export class CoqEditorProvider implements vscode.CustomTextEditorProvider {
     }
 
     /**
-     * Called when our custom editor is opened.
+     * Creates a ProseMirror webview based on the `document` and displays it it `webviewPanel`.
+     * Called when waterproof custom editor is opened.
+     *
+     * @param document - Text document of the rocq or lean file that has been opened.
+     * @param webviewPanel - VScode webview panel for the webview.
+     * @param _token - A cancellation token that indicates the result is no longer needed.
+     * @returns Promise indicating that the custom editor has been resolved.
      */
     public async resolveCustomTextEditor(
         document: vscode.TextDocument,

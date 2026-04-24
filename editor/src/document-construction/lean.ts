@@ -15,6 +15,10 @@ enum Kind {
     MultileanClose,
 }
 
+/**
+ * A unit for linked list structure of tokens.
+ * Each token represents a part of the document - a Waterproof Lean tag, document preamble, newline or text/code frangment.
+ */
 class Token {
     private readonly index: number;
 
@@ -68,7 +72,7 @@ const regexes: [RegExp, Kind][] = [
     [/(?<=\n)::::multilean\n/,            Kind.MultileanOpen  ],
     [/\n::::(?=\n|$)/,                    Kind.MultileanClose ],
     // Match these last
-    [/\n{1}?/,                            Kind.Newline        ],
+    [/\n{1}/,                            Kind.Newline        ],
 ];
 const flags: string = 'g';
 const tokenRegex = new RegExp(regexes.map(([regex, toKind]) => {
@@ -90,35 +94,42 @@ function expect(token: Token | undefined, kinds?: Kind[]): Token {
 }
 
 /**
- * Parse the given token in the context of the given document, creating new blocks.
+ * Parses the given token in the context of the given document, creating new blocks.
  *
- * @param doc document string
- * @param token token that needs to be parsed
- * @param blocks list to append new blocks to
+ * @param doc - Document string.
+ * @param token - Token that needs to be parsed.
+ * @param blocks - List to append new blocks to.
  *
- * @return the next unparsed token or undefined on EOF
+ * @return The next unparsed token or undefined on EOF.
  */
 function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
+    // Newline is significant if it's right before or after either code, input or hint block.
     const isSignificantNewline = (token: Token) =>
         token.kind === Kind.Newline
         && (token.prev?.isOneOf([Kind.Close])
             || token.next?.isOneOf([Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen]));
 
     if (token.kind === Kind.Preamble) {
+        // Process the preamble.
+      
         const range = token.range;
-        const content = doc.substring(range.from, range.to);
+        // The visible part of the block excludes the last line, which has the form:
+        // #doc ..... =>
+        const innerRange = { from: token.range.from, to: doc.indexOf('#doc') - 1 };
+        const content = doc.substring(innerRange.from, innerRange.to);
 
-        const child = new CodeBlock(content, range, range, token.line);
-        blocks.push(new HintBlock(content, "🛠 Technical details", range, range, token.line, [child]));
+        const child = new CodeBlock(content, range, innerRange, token.line);
+        blocks.push(new HintBlock(content, "🛠 Technical details", range, innerRange, token.line, [child]));
 
         return token.next;
     } else if (isSignificantNewline(token)) {
+        // If newline is significant, add it as a newline block.
         const range = token.range;
         blocks.push(new NewlineBlock(range, range, token.line));
 
         return token.next;
     } else if (token.isOneOf([Kind.Text, Kind.Newline, Kind.MathInline])) {
-        // concatenate following inline math, text, and newlines
+        // Concatenate following inline math, text, and newlines.
         let head: Token = token;
         while (head.next
                && head.next.isOneOf([Kind.Text, Kind.Newline, Kind.MathInline])
@@ -134,7 +145,11 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
         return head.next;
     } else if (token.kind === Kind.CodeOpen) {
+        // Process a code block.
+        
         let head = token;
+        // Iterate tokens until the code block closing token.
+        // Only text (code) and newline are allowed inside a code block.
         while (head.kind !== Kind.CodeClose) {
             head = expect(head.next, [Kind.CodeClose, Kind.Text, Kind.Newline])
         }
@@ -147,6 +162,8 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
         return head.next;
     } else if (token.isOneOf([Kind.HintOpen, Kind.InputOpen])) {
+        // Process a hint block or input block.
+        
         const expected: Kind[] = [
             Kind.Close,
             Kind.Text,
@@ -191,11 +208,16 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 }
 
 /**
- * Split the input document into a linked list of tokens
+ * Split the `inputDocument` into a linked list of tokens
  * representing different tags or fragments in the document
  * and return the first one.
+ *
+ * @param inputDocument - Document to split in tokens.
+ * 
+ * @returns Linked list of tokens or unefined if no tokens obtained (document is empty).
  */
 function tokenize(inputDocument: string): Token | undefined {
+    // Match Waterproof Lean tag regexes in the document.
     const matches: RegExpMatchArray[] = Array.from(
         inputDocument.matchAll(tokenRegex)
     );
@@ -211,6 +233,7 @@ function tokenize(inputDocument: string): Token | undefined {
     let newlines = 1;
     const tokens: Token[] = [];
 
+    // Process each mached expression.
     for (const m of matches) {
         const pos = m.index as number;
 
@@ -241,8 +264,10 @@ function tokenize(inputDocument: string): Token | undefined {
  * Extract top-level blocks from a Lean-based document.
  */
 export function topLevelBlocksLean(inputDocument: string): WaterproofDocument {
+    // Split document into tokens.
     let head = tokenize(inputDocument);
 
+    // Iteratively construct block structure of the document from the list of tokens.
     const blocks: Block[] = [];
     while (head) {
         head = handle(inputDocument, head, blocks);

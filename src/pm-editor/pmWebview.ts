@@ -70,7 +70,7 @@ export class ProseMirrorWebview extends EventEmitter {
         this.sendHistoryChangeToEditor(HistoryChange.Redo);
     };
 
-    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
+    private constructor(webviewPanel: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         super();
 
         this._provider = provider;
@@ -88,7 +88,7 @@ export class ProseMirrorWebview extends EventEmitter {
         }
 
 
-        this._panel = webview;
+        this._panel = webviewPanel;
         this._workspaceEditor.onFinish(() => {
             this.emit(WebviewEvents.finishUpdate);
         });
@@ -115,8 +115,15 @@ export class ProseMirrorWebview extends EventEmitter {
         if (value === SAVE_AS) commands.executeCommand("workbench.action.files.saveAs");
     }
 
-    /** Create a prosemirror webview */
-    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
+    /**
+     * Create a ProseMirror webview.
+     *
+     * @param webviewPanel - VScode panel in which ProseMirror webview is displayed.
+     * @param extensionUri - Uri of the directory containing Waterproof extension.
+     * @param doc - Rocq of lean text document for which webview is created.
+     * @param provider - Waterproof text editor provider.
+     */
+    public static async createProseMirrorView(webviewPanel: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         // Check if the line endings of file are windows
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
@@ -132,7 +139,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 window.showErrorMessage("Failed to open document for conversion");
             }
         }
-        return new ProseMirrorWebview(webview, extensionUri, doc, provider);
+        return new ProseMirrorWebview(webviewPanel, extensionUri, doc, provider);
     }
 
     /**
@@ -246,7 +253,8 @@ export class ProseMirrorWebview extends EventEmitter {
                     return "light";
             }
         })();
-
+        
+        // Fill the webview panel with initial HTML of our ProseMirror based editor.
         this._panel.webview.html = `
         <!doctype html>
         <html>

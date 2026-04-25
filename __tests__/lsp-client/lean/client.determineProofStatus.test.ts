@@ -1,3 +1,5 @@
+import { describe, expect, it, jest } from "@jest/globals";
+
 jest.mock("vscode", () => {
     const Position = class {
         constructor(public line: number, public character: number) {}

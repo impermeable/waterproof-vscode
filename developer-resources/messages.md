@@ -126,7 +126,7 @@ Send by the extension to start initialization of the webview editor, includes th
 ### `refreshDocument`
 
 #### Description
-Send by the extension to refresh the webview editor, includes the updated content of the document in the body, as well as the documnet's version.
+Send by the extension to refresh the webview editor, includes the updated content of the document in the body, as well as the document's version.
 
 #### Body
 ```ts

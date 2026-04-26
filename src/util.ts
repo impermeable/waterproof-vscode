@@ -63,7 +63,7 @@ export function checkTrimmingWhitespace() {
     const isTrimTrailingWhitespaceEnabled = config.get<boolean>('trimTrailingWhitespace');
     if (isTrimTrailingWhitespaceEnabled) {
         window.showWarningMessage(
-            "The setting `Trim Trailing Whitespace` is enabled. This may cause unexpected behaviour, and is strongly suggested to turned off.",
+            "The setting `Trim Trailing Whitespace` is enabled. This may cause unexpected behaviour in Waterproof, and we thus recommend you to turn it off.",
             "Open Settings",
             "Dismiss"
         ).then((selection: string | undefined) => {

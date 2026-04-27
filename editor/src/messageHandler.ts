@@ -4,8 +4,8 @@ import { Message, MessageType, ServerStatus } from "../../shared";
 export interface MessageHandlerEditor {
 	init: (value: string, version: number) => void;
 	insertSymbol: (symbolUnicode: string) => void;
-	refreshDocument: (value: string, version: number) => void;
 	handleSnippet: (template: string) => void;
+	refreshDocument: (value: string, version: number) => void;
 	replaceRange: (start: number, end: number, text: string) => void;
 	handleCompletions: (completions: Completion[]) => void;
 	setInputAreaStatus: (statuses: InputAreaStatus[]) => void;

@@ -7,7 +7,8 @@ import {
     workspace,
     window,
     ConfigurationTarget,
-    Uri} from "vscode";
+    Uri,
+    Range} from "vscode";
 import { LanguageClientOptions, RevealOutputChannelOn } from "vscode-languageclient";
 
 import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
@@ -347,7 +348,8 @@ export class Waterproof implements Disposable {
     public async proofContext(cursorMarker: string = "{!* CURSOR *!}"): Promise<{
         name: string,
         full: string
-        withCursorMarker: string
+        withCursorMarker: string,
+        proofRange: Range
     }> {
         if (!this.client.activeDocument || !this.client.activeCursorPosition) {
             throw new Error("No active document or cursor position.");
@@ -359,6 +361,7 @@ export class Waterproof implements Disposable {
 
         // Regex to find the end of the proof the user is working on.
         const endRegex = /(?:Qed|Admitted|Defined)\.\s/;
+        
         // We request the document symbols with the goal of finding the lemma the user is working on.
         const symbols = await this.client.requestSymbols();
         const firstBefore = symbols.filter(s => {
@@ -369,19 +372,27 @@ export class Waterproof implements Disposable {
         if (firstBefore === undefined) {
             throw new Error("Could not find lemma before cursor.");
         }
+        const startRegex = new RegExp(`(?:Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\\s+${firstBefore.name}\\s*:\\s*[^.]*\\.\\s+(?:Proof\\.)?`, "g");
         // Compute the offset into the document where the proof starts (will be the position before Lemma)
         const startProof = document.offsetAt(new Position(firstBefore.range.start.line, firstBefore.range.start.character));
 
         // Get the part of the text of the document starting at the lemma statement.
         const docText = document.getText().substring(startProof);
-        const proofClose = docText.match(endRegex);
+        const proofClose = endRegex.exec(docText);
 
         if (proofClose === null) {
             throw new Error("Could not find end of proof.");
         }
 
-        // Get the text of the proof from the document, we need to add startProof to the index since the regex was run on a su
-        const theProof = docText.substring(0, proofClose.index! + proofClose[0].length);
+        const startMatch = startRegex.exec(docText);
+        if (startMatch === null) {
+            throw new Error("Could not find start of proof.");
+        }
+        const proofStart = startProof + startMatch.index + startMatch[0].length;
+
+
+        // Get the text of the proof from the document
+        const theProof = docText.substring(0, proofClose.index + proofClose[0].length);
 
         // Helper function to remove input-area tags, coq markers and extra whitespace from input string
         const removeMarkersAndWhitespace = (input: string) => {
@@ -397,17 +408,19 @@ export class Waterproof implements Disposable {
         return {
             full: removeMarkersAndWhitespace(theProof),
             withCursorMarker: removeMarkersAndWhitespace(theProof.substring(0, offsetIntoMatch) + cursorMarker + theProof.substring(offsetIntoMatch)),
-            name: firstBefore.name
+            name: firstBefore.name,
+            proofRange: new Range(document.positionAt(proofStart), document.positionAt(proofClose.index + startProof))
         }
     }
 
     /**
-     * Try a proof/step by executing the given commands/tactics.
+     * Try a proof/step by executing the given commands/tactics at the cursor position.
      * @param steps The proof steps to try. This can be a single tactic or command or multiple separated by the
      * usual `.` and space.
+     * @param pos Optional position at which to try the proof steps.
      */
-    public async tryProof(steps: string): Promise<{finished: boolean, remainingGoals: string[]}> {
-        const execResponse = await executeCommandFullOutput(this.client, steps);
+    public async tryProof(steps: string, pos?: Position): Promise<{finished: boolean, remainingGoals: string[]}> {
+        const execResponse = await executeCommandFullOutput(this.client, steps, pos);
         return {
             finished: execResponse.proof_finished,
             remainingGoals: execResponse.goals.map(g => convertToString(g.ty))

@@ -7,20 +7,22 @@ import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams,
 /**
  * Base function for executing tactics/commands in a client.
  */
-async function executeCommandBase(client: CoqLspClient, command: string) {
+async function executeCommandBase(client: CoqLspClient, command: string, pos?: Position) {
     const document = client.activeDocument;
 
     if (!document) {
         throw new Error("Cannot execute command; there is no active document.");
     }
 
-    // We execute the command at the end of the previous sentence.
-    const commandPosition = client.getBeginningOfCurrentSentence();
-    if (!commandPosition) {
-        throw new Error("Cannot execute command; the document contains no Coq code.");
+    if (!pos) {
+        // We execute the command at the end of the previous sentence.
+        const commandPosition = client.getBeginningOfCurrentSentence();
+        if (!commandPosition) {
+            throw new Error("Cannot execute command; the document contains no Coq code.");
+        }
+        pos = new Position(commandPosition.line, commandPosition.character > 0 ? commandPosition.character - 1 : 0);
     }
 
-    const pos = { line: commandPosition.line, character: commandPosition.character - 1 };
     const params: GetStateAtPosParams = {
         // Make sure that the position is **before** the dot, otherwise there is no node at the position.
         position: pos,
@@ -49,12 +51,13 @@ async function executeCommandBase(client: CoqLspClient, command: string) {
  * Execute `command` using client `client` and return the output formatted as a valid `GoalAnswer<string>`.
  * @param client The client to use when executing the command.
  * @param command The command/tactic to execute. It is allowed to execute multiple tactics/commands by seperating them using `.`'s.
+ * @param pos Optional position at which to execute the command.
  * @returns The output of executing `command` formatted as a valid `GoalAnswer<string>` object, this can be passed to any component that
  * implement `IGoalsComponent`.
  */
-export async function executeCommand(client: CoqLspClient, command: string): Promise<GoalAnswer<string>> {
+export async function executeCommand(client: CoqLspClient, command: string, pos?: Position): Promise<GoalAnswer<string>> {
     try {
-        const { goalsRes, runRes, document } = await executeCommandBase(client, command);
+        const { goalsRes, runRes, document } = await executeCommandBase(client, command, pos);
         // This should form a valid `GoalAnswer<string>`
         return {
             messages: runRes.feedback.map((val) => { return { level: val[0], text: val[1] } }),
@@ -72,11 +75,12 @@ export async function executeCommand(client: CoqLspClient, command: string): Pro
  * running the command (`RunResult`, this includes messages and whether the proof was finished running `command`)
  * @param client The client to use when executing the command.
  * @param command The command/tactic to execute. It is allowed to execute multiple tactics/commands by seperating them using `.`'s.
+ * @param pos Optional position at which to execute the command.
  * @returns The full output of running `command` using `client`.
  */
-export async function executeCommandFullOutput(client: CoqLspClient, command: string): Promise<GoalConfig<string> & RunResult<number>> {
+export async function executeCommandFullOutput(client: CoqLspClient, command: string, pos?: Position): Promise<GoalConfig<string> & RunResult<number>> {
     try {
-        const { goalsRes, runRes } = await executeCommandBase(client, command);
+        const { goalsRes, runRes } = await executeCommandBase(client, command, pos);
         return { ...goalsRes, ...runRes };
     } catch (error) {
         throw new Error(`Error when trying to execute command '${command}': ${error}`);

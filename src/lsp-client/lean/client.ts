@@ -209,7 +209,9 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         if (response.goals.length > 0) return InputAreaStatus.Incorrect;
 
         // Goals are empty, proof looks complete, but check for sorry
-        // The Lean LSP prefixes all sorry-like aliases with "declaration uses "
+        // The Lean LSP prefixes all sorry-like aliases with "declaration uses " including hint
+        // Important: when hint suggests something that immediatly resolves the goal,
+        // it will not throw a sorry warning. It will see the proof as valid.
         const SORRY_PREFIX = "declaration uses ";
 
         const hasSorry = diags.some(d =>

@@ -1,0 +1,40 @@
+import { Code2ProtocolConverter, Protocol2CodeConverter } from "vscode-languageclient";
+import { LeanDiagnostic } from "./requestTypes";
+import { Diagnostic } from "vscode";
+
+import * as async from 'vscode-languageclient/lib/common/utils/async'
+
+/**
+* Preserve Lean-specific diagnostic fields (e.g. leanTags) during protocol<->code conversion.
+* Vscode does not preserve them on its own.
+* Inspired by the lean4 vscode extension's approach:
+*/
+export function patchDiagnosticConverters(p2c: Protocol2CodeConverter, c2p: Code2ProtocolConverter): void {
+
+    const origP2c = p2c.asDiagnostic.bind(p2c);
+    p2c.asDiagnostic = (protDiag: LeanDiagnostic) => {
+        if (!protDiag.message) {
+            // Fixes: Notification handler 'textDocument/publishDiagnostics' failed with message: message must be set
+            protDiag.message = ' '
+        }
+        const diag = origP2c(protDiag) as LeanDiagnostic;
+        diag.fullRange = p2c.asRange(protDiag.fullRange);
+        diag.leanTags  = protDiag.leanTags;
+        diag.isSilent  = protDiag.isSilent;
+        return diag as Diagnostic;
+    };
+    p2c.asDiagnostics = async (diags, token) => 
+        async.map(diags, d => p2c.asDiagnostic(d), token)
+
+    const origC2p = c2p.asDiagnostic.bind(c2p);
+    c2p.asDiagnostic = (diag: Diagnostic) => {
+        const leanDiag = diag as LeanDiagnostic;
+        const protDiag = origC2p(diag) as LeanDiagnostic;
+        protDiag.fullRange = c2p.asRange(leanDiag.fullRange) as any;
+        protDiag.leanTags = leanDiag.leanTags;
+        protDiag.isSilent = leanDiag.isSilent;
+        return protDiag;
+    };
+    c2p.asDiagnostics = async (diags: Diagnostic[]) =>
+        async.map(diags, d => c2p.asDiagnostic(d));
+}

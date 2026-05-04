@@ -3,7 +3,7 @@ import { LspClient } from "../client";
 import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
-import { leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams } from "./requestTypes";
+import { LeanDiagnostic, leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams, LeanTag } from "./requestTypes";
 import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } from "../../helpers";
 import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
@@ -12,6 +12,7 @@ import { InputAreaStatus } from "@impermeable/waterproof-editor";
 import { ServerStoppedReason } from "@leanprover/infoview-api";
 import { DidChangeTextDocumentParams, DidCloseTextDocumentParams } from "vscode-languageclient";
 import { FileProgressKind, MessageType } from "../../../shared";
+import { patchDiagnosticConverters } from "./converter";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
@@ -24,6 +25,8 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
     constructor(clientProvider: LanguageClientProvider, channel: OutputChannel) {
         super(clientProvider, channel);
+
+        patchDiagnosticConverters(this.client.protocol2CodeConverter, this.client.code2ProtocolConverter);
 
         // call each file progress component when the server has processed a part
         this.disposables.push(this.client.onNotification(leanFileProgressNotificationType, params => {
@@ -256,5 +259,10 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
     }
 
-
+    /**
+     * Hides diagnostic when it says 'Unsolved goals'
+     */
+    protected override shouldHideDiagnosticFromBottomPanel(d: Diagnostic): boolean {
+        return (d as LeanDiagnostic).leanTags?.includes(LeanTag.UnsolvedGoals) ?? false;
+    }
 }

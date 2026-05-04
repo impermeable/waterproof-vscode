@@ -73,26 +73,11 @@ jest.mock("vscode-languageserver-types", () => ({
     VersionedTextDocumentIdentifier: { create: jest.fn((uri, v) => ({ uri, version: v })) },
 }), { virtual: true });
 
-jest.mock("../../../shared",        () => ({ MessageType: {}, FileProgressKind: { Processing: 1 } }), { virtual: true });
-jest.mock("../../../lib/types",     () => ({}), { virtual: true });
-jest.mock("../../../src/helpers",   () => ({
-    WaterproofConfigHelper: { get: jest.fn(() => false) },
-    WaterproofLogger:       { log: jest.fn(), debug: jest.fn() },
-    WaterproofSetting:      {},
-    qualifiedSettingName:   jest.fn(s => s),
-}));
-jest.mock("../sentenceManager",     () => ({ SentenceManager: class { onProgress() {} dispose() {} } }), { virtual: true });
-jest.mock("../clientTypes",         () => ({}), { virtual: true });
-jest.mock("../requestTypes",        () => ({ convertToSimple: jest.fn() }), { virtual: true });
-
-jest.mock("./requestTypes",         () => ({
-    leanFileProgressNotificationType: "$/lean/fileProgress",
-    leanGoalRequestType:              "$/lean/plainGoal",
-}), { virtual: true });
 jest.mock("@impermeable/waterproof-editor", () => ({
     InputAreaStatus: { Correct: "Correct", Incorrect: "Incorrect", Invalid: "Invalid" },
 }), { virtual: true });
 jest.mock("@leanprover/infoview-api", () => ({}), { virtual: true });
+jest.mock("../../../src/lsp-client/lean/converter", () => ({ patchDiagnosticConverters: jest.fn() }), { virtual: true });
 
 import { Range, Position, DiagnosticSeverity } from "vscode";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";

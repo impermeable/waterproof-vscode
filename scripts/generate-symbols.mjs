@@ -4,6 +4,11 @@
  * Merges the hand-curated symbols.json (BASE) with the Lean unicode table,
  * adding any characters from Lean that are not already in the base.
  *
+ * Priority order (highest to lowest):
+ *   1. symbols.json  (sacred, never modified)
+ *   2. latex-unicode.json  (ALL lean labels that also appear in latex are added)
+ *   3. lean abbreviations  (for applies with no latex match, ALL lean labels are added)
+ *
  * Categories:
  *   0  Greek lowercase      1  Greek uppercase
  *   2  Math / logic         3  Arrows
@@ -11,337 +16,385 @@
  *   6  Calligraphic         7  Misc
  *   99 Hidden (completion-only, not shown in panel)
  *
+ * All tunable options live in generate-symbols.config.mjs.
+ *
  * Usage:
- *   node generate-symbols.mjs           # merge and write
- *   node generate-symbols.mjs --test    # merge, write, then compare against base
+ *   node generate-symbols.mjs             # merge and write
+ *   node generate-symbols.mjs --verbose   # also show lean-fallback list and latex{} notice
+ *   node generate-symbols.mjs --test      # merge, write, then run validation checks
+ *   node generate-symbols.mjs --verbose --test
  */
 
 import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
 
+import {
+  PATHS,
+  SHOW_IN_PANEL,
+  BLOCKS,
+  OVERRIDES as overrides,
+  MERGE,
+  ENRICHMENT,
+} from "./config.generate-symbols.mjs";
+
+import { runReports } from "./generate-symbols-helpers/report.generate-symbols.mjs";
+import { runTests } from "./generate-symbols-helpers/test.generate-symbols.mjs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const BASE   = path.resolve(__dirname, "../completions/symbols.json");
-const LEAN   = path.resolve(__dirname, "../node_modules/@leanprover/unicode-input/dist/abbreviations.json");
-const OUTPUT = path.resolve(__dirname, "../completions/symbols+lean.json");
-const TEST   = process.argv.includes("--test");
 
-// CONFIGURATION
-// Which groups of new symbols (from Lean) to show in the panel vs hide.
-// Set a group to `true` to assign its natural category (visible in panel).
-// Set to `false` to assign category 99 (completion-only, hidden from panel).
-// This only affects symbols added from Lean. The base symbols.json is
-// always preserved exactly as-is.
-const SHOW_IN_PANEL = {
-    greekLower:     false,   // α β γ ...
-    greekUpper:     false,   // Α Β Γ ...
-    mathLogic:      false,   // ∀ ∃ ∈ ...
-    arrows:         false,   // → ← ⇒ ...
-    letterlike:     false,   // N Z R C ...
-    scripts:        false,   // superscripts, subscripts
-    calligraphic:   false,   // script A-Z (A-Z ...)
-    fraktur:        false,  // fraktur A-Z a-z (g p q ...)
-    doubleStruck:   false,  // blackboard bold A-Z (A B C ...)
-    boldItalic:     false,  // bold/italic math letters
-    misc:           false,  // everything else
-};
+const BASE = path.resolve(__dirname, PATHS.base);
+const LEAN = path.resolve(__dirname, PATHS.lean);
+const LATEX = path.resolve(__dirname, PATHS.latex);
+const OUTPUT = path.resolve(__dirname, PATHS.output);
 
-// -- Unicode block -> category
-// Each entry: [codepoint range, natural category, SHOW_IN_PANEL key]
-const BLOCKS = [
-    [[0x03B1, 0x03CE], 0, "greekLower"],
-    [[0x03D0, 0x03D6], 0, "greekLower"],
-    [[0x03F0, 0x03F5], 0, "greekLower"],
-    [[0x0391, 0x03A9], 1, "greekUpper"],
-    [[0x00B2, 0x00B3], 5, "scripts"],
-    [[0x00B9, 0x00B9], 5, "scripts"],
-    [[0x2070, 0x209C], 5, "scripts"],
-    [[0x2100, 0x214F], 4, "letterlike"],
-    [[0x2190, 0x21FF], 3, "arrows"],
-    [[0x2B00, 0x2BFF], 3, "arrows"],
-    [[0x27F0, 0x27FF], 3, "arrows"],
-    [[0x2900, 0x297F], 3, "arrows"],
-    [[0x1D49C, 0x1D4CF], 6, "calligraphic"],
-    [[0x1D4D0, 0x1D4FF], 6, "calligraphic"],
-    [[0x2200, 0x22FF], 2, "mathLogic"],
-    [[0x2A00, 0x2AFF], 2, "mathLogic"],
-    [[0x27C0, 0x27EF], 2, "mathLogic"],
-    [[0x2980, 0x29FF], 2, "mathLogic"],
-    // Mathematical Alphanumeric block (U+1D400-1D7FF) -- split by sub-range:
-    [[0x1D504, 0x1D56B], 6, "fraktur"],       // Fraktur + Bold Fraktur A-Z a-z
-    [[0x1D538, 0x1D56B], 4, "doubleStruck"],  // Double-Struck (blackboard bold)
-    [[0x1D400, 0x1D7FF], 6, "boldItalic"],    // everything else (bold, italic, sans, mono)
-];
+const TEST = process.argv.includes("--test");
+const VERBOSE = process.argv.includes("--verbose");
+
+// -- Unicode block helpers --
 
 function blockEntry(cp) {
-    for (const entry of BLOCKS) {
-        const [[lo, hi]] = entry;
-        if (cp >= lo && cp <= hi) return entry;
-    }
-    return null;
+  for (const entry of BLOCKS) {
+    const [[lo, hi]] = entry;
+    if (cp >= lo && cp <= hi) return entry;
+  }
+  return null;
 }
 
 function categoryFromBlock(cp) {
-    const entry = blockEntry(cp);
-    if (!entry) return [7, "misc"];
-    const [, cat, key] = entry;
-    return [cat, key];
+  const entry = blockEntry(cp);
+  if (!entry) return [7, "misc"];
+  const [, cat, key] = entry;
+  return [cat, key];
 }
 
-// -- Per-label overrides --
-let overrides = {
-    // Example: "foo": 3,  // assign category 3 (arrows) to symbol with label "foo"
+// -- ANSI color helpers --
+const C = {
+  reset: "\x1b[0m",
+  bold: "\x1b[1m",
+  dim: "\x1b[2m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  cyan: "\x1b[36m",
+  gray: "\x1b[90m",
+  red: "\x1b[31m",
+  blue: "\x1b[34m",
+  magenta: "\x1b[35m",
 };
+
+function col(color, text) {
+  return `${color}${text}${C.reset}`;
+}
+function hint(msg) {
+  return col(C.dim, `(${msg})`);
+}
+
+// -- Helpers --
+
+/** Common prefix length, ignoring leading backslash */
+function commonPrefixLen(a, b) {
+  const sa = a.startsWith("\\") ? a.slice(1) : a;
+  const sb = b.startsWith("\\") ? b.slice(1) : b;
+  let i = 0;
+  while (i < sa.length && i < sb.length && sa[i] === sb[i]) i++;
+  return i;
+}
+
+/** Format labels as a comma-separated string */
+function fmtLabels(labels) {
+  return labels.join(", ");
+}
+
+/** Group an array of {apply, label} items by apply, collecting labels */
+function groupByApply(items) {
+  const map = new Map();
+  for (const { apply, label } of items) {
+    if (!map.has(apply)) map.set(apply, []);
+    map.get(apply).push(label);
+  }
+  return map;
+}
+
+/** Returns all pairs from an array */
+function pairs(arr) {
+  const result = [];
+  for (let i = 0; i < arr.length; i++)
+    for (let j = i + 1; j < arr.length; j++) result.push([arr[i], arr[j]]);
+  return result;
+}
+
+/** Compute the symbolPanelCategory for a new lean-added label+apply */
+function computeCategory(label, apply) {
+  const cp = apply.codePointAt(0);
+  if (overrides[label] !== undefined) return overrides[label];
+  if (/^\\[\^_]/.test(label)) return SHOW_IN_PANEL.scripts ? 5 : undefined;
+  const [naturalCat, groupKey] = categoryFromBlock(cp);
+  return SHOW_IN_PANEL[groupKey] ? naturalCat : undefined;
+}
 
 // -- Step 1: load base symbols
 const base = JSON.parse(fs.readFileSync(BASE, "utf8"));
+
+const baseApplyToLabel = new Map(base.map((s) => [s.apply, s.label]));
+const baseLabelToEntry = new Map(base.map((s) => [s.label, s]));
+
+// -- Step 2: load latex-unicode
+const latexRaw = JSON.parse(fs.readFileSync(LATEX, "utf8"));
+const latexApplyToLabels = new Map(); // apply → Set<label>  (only non-{} labels)
+const latexLabelToApply = new Map(); // label → apply       (only non-{} labels)
+const latexBraceLabels = []; // { label, apply }    (labels containing {})
+
+for (const [label, apply] of Object.entries(latexRaw)) {
+  const normalLabel = label.startsWith("\\") ? label : "\\" + label;
+  if (normalLabel.includes("{")) {
+    latexBraceLabels.push({ label: normalLabel, apply });
+    if (!latexApplyToLabels.has(apply))
+      latexApplyToLabels.set(apply, new Set());
+    // intentionally NOT added to latexLabelToApply - won't be chosen as a lean label
+  } else {
+    latexLabelToApply.set(normalLabel, apply);
+    if (!latexApplyToLabels.has(apply))
+      latexApplyToLabels.set(apply, new Set());
+    latexApplyToLabels.get(apply).add(normalLabel);
+  }
+}
+
+// -- Step 3: load & normalize lean symbols
+const leanJson = JSON.parse(fs.readFileSync(LEAN, "utf8"));
+const leanAll = new Map(); // label → apply
+
+for (const [key, value] of Object.entries(leanJson)) {
+  const apply = Array.isArray(value) ? value[0] : value;
+  if (!apply || apply.includes("$CURSOR")) continue;
+  if (apply === "\\" || apply === "\\n") continue;
+  if ([...apply].length !== 1) continue;
+  const label = key.startsWith("\\") ? key : "\\" + key;
+  leanAll.set(label, apply);
+}
+
+const leanApplyToLabels = new Map(); // apply → Set<label>
+for (const [label, apply] of leanAll) {
+  if (!leanApplyToLabels.has(apply)) leanApplyToLabels.set(apply, new Set());
+  leanApplyToLabels.get(apply).add(label);
+}
+
+// -- Step 4: merge
 const symbols = [...base];
-const seenLabels = new Set(base.map(s => s.label));
+const seenLabels = new Set(base.map((s) => s.label));
+const seenApplies = new Set(base.map((s) => s.apply));
 
-// -- Step 2: add new characters from Lean table
-const lean = JSON.parse(fs.readFileSync(LEAN, "utf8"));
+const report = {
+  // apply already covered by symbols.json - only when lean has EXTRA labels
+  // { baseLabel, droppedLabels[], latexLabels[] }
+  skippedByApply: new Map(),
 
-for (const [key, value] of Object.entries(lean)) {
-    const apply = Array.isArray(value) ? value[0] : value;
+  // New applies added via latex-matching lean labels (ALL matching labels added)
+  // { apply, addedLabels[], latexLabels[], droppedLean[] }
+  addedViaLatex: [],
 
-    // Skip bracket-pair templates, escapes, and multi-character symbols
-    if (!apply || apply.includes("$CURSOR")) continue;
-    if (apply === "\\" || apply === "\\n") continue;
+  // New applies added via lean only (ALL lean labels added, no latex match)
+  // { apply, addedLabels[] }
+  addedViaLean: [],
 
-    const label = key.startsWith("\\") ? key : "\\" + key;
-    if (seenLabels.has(label)) continue;                    // skip duplicate labels
-    // Note: duplicate apply values are allowed (multiple labels -> same character)
+  // Lean label collides with a base label but points to a different character
+  labelConflicts: [], // { label, baseApply, leanApply }
+};
 
-    const cp = apply.codePointAt(0);
-
-    let cat;
-    if (overrides[label] !== undefined) {
-        cat = overrides[label];
-    } else if (/^\\[\^_]/.test(label)) {
-        cat = SHOW_IN_PANEL.scripts ? 5 : undefined;
-    } else {
-        const [naturalCat, groupKey] = categoryFromBlock(cp);
-        cat = SHOW_IN_PANEL[groupKey] ? naturalCat : undefined;
+for (const [apply, leanLabels] of leanApplyToLabels) {
+  // -- Case A: apply already in symbols.json
+  if (seenApplies.has(apply)) {
+    const baseLabel = baseApplyToLabel.get(apply);
+    const droppedLabels = [...leanLabels].filter((l) => l !== baseLabel);
+    if (droppedLabels.length > 0) {
+      const latexLabels = latexApplyToLabels.get(apply)
+        ? [...latexApplyToLabels.get(apply)]
+        : [];
+      report.skippedByApply.set(apply, {
+        baseLabel,
+        droppedLabels,
+        latexLabels,
+      });
     }
 
+    // Optionally add extra LaTeX labels for already-covered applies
+    if (MERGE.addLatexIfAlreadyInBase) {
+      const latexLabels = latexApplyToLabels.get(apply) ?? new Set();
+      for (const latexLabel of latexLabels) {
+        if (seenLabels.has(latexLabel)) continue;
+        seenLabels.add(latexLabel);
+        const cat = computeCategory(latexLabel, apply);
+        const entry =
+          cat !== undefined
+            ? {
+                label: latexLabel,
+                type: "symbol",
+                apply,
+                symbolPanelCategory: cat,
+              }
+            : { label: latexLabel, type: "symbol", apply };
+        symbols.push(entry);
+      }
+    }
+    continue;
+  }
+
+  // -- Case B: detect label conflicts
+  for (const leanLabel of leanLabels) {
+    if (seenLabels.has(leanLabel)) {
+      const baseEntry = baseLabelToEntry.get(leanLabel);
+      if (baseEntry && baseEntry.apply !== apply) {
+        report.labelConflicts.push({
+          label: leanLabel,
+          baseApply: baseEntry.apply,
+          leanApply: apply,
+        });
+      }
+    }
+  }
+
+  const eligibleLeanLabels = [...leanLabels].filter((l) => !seenLabels.has(l));
+  if (eligibleLeanLabels.length === 0) continue;
+
+  // -- Case C: add labels
+  const latexMatches = eligibleLeanLabels.filter((l) =>
+    latexLabelToApply.has(l),
+  );
+  const latexLabelsForApply = latexApplyToLabels.get(apply)
+    ? [...latexApplyToLabels.get(apply)]
+    : [];
+
+  // Labels to actually add as symbol entries this round
+  let labelsToAdd;
+  let source; // "latex" | "lean"
+
+  if (latexMatches.length > 0 && MERGE.addViaLatex) {
+    labelsToAdd = latexMatches;
+    source = "latex";
+    report.addedViaLatex.push({
+      apply,
+      addedLabels: latexMatches,
+      latexLabels: latexLabelsForApply,
+      droppedLean: eligibleLeanLabels.filter((l) => !latexMatches.includes(l)),
+    });
+  } else if (latexMatches.length === 0 && MERGE.addViaLean) {
+    labelsToAdd = eligibleLeanLabels;
+    source = "lean";
+    report.addedViaLean.push({
+      apply,
+      addedLabels: eligibleLeanLabels,
+    });
+  } else if (
+    latexMatches.length > 0 &&
+    !MERGE.addViaLatex &&
+    MERGE.addViaLean
+  ) {
+    // latex match exists but addViaLatex is off; fall through to lean labels
+    labelsToAdd = eligibleLeanLabels;
+    source = "lean";
+    report.addedViaLean.push({
+      apply,
+      addedLabels: eligibleLeanLabels,
+    });
+  } else {
+    continue; // both sources disabled for this apply
+  }
+
+  // Emit one symbol entry per label
+  seenApplies.add(apply);
+  for (const label of labelsToAdd) {
+    if (seenLabels.has(label)) continue; // guard against duplicates within batch
     seenLabels.add(label);
-    // Omit symbolPanelCategory entirely when hidden
-    const entry = cat !== undefined
+    const cat = computeCategory(label, apply);
+    const entry =
+      cat !== undefined
         ? { label, type: "symbol", apply, symbolPanelCategory: cat }
         : { label, type: "symbol", apply };
     symbols.push(entry);
+  }
 }
 
-// -- Write output
-fs.writeFileSync(OUTPUT, JSON.stringify(symbols, null, 4), "utf8");
+// -- Step 5: write output
+const baseApplySet = new Set(base.map((s) => s.apply));
 
-const hidden  = symbols.filter(s => s.symbolPanelCategory === undefined).length;
+// Determine which source a lean-added symbol came from (for boost purposes)
+const latexAddedLabels = new Set(
+  report.addedViaLatex.flatMap((r) => r.addedLabels),
+);
+
+const finalLabelsByApply = new Map();
+for (const s of symbols) {
+  if (!finalLabelsByApply.has(s.apply)) finalLabelsByApply.set(s.apply, []);
+  finalLabelsByApply.get(s.apply).push(s.label);
+}
+
+const enriched = symbols.map((s) => {
+  const allAliases = new Set(finalLabelsByApply.get(s.apply) ?? []);
+  allAliases.delete(s.label);
+
+  const extras = {};
+
+  if (ENRICHMENT.includeAliasDetails && allAliases.size > 0) {
+    extras.detail = ` Also: ${[...allAliases].join(" ")} `;
+  }
+
+  if (baseApplySet.has(s.apply) && base.some((b) => b.label === s.label)) {
+    // Base symbol
+    if (ENRICHMENT.baseBoost) extras.boost = ENRICHMENT.baseBoost;
+  } else if (latexAddedLabels.has(s.label)) {
+    // Added via latex alias
+    if (ENRICHMENT.latexBoost) extras.boost = ENRICHMENT.latexBoost;
+  } else {
+    // Added via lean fallback
+    if (ENRICHMENT.leanBoost) extras.boost = ENRICHMENT.leanBoost;
+  }
+
+  return Object.keys(extras).length ? { ...s, ...extras } : s;
+});
+
+fs.writeFileSync(OUTPUT, JSON.stringify(enriched, null, 4), "utf8");
+
+const hidden = symbols.filter(
+  (s) => s.symbolPanelCategory === undefined,
+).length;
 const fromLean = symbols.length - base.length;
-console.log(`Base symbols   : ${base.length}`);
-console.log(`Added from Lean: ${fromLean}`);
-console.log(`Total written  : ${symbols.length} (${symbols.length - hidden} in panel, ${hidden} hidden) -> ${OUTPUT}`);
+console.log(`${col(C.bold, "Base symbols")}   : ${base.length}`);
+console.log(`${col(C.bold, "Added from Lean")}: ${fromLean}`);
+console.log(
+  `${col(C.bold, "Total written")}  : ${symbols.length} (${
+    symbols.length - hidden
+  } in panel, ${hidden} hidden) -> ${OUTPUT}`,
+);
 
-// --- Tests ---
 if (!TEST) process.exit(0);
 
-console.log(`\nRunning tests against base file...`);
-const outMap = new Map(symbols.map(s => [s.label, s]));
-let pass = true;
-
-function fail(msg) {
-    pass = false;
-    console.log("Failed: " + msg);
-}
-
-// 1. Base categories preserved
-const catMismatches = base.filter(ref => {
-    const out = outMap.get(ref.label);
-    return out && out.symbolPanelCategory !== ref.symbolPanelCategory;
+runReports({
+  report,
+  symbols,
+  latexApplyToLabels,
+  latexLabelToApply,
+  latexBraceLabels,
+  VERBOSE,
+  C,
+  col,
+  hint,
+  fmtLabels,
+  groupByApply,
+  pairs,
+  commonPrefixLen,
 });
-if (catMismatches.length > 0) {
-    fail(`\nCategory mismatches (${catMismatches.length}):`);
-    for (const m of catMismatches) {
-        const got = outMap.get(m.label).symbolPanelCategory;
-        console.log(`   ${m.label.padEnd(25)} ${m.apply}  expected=${m.symbolPanelCategory}  got=${got}`);
-    }
-} else {
-    console.log(`✓ All base categories preserved`);
-}
 
-// 2. Base labels preserved
-const missing = base.filter(r => !outMap.has(r.label));
-if (missing.length > 0) {
-    fail(`\nMissing labels (${missing.length}):`);
-    for (const m of missing) console.log(`   ${m.label.padEnd(25)} ${m.apply}`);
-} else {
-    console.log(`✓ All base labels preserved`);
-}
-
-// 3. Base apply values preserved
-const applyMismatches = base.filter(ref => {
-    const out = outMap.get(ref.label);
-    return out && out.apply !== ref.apply;
+runTests({
+  base,
+  symbols,
+  enriched,
+  report,
+  leanAll,
+  leanApplyToLabels,
+  baseApplyToLabel,
+  overrides,
+  MERGE,
+  fmtLabels,
+  col,
+  C,
+  fromLean,
 });
-if (applyMismatches.length > 0) {
-    fail(`\nApply mismatches (${applyMismatches.length}):`);
-    for (const m of applyMismatches) {
-        const got = outMap.get(m.label).apply;
-        console.log(`   ${m.label.padEnd(25)} expected=${m.apply}  got=${got}`);
-    }
-} else {
-    console.log(`✓ All base apply values preserved`);
-}
-
-// 4. No duplicate labels
-const labelCounts = new Map();
-for (const s of symbols) labelCounts.set(s.label, (labelCounts.get(s.label) ?? 0) + 1);
-const dupLabels = [...labelCounts.entries()].filter(([, n]) => n > 1);
-if (dupLabels.length > 0) {
-    fail(`\nDuplicate labels (${dupLabels.length}):`);
-    for (const [label, count] of dupLabels) console.log(`   ${label.padEnd(25)} (${count}x)`);
-} else {
-    console.log(`✓ No duplicate labels`);
-}
-
-// 5. Valid category values on Lean-added symbols (undefined = hidden)
-const validCats = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
-const badCat = symbols.slice(base.length).filter(s => s.symbolPanelCategory !== undefined && !validCats.has(s.symbolPanelCategory));
-if (badCat.length > 0) {
-    fail(`\nInvalid category values in Lean-added symbols (${badCat.length}):`);
-    for (const s of badCat) console.log(`   ${s.label.padEnd(25)} cat=${s.symbolPanelCategory}`);
-} else {
-    console.log(`✓ All Lean-added category values valid`);
-}
-// 6. No stray "type" fields on Lean-added symbols other than "symbol"
-const hasType = symbols.slice(base.length).filter(s => s.type !== 'symbol');
-if (hasType.length > 0) {
-    fail(`\nLean-added symbols with unexpected "type" field (${hasType.length}):`);
-    for (const s of hasType) console.log(`   ${s.label.padEnd(25)} type=${s.type}`);
-} else {
-    console.log(`✓ No stray "type" fields on Lean-added symbols`);
-}
-
-// 7. No multi-character apply values in Lean-added symbols
-// const multiChar = symbols.slice(base.length).filter(s => [...s.apply].length > 1);
-// if (multiChar.length > 0) {
-//     fail(`\nMulti-character apply values in Lean-added symbols (${multiChar.length}):`);
-//     for (const s of multiChar) console.log(`   ${s.label.padEnd(25)} apply=${s.apply}`);
-// } else {
-//     console.log(`✓ No multi-character apply values`);
-// }
-
-// 8. Overrides all resolved (catches typos in override labels)
-const unresolvedOverrides = Object.keys(overrides).filter(label => !outMap.has(label));
-if (unresolvedOverrides.length > 0) {
-    fail(`\nOverride labels not found in output (${unresolvedOverrides.length}):`);
-    for (const label of unresolvedOverrides) console.log(`   ${label}`);
-} else if (Object.keys(overrides).length > 0) {
-    console.log(`✓ All overrides resolved`);
-}
-
-// 9. Override categories applied correctly
-const overrideMismatches = Object.entries(overrides).filter(([label, expectedCat]) => {
-    const out = outMap.get(label);
-    return out && out.symbolPanelCategory !== expectedCat;
-});
-if (overrideMismatches.length > 0) {
-    fail(`\nOverride category mismatches (${overrideMismatches.length}):`);
-    for (const [label, expectedCat] of overrideMismatches) {
-        const got = outMap.get(label)?.symbolPanelCategory;
-        console.log(`   ${label.padEnd(25)} expected=${expectedCat}  got=${got}`);
-    }
-} else if (Object.keys(overrides).length > 0) {
-    console.log(`✓ All override categories applied correctly`);
-}
-
-// 10. Base symbol order preserved
-const baseLabels = base.map(s => s.label);
-const outLabels  = symbols.slice(0, base.length).map(s => s.label);
-if (JSON.stringify(baseLabels) !== JSON.stringify(outLabels)) {
-    fail(`\nBase symbol order not preserved`);
-} else {
-    console.log(`✓ Base symbol order preserved`);
-}
-const leanRaw = Object.entries(lean)
-    .map(([key, value]) => ({ label: key.startsWith("\\") ? key : "\\" + key, apply: Array.isArray(value) ? value[0] : value }))
-    .filter(({ apply }) => apply && !apply.includes("$CURSOR") && apply !== "\\" && apply !== "\\n" && [...apply].length === 1);
-
-// 11. Informational: Lean symbols whose character already exists in symbols.json
-const baseApplyMap = new Map(base.map(s => [s.apply, s.label]));
-const leanByApply = new Map();
-for (const { label, apply } of leanRaw) {
-    if (!leanByApply.has(apply)) leanByApply.set(apply, []);
-    leanByApply.get(apply).push(label);
-}
-
-const sharedChars = [...baseApplyMap.entries()]
-    .filter(([apply]) => leanByApply.has(apply))
-    .map(([apply, baseLabel]) => ({ apply, baseLabel, leanLabels: leanByApply.get(apply) }));
-
-if (sharedChars.length > 0) {
-    console.log(`\nℹ️  Characters in both symbols.json and Lean (${sharedChars.length}):`);
-    console.log(`   ${"char".padEnd(5)} ${"U+".padEnd(8)} ${"waterproof label".padEnd(28)} lean labels`);
-    console.log(`   ${"─".repeat(80)}`);
-    for (const { apply, baseLabel, leanLabels } of sharedChars) {
-        const cp = `U+${apply.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
-        console.log(`   ${apply.padEnd(5)} ${cp.padEnd(8)} ${baseLabel.padEnd(28)} ${leanLabels.join(", ")}`);
-    }
-}
-// 12. Informational: Lean labels skipped because the label already exists in symbols.json
-//    Split into: same apply (true alias) vs different apply (conflict)
-
-const skippedSameApply = [];
-const skippedDiffApply = [];
-for (const { label, apply } of leanRaw) {
-    if (!seenLabels.has(label)) continue; // was added, not skipped
-    const baseEntry = outMap.get(label);
-    if (!baseEntry) continue; // shouldn't happen
-    if (baseEntry.apply === apply) {
-        skippedSameApply.push({ label, apply });
-    } else {
-        skippedDiffApply.push({ label, leanApply: apply, baseApply: baseEntry.apply });
-    }
-}
-
-if (skippedDiffApply.length > 0) {
-    console.log(`\nℹ️  Lean labels skipped: label exists in symbols.json but with different character (${skippedDiffApply.length}):`);
-    for (const s of skippedDiffApply) {
-        console.log(`   ${s.label.padEnd(25)} base: ${s.baseApply}  lean: ${s.leanApply}`);
-    }
-} else {
-    console.log(`✓ No Lean labels conflict with symbols.json`);
-}
-
-// 13. Informational: symbols.json entries not present in Lean at all
-const leanLabels  = new Set(leanRaw.map(s => s.label));
-const leanApplies = new Set(leanRaw.map(s => s.apply));
-const baseOnlyLabel  = base.filter(s => !leanLabels.has(s.label));
-const baseOnlyApply  = base.filter(s => !leanApplies.has(s.apply));
-const baseOnlyBoth   = base.filter(s => !leanLabels.has(s.label) && !leanApplies.has(s.apply));
-const baseOnlyLabelOnly  = baseOnlyLabel.filter(s => leanApplies.has(s.apply));
-const baseOnlyApplyOnly  = baseOnlyApply.filter(s => leanLabels.has(s.label));
-
-if (baseOnlyBoth.length > 0) {
-    console.log(`\nℹ️  symbols.json entries absent from Lean entirely: label and character (${baseOnlyBoth.length}):`);
-    for (const s of baseOnlyBoth) console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
-}
-if (baseOnlyLabelOnly.length > 0) {
-    console.log(`\nℹ️  symbols.json entries whose label is not in Lean (but character is) (${baseOnlyLabelOnly.length}):`);
-    for (const s of baseOnlyLabelOnly) console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
-}
-if (baseOnlyApplyOnly.length > 0) {
-    console.log(`\nℹ️  symbols.json entries whose character is not in Lean (but label is) (${baseOnlyApplyOnly.length}):`);
-    for (const s of baseOnlyApplyOnly) console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
-}
-if (baseOnlyBoth.length === 0 && baseOnlyLabelOnly.length === 0 && baseOnlyApplyOnly.length === 0) {
-    console.log(`✓ All symbols.json entries have both label and character present in Lean`);
-}
-
-console.log(`\n${fromLean} new symbols added from Lean table (first 20):`);
-for (const s of symbols.slice(base.length, base.length + 20)) {
-    console.log(`   ${s.label.padEnd(10)} ${s.apply}  cat=${s.symbolPanelCategory ?? "hidden"}`);
-}
-if (fromLean > 20) console.log(`   ... and ${fromLean - 20} more`);
-
-console.log(`\n${pass ? "Test passed" : "Test FAILED"}`);
-process.exit(pass ? 0 : 1);

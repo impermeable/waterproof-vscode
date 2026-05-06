@@ -5,6 +5,7 @@ export interface MessageHandlerEditor {
 	init: (value: string, version: number) => void;
 	insertSymbol: (symbolUnicode: string) => void;
 	handleSnippet: (template: string) => void;
+	refreshDocument: (value: string, version: number) => void;
 	replaceRange: (start: number, end: number, text: string) => void;
 	handleCompletions: (completions: Completion[]) => void;
 	setInputAreaStatus: (statuses: InputAreaStatus[]) => void;
@@ -39,6 +40,9 @@ export function handleEditorMessage(editor: MessageHandlerEditor, msg: Message):
 				}
 				break;
 			}
+		case MessageType.refreshDocument:
+				editor.refreshDocument(msg.body.value, msg.body.version);
+				break;
 		case MessageType.replaceRange:
 			{
 				const { start, end, text } = msg.body;

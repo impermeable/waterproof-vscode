@@ -36,19 +36,20 @@ export function runReports(ctx: ReportContext): void {
     );
     for (const [
       apply,
-      { baseLabel, droppedLabels, latexLabels },
+      { baseLabels, droppedLabels, latexLabels },
     ] of report.skippedByApply) {
-      const latexOthers = latexLabels.filter((l) => l !== baseLabel);
-      const baseInLatex = latexLabels.includes(baseLabel);
-      const baseColor =
-        latexLabels.length > 0 && !baseInLatex ? C.yellow : C.cyan;
+      const baseLabelsSet = new Set(baseLabels);
+      const latexOthers = latexLabels.filter((l) => !baseLabelsSet.has(l));
+      const coloredBaseLabels = baseLabels
+        .map((l) => col(latexLabels.includes(l) ? C.cyan : C.yellow, l))
+        .join(", ");
       const latexStr =
         latexOthers.length > 0
           ? `  ${col(C.gray, "latex:")} ${col(C.blue, fmtLabels(latexOthers))}`
           : "";
       console.log(
         `   ${col(C.bold, apply)}  ` +
-          `${col(C.gray, "base:")} ${col(baseColor, baseLabel)}${latexStr}  ` +
+          `${col(C.gray, "base:")} ${coloredBaseLabels}${latexStr}  ` +
           `${col(C.gray, "dropped:")} ${col(C.red, fmtLabels(droppedLabels))}`,
       );
     }

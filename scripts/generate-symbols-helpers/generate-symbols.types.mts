@@ -88,7 +88,7 @@ export interface EnrichmentConfig {
 // ---------------------------------------------------------------------------
 
 export interface SkippedByApplyEntry {
-  baseLabel: string;
+  baseLabels: string[];
   droppedLabels: string[];
   latexLabels: string[];
 }

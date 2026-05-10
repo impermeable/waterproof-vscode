@@ -176,14 +176,16 @@ const report: MergeReport = {
 for (const [apply, leanLabels] of leanApplyToLabels) {
   // -- Case A: apply already in symbols.json
   if (seenApplies.has(apply)) {
-    const baseLabel = baseApplyToLabel.get(apply)!;
-    const droppedLabels = [...leanLabels].filter((l) => l !== baseLabel);
+    const baseLabelsForApply = base
+      .filter((s) => s.apply === apply)
+      .map((s) => s.label);
+    const droppedLabels = [...leanLabels].filter((l) => !seenLabels.has(l));
     if (droppedLabels.length > 0) {
       const latexLabels = latexApplyToLabels.get(apply)
         ? [...latexApplyToLabels.get(apply)!]
         : [];
       report.skippedByApply.set(apply, {
-        baseLabel,
+        baseLabels: baseLabelsForApply,
         droppedLabels,
         latexLabels,
       });

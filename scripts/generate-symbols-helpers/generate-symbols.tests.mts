@@ -1,4 +1,6 @@
-export function runTests(ctx) {
+import type { BaseSymbol, SymbolEntry, TestContext } from "./generate-symbols.types.mjs";
+
+export function runTests(ctx: TestContext): void {
     const {
         base,
         symbols,
@@ -17,7 +19,7 @@ export function runTests(ctx) {
 
     const ICONS = {
         info: "\u2139\uFE0F",
-        ok: "\u2713",
+        ok:   "\u2713",
         fail: "\u2717",
     };
 
@@ -30,14 +32,18 @@ export function runTests(ctx) {
     // Informational: Characters in both symbols.json AND Lean
     const sharedChars = [...baseApplyToLabel.entries()]
         .filter(([apply]) => leanApplyToLabels.has(apply))
-        .map(([apply, baseLabel]) => ({ apply, baseLabel, leanLabels: [...leanApplyToLabels.get(apply)] }));
+        .map(([apply, baseLabel]) => ({
+            apply,
+            baseLabel,
+            leanLabels: [...leanApplyToLabels.get(apply)!],
+        }));
 
     if (sharedChars.length > 0) {
         console.log(`\n${col(C.cyan, `${ICONS.info}  Characters in both symbols.json and Lean (${sharedChars.length}):`)}`);
         console.log(`   ${"char".padEnd(5)} ${"U+".padEnd(8)} ${"base label".padEnd(28)} lean labels`);
         console.log(`   ${"\u2500".repeat(80)}`);
         for (const { apply, baseLabel, leanLabels } of sharedChars) {
-            const cp = `U+${apply.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
+            const cp = `U+${apply.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}`;
             console.log(`   ${apply.padEnd(5)} ${cp.padEnd(8)} ${baseLabel.padEnd(28)} ${fmtLabels(leanLabels)}`);
         }
     }
@@ -70,10 +76,11 @@ export function runTests(ctx) {
     if (fromLean > 20) console.log(`   ... and ${fromLean - 20} more`);
 
     console.log(`\nRunning tests against base file...`);
-    const outMap = new Map(symbols.map(s => [s.label, s]));
+
+    const outMap = new Map<string, SymbolEntry>(symbols.map(s => [s.label, s]));
     let pass = true;
 
-    function fail(msg) {
+    function fail(msg: string): void {
         pass = false;
         console.log(col(C.red, "FAILED: ") + msg);
     }
@@ -86,7 +93,7 @@ export function runTests(ctx) {
     if (catMismatches.length > 0) {
         fail(`Category mismatches (${catMismatches.length}):`);
         for (const m of catMismatches) {
-            const got = outMap.get(m.label).symbolPanelCategory;
+            const got = outMap.get(m.label)!.symbolPanelCategory;
             console.log(`   ${m.label.padEnd(25)} ${m.apply}  expected=${m.symbolPanelCategory}  got=${got}`);
         }
     } else {
@@ -110,7 +117,7 @@ export function runTests(ctx) {
     if (applyMismatches.length > 0) {
         fail(`Apply mismatches (${applyMismatches.length}):`);
         for (const m of applyMismatches) {
-            const got = outMap.get(m.label).apply;
+            const got = outMap.get(m.label)!.apply;
             console.log(`   ${m.label.padEnd(25)} expected=${m.apply}  got=${got}`);
         }
     } else {
@@ -118,7 +125,7 @@ export function runTests(ctx) {
     }
 
     // 4. No duplicate labels
-    const labelCounts = new Map();
+    const labelCounts = new Map<string, number>();
     for (const s of symbols) labelCounts.set(s.label, (labelCounts.get(s.label) ?? 0) + 1);
     const dupLabels = [...labelCounts.entries()].filter(([, n]) => n > 1);
     if (dupLabels.length > 0) {
@@ -130,7 +137,9 @@ export function runTests(ctx) {
 
     // 5. Valid category values on Lean-added symbols (undefined = hidden)
     const validCats = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
-    const badCat = symbols.slice(base.length).filter(s => s.symbolPanelCategory !== undefined && !validCats.has(s.symbolPanelCategory));
+    const badCat = symbols.slice(base.length).filter(
+        s => s.symbolPanelCategory !== undefined && !validCats.has(s.symbolPanelCategory)
+    );
     if (badCat.length > 0) {
         fail(`Invalid category values in Lean-added symbols (${badCat.length}):`);
         for (const s of badCat) console.log(`   ${s.label.padEnd(25)} cat=${s.symbolPanelCategory}`);
@@ -186,8 +195,7 @@ export function runTests(ctx) {
         const invalidApply = symbols.slice(base.length).filter(s => baseApplies.has(s.apply));
         if (invalidApply.length > 0) {
             fail(`Lean-added symbols reuse a base apply (${invalidApply.length}):`);
-            for (const s of invalidApply)
-                console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
+            for (const s of invalidApply) console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
         } else {
             console.log(`${ICONS.ok}  No lean-added symbols incorrectly reuse base applies`);
         }
@@ -195,11 +203,10 @@ export function runTests(ctx) {
         // addLatexIfAlreadyInBase intentionally emits entries sharing a base apply,
         // so instead just verify those entries do not clobber an existing base label.
         const baseLabelSet = new Set(base.map(s => s.label));
-        const clobbered = symbols.slice(base.length).filter(s => baseLabelSet.has(s.label));
+        const clobbered    = symbols.slice(base.length).filter(s => baseLabelSet.has(s.label));
         if (clobbered.length > 0) {
             fail(`Lean-added symbols duplicate a base label (${clobbered.length}):`);
-            for (const s of clobbered)
-                console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
+            for (const s of clobbered) console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
         } else {
             console.log(`${ICONS.ok}  No lean-added symbols duplicate a base label`);
         }
@@ -221,7 +228,9 @@ export function runTests(ctx) {
     if (!latexCoverFail) console.log(`${ICONS.ok}  All latex-matched lean labels present in output`);
 
     // 12. Boost fields are within expected range when set
-    const badBoost = enriched.filter(s => s.boost !== undefined && (typeof s.boost !== "number" || s.boost < 0));
+    const badBoost = enriched.filter(
+        s => s.boost !== undefined && (typeof s.boost !== "number" || s.boost < 0)
+    );
     if (badBoost.length > 0) {
         fail(`Symbols with invalid boost values (${badBoost.length}):`);
         for (const s of badBoost) console.log(`   ${s.label.padEnd(25)} boost=${s.boost}`);

@@ -1,4 +1,6 @@
-export function runReports(ctx) {
+import type { ReportContext } from "./generate-symbols.types.mjs";
+
+export function runReports(ctx: ReportContext): void {
     const {
         report,
         symbols,
@@ -17,7 +19,7 @@ export function runReports(ctx) {
 
     const ICONS = {
         warn: "\u26A0\uFE0F",
-        ok: "\u2705",
+        ok:   "\u2705",
         info: "\u2139\uFE0F",
     };
 
@@ -27,11 +29,12 @@ export function runReports(ctx) {
             `\n${col(C.yellow, `${ICONS.warn}  Lean symbols skipped - apply already in symbols.json, extra lean aliases dropped. (${report.skippedByApply.size} characters) Symbols that do not appear in LaTeX get marked yellow:`)}`
         );
         for (const [apply, { baseLabel, droppedLabels, latexLabels }] of report.skippedByApply) {
-            const latexOthers  = latexLabels.filter(l => l !== baseLabel);
-            const baseInLatex  = latexLabels.includes(baseLabel);
-            const baseColor    = latexLabels.length > 0 && !baseInLatex ? C.yellow : C.cyan;
-            const latexStr     = latexOthers.length > 0
-                ? `  ${col(C.gray, "latex:")} ${col(C.blue, fmtLabels(latexOthers))}` : "";
+            const latexOthers = latexLabels.filter(l => l !== baseLabel);
+            const baseInLatex = latexLabels.includes(baseLabel);
+            const baseColor   = latexLabels.length > 0 && !baseInLatex ? C.yellow : C.cyan;
+            const latexStr    = latexOthers.length > 0
+                ? `  ${col(C.gray, "latex:")} ${col(C.blue, fmtLabels(latexOthers))}`
+                : "";
             console.log(
                 `   ${col(C.bold, apply)}  ` +
                 `${col(C.gray, "base:")} ${col(baseColor, baseLabel)}${latexStr}  ` +
@@ -101,19 +104,19 @@ export function runReports(ctx) {
     }
 
     // R4: Final-symbol aliases vs latex-unicode aliases, paired per character
-    const finalByApply = new Map();
+    const finalByApply = new Map<string, string[]>();
     for (const s of symbols) {
         if (!finalByApply.has(s.apply)) finalByApply.set(s.apply, []);
-        finalByApply.get(s.apply).push(s.label);
+        finalByApply.get(s.apply)!.push(s.label);
     }
 
     const appliesInBoth  = [...finalByApply.keys()].filter(a => latexApplyToLabels.has(a));
-    const finalOnlyItems = [];   // in final but not in latex (like \ksi)
-    const latexOnlyItems = [];   // in latex but not in final (like \xi)
+    const finalOnlyItems: Array<{ apply: string; label: string }> = [];
+    const latexOnlyItems: Array<{ apply: string; label: string }> = [];
 
     for (const apply of appliesInBoth) {
         const finalLabels = new Set(finalByApply.get(apply));
-        const latexLabels = latexApplyToLabels.get(apply);
+        const latexLabels = latexApplyToLabels.get(apply)!;
         for (const ll of latexLabels) {
             if (!finalLabels.has(ll)) latexOnlyItems.push({ apply, label: ll });
         }
@@ -136,7 +139,7 @@ export function runReports(ctx) {
             for (const [apply, labels] of byApply) {
                 const labelsWithLatexTarget = labels.map(label => {
                     const latexApply = latexLabelToApply.get(label);
-                    return `${label} ${col(C.gray, "LaTeX:")} ${col(C.yellow, latexApply)}`;
+                    return `${label} ${col(C.gray, "LaTeX:")} ${col(C.yellow, latexApply ?? "?")}`;
                 });
                 console.log(
                     `   ${col(C.bold, apply)}  ` +
@@ -153,8 +156,9 @@ export function runReports(ctx) {
             );
             for (const [apply, latexLabels] of byApply) {
                 const finalLabels = finalByApply.get(apply) ?? [];
-                const finalStr = finalLabels.length > 0
-                    ? `${col(C.gray, "final:")} ${fmtLabels(finalLabels)}  ` : "";
+                const finalStr    = finalLabels.length > 0
+                    ? `${col(C.gray, "final:")} ${fmtLabels(finalLabels)}  `
+                    : "";
                 console.log(
                     `   ${col(C.bold, apply)}  ` +
                     `${finalStr}` +
@@ -170,8 +174,9 @@ export function runReports(ctx) {
                 console.log(
                     `\n${col(C.cyan, `${ICONS.info}  Final labels not in LaTeX at all (${byApply.size} chars, ${absentItems.length} labels):`)}`
                 );
-                for (const [apply, labels] of byApply)
+                for (const [apply, labels] of byApply) {
                     console.log(`   ${col(C.bold, apply)}  ${fmtLabels(labels)}`);
+                }
             } else if (absentItems.length > 0) {
                 console.log(
                     `\n${col(C.cyan, `${ICONS.info}  Final labels not in LaTeX at all:`)} ` +
@@ -204,18 +209,17 @@ export function runReports(ctx) {
     }
 
     // R6: Matching-prefix alias pairs in the final symbol list
-    const labelsByApply = new Map();
+    const labelsByApply = new Map<string, string[]>();
     for (const s of symbols) {
         if (!labelsByApply.has(s.apply)) labelsByApply.set(s.apply, []);
-        labelsByApply.get(s.apply).push(s.label);
+        labelsByApply.get(s.apply)!.push(s.label);
     }
 
-    const prefixReport = [];
-
+    const prefixReport: Array<{ apply: string; labels: string[]; maxCommon: number }> = [];
     for (const [apply, labels] of labelsByApply) {
         if (labels.length < 2) continue;
         let maxCommon = 0;
-        const matchingPairs = [];
+        const matchingPairs: Array<{ a: string; b: string; common: number }> = [];
         for (const [a, b] of pairs(labels)) {
             const common = commonPrefixLen(a, b);
             if (common > 0) {
@@ -229,7 +233,6 @@ export function runReports(ctx) {
     }
 
     prefixReport.sort((a, b) => b.maxCommon - a.maxCommon);
-
     if (prefixReport.length > 0) {
         console.log(
             `\n${col(C.cyan, `${ICONS.info}  Aliases with matching prefixes - ranked by prefix length (${prefixReport.length} characters):`)}`

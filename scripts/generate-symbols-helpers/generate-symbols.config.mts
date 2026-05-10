@@ -1,32 +1,40 @@
 /**
- * generate-symbols.config.mjs
+ * generate-symbols.config.ts
  *
- * All configuration for generate-symbols.mjs lives here.
+ * All configuration for generate-symbols.ts lives here.
  * Edit this file to control which symbols are added, how they are boosted,
  * what appears in the symbol panel, and where output is written.
  *
  * After editing, re-run:
- *   node generate-symbols.mjs            # normal run
- *   node generate-symbols.mjs --test     # run + validation suite
- *   node generate-symbols.mjs --verbose  # show full lean-fallback list etc.
+ *   node --import tsx/esm generate-symbols.ts            # normal run
+ *   node --import tsx/esm generate-symbols.ts --test     # run + validation suite
+ *   node --import tsx/esm generate-symbols.ts --verbose  # show full lean-fallback list etc.
  */
+
+import type {
+    PathsConfig,
+    ShowInPanelConfig,
+    BlockEntry,
+    MergeConfig,
+    EnrichmentConfig,
+} from "./generate-symbols.types.mjs";
 
 
 // --- File paths ---
 // All paths are resolved relative to the directory that contains
-// generate-symbols.mjs (i.e. the same __dirname).
+// generate-symbols.ts (i.e. the same __dirname equivalent).
 
-export const PATHS = {
+export const PATHS: PathsConfig = {
     /** Hand-curated base symbol list.  Never modified by the script. */
     base:   "../completions/symbols.json",
 
     /** Lean unicode abbreviation table (from @leanprover/unicode-input). */
     lean:   "../node_modules/@leanprover/unicode-input/dist/abbreviations.json",
 
-    /** LaTeX-unicode mapping used for alias matching and alias details. 
+    /** LaTeX-unicode mapping used for alias matching and alias details.
      *  Symbol mappings in latex-unicode.json are derived from the unicode-math package
      *  https://github.com/latex3/unicode-math  (LPPL 1.3c)
-    */
+     */
     latex:  "./generate-symbols-helpers/latex2unicode.json",
 
     /** Merged output file written by the script. */
@@ -43,7 +51,7 @@ export const PATHS = {
 // Base symbols (symbols.json) are ALWAYS preserved exactly as written and are
 // never affected by these flags.
 
-export const SHOW_IN_PANEL = {
+export const SHOW_IN_PANEL: ShowInPanelConfig = {
     greekLower:   false,   // α β γ δ ε …
     greekUpper:   false,   // Α Β Γ Δ Ε …
     mathLogic:    false,   // ∀ ∃ ∈ ∧ ∨ …
@@ -72,7 +80,7 @@ export const SHOW_IN_PANEL = {
 //
 // Ranges listed earlier take priority over ranges listed later when they overlap.
 
-export const BLOCKS = [
+export const BLOCKS: BlockEntry[] = [
     [[0x03B1, 0x03CE], 0, "greekLower"],
     [[0x03D0, 0x03D6], 0, "greekLower"],
     [[0x03F0, 0x03F5], 0, "greekLower"],
@@ -91,11 +99,11 @@ export const BLOCKS = [
     [[0x2A00, 0x2AFF], 2, "mathLogic"],
     [[0x27C0, 0x27EF], 2, "mathLogic"],
     [[0x2980, 0x29FF], 2, "mathLogic"],
-    // Mathematical Alphanumeric Symbols block (U+1D400-U+1D7FF), split by sub-range,
+    // Mathematical Alphanumeric Symbols block (U+1D400-U+1D7FF), split by sub-range;
     // more-specific ranges must come BEFORE the catch-all at the bottom:
-    [[0x1D504, 0x1D537], 6, "fraktur"],      // Fraktur + Bold Fraktur A-Z a-z
-    [[0x1D538, 0x1D56B], 4, "doubleStruck"], // Double-Struck (blackboard bold) A-Z
-    [[0x1D400, 0x1D7FF], 6, "boldItalic"],   // everything else (bold, italic, sans, mono)
+    [[0x1D504, 0x1D537], 6, "fraktur"],       // Fraktur + Bold Fraktur A-Z a-z
+    [[0x1D538, 0x1D56B], 4, "doubleStruck"],  // Double-Struck (blackboard bold) A-Z
+    [[0x1D400, 0x1D7FF], 6, "boldItalic"],    // everything else (bold, italic, sans, mono)
 ];
 
 
@@ -110,14 +118,14 @@ export const BLOCKS = [
 //   "\\nabla": 2,    // show ∇ in the Math/logic group even if mathLogic is false
 //   "\\star":  7,    // show ⋆ in Misc instead of its block's natural category
 
-export const OVERRIDES = {
+export const OVERRIDES: Record<string, number> = {
     // "\\label": categoryNumber,
 };
 
 
 // --- Merge behaviour ---
 
-export const MERGE = {
+export const MERGE: MergeConfig = {
     /**
      * Add extra LaTeX-alias labels for characters that are already covered by
      * symbols.json
@@ -158,14 +166,14 @@ export const MERGE = {
 
 // --- Output enrichment ---
 
-export const ENRICHMENT = {
+export const ENRICHMENT: EnrichmentConfig = {
     /**
      * Completion-boost score written to the `boost` field of every symbol that
      * comes from symbols.json (the hand-curated base list).
      *
      * Higher values push these entries to the top of completion pop-ups.
      * Set to 0 or null to omit the boost field entirely for base symbols.
-     * 
+     *
      * Reasoning: hand-curated symbols are probably the most common symbols
      *
      * Default: 5

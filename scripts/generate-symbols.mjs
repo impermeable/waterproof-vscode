@@ -36,10 +36,10 @@ import {
   OVERRIDES as overrides,
   MERGE,
   ENRICHMENT,
-} from "./config.generate-symbols.mjs";
+} from "./generate-symbols-helpers/generate-symbols.config.mjs";
 
-import { runReports } from "./generate-symbols-helpers/report.generate-symbols.mjs";
-import { runTests } from "./generate-symbols-helpers/test.generate-symbols.mjs";
+import { runReports } from "./generate-symbols-helpers/generate-symbols.report.mjs";
+import { runTests } from "./generate-symbols-helpers/generate-symbols.tests.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

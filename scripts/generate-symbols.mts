@@ -19,10 +19,10 @@
  * All tunable options live in generate-symbols-helpers/generate-symbols.config.mts.
  *
  * Usage:
- *   node generate-symbols.mjs             # merge and write
- *   node generate-symbols.mjs --verbose   # also show lean-fallback list and latex{} notice
- *   node generate-symbols.mjs --test      # merge, write, then run validation checks
- *   node generate-symbols.mjs --verbose --test
+ *   node generate-symbols.mts             # merge and write
+ *   node generate-symbols.mts --verbose   # also show lean-fallback list and latex{} notice
+ *   node generate-symbols.mts --test      # merge, write, then run validation checks
+ *   node generate-symbols.mts --verbose --test
  */
 
 import fs from "fs";
@@ -36,10 +36,16 @@ import {
   OVERRIDES as overrides,
   MERGE,
   ENRICHMENT,
-} from "./generate-symbols-helpers/generate-symbols.config.mjs";
+} from "./generate-symbols-helpers/generate-symbols.config.mts";
 
-import { runReports } from "./generate-symbols-helpers/generate-symbols.report.mjs";
-import { runTests } from "./generate-symbols-helpers/generate-symbols.tests.mjs";
+import { runReports } from "./generate-symbols-helpers/generate-symbols.report.mts";
+import { runTests } from "./generate-symbols-helpers/generate-symbols.tests.mts";
+
+import {
+  C,
+  col,
+  filterLeanLabels,
+} from "./generate-symbols-helpers/generate-symbols.utils.mts";
 
 import type {
   BaseSymbol,
@@ -47,7 +53,7 @@ import type {
   MergeReport,
   BlockEntry,
   ShowInPanelConfig,
-} from "./generate-symbols-helpers/generate-symbols.types.mjs";
+} from "./generate-symbols-helpers/generate-symbols.types.mts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -74,63 +80,6 @@ function categoryFromBlock(cp: number): [number, keyof ShowInPanelConfig] {
   if (!entry) return [7, "misc"];
   const [, cat, key] = entry;
   return [cat, key];
-}
-
-// -- ANSI color helpers --
-const C = {
-  reset: "\x1b[0m",
-  bold: "\x1b[1m",
-  dim: "\x1b[2m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  cyan: "\x1b[36m",
-  gray: "\x1b[90m",
-  red: "\x1b[31m",
-  blue: "\x1b[34m",
-  magenta: "\x1b[35m",
-};
-
-function col(color: string, text: string): string {
-  return `${color}${text}${C.reset}`;
-}
-function hint(msg: string): string {
-  return col(C.dim, `(${msg})`);
-}
-
-// -- Helpers --
-
-/** Common prefix length, ignoring leading backslash */
-function commonPrefixLen(a: string, b: string): number {
-  const sa = a.startsWith("\\") ? a.slice(1) : a;
-  const sb = b.startsWith("\\") ? b.slice(1) : b;
-  let i = 0;
-  while (i < sa.length && i < sb.length && sa[i] === sb[i]) i++;
-  return i;
-}
-
-/** Format labels as a comma-separated string */
-function fmtLabels(labels: string[]): string {
-  return labels.join(", ");
-}
-
-/** Group an array of {apply, label} items by apply, collecting labels */
-function groupByApply(
-  items: ReadonlyArray<{ apply: string; label: string }>,
-): Map<string, string[]> {
-  const map = new Map<string, string[]>();
-  for (const { apply, label } of items) {
-    if (!map.has(apply)) map.set(apply, []);
-    map.get(apply)!.push(label);
-  }
-  return map;
-}
-
-/** Returns all pairs from an array */
-function pairs(arr: string[]): [string, string][] {
-  const result: [string, string][] = [];
-  for (let i = 0; i < arr.length; i++)
-    for (let j = i + 1; j < arr.length; j++) result.push([arr[i]!, arr[j]!]);
-  return result;
 }
 
 /** Compute the symbolPanelCategory for a new lean-added label+apply */
@@ -167,9 +116,7 @@ for (const [label, apply] of Object.entries(latexRaw)) {
   const normalLabel = label.startsWith("\\") ? label : "\\" + label;
   if (normalLabel.includes("{")) {
     latexBraceLabels.push({ label: normalLabel, apply });
-    if (!latexApplyToLabels.has(apply))
-      latexApplyToLabels.set(apply, new Set());
-    // intentionally NOT added to latexLabelToApply - won't be chosen as a lean label
+    // intentionally NOT added to latexApplyToLabels or latexLabelToApply
   } else {
     latexLabelToApply.set(normalLabel, apply);
     if (!latexApplyToLabels.has(apply))
@@ -203,6 +150,7 @@ for (const [label, apply] of leanAll) {
 const symbols: SymbolEntry[] = [...base];
 const seenLabels = new Set<string>(base.map((s) => s.label));
 const seenApplies = new Set<string>(base.map((s) => s.apply));
+const latexBaseAliasLabels = new Set<string>();
 
 const report: MergeReport = {
   // apply already covered by symbols.json - only when lean has EXTRA labels
@@ -216,6 +164,10 @@ const report: MergeReport = {
   // New applies added via lean only (ALL lean labels added, no latex match)
   // { apply, addedLabels[] }
   addedViaLean: [],
+
+  // Labels dropped from lean-only characters by the leanLabelStrategy filter
+  // { apply, keptLabels[], droppedLabels[] }
+  filteredLean: [],
 
   // Lean label collides with a base label but points to a different character
   labelConflicts: [], // { label, baseApply, leanApply }
@@ -243,6 +195,7 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
       for (const latexLabel of latexLabels) {
         if (seenLabels.has(latexLabel)) continue;
         seenLabels.add(latexLabel);
+        latexBaseAliasLabels.add(latexLabel);
         const cat = computeCategory(latexLabel, apply);
         const entry: SymbolEntry =
           cat !== undefined
@@ -288,6 +241,8 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
   let labelsToAdd: string[];
 
   if (latexMatches.length > 0 && MERGE.addViaLatex) {
+    // LaTeX-matched path: no leanLabelStrategy filtering applied here
+    // (the latex table is already a quality filter)
     labelsToAdd = latexMatches;
     report.addedViaLatex.push({
       apply,
@@ -296,16 +251,39 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
       droppedLean: eligibleLeanLabels.filter((l) => !latexMatches.includes(l)),
     });
   } else if (latexMatches.length === 0 && MERGE.addViaLean) {
-    labelsToAdd = eligibleLeanLabels;
-    report.addedViaLean.push({ apply, addedLabels: eligibleLeanLabels });
+    // Lean-only fallback path: apply the label strategy filter
+    const { kept, dropped } = filterLeanLabels(
+      eligibleLeanLabels,
+      MERGE.leanLabelStrategy,
+    );
+    labelsToAdd = kept;
+    report.addedViaLean.push({ apply, addedLabels: kept });
+    if (dropped.length > 0) {
+      report.filteredLean.push({
+        apply,
+        keptLabels: kept,
+        droppedLabels: dropped,
+      });
+    }
   } else if (
     latexMatches.length > 0 &&
     !MERGE.addViaLatex &&
     MERGE.addViaLean
   ) {
     // latex match exists but addViaLatex is off; fall through to lean labels
-    labelsToAdd = eligibleLeanLabels;
-    report.addedViaLean.push({ apply, addedLabels: eligibleLeanLabels });
+    const { kept, dropped } = filterLeanLabels(
+      eligibleLeanLabels,
+      MERGE.leanLabelStrategy,
+    );
+    labelsToAdd = kept;
+    report.addedViaLean.push({ apply, addedLabels: kept });
+    if (dropped.length > 0) {
+      report.filteredLean.push({
+        apply,
+        keptLabels: kept,
+        droppedLabels: dropped,
+      });
+    }
   } else {
     continue; // both sources disabled for this apply
   }
@@ -328,9 +306,10 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
 const baseApplySet = new Set<string>(base.map((s) => s.apply));
 
 // Determine which source a lean-added symbol came from (for boost purposes)
-const latexAddedLabels = new Set<string>(
-  report.addedViaLatex.flatMap((r) => r.addedLabels),
-);
+const latexAddedLabels = new Set<string>([
+  ...report.addedViaLatex.flatMap((r) => r.addedLabels),
+  ...latexBaseAliasLabels,
+]);
 
 const finalLabelsByApply = new Map<string, string[]>();
 for (const s of symbols) {
@@ -385,19 +364,12 @@ runReports({
   latexApplyToLabels,
   latexLabelToApply,
   latexBraceLabels,
+  leanLabelStrategy: MERGE.leanLabelStrategy,
   VERBOSE,
-  C,
-  col,
-  hint,
-  fmtLabels,
-  groupByApply,
-  pairs,
-  commonPrefixLen,
 });
 
 runTests({
   base,
-  symbols,
   enriched,
   report,
   leanAll,
@@ -405,8 +377,5 @@ runTests({
   baseApplyToLabel,
   overrides,
   MERGE,
-  fmtLabels,
-  col,
-  C,
   fromLean,
 });

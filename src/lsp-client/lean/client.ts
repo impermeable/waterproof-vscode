@@ -171,7 +171,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         });
     }
 
-    protected async determineProofStatus(document: TextDocument, inputArea: Range, diags: Array<Diagnostic>): Promise<InputAreaStatus> {
+    protected async determineProofStatus(document: TextDocument, inputArea: Range, diags: Array<Diagnostic>, lowerBound: Position,): Promise<InputAreaStatus> {
 
         // If Lean hasn't finished processing up to the end of this input area, an empty goals
         // response simply means "not checked yet" rather than "proof complete".  Guard against
@@ -181,6 +181,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             return InputAreaStatus.Incorrect;
         }
 
+        // Get diagnostics that intersect with the input area, and check if any of them are error-level.
         const diagsInArea = diags.filter(v => {
             const intersection = inputArea.intersection(v.range);
             return intersection !== undefined && !intersection.isEmpty;
@@ -194,6 +195,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             return InputAreaStatus.Incorrect;
         }
  
+        // Request goals
         const goalsPosition = inputArea.end.translate(0, 0);
         
         const goalsParams = this.createGoalsRequestParameters(document, goalsPosition);
@@ -203,8 +205,22 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
             return InputAreaStatus.Incorrect;
         }
         
-        const status = response.goals.length > 0 ? InputAreaStatus.Incorrect : InputAreaStatus.Correct;
-        return status;
+        // return incorrect if there are still goals remaining
+        if (response.goals.length > 0) return InputAreaStatus.Incorrect;
+
+        // Goals are empty, proof looks complete, but check for sorry
+        // The Lean LSP prefixes all sorry-like aliases with "declaration uses " including hint
+        // Important: when hint suggests something that immediatly resolves the goal,
+        // it will not throw a sorry warning. It will see the proof as valid.
+        const SORRY_PREFIX = "declaration uses ";
+
+        const hasSorry = diags.some(d =>
+            d.severity === DiagnosticSeverity.Warning &&
+            d.range.start.isAfter(lowerBound) &&
+            d.range.start.isBeforeOrEqual(inputArea.end) &&
+            d.message.startsWith(SORRY_PREFIX)
+        );
+        return hasSorry ? InputAreaStatus.Invalid : InputAreaStatus.Correct;
     }
 
     // Emitters for infoview
@@ -240,7 +256,5 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
     }
 
-    protected onDocumentChanged(): void {
-        this.isBusy = true;
-    }
+
 }

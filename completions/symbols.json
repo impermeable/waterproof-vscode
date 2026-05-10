@@ -78,7 +78,7 @@
         "symbolPanelCategory": 0
     },
     {
-        "label": "\\ksi",
+        "label": "\\xi",
         "type": "symbol",
         "apply": "ξ",
         "symbolPanelCategory": 0
@@ -90,7 +90,7 @@
         "symbolPanelCategory": 0
     },
     {
-        "label": "\\omikron",
+        "label": "\\omicron",
         "type": "symbol",
         "apply": "ο",
         "symbolPanelCategory": 0
@@ -234,7 +234,7 @@
         "symbolPanelCategory": 1
     },
     {
-        "label": "\\Ksi",
+        "label": "\\Xi",
         "type": "symbol",
         "apply": "Ξ",
         "symbolPanelCategory": 1
@@ -346,6 +346,11 @@
         "type": "symbol",
         "apply": "∨",
         "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\vee",
+        "type": "symbol",
+        "apply": "∨"
     },
     {
         "label": "\\abs",
@@ -580,6 +585,11 @@
         "type": "symbol",
         "apply": "·",
         "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\.",
+        "type": "symbol",
+        "apply": "·"
     },
     {
         "label": "\\^1",

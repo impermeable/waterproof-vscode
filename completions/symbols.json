@@ -348,6 +348,11 @@
         "symbolPanelCategory": 2
     },
     {
+        "label": "\\vee",
+        "type": "symbol",
+        "apply": "∨"
+    },
+    {
         "label": "\\abs",
         "type": "symbol",
         "apply": "∣",
@@ -580,6 +585,11 @@
         "type": "symbol",
         "apply": "·",
         "symbolPanelCategory": 2
+    },
+    {
+        "label": "\\.",
+        "type": "symbol",
+        "apply": "·"
     },
     {
         "label": "\\^1",

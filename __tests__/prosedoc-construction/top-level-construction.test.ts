@@ -29,7 +29,7 @@ Random Markdown list:
 `;
 
 const inputDocumentLean = `import Some.Library
-#doc (Genre) "Title" =>
+#doc (WaterproofGenre) "Title" =>
 # A Header
 ::::multilean
 \`\`\`lean
@@ -188,7 +188,7 @@ test("Parse top level blocks (Lean)", () => {
     const [preamble, md1, nl1, container, nl2, md2, math, md3] = blocks;
 
     expect(typeguards.isHintBlock(preamble)).toBe(true);
-    expect(preamble.stringContent).toBe("import Some.Library\n#doc (Genre) \"Title\" =>\n");
+    expect(preamble.stringContent).toBe("import Some.Library");
 
     expect(typeguards.isMarkdownBlock(md1)).toBe(true);
     expect(md1.stringContent).toBe("# A Header");

@@ -1,4 +1,4 @@
-import { Block, BlockRange, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
+import { Block, BlockRange, CodeBlock, ContainerBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
 
 enum Kind {
     Text,
@@ -65,7 +65,7 @@ const regexes: [RegExp, Kind][] = [
     [/(?<=\n)```lean\n/,                  Kind.CodeOpen       ],
     [/\n```(?=\n|$)/,                     Kind.CodeClose      ],
     [/(?<=\n):::input\n/,                 Kind.InputOpen      ],
-    [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"(?=\n)/, Kind.HintOpen       ],
+    [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"\n/,     Kind.HintOpen       ],
     [/\n:::(?=\n|$)/,                     Kind.Close          ],
     [/\$`[\s\S]*?`/,                      Kind.MathInline     ],
     [/\$\$`[\s\S]*?`/,                    Kind.MathDisplay    ],
@@ -106,13 +106,15 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     // Newline is significant if it's right before or after either code, input or hint block.
     const isSignificantNewline = (token: Token) =>
         token.kind === Kind.Newline
-        && (token.prev?.isOneOf([Kind.Close])
-            || token.next?.isOneOf([Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen]));
+        && (token.prev?.isOneOf([Kind.Close, Kind.CodeClose, Kind.MultileanClose])
+            || token.next?.isOneOf([Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen, Kind.MultileanOpen]));
 
     if (token.kind === Kind.Preamble) {
         // Process the preamble.
       
-        const range = token.range;
+        // We exclude the newline matched by the regex from the range to be able to 
+        // have a newline block after the preamble, to prevent spawning spurious newlines.
+        const range = {from: token.range.from, to: token.range.to - 1};
         // The visible part of the block excludes the last line, which has the form:
         // #doc ..... =>
         const innerRange = { from: token.range.from, to: doc.indexOf('#doc') - 1 };
@@ -120,6 +122,8 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
         const child = new CodeBlock(content, range, innerRange, token.line);
         blocks.push(new HintBlock(content, "🛠 Technical details", range, innerRange, token.line, [child]));
+        const newlineRange = {from: token.range.to - 1, to: token.range.to}
+        blocks.push(new NewlineBlock(newlineRange, newlineRange, token.line))
 
         return token.next;
     } else if (isSignificantNewline(token)) {
@@ -199,9 +203,22 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         blocks.push(new MathDisplayBlock(content, range, innerRange, token.line));
 
         return token.next;
-    } else if (token.isOneOf([Kind.MultileanOpen, Kind.MultileanClose])) {
-        // We skip to the next token as we don't want the multilean tags to be shown in the editor.
-        return token.next;
+    } else if (token.kind === Kind.MultileanOpen) {
+        const expected: Kind[] = [
+            Kind.MultileanClose,
+            Kind.Text, Kind.MathInline, Kind.MathDisplay,
+            Kind.CodeOpen, Kind.InputOpen, Kind.HintOpen, Kind.Newline,
+        ];
+        let head: Token = expect(token.next, expected);
+        const innerBlocks: Block[] = [];
+        while (head && head.kind !== Kind.MultileanClose) {
+            head = expect(handle(doc, head, innerBlocks));
+        }
+        const range = { from: token.range.from, to: head.range.to };
+        const innerRange = { from: token.range.to, to: head.range.from };
+        const content = doc.substring(innerRange.from, innerRange.to);
+        blocks.push(new ContainerBlock(content, "multilean", range, innerRange, token.line, innerBlocks));
+        return head.next;
     } else {
         throw Error(`Unexpected token ${token.kind}`);
     }

@@ -1,5 +1,5 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
+import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig, wrapInContainer } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import waterproofTactics from "../../completions/tactics.json";
 import leanTactics from "../../completions/tacticsLean.json";
@@ -30,9 +30,9 @@ interface VSCodeAPI {
 	postMessage: (message: Message) => void;
 }
 
-function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
+function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI, editorRef: { current?: WaterproofEditor }) {
 	let formatConf: Pick<WaterproofEditorConfig,
-		"completions" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" | "disableMarkdownFeatures" | "serializer" >;
+		"completions" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" | "disableMarkdownFeatures" | "serializer" | "menubarEntries" >;
 
 	// Set format-specific configuration
 	switch (format) {
@@ -78,6 +78,17 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 					highlightLight: langVerbose.highlight_light,
 					languageSupport: langVerbose.verbose(),
 				},
+				menubarEntries: [
+					{
+						title: "M...",
+						hoverText: "Wrap selection in a container (groups math evaluation)",
+						callback: () => {
+							editorRef.current?.executeProsemirrorCommand(wrapInContainer(tagConfigurationLean, "multilean"));
+						},
+						isActive: (state) => wrapInContainer(tagConfigurationLean, "multilean")(state, undefined),
+						buttonVisibility: { teacherModeOnly: true },
+					}
+				],
 			}
 			break;
 	}
@@ -131,8 +142,11 @@ window.onload = () => {
 	}
 	const format = document.body.getAttribute("format") as FileFormat;
 
+	// Create a ref so that menubar callbacks can dispatch commands after the editor is constructed.
+	const editorRef: { current?: WaterproofEditor } = {};
+
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
-	const cfg = createConfiguration(format, codeAPI);
+	const cfg = createConfiguration(format, codeAPI, editorRef);
 	// Retrieve the current theme style from the attribute 'data-theme-kind'
 	// attached to the editor element. This allows us to set the initial theme kind
 	// rather than waiting for the themestyle message to arrive.
@@ -149,6 +163,7 @@ window.onload = () => {
 		}
 	})();
 	const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
+	editorRef.current = editor;
 
 	//@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.
 	window.editorInstance = editor;

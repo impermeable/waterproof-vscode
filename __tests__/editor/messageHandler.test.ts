@@ -13,6 +13,7 @@ function createEditorMock(): jest.Mocked<MessageHandlerEditor> {
         setShowMenuItems: jest.fn(),
         handleHistoryChange: jest.fn(),
         updateLockingState: jest.fn(),
+        refreshDocument: jest.fn(),
         removeBusyIndicators: jest.fn(),
         reportProgress: jest.fn(),
         setBusyIndicator: jest.fn(),

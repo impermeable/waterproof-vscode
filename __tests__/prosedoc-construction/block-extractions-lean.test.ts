@@ -1,5 +1,6 @@
-import { typeguards } from "@impermeable/waterproof-editor";
+import { typeguards, constructDocument } from "@impermeable/waterproof-editor";
 import { topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
+import { LeanSerializer } from "../../editor/src/leanSerializer";
 
 /**
  * Lean equivalents of the block extraction tests in block-extractions.test.ts.
@@ -205,41 +206,66 @@ test("Lean parser extracts hint titles", () => {
 });
 
 // --- Multilean directive tests ---
-// The ::::multilean / :::: directives should be skipped (no blocks produced),
-// but all blocks inside should have their ranges reflect their true positions
-// in the original document string.
-// TODO: Update these tests when multilean becomes editable.
+// The ::::multilean / :::: directives produce a ContainerBlock wrapping the
+// inner blocks. Blocks inside multilean have their ranges reflecting their true
+// positions in the original document string.
 
-test("Empty multilean wrapper produces no content blocks", () => {
+test("Empty multilean wrapper produces a ContainerBlock with no inner blocks", () => {
     const document = "\n::::multilean\n\n::::\n";
     const blocks = topLevelBlocksLean(document);
-    // The multilean open/close markers should be skipped entirely
-    expect(blocks.length).toBe(0);
+
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
+
+    const cg = containerBlocks[0];
+    expect(cg.innerBlocks.length).toBe(0);
 });
 
-test("Multilean wrapper with markdown content", () => {
-    // "\n::::multilean\n" occupies positions 0–14, so "# Hello" starts at 15
+test("Multilean wrapper produces a ContainerBlock at top level", () => {
     const document = "\n::::multilean\n# Hello\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
-    expect(mdBlocks.length).toBe(1);
-    expect(mdBlocks[0].stringContent).toBe("# Hello");
-    expect(mdBlocks[0].range.from).toBe(15);
-    expect(mdBlocks[0].range.to).toBe(22);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
+
+    const cg = containerBlocks[0];
+    expect(typeguards.isContainerBlock(cg)).toBe(true);
+    // The inner block should be the markdown
+    const innerMd = cg.innerBlocks.filter(b => typeguards.isMarkdownBlock(b));
+    expect(innerMd.length).toBe(1);
+    expect(innerMd[0].stringContent).toBe("# Hello");
+    expect(innerMd[0].range.from).toBe(15);
+    expect(innerMd[0].range.to).toBe(22);
+});
+
+test("Multilean ContainerBlock range and innerRange are correct", () => {
+    // MultileanOpen "::::multilean\n" starts at 1 (after leading \n), length 14 → {from:1, to:15}
+    // MultileanClose "\n::::" at position 22, length 5 → {from:22, to:27}
+    // So ContainerBlock range = {from:1, to:27}, innerRange = {from:15, to:22}
+    const document = "\n::::multilean\n# Hello\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const cg = blocks.find(b => typeguards.isContainerBlock(b))!;
+    expect(cg.range.from).toBe(1);
+    expect(cg.range.to).toBe(27);
+    expect(cg.innerRange.from).toBe(15);
+    expect(cg.innerRange.to).toBe(22);
 });
 
 test("Multilean wrapper with a code block", () => {
-    // MultileanOpen "::::multilean\n" at 1–15
-    // CodeOpen "```lean\n" at 15–23, inner content at 23–33, CodeClose "\n```" at 33–37
+    // CodeOpen "```lean\n" at 15, inner content at 23, CodeClose "\n```" ends at 37
+    // MultileanClose "\n::::" starts at 37
     const document = "\n::::multilean\n```lean\ndef x := 1\n```\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const codeBlocks = blocks.filter(b => typeguards.isCodeBlock(b));
-    expect(codeBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const code = codeBlocks[0];
-    expect(typeguards.isCodeBlock(code)).toBe(true);
+    const cg = containerBlocks[0];
+    const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
+    expect(innerCode.length).toBe(1);
+
+    const code = innerCode[0];
     expect(code.stringContent).toBe("def x := 1");
     expect(code.range.from).toBe(15);
     expect(code.range.to).toBe(37);
@@ -253,10 +279,14 @@ test("Multilean wrapper with an input area", () => {
     const document = "\n::::multilean\n:::input\n# Help\n:::\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const inputBlocks = blocks.filter(b => typeguards.isInputAreaBlock(b));
-    expect(inputBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const input = inputBlocks[0];
+    const cg = containerBlocks[0];
+    const innerInput = cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b));
+    expect(innerInput.length).toBe(1);
+
+    const input = innerInput[0];
     expect(typeguards.isInputAreaBlock(input)).toBe(true);
     expect(input.stringContent).toContain("# Help");
     expect(input.range.from).toBe(15);
@@ -270,30 +300,34 @@ test("Multilean wrapper with a math display block", () => {
     const document = "\n::::multilean\n$$`\\frac{1}{2}`\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const mathBlocks = blocks.filter(b => typeguards.isMathDisplayBlock(b));
-    expect(mathBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const math = mathBlocks[0];
-    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+    const cg = containerBlocks[0];
+    const innerMath = cg.innerBlocks.filter(b => typeguards.isMathDisplayBlock(b));
+    expect(innerMath.length).toBe(1);
+
+    const math = innerMath[0];
     expect(math.stringContent).toBe("\\frac{1}{2}");
     expect(math.range.from).toBe(15);
     expect(math.range.to).toBe(30);
 });
 
 test("Multilean wrapper with a hint block", () => {
-    // MultileanOpen at 1–15, HintOpen at 15–30, content 30–38, Close 38–42
     const document = '\n::::multilean\n:::hint "title"\nContent\n:::\n::::\n';
     const blocks = topLevelBlocksLean(document);
 
-    const hintBlocks = blocks.filter(b => typeguards.isHintBlock(b));
-    expect(hintBlocks.length).toBe(1);
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    const hint = hintBlocks[0];
-    expect(typeguards.isHintBlock(hint)).toBe(true);
+    const cg = containerBlocks[0];
+    const innerHint = cg.innerBlocks.filter(b => typeguards.isHintBlock(b));
+    expect(innerHint.length).toBe(1);
+
+    const hint = innerHint[0];
     expect(hint.title).toBe("title");
     expect(hint.stringContent).toContain("Content");
     expect(hint.range.from).toBe(15);
-    expect(hint.range.to).toBe(42);
 });
 
 test("Multilean wrapper with multiple block types", () => {
@@ -301,23 +335,27 @@ test("Multilean wrapper with multiple block types", () => {
     const document = "\n::::multilean\n## Title\n```lean\ndef x := 1\n```\n::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
-    const codeBlocks = blocks.filter(b => typeguards.isCodeBlock(b));
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    expect(mdBlocks.length).toBe(1);
-    expect(codeBlocks.length).toBe(1);
+    const cg = containerBlocks[0];
+    const innerMd = cg.innerBlocks.filter(b => typeguards.isMarkdownBlock(b));
+    const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
 
-    expect(mdBlocks[0].stringContent).toBe("## Title");
-    expect(mdBlocks[0].range.from).toBe(15);
+    expect(innerMd.length).toBe(1);
+    expect(innerCode.length).toBe(1);
 
-    expect(codeBlocks[0].stringContent).toBe("def x := 1");
+    expect(innerMd[0].stringContent).toBe("## Title");
+    expect(innerMd[0].range.from).toBe(15);
+
+    expect(innerCode[0].stringContent).toBe("def x := 1");
     // Code block starts after "## Title\n"
-    expect(codeBlocks[0].range.from).toBe(24);
+    expect(innerCode[0].range.from).toBe(24);
 });
 
 test("Multilean wrapper mimicking WaterproofDocument.lean structure", () => {
     // Simplified version of the ATC-003 pattern from WaterproofDocument.lean:
-    // preamble-like text, then multilean containing markdown + code + input + code
+    // multilean containing markdown + code + input + code
     const document =
         "\n::::multilean\n" +
         "## ATC - 003\n" +
@@ -327,22 +365,236 @@ test("Multilean wrapper mimicking WaterproofDocument.lean structure", () => {
         "::::\n";
     const blocks = topLevelBlocksLean(document);
 
-    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
-    const codeBlocks = blocks.filter(b => typeguards.isCodeBlock(b));
-    const inputBlocks = blocks.filter(b => typeguards.isInputAreaBlock(b));
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
 
-    expect(mdBlocks.length).toBe(1);
-    expect(mdBlocks[0].stringContent).toBe("## ATC - 003");
+    const cg = containerBlocks[0];
+    const innerMd = cg.innerBlocks.filter(b => typeguards.isMarkdownBlock(b));
+    const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
+    const innerInput = cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b));
 
-    expect(codeBlocks.length).toBe(2);
-    expect(codeBlocks[0].stringContent).toBe("Example");
-    expect(codeBlocks[1].stringContent).toBe("QED");
+    expect(innerMd.length).toBe(1);
+    expect(innerMd[0].stringContent).toBe("## ATC - 003");
 
-    expect(inputBlocks.length).toBe(1);
-    expect(inputBlocks[0].stringContent).toContain("Fix a");
+    expect(innerCode.length).toBe(2);
+    expect(innerCode[0].stringContent).toBe("Example");
+    expect(innerCode[1].stringContent).toBe("QED");
 
-    // All block positions should be offset by the multilean open tag
-    for (const block of blocks) {
+    expect(innerInput.length).toBe(1);
+    expect(innerInput[0].stringContent).toContain("Fix a");
+
+    // All inner block positions should be offset by the multilean open tag
+    for (const block of cg.innerBlocks) {
         expect(block.range.from).toBeGreaterThanOrEqual(15);
     }
+});
+
+// --- New multilean tests for the typical exercise pattern ---
+// The primary multilean use case groups a Lean execution context with an
+// input block: code (exercise preamble) + input (student answer) + code (QED).
+
+test("Typical exercise pattern: code + input + code inside multilean", () => {
+    const document =
+        "\n::::multilean\n" +
+        "```lean\nExercise \"ex1\"\nProof:\n```\n" +
+        ":::input\n```lean\n  exact h\n```\n:::\n" +
+        "```lean\nQED\n```\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(1);
+
+    const cg = containerBlocks[0];
+    const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
+    const innerInput = cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b));
+    const innerNewlines = cg.innerBlocks.filter(b => typeguards.isNewlineBlock(b));
+
+    expect(innerCode.length).toBe(2);
+    expect(innerInput.length).toBe(1);
+    expect(innerNewlines.length).toBe(2); // between code+input and input+code
+
+    expect(innerCode[0].stringContent).toBe("Exercise \"ex1\"\nProof:");
+    expect(innerCode[1].stringContent).toBe("QED");
+
+    // Input area contains an inner code block
+    const inputInnerCode = innerInput[0].innerBlocks.filter(b => typeguards.isCodeBlock(b));
+    expect(inputInnerCode.length).toBe(1);
+    expect(inputInnerCode[0].stringContent).toBe("  exact h");
+});
+
+test("Exercise pattern: code before input only (no trailing code block)", () => {
+    const document =
+        "\n::::multilean\n" +
+        "```lean\nExercise \"ex2\"\nProof:\n```\n" +
+        ":::input\n```lean\n  trivial\n```\n:::\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const cg = blocks.find(b => typeguards.isContainerBlock(b))!;
+    expect(typeguards.isContainerBlock(cg)).toBe(true);
+
+    const innerCode = cg.innerBlocks.filter(b => typeguards.isCodeBlock(b));
+    const innerInput = cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b));
+
+    expect(innerCode.length).toBe(1);
+    expect(innerInput.length).toBe(1);
+    expect(innerCode[0].stringContent).toBe("Exercise \"ex2\"\nProof:");
+    expect(innerInput[0].innerBlocks.filter(b => typeguards.isCodeBlock(b))[0].stringContent).toBe("  trivial");
+});
+
+test("Two consecutive multilean blocks produce two ContainerBlocks", () => {
+    const document =
+        "\n::::multilean\n```lean\nblock1\n```\n::::\n" +
+        "::::multilean\n```lean\nblock2\n```\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+    expect(containerBlocks.length).toBe(2);
+
+    const [cg1, cg2] = containerBlocks;
+    const code1 = cg1.innerBlocks.filter(b => typeguards.isCodeBlock(b));
+    const code2 = cg2.innerBlocks.filter(b => typeguards.isCodeBlock(b));
+
+    expect(code1[0].stringContent).toBe("block1");
+    expect(code2[0].stringContent).toBe("block2");
+});
+
+test("Content before and after multilean block", () => {
+    const document =
+        "# Introduction\n" +
+        "::::multilean\n" +
+        "```lean\nExercise \"ex3\"\nProof:\n```\n" +
+        ":::input\n```lean\n  rfl\n```\n:::\n" +
+        "```lean\nQED\n```\n" +
+        "::::\n" +
+        "## Conclusion\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
+    const containerBlocks = blocks.filter(b => typeguards.isContainerBlock(b));
+
+    expect(containerBlocks.length).toBe(1);
+    expect(mdBlocks.length).toBeGreaterThanOrEqual(1);
+    expect(mdBlocks[0].stringContent).toContain("# Introduction");
+
+    const cg = containerBlocks[0];
+    expect(cg.innerBlocks.filter(b => typeguards.isCodeBlock(b)).length).toBe(2);
+    expect(cg.innerBlocks.filter(b => typeguards.isInputAreaBlock(b)).length).toBe(1);
+
+    // Last block should contain conclusion text
+    const lastMd = mdBlocks[mdBlocks.length - 1];
+    expect(lastMd.stringContent).toContain("## Conclusion");
+});
+
+test("ContainerBlock stringContent matches the inner document slice", () => {
+    // stringContent = doc.substring(innerRange.from, innerRange.to)
+    const document = "\n::::multilean\n```lean\ndef x := 1\n```\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const cg = blocks.find(b => typeguards.isContainerBlock(b))!;
+    // innerRange excludes the ::::multilean\n and \n:::: tags
+    expect(cg.stringContent).toBe("```lean\ndef x := 1\n```");
+    expect(document.substring(cg.innerRange.from, cg.innerRange.to)).toBe(cg.stringContent);
+});
+
+test("Serialization round-trip of typical exercise pattern is identity", () => {
+    const document =
+        "\n::::multilean\n" +
+        "```lean\nExercise \"ex\"\nProof:\n```\n" +
+        ":::input\n```lean\n  exact h\n```\n:::\n" +
+        "```lean\nQED\n```\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+    const doc = constructDocument(blocks);
+    const out = new LeanSerializer().serializeDocument(doc);
+    expect(out).toBe(document);
+});
+
+// ============================================================
+// Regression tests for feature/codegroup bugs
+// ============================================================
+
+// T7 — Regression: isSignificantNewline must treat a newline immediately after
+// MultileanClose as significant (so it becomes a NewlineBlock, not stripped).
+// Bug: MultileanClose was missing from the significance check initially.
+test("Newline between multilean close and following code block is significant (not stripped)", () => {
+    // Structure: \n (significant) | container | \n (significant, between ::::\n and ```lean\n) | code
+    const document =
+        "\n::::multilean\n" +
+        "```lean\ndef a := 1\n```\n" +
+        "::::\n" +
+        "```lean\ndef b := 2\n```";
+    const blocks = topLevelBlocksLean(document);
+
+    const containers = blocks.filter(b => typeguards.isContainerBlock(b));
+    const codes = blocks.filter(b => typeguards.isCodeBlock(b));
+    expect(containers.length).toBe(1);
+    expect(codes.length).toBe(1);
+
+    // The newline token whose prev is MultileanClose must be preserved as a NewlineBlock.
+    const containerIdx = blocks.indexOf(containers[0]);
+    const codeIdx = blocks.indexOf(codes[0]);
+    expect(codeIdx).toBeGreaterThan(containerIdx);
+
+    const blocksBetween = blocks.slice(containerIdx + 1, codeIdx);
+    const newlinesBetween = blocksBetween.filter(b => typeguards.isNewlineBlock(b));
+    expect(newlinesBetween.length).toBe(1);
+});
+
+// T8 — Serialization round-trip: multilean containing a hint block is identity.
+test("Serialization round-trip: multilean containing a hint block is identity", () => {
+    const document =
+        "\n::::multilean\n" +
+        ":::hint \"tip\"\nSome hint content\n:::\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+    const doc = constructDocument(blocks);
+    const out = new LeanSerializer().serializeDocument(doc);
+    expect(out).toBe(document);
+});
+
+// T9 — Serialization round-trip: multilean as first block (after leading newline, no preceding content).
+test("Serialization round-trip: multilean at start of document body is identity", () => {
+    const document =
+        "\n::::multilean\n" +
+        "## Introduction\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+    const doc = constructDocument(blocks);
+    const out = new LeanSerializer().serializeDocument(doc);
+    expect(out).toBe(document);
+});
+
+// T10 — Serialization round-trip: two consecutive multilean blocks.
+// The parse-only version of this test already exists; this adds the round-trip assertion.
+test("Serialization round-trip: two consecutive multilean blocks is identity", () => {
+    const document =
+        "\n::::multilean\n" +
+        "```lean\nblock1\n```\n" +
+        "::::\n" +
+        "::::multilean\n" +
+        "```lean\nblock2\n```\n" +
+        "::::\n";
+    const blocks = topLevelBlocksLean(document);
+    const doc = constructDocument(blocks);
+    const out = new LeanSerializer().serializeDocument(doc);
+    expect(out).toBe(document);
+});
+
+// T11 — Range correctness: innerRange must not include the ::::multilean\n or \n:::: delimiters.
+// This is a focused assertion on top of the existing range tests.
+test("ContainerBlock innerRange excludes ::::multilean and :::: delimiters", () => {
+    const document = "\n::::multilean\n# Hello\n::::\n";
+    const blocks = topLevelBlocksLean(document);
+
+    const cg = blocks.find(b => typeguards.isContainerBlock(b))!;
+    const inner = document.substring(cg.innerRange.from, cg.innerRange.to);
+
+    // The inner slice must not contain any :::: markers
+    expect(inner).not.toContain("::::");
+    // And it must match the block's stringContent
+    expect(inner).toBe(cg.stringContent);
+    // Sanity: actual content is only the inner markdown
+    expect(inner).toBe("# Hello");
 });

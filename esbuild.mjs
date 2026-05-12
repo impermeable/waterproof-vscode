@@ -2,6 +2,16 @@
 import process from "process";
 import * as esbuild from "esbuild";
 import copy from "esbuild-plugin-copy";
+import path from "path";
+import { existsSync } from "fs";
+
+// Resolve a package to its root directory, following npm workspace hoisting.
+// Checks the local node_modules first, then walks up to the workspace root.
+const resolvePackage = (pkg) => {
+  const local = path.resolve("./node_modules", pkg);
+  if (existsSync(local)) return local;
+  return path.resolve("../node_modules", pkg);
+};
 
 const watch = process.argv.includes("--watch");
 const minify = process.argv.includes("--minify");
@@ -43,12 +53,12 @@ const editorConfig = {
     ".grammar": "file"
 	},
   alias: {
-    '@codemirror/autocomplete': './node_modules/@codemirror/autocomplete',
-    '@codemirror/commands': './node_modules/@codemirror/commands',
-    '@codemirror/language': './node_modules/@codemirror/language',
-    '@codemirror/lint': './node_modules/@codemirror/lint',
-    '@codemirror/state': './node_modules/@codemirror/state',
-    '@codemirror/view': './node_modules/@codemirror/view',
+    '@codemirror/autocomplete': resolvePackage('@codemirror/autocomplete'),
+    '@codemirror/commands': resolvePackage('@codemirror/commands'),
+    '@codemirror/language': resolvePackage('@codemirror/language'),
+    '@codemirror/lint': resolvePackage('@codemirror/lint'),
+    '@codemirror/state': resolvePackage('@codemirror/state'),
+    '@codemirror/view': resolvePackage('@codemirror/view'),
   },
   minify,
   plugins: [watchPlugin("editor")]

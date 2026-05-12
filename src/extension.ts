@@ -18,7 +18,7 @@ import { CoqLspServerConfig } from "./lsp-client/rocq";
 import { LeanLspServerConfig } from "./lsp-client/lean";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
-import { checkConflictingExtensions, excludeCoqFileTypes, checkTrimmingWhitespace } from "./util";
+import { checkConflictingExtensions, checkLeanConflict, excludeCoqFileTypes, checkTrimmingWhitespace } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
@@ -94,6 +94,7 @@ export class Waterproof implements Disposable {
     ) {
         wpl.log("Waterproof initialized");
         checkConflictingExtensions();
+        checkLeanConflict();
         excludeCoqFileTypes();
         checkTrimmingWhitespace();
 
@@ -588,6 +589,7 @@ export class Waterproof implements Disposable {
                 return;
             }
         }
+
         return this.client.startWithHandlers(this.webviewManager, allowedLanguages).then(
             (clients) => {
                 this.webviewManager.open("goals");

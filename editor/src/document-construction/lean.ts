@@ -61,7 +61,7 @@ class Token {
 }
 
 const regexes: [RegExp, Kind][] = [
-    [/^[\s\S]*#doc .*? =>\n/,             Kind.Preamble       ],
+    [/^[\s\S]*#doc .*? =>\n/,               Kind.Preamble       ],
     [/(?<=\n)```lean\n/,                  Kind.CodeOpen       ],
     [/\n```(?=\n|$)/,                     Kind.CodeClose      ],
     [/(?<=\n):::input\n/,                 Kind.InputOpen      ],
@@ -112,7 +112,9 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     if (token.kind === Kind.Preamble) {
         // Process the preamble.
       
-        const range = token.range;
+        // We exclude the newline matched by the regex from the range to be able to 
+        // have a newline block after the preamble, to prevent spawning spurious newlines.
+        const range = {from: token.range.from, to: token.range.to - 1};
         // The visible part of the block excludes the last line, which has the form:
         // #doc ..... =>
         const innerRange = { from: token.range.from, to: doc.indexOf('#doc') - 1 };
@@ -120,6 +122,8 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
         const child = new CodeBlock(content, range, innerRange, token.line);
         blocks.push(new HintBlock(content, "🛠 Technical details", range, innerRange, token.line, [child]));
+        const newlineRange = {from: token.range.to - 1, to: token.range.to}
+        blocks.push(new NewlineBlock(newlineRange, newlineRange, token.line))
 
         return token.next;
     } else if (isSignificantNewline(token)) {

@@ -183,12 +183,14 @@ Goal True.
 
 test("Parse top level blocks (Lean)", () => {
     const blocks = topLevelBlocksLean(inputDocumentLean);
-    expect(blocks.length).toBe(8);
+    expect(blocks.length).toBe(9);
 
-    const [preamble, md1, nl1, container, nl2, md2, math, md3] = blocks;
+    const [preamble, nl0, md1, nl1, container, nl2, md2, math, md3] = blocks;
 
     expect(typeguards.isHintBlock(preamble)).toBe(true);
     expect(preamble.stringContent).toBe("import Some.Library");
+
+    expect(typeguards.isNewlineBlock(nl0)).toBe(true);
 
     expect(typeguards.isMarkdownBlock(md1)).toBe(true);
     expect(md1.stringContent).toBe("# A Header");

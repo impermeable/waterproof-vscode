@@ -79,7 +79,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         });
     }
 
-    protected async onFileProgress(progress: FileProgressParams) {
+    protected onFileProgress(progress: FileProgressParams) {
 
         // Call super first so LSP ranges are converted to VSCode Ranges before we store/use them.
         super.onFileProgress(progress);

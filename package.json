@@ -576,6 +576,9 @@
       "jws": "3.2.3",
       "glob": "11.1.0",
       "js-yaml": "4.1.1"
+    },
+    "ts-jest": {
+      "js-yaml": "4.1.1"
     }
   },
   "main": "./out/src/mainNode.js",

@@ -1,6 +1,7 @@
 import { RequestType, NotificationType, DocumentUri, Diagnostic } from "vscode-languageclient";
 import { LeanGoalRequest, LeanGoalAnswer } from "../../../lib/types";
 import { FileProgressParams } from "../requestTypes";
+import { Range } from 'vscode';
 
 /**
  * LSP request to obtain the goals at a specific point in the doc.

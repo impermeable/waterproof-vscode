@@ -53,15 +53,6 @@ const messages: Array<Message> = [
         "body": true
     },
     {
-        "type": MessageType.lineNumbers,
-        "body": {
-            "linenumbers": [
-                2
-            ],
-            "version": 1
-        }
-    },
-    {
         "type": MessageType.setAutocomplete,
         "body": []
     }
@@ -81,7 +72,6 @@ describe('TestingTest', () => {
                     "type": MessageType.init,
                     "body": {
                         "value": "<input-area>\n```coq\nCompute 3 + 3.\n```\n</input-area>",
-                        "format": "MarkdownV",
                         "version": 1
                     }
                 });

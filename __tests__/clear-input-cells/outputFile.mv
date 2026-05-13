@@ -1,0 +1,83 @@
+<hint title="Import libs">
+```coq
+From Stdlib Require Import Rbase.
+From Stdlib Require Import Rfunctions.
+Require Import Waterproof.Waterproof.
+Require Import Waterproof.Notations.Common.
+Require Import Waterproof.Notations.Reals.
+Require Import Waterproof.Notations.Sets.
+Require Import Waterproof.Chains.
+Require Import Waterproof.Tactics.
+Require Import Waterproof.Libs.Analysis.SupAndInf.
+Require Import Waterproof.Automation.
+
+Waterproof Enable Automation RealsAndIntegers.
+
+
+Open Scope R_scope.
+Open Scope subset_scope.
+Set Default Goal Selector "!".
+
+Set Bullet Behavior "Waterproof Relaxed Subproofs".
+
+
+Notation "'max(' x , y )" := (Rmax x y)
+  (format "'max(' x ,  y ')'").
+Notation "'min(' x , y )" := (Rmin x y)
+  (format "'min(' x ,  y ')'").
+```
+</hint>
+
+```coq
+Lemma test003:
+  ∀ a ∈ ℝ,
+    ∀ b > 5,
+      ∃ c ∈ ℝ,
+        c > b - a.
+
+Proof.
+```
+<input-area>
+```coq
+
+```
+</input-area>
+```coq
+Qed.
+```
+
+```coq
+Lemma test006:
+  ∀ a ∈ ℝ,
+    ∀ b > 5,
+      ∃ c ∈ ℝ,
+        c > b - a.
+
+Proof.
+```
+<input-area>
+```coq
+
+```
+</input-area>
+```coq
+Qed.
+```
+
+```coq
+Lemma test008:
+  ∀ a ∈ ℝ,
+    ∀ b > 5,
+      ∃ c ∈ ℝ,
+        c > b - a.
+
+Proof.
+```
+<input-area>
+```coq
+
+```
+</input-area>
+```coq
+Qed.
+```

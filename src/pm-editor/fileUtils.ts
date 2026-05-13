@@ -15,6 +15,8 @@ export function getFormatFromExtension(doc: TextDocument): FileFormat | undefine
         return FileFormat.MarkdownV;
     } else if (extension === "v") {
         return FileFormat.RegularV;
+    } else if (extension === "lean") {
+        return FileFormat.Lean
     }
 
     return undefined;

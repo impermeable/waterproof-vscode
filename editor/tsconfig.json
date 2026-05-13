@@ -5,7 +5,11 @@
     "target": "ESNext",
     "module": "preserve",
     "resolveJsonModule": true,
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "paths": {
+      "@codemirror/state": ["../node_modules/@codemirror/state"],
+      "@codemirror/language": ["../node_modules/@codemirror/language"]
+    }
   },
   "include": ["**/*.ts", "**/*.js", "../lib/**/*.ts", "**/*.json", "../shared/**/*.ts", "../src/helpers/**/*.ts", "../shared/**/*.json", "../completions/**/*.json"]
 }

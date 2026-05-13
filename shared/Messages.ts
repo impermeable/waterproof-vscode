@@ -1,6 +1,8 @@
-import { LineNumber, DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, SimpleProgressParams, ServerStatus, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
-import { GoalAnswer, HypVisibility, PpString } from "../lib/types";
+import { DocChange, WrappingDocChange, InputAreaStatus, HistoryChange, ThemeStyle, OffsetDiagnostic } from "@impermeable/waterproof-editor";
+import { RocqGoalAnswer, HypVisibility, PpString } from "../lib/types";
 import { Completion } from "@impermeable/waterproof-editor";
+import { ServerStatus } from "./ServerStatus";
+import { SimpleProgressParams } from "./ProgressInfo";
 
 
 /** Type former for the `Message` type. A message has an optional body B, but must include a type T (from MessageType)
@@ -30,23 +32,29 @@ export type Message =
     | MessageBase<MessageType.editorHistoryChange, HistoryChange>
     | MessageBase<MessageType.editorReady>
     | MessageBase<MessageType.errorGoals, unknown>
+    | MessageBase<MessageType.executionInfo, { from: number, to: number }>
     | MessageBase<MessageType.init, { value: string, version: number }>
     | MessageBase<MessageType.insert, { symbolUnicode: string, type: "symbol" | "tactics", time: number }>
-    | MessageBase<MessageType.lineNumbers, LineNumber>
+    | MessageBase<MessageType.refreshDocument, { value: string, version: number }>
+    | MessageBase<MessageType.replaceRange, { start: number, end: number, text: string }>
     | MessageBase<MessageType.progress, SimpleProgressParams>
     | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
     | MessageBase<MessageType.ready>
-    | MessageBase<MessageType.renderGoals, { goals : GoalAnswer<PpString>, visibility?: HypVisibility }>
-    | MessageBase<MessageType.renderGoalsList, { goalsList : GoalAnswer<PpString>[]}>
+    | MessageBase<MessageType.renderGoals, { goals : RocqGoalAnswer<PpString>, visibility?: HypVisibility }>
+    | MessageBase<MessageType.renderGoalsList, { goalsList : RocqGoalAnswer<PpString>[]}>
     | MessageBase<MessageType.response, { data: unknown, requestId: number }>
     | MessageBase<MessageType.serverStatus, ServerStatus>
     | MessageBase<MessageType.setAutocomplete, Completion[]>
-    | MessageBase<MessageType.setData, string[] | GoalAnswer<PpString> >
+    | MessageBase<MessageType.setData, string[] | RocqGoalAnswer<PpString>>
     | MessageBase<MessageType.setShowLineNumbers, boolean>
     | MessageBase<MessageType.setShowMenuItems, boolean>
     | MessageBase<MessageType.teacher, boolean>
-    | MessageBase<MessageType.themeUpdate, ThemeStyle>
-    | MessageBase<MessageType.viewportHint, { start: number, end: number }>;
+    | MessageBase<MessageType.themeUpdate, { theme: ThemeStyle, lang: string }>
+    | MessageBase<MessageType.viewportHint, { start: number, end: number }>
+    // The payload is forwarded to an InfoView instance, so its type does not concern us
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | MessageBase<MessageType.infoviewRpc, { payload: any }>
+    ;
 
 /**
  * Message type enum. Every message that is send from the
@@ -61,9 +69,12 @@ export const enum MessageType {
     editorHistoryChange,
     editorReady,
     errorGoals,
+    executionInfo,
+    flash,
     init,
     insert,
-    lineNumbers,
+    refreshDocument,
+    replaceRange,
     progress,
     qedStatus,
     ready,
@@ -77,6 +88,6 @@ export const enum MessageType {
     setShowMenuItems,
     teacher,
     themeUpdate,
-    flash,
     viewportHint,
+    infoviewRpc
 }

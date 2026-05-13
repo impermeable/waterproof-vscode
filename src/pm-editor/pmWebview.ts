@@ -11,7 +11,7 @@ import { qualifiedSettingName, WaterproofConfigHelper, WaterproofFileUtil, Water
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { CoqEditorProvider } from "./coqEditor";
 import { FileFormat, Message, MessageType } from "../../shared";
-import { DocChange, HistoryChange, LineNumber, ThemeStyle, WrappingDocChange } from "@impermeable/waterproof-editor";
+import { DocChange, HistoryChange, ThemeStyle, WrappingDocChange } from "@impermeable/waterproof-editor";
 
 export class ProseMirrorWebview extends EventEmitter {
     /** The webview panel of this ProseMirror instance */
@@ -28,9 +28,6 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Disposables */
     private readonly _disposables: Disposable[] = [];
-
-    /** The latest linenumbers message */
-    private _linenumber: LineNumber | undefined = undefined;
 
     private _teacherMode: boolean;
     private _enforceCorrectNonInputArea: boolean;
@@ -73,7 +70,7 @@ export class ProseMirrorWebview extends EventEmitter {
         this.sendHistoryChangeToEditor(HistoryChange.Redo);
     };
 
-    private constructor(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
+    private constructor(webviewPanel: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         super();
 
         this._provider = provider;
@@ -83,7 +80,7 @@ export class ProseMirrorWebview extends EventEmitter {
             this.redoHandler.bind(this));
 
         const fileName = WaterproofFileUtil.getBasename(doc.uri)
-        
+
         if (isIllegalFileName(fileName)) {
             const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "-", "(", ")". Please rename the file.`
             window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
@@ -91,13 +88,11 @@ export class ProseMirrorWebview extends EventEmitter {
         }
 
 
-        this._panel = webview;
+        this._panel = webviewPanel;
         this._workspaceEditor.onFinish(() => {
-            this.updateLineNumbers();
             this.emit(WebviewEvents.finishUpdate);
         });
         this._cachedMessages = new Map();
-        this.initWebview(extensionUri);
         this._document = doc;
 
         this._nonInputRegions = getNonInputRegions(doc.getText());
@@ -109,18 +104,26 @@ export class ProseMirrorWebview extends EventEmitter {
         const format = getFormatFromExtension(doc);
         if (format === undefined) {
             // FIXME: We should never encounter this, as the extension is only activated for .v and .mv files?
-            WaterproofLogger.log("Aborting creation of Waterproof editor. Encountered a file with extension different from .mv or .v!");
+            WaterproofLogger.log("Aborting creation of Waterproof editor. Encountered a file with extension different from .mv, .v, or .lean!");
             return;
         }
         this._format = format;
+        this.initWebview(extensionUri);
     }
 
     private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {
         if (value === SAVE_AS) commands.executeCommand("workbench.action.files.saveAs");
     }
 
-    /** Create a prosemirror webview */
-    public static async createProseMirrorView(webview: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
+    /**
+     * Create a ProseMirror webview.
+     *
+     * @param webviewPanel - VScode panel in which ProseMirror webview is displayed.
+     * @param extensionUri - Uri of the directory containing Waterproof extension.
+     * @param doc - Rocq of lean text document for which webview is created.
+     * @param provider - Waterproof text editor provider.
+     */
+    public static async createProseMirrorView(webviewPanel: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: CoqEditorProvider) {
         // Check if the line endings of file are windows
         if (doc.eol == EndOfLine.CRLF) {
             window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
@@ -136,7 +139,7 @@ export class ProseMirrorWebview extends EventEmitter {
                 window.showErrorMessage("Failed to open document for conversion");
             }
         }
-        return new ProseMirrorWebview(webview, extensionUri, doc, provider);
+        return new ProseMirrorWebview(webviewPanel, extensionUri, doc, provider);
     }
 
     /**
@@ -172,6 +175,14 @@ export class ProseMirrorWebview extends EventEmitter {
         // Convert path of `main.css` from local file uri to webview relative path.
         const styleUri = this._panel.webview.asWebviewUri(Uri.joinPath(
             extensionUri, 'editor_output', 'index.css'));
+        
+        // Register listener for when the document is saved, to trigger a refresh of the editor content.
+        this._disposables.push(workspace.onDidSaveTextDocument(e => {
+            if (e.uri.toString() === this._document.uri.toString()) {
+                this.refreshOnSave();
+            }
+        }));
+
 
         // Register various listeners
         this._disposables.push(workspace.onDidChangeTextDocument(e => {
@@ -229,6 +240,8 @@ export class ProseMirrorWebview extends EventEmitter {
                     this,
                     this.undoHandler.bind(this),
                     this.redoHandler.bind(this));
+                // TODO: Handle this properly
+                this.themeUpdate();
             } else {
                 // Dispose of the overwritten undo and redo commands when the editor is not active.
                 this._provider.disposeHistoryCommandListeners(this);
@@ -248,7 +261,8 @@ export class ProseMirrorWebview extends EventEmitter {
                     return "light";
             }
         })();
-
+        
+        // Fill the webview panel with initial HTML of our ProseMirror based editor.
         this._panel.webview.html = `
         <!doctype html>
         <html>
@@ -257,7 +271,7 @@ export class ProseMirrorWebview extends EventEmitter {
             <meta charset="utf-8">
             <script defer src="${scriptUri}" nonce="${nonce}"></script><link href="${styleUri}" rel="stylesheet">
         </head>
-        <body>
+        <body format="${this._format}">
             <article>
                 <!-- The div underneath stores the editor -->
                 <div id="editor" spellcheck="false" data-theme-kind="${themeKind}">
@@ -269,6 +283,8 @@ export class ProseMirrorWebview extends EventEmitter {
         </body>
         </html>
         `;
+        // TODO: find a proper way to do this
+        this.themeUpdate();
     }
 
     private themeUpdate() {
@@ -287,7 +303,10 @@ export class ProseMirrorWebview extends EventEmitter {
         })();
         this.postMessage({
             type: MessageType.themeUpdate,
-            body: themeType
+            body: {
+                theme: themeType,
+                lang: this.document.languageId
+            }
         }, true);
     }
 
@@ -307,8 +326,20 @@ export class ProseMirrorWebview extends EventEmitter {
         for (const m of this._cachedMessages.values()) this.postMessage(m);
     }
 
+    private refreshOnSave() {
+        this.postMessage({
+            type: MessageType.refreshDocument,
+            body: {
+                value: this._document.getText(),
+                version: this._document.version,
+            }
+        });
+        this.updateLineNumberStatusInEditor();
+        // send any cached messages
+        for (const m of this._cachedMessages.values()) this.postMessage(m);
+    }
+
     private updateLineNumberStatusInEditor() {
-        this.updateLineNumbers();
         this.postMessage({
             type: MessageType.setShowLineNumbers,
             body: this._showLineNrsInEditor
@@ -320,20 +351,6 @@ export class ProseMirrorWebview extends EventEmitter {
         this.postMessage({
             type: MessageType.setShowMenuItems,
             body: this._showMenuItemsInEditor
-        }, true);
-    }
-
-    /** Convert line number offsets to line indices and send message to Editor webview */
-    private updateLineNumbers() {
-        // Early return if line numbers should not be shown in the editor.
-        if (!this._showLineNrsInEditor) return;
-        if (!this._linenumber || this._linenumber.version > this._document.version) return;
-        this.postMessage({
-            type: MessageType.lineNumbers,
-            body: {
-                linenumbers: this._linenumber.linenumbers.map(n => this._document.positionAt(n).line),
-                version: this._document.version,
-            }
         }, true);
     }
 
@@ -387,6 +404,8 @@ export class ProseMirrorWebview extends EventEmitter {
 
     /** Handle a doc change sent from prosemirror */
     private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
+        // const e = new WorkspaceEdit();
+
         this._workspaceEditor.edit(e => {
             if ("firstEdit" in change) {
                 this.applyChangeToWorkspace(change.firstEdit, e);
@@ -395,6 +414,14 @@ export class ProseMirrorWebview extends EventEmitter {
                 this.applyChangeToWorkspace(change, e);
             }
         });
+            // workspace.applyEdit(e).then((val) => {
+            //     if (val) {
+            //         this.document.save();
+            //     } else {
+            //         WaterproofLogger.log("Failed to apply edit to workspace");
+            //     }
+            // },
+            // (reason) => console.log("REJECTED EDIT", reason));
 
         // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
         if (!this._teacherMode && this._enforceCorrectNonInputArea) {
@@ -437,10 +464,6 @@ export class ProseMirrorWebview extends EventEmitter {
                 // When ready send the state of the teacher mode and show menu items settings to editor
                 this.updateTeacherMode();
                 this.updateMenuItemsInEditor();
-                break;
-            case MessageType.lineNumbers:
-                this._linenumber = msg.body;
-                this.updateLineNumbers();
                 break;
             default:
                 this.emit(WebviewEvents.message, msg);

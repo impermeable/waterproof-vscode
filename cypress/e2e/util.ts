@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+import { DocChange, WrappingDocChange } from "@impermeable/waterproof-editor";
 import {Message, MessageType} from "../../shared/Messages";
 /**
  * Sets up the test harness and initializes the editor after receiving the
@@ -7,7 +8,7 @@ import {Message, MessageType} from "../../shared/Messages";
  * @param edits Array where the `docChange` events will be stored.
  */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function setupTest(initialDocument: string, edits: unknown[], callbacks?: Partial<Record<MessageType, Function>> ) {
+export function setupTest(initialDocument: string, edits: (DocChange | WrappingDocChange)[], callbacks?: Partial<Record<MessageType, Function>> ) {
     cy.visit("../../__test_harness/index.html", {
         onBeforeLoad: (window) => {
             // Supply a 'fake' acquireVsCodeApi function
@@ -20,7 +21,6 @@ export function setupTest(initialDocument: string, edits: unknown[], callbacks?:
                                 type: MessageType.init,
                                 body: {
                                     value: initialDocument,
-                                    format: "MarkdownV",
                                     version: 1,
                                 }
                             });

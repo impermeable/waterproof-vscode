@@ -1,31 +1,25 @@
 import { Uri } from "vscode";
-import { GoalAnswer, PpString } from "../../../lib/types";
-import { CoqLspClientConfig } from "../../lsp-client/clientTypes";
+import { LspClientConfig } from "../../lsp-client/clientTypes";
 import { WebviewEvents, WebviewState } from "../coqWebview";
 import { MessageType } from "../../../shared";
 import { GoalsBase } from "./goalsBase";
 import { IExecutor } from "../../components";
+import { PpString, RocqGoalAnswer } from "../../../lib/types";
 
 //the goals panel extends the GoalsBase class
 export class GoalsPanel extends GoalsBase implements IExecutor {
 
-    private previousGoal: GoalAnswer<PpString> | undefined;
+    private previousGoal: RocqGoalAnswer<PpString> | undefined;
     private data: string[] = ['no results'];
 
     // constructor to define the name and to listen for webview events
-    constructor(extensionUri: Uri, config: CoqLspClientConfig) {
+    constructor(extensionUri: Uri, config: LspClientConfig) {
         super(extensionUri, config, "goals", true);
         this.on(WebviewEvents.change, () => {
-            if (this.state === WebviewState.visible)
-                if (this.previousGoal)
-                    this.updateGoals(this.previousGoal);  // when the panels is focused or visible the goalsPanel is updated
+            if (this.state === WebviewState.visible) {
+                // TODO: show last goals?
+            }
         });
-    }
-
-    //override updateGoals to save the previous goals and activating the panel before posting the goals message
-    override updateGoals(goals: GoalAnswer<PpString> | undefined) {
-        this.previousGoal = goals;
-        super.updateGoals(goals);
     }
 
     setResults(results: string[]): void {
@@ -40,5 +34,4 @@ export class GoalsPanel extends GoalsBase implements IExecutor {
             this.postMessage({ type: MessageType.setData, body: this.data })
         }
     }
-
 }

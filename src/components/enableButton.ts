@@ -24,10 +24,10 @@ export class CoqnitiveStatusBar implements IStatusComponent {
         this.item.show();
     }
 
-    update(clientRunning: boolean): void {
-        if (clientRunning) {
+    update(clientsRunning: string[]): void {
+        if (clientsRunning.length > 0) {
             this.item.backgroundColor = undefined;
-            this.item.text = "$(check) Waterproof checker";
+            this.item.text = "$(check) Waterproof checker (" + clientsRunning.join(", ") + ")";
             this.item.tooltip = "Waterproof document checker is running. Click to stop.";
         } else {
             this.item.backgroundColor = new ThemeColor("statusBarItem.warningBackground");

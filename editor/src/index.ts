@@ -1,14 +1,26 @@
 import { FileFormat, Message, MessageType } from "../../shared";
-import { ThemeStyle, WaterproofEditor, WaterproofEditorConfig } from "@impermeable/waterproof-editor";
-// TODO: Move this to a types location.
-import { TextDocMappingMV, TextDocMappingV } from "./mapping";
-import { blocksFromMV, blocksFromV } from "./document-construction/construct-document";
+import { defaultToMarkdown, markdown, ThemeStyle, WaterproofEditor, WaterproofEditorConfig, wrapInContainer } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
-import tactics from "../../completions/tactics.json";
-import symbols from "../../completions/symbols.json";
+import waterproofTactics from "../../completions/tactics.json";
+import leanTactics from "../../completions/tacticsLean.json";
+import rocqTactics from "../../completions/tacticsRocq.json"
+import symbols from "../../completions/symbols+lean.json";
 
 // import style sheet and fonts from waterproof-editor
-import "@impermeable/waterproof-editor/styles.css"
+import "@impermeable/waterproof-editor/styles.css";
+// import the style sheet mapping waterproof style properties to vscode styles
+import "./vscodemapping.css";
+import { vFileParser } from "./document-construction/vFile";
+import { coqdocToMarkdown } from "./coqdoc";
+import { topLevelBlocksLean } from "./document-construction/construct-document";
+import { tagConfigurationV } from "./vFileConfiguration";
+import * as langWp from "@impermeable/codemirror-lang-waterproof";
+import * as langVerbose from "@impermeable/codemirror-lang-verbose";
+import * as langRocq from "@impermeable/codemirror-lang-rocq";
+import { tagConfigurationLean } from "./leanFileConfiguration";
+import { LeanSerializer } from "./leanSerializer";
+import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
+import { handleEditorMessage } from "./messageHandler";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -18,14 +30,78 @@ interface VSCodeAPI {
 	postMessage: (message: Message) => void;
 }
 
-function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
+function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI, editorRef: { current?: WaterproofEditor }) {
+	let formatConf: Pick<WaterproofEditorConfig,
+		"completions" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" | "disableMarkdownFeatures" | "serializer" | "menubarEntries" >;
+
+	// Set format-specific configuration
+	switch (format) {
+		case FileFormat.MarkdownV:
+			formatConf = {
+				completions: waterproofTactics,
+				documentConstructor: (v: string) => markdown.parse(v, {language: "coq"}),
+				toMarkdown: defaultToMarkdown,
+				markdownName: "Markdown",
+				tagConfiguration: markdown.configuration("coq"),
+				languageConfig: {
+					highlightDark: langWp.highlight_dark,
+					highlightLight: langWp.highlight_light,
+					languageSupport: langWp.waterproof(),
+				},
+			}
+			break;
+		case FileFormat.RegularV:
+			formatConf = {
+				completions: rocqTactics,
+				documentConstructor: vFileParser,
+				toMarkdown: coqdocToMarkdown,
+				markdownName: "Rocq doc",
+				tagConfiguration: tagConfigurationV,
+				disableMarkdownFeatures: ["code"],
+				languageConfig: {
+					languageSupport: langRocq.rocq(),
+					highlightDark: langRocq.highlight_dark,
+					highlightLight: langRocq.highlight_light
+				}
+			}
+			break;
+		case FileFormat.Lean:
+			formatConf = {
+				completions: leanTactics,
+				documentConstructor: topLevelBlocksLean,
+				toMarkdown: versoMarkdownToMarkdown,
+				markdownName: "Markdown",
+				tagConfiguration: tagConfigurationLean,
+				serializer: new LeanSerializer(),
+				languageConfig: {
+					highlightDark: langVerbose.highlight_dark,
+					highlightLight: langVerbose.highlight_light,
+					languageSupport: langVerbose.verbose(),
+				},
+				menubarEntries: [
+					{
+						title: "M...",
+						hoverText: "Wrap selection in a container (groups math evaluation)",
+						callback: () => {
+							editorRef.current?.executeProsemirrorCommand(wrapInContainer(tagConfigurationLean, "multilean"));
+						},
+						isActive: (state) => wrapInContainer(tagConfigurationLean, "multilean")(state, undefined),
+						buttonVisibility: { teacherModeOnly: true },
+					}
+				],
+			}
+			break;
+	}
+
 	// Create the WaterproofEditorConfig object
 	const cfg: WaterproofEditorConfig = {
-		completions: tactics,
+		// Include format-specific configuration
+		...formatConf,
+
 		symbols: symbols,
 		api: {
 			executeHelp() {
-				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime()} });
+				codeAPI.postMessage({ type: MessageType.command, body: { command: "Help.", time: (new Date()).getTime() } });
 			},
 			executeCommand(command: string, time: number) {
 				codeAPI.postMessage({ type: MessageType.command, body: { command, time } });
@@ -44,15 +120,8 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI) {
 			},
 			viewportHint(start, end) {
 				codeAPI.postMessage({ type: MessageType.viewportHint, body: { start, end } });
-			},
-			lineNumbers(linenumbers, version) {
-				codeAPI.postMessage({ type: MessageType.lineNumbers, body: { linenumbers, version } });
-			},
-
+			}
 		},
-		documentConstructor: format === FileFormat.MarkdownV ? blocksFromMV : blocksFromV,
-		// TODO: For now assuming we are constructing an mv file editor.
-		mapping: format === FileFormat.MarkdownV ? TextDocMappingMV : TextDocMappingV
 	}
 
 	return cfg;
@@ -71,10 +140,13 @@ window.onload = () => {
 		throw Error("Could not acquire the vscode api.");
 		// TODO: maybe sent some sort of test message?
 	}
+	const format = document.body.getAttribute("format") as FileFormat;
 
+	// Create a ref so that menubar callbacks can dispatch commands after the editor is constructed.
+	const editorRef: { current?: WaterproofEditor } = {};
 
 	// Create the editor, passing it the vscode api and the editor and content HTML elements.
-	const cfg = createConfiguration(FileFormat.MarkdownV, codeAPI);
+	const cfg = createConfiguration(format, codeAPI, editorRef);
 	// Retrieve the current theme style from the attribute 'data-theme-kind'
 	// attached to the editor element. This allows us to set the initial theme kind
 	// rather than waiting for the themestyle message to arrive.
@@ -91,71 +163,18 @@ window.onload = () => {
 		}
 	})();
 	const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
+	editorRef.current = editor;
+
+	//@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.
+	window.editorInstance = editor;
 
 	// Register event listener for communication between extension and editor
 	window.addEventListener("message", (event: MessageEvent<Message>) => {
 		const msg = event.data;
 
-		switch(msg.type) {
-			case MessageType.init:
-				editor.init(msg.body.value, msg.body.version);
-				break;
-			case MessageType.insert:
-				// Insert symbol message, retrieve the symbol from the message.
-				{
-				const { symbolUnicode } = msg.body;
-				if (msg.body.type === "tactics") {
-					// `symbolUnicode` stores the tactic template.
-					if (!symbolUnicode) { console.error("no template provided for snippet"); return; }
-					const template = symbolUnicode;
-					editor.handleSnippet(template);
-				} else {
-					editor.insertSymbol(symbolUnicode);
-				}
-				break; }
-			case MessageType.setAutocomplete:
-				// Handle autocompletion
-				editor.handleCompletions(msg.body);
-				break;
-			case MessageType.qedStatus:
-				{ const statuses = msg.body;  // one status for each input area, in order
-				editor.updateQedStatus(statuses);
-				break; }
-			case MessageType.setShowLineNumbers:
-				{ const show = msg.body;
-				editor.setShowLineNumbers(show);
-				break; }
-			case MessageType.setShowMenuItems:
-				{ const show = msg.body; editor.setShowMenuItems(show); break; }
-			case MessageType.editorHistoryChange:
-				editor.handleHistoryChange(msg.body);
-				break;
-			case MessageType.lineNumbers:
-				editor.setLineNumbers(msg.body);
-				break;
-			case MessageType.teacher:
-				editor.updateLockingState(msg.body);
-				break;
-			case MessageType.progress:
-				{ const progressParams = msg.body;
-				editor.updateProgressBar(progressParams);
-				break; }
-			case MessageType.diagnostics:
-				{ editor.setActiveDiagnostics(msg.body.positionedDiagnostics);
-				break; }
-			case MessageType.serverStatus:
-				{ const status = msg.body;
-				editor.updateServerStatus(status);
-				break; }
-			case MessageType.themeUpdate:
-				editor.updateNodeViewThemes(msg.body);
-				break;
-			default:
-				// If we reach this 'default' case, then we have encountered an unknown message type.
-				console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);
-				break;
-		}
+		handleEditorMessage(editor, msg);
 	});
+
 	let timeoutHandle: number | undefined;
 	window.addEventListener('scroll', (_event) => {
 		if (timeoutHandle === undefined) {
@@ -167,5 +186,5 @@ window.onload = () => {
 	});
 
 	// Start the editor
-	codeAPI.postMessage({type: MessageType.ready});
+	codeAPI.postMessage({ type: MessageType.ready });
 };

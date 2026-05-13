@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    "noEmit": true,
+    "skipLibCheck": true,
+    "outDir": "./out-jest",
+    "sourceMap": true,
+    "strict": true
+  },
+  "include": [
+    "__tests__/**/*",
+    "editor/src/**/*",
+    "shared/**/*"
+  ]
+}

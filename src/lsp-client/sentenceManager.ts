@@ -1,6 +1,6 @@
 import { Position } from "vscode";
 import { IFileProgressComponent } from "../components";
-import { CoqFileProgressParams } from "./requestTypes";
+import { FileProgressParams } from "./requestTypes";
 
 // TODO: Figure out if this is unused, and if yes, delete file and usages.
 
@@ -41,7 +41,7 @@ export class SentenceManager implements IFileProgressComponent {
         this.sentenceEndPositions.splice(i, this.sentenceEndPositions.length - i);
     }
 
-    onProgress(params: CoqFileProgressParams): void {
+    onProgress(params: FileProgressParams): void {
         // get position from each processed range (always just one? we assume it's sorted)
         // end position is always end of document, so useless
         const positions = params.processing.map(info => info.range.start);
@@ -69,7 +69,7 @@ export class SentenceManager implements IFileProgressComponent {
         } else {
             return sentenceEndPosition;
         }
-        
+
     }
 
     /**

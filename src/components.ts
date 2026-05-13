@@ -1,6 +1,7 @@
 import { Disposable, Position } from "vscode";
-import { GoalAnswer, PpString } from "../lib/types";
-import { CoqFileProgressParams } from "./lsp-client/requestTypes";
+import { RocqGoalAnswer, PpString } from "../lib/types";
+import { FileProgressParams } from "./lsp-client/requestTypes";
+import { ILspClient } from "./lsp-client/clientTypes";
 
 /**
  * This defines the interface of a component that displays
@@ -11,9 +12,9 @@ export interface IStatusComponent extends Disposable {
      * Update the status bar component to display current status
      * of client
      *
-     * @param clientRunning indicates whether the client is running
+     * @param clientsRunning indicates which clients are running
      */
-    update(clientRunning: boolean): void;
+    update(clientsRunning: string[]): void;
 
     /**
      * Update the status bar to indicate failure to start client
@@ -40,7 +41,7 @@ export interface IFileProgressComponent extends Disposable {
      * Called when the LSP client receives a notification that part of the document has been
      * processed.
      */
-    onProgress(params: CoqFileProgressParams): void;
+    onProgress(params: FileProgressParams): void;
 }
 
 /**
@@ -55,7 +56,7 @@ export interface IGoalsComponent extends Disposable {
      *
      * @param goals the goal answer object received from coq-lsp
      */
-    updateGoals(goals: GoalAnswer<PpString> | undefined): void;
+    updateGoals(client: ILspClient): Promise<void>;
 
     /**
      * Update the status bar to indicate failure to start client
@@ -75,5 +76,5 @@ export interface IGoalsComponent extends Disposable {
  * This defines the interface of components that execute commands
 */
 export interface IExecutor {
-    setResults(results: GoalAnswer<PpString> | string[]): void;
+    setResults(results: RocqGoalAnswer<PpString> | string[]): void;
 }

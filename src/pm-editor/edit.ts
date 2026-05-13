@@ -27,8 +27,8 @@ export class SequentialEditor {
         if (this.queue.length) {
             this.apply(this.queue.shift()!);
         } else {
-            this.finishListener?.();
             this.inProgress = false;
+            this.finishListener?.();
         }
     }
 
@@ -41,7 +41,8 @@ export class SequentialEditor {
         op(edit);
         workspace.applyEdit(edit).then(() => {
             this.applyNext();
-        });
+        },
+        (reason) => console.log("REJECTED EDIT", reason));
     }
 
     /**

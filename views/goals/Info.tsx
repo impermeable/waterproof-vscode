@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
-import { GoalAnswer, HypVisibility, PpString } from "../../lib/types";
+import { RocqGoalAnswer, HypVisibility, PpString } from "../../lib/types";
 import { ErrorBrowser } from "./ErrorBrowser";
 import { Goals } from "./Goals";
 import { Messages } from "./Messages";
@@ -20,17 +20,17 @@ const VSCodeDivider = lazy(async () => {
  
 export function InfoPanel() {
   // visibility of the hypotheses in the goals panel
-  
+
   //saves the goal
-  const [goals, setGoals] = useState<GoalAnswer<PpString>>();
-  const goalsRef = useRef<GoalAnswer<PpString> | undefined>();
+  const [goals, setGoals] = useState<RocqGoalAnswer<PpString>>();
+  const goalsRef = useRef<RocqGoalAnswer<PpString> | undefined>();
   //boolean to check if the goals are still loading
   const [goalsLoading, setGoalsLoading] = useState(false);
   //visibility of the hypotheses in the goals panel as State
   const [visibility, setVisibility] = useState<HypVisibility>(HypVisibility.None);
   
   const [isHelpLoading, setIsHelpLoading] = useState(false);
-  const [helpInfo, setHelpInfo] = useState<string[] | GoalAnswer<PpString> | undefined>(undefined);
+  const [helpInfo, setHelpInfo] = useState<string[] | RocqGoalAnswer<PpString> | undefined>(undefined);
   //handles the message
   //event : CoqMessageEvent as defined above
   function infoViewDispatch(msg: Message) { 

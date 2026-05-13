@@ -5,6 +5,10 @@ This README is intented for **Waterproof developers**. If you are not a develope
 Please follow the instructions as specified in [developer_instructions.md](./developer_instructions.md).
 
 ## Resources
+
+### Architecture
+An architecture overview is available [here](./architecture.md).
+
 ### VSCode styling/theming guide:
 - [Creating our own theme](https://code.visualstudio.com/docs/getstarted/themes#_creating-your-own-color-theme)
 - [Theme Guide](https://code.visualstudio.com/api/extension-guides/color-theme)

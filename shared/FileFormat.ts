@@ -1,4 +1,5 @@
 export const enum FileFormat {
-    MarkdownV,
-    RegularV
+    MarkdownV = "markdownv",
+    RegularV = "regularv",
+    Lean = "lean"
 }

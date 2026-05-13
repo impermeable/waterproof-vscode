@@ -542,7 +542,7 @@
     "@impermeable/codemirror-lang-rocq": "github:impermeable/codemirror-lang-rocq",
     "@impermeable/codemirror-lang-verbose": "github:impermeable/codemirror-lang-verbose",
     "@impermeable/codemirror-lang-waterproof": "github:impermeable/codemirror-lang-waterproof",
-    "@impermeable/waterproof-editor": "^0.14.1",
+    "@impermeable/waterproof-editor": "^0.14.0",
     "@leanprover/infoview": "^0.10.0",
     "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
@@ -569,16 +569,7 @@
   "overrides": {
     "mocha": {
       "serialize-javascript": "7.0.5",
-      "diff": "8.0.3",
-      "js-yaml": "4.1.1"
-    },
-    "@vscode/vsce": {
-      "jws": "3.2.3",
-      "glob": "11.1.0",
-      "js-yaml": "4.1.1"
-    },
-    "ts-jest": {
-      "js-yaml": "4.1.1"
+      "diff": "8.0.3"
     }
   },
   "main": "./out/src/mainNode.js",

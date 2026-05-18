@@ -1,5 +1,7 @@
 import { Message, MessageType } from "../../shared";
-import { handleEditorMessage, MessageHandlerEditor } from "../../editor/src/messageHandler";
+import { handleEditorMessage } from "../../editor/src/messageHandler";
+import { MessageHandlerEditor } from "@impermeable/waterproof-editor";
+import { describe, expect, it, jest } from "@jest/globals";
 
 function createEditorMock(): jest.Mocked<MessageHandlerEditor> {
     return {
@@ -54,6 +56,8 @@ describe("handleEditorMessage", () => {
 
         it("aborts silently when tactics type has no symbolUnicode", () => {
             const editor = createEditorMock();
+            const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
             const msg = {
                 type: MessageType.insert,
                 body: { symbolUnicode: undefined, type: "tactics", time: 1 },
@@ -63,6 +67,8 @@ describe("handleEditorMessage", () => {
 
             expect(editor.handleSnippet).not.toHaveBeenCalled();
             expect(editor.insertSymbol).not.toHaveBeenCalled();
+            expect(consoleSpy).toHaveBeenCalled();
+            consoleSpy.mockRestore();
         });
     });
 

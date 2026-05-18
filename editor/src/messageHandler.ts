@@ -1,26 +1,6 @@
-import { Completion, HistoryChange, InputAreaStatus, OffsetDiagnostic, ThemeStyle } from "@impermeable/waterproof-editor";
+import type { MessageHandlerEditor } from "@impermeable/waterproof-editor";
 import { Message, MessageType, ServerStatus } from "../../shared";
 
-export interface MessageHandlerEditor {
-	init: (value: string, version: number) => void;
-	insertSymbol: (symbolUnicode: string) => void;
-	handleSnippet: (template: string) => void;
-	refreshDocument: (value: string, version: number) => void;
-	replaceRange: (start: number, end: number, text: string) => void;
-	handleCompletions: (completions: Completion[]) => void;
-	setInputAreaStatus: (statuses: InputAreaStatus[]) => void;
-	setShowLineNumbers: (show: boolean) => void;
-	setShowMenuItems: (show: boolean) => void;
-	handleHistoryChange: (historyChange: HistoryChange) => void;
-	updateLockingState: (teacherModeEnabled: boolean) => void;
-	removeBusyIndicators: () => void;
-	reportProgress: (at: number, numberOfLines: number, label: string) => void;
-	setBusyIndicator: (from: number) => void;
-	setActiveDiagnostics: (diagnostics: Array<OffsetDiagnostic>) => void;
-	startSpinner: () => void;
-	stopSpinner: () => void;
-	updateNodeViewThemes: (theme: ThemeStyle) => void;
-}
 
 export function handleEditorMessage(editor: MessageHandlerEditor, msg: Message): void {
 	switch (msg.type) {

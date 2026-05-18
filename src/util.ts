@@ -13,53 +13,41 @@ export function getNonce() {
     return text;
 }
 
-/**
- * Checks whether any conflicting extensions are enabled, and warns the user in that case.
- * Lean 4 conflicts are handled separately by {@link checkLeanConflict}.
- */
-export function checkConflictingExtensions() {
-    const conflicting: string[] = [];
-
-    // note: `isActive` can be false, even if extension activates later
-    // this way of checking correctly ignores disabled extensions
-    if (extensions.getExtension("ejgallego.coq-lsp")) conflicting.push("Coq LSP");
-    if (extensions.getExtension("maximedenes.vscoq")) conflicting.push("VSCoq");
-
-    // show warning if any conflicting extensions are present
-    if (conflicting.length) {
-        window.showErrorMessage(
-            "The following extensions must be disabled for Waterproof to work properly: " + conflicting.join(", "),
-            "Dismiss"  // although it does nothing, this action item causes the message to be expanded
-        );
-    }
-}
+const CONFLICTING_EXTENSIONS: { id: string; label: string }[] = [
+    { id: "leanprover.lean4", label: "Lean 4" },
+    { id: "ejgallego.coq-lsp", label: "Coq LSP" },
+    { id: "maximedenes.vscoq", label: "VSCoq" },
+];
 
 /**
- * Checks whether the Lean 4 extension is installed and, if so, offers to set up a dedicated
- * VS Code profile where Lean 4 is disabled.
+ * Checks whether any conflicting extensions are installed and, if so, offers to set up a
+ * dedicated VS Code profile where they are all disabled.
  */
-export function checkLeanConflict(context: ExtensionContext) {
-    if (!extensions.getExtension("leanprover.lean4")) return;
+export function checkConflictingExtensions(context: ExtensionContext) {
+    const conflicting = CONFLICTING_EXTENSIONS.filter(e => extensions.getExtension(e.id));
+    if (!conflicting.length) return;
 
+    const names = conflicting.map(e => e.label).join(", ");
     window.showWarningMessage(
-        "The Lean 4 extension conflicts with Waterproof. Set up a 'Waterproof' profile for easy switching?",
+        `The following extensions conflict with Waterproof: ${names}. Set up a 'Waterproof' profile where they are disabled?`,
         "Set up Waterproof Profile",
         "Dismiss",
     ).then((selection) => {
         if (selection === "Set up Waterproof Profile") {
-            setupWaterproofProfile(context);
+            setupWaterproofProfile(context, conflicting.map(e => e.id));
         }
     });
 }
 
-async function setupWaterproofProfile(context: ExtensionContext): Promise<void> {
+async function setupWaterproofProfile(context: ExtensionContext, conflictingIds: string[]): Promise<void> {
     try {
+        const conflictingSet = new Set(conflictingIds);
         const profileExtensions = [
             ...extensions.all
-                .filter(ext => !ext.packageJSON.isBuiltin && ext.id !== "leanprover.lean4")
+                .filter(ext => !ext.packageJSON.isBuiltin && !conflictingSet.has(ext.id))
                 .map(ext => ({ identifier: { id: ext.id }, version: ext.packageJSON.version })),
-            // Explicitly disable Lean 4, even if it is application-scoped
-            { identifier: { id: "leanprover.lean4" }, disabled: true },
+            // Explicitly disable all conflicting extensions, even if application-scoped
+            ...conflictingIds.map(id => ({ identifier: { id }, disabled: true })),
         ];
 
         const profile = {

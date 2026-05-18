@@ -49,9 +49,10 @@ function Goal({ goal}: GoalP) {
 
   // Handler for insert button
   const handleInsert = (suggestion : string) => {
+    const time = Date.now();
     // Post insert message with the line as symbolUnicode and type "tactics"
     vscode.postMessage({ 
-      time: Date.now(),
+      time,
       type: MessageType.insert, 
       body: { 
         symbolUnicode: suggestion,

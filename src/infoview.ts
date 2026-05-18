@@ -324,22 +324,51 @@ export class InfoProvider implements Disposable {
             await env.clipboard.writeText(text)
         },
 
-        insertText: async (_text, _kind, _tdpp) => {
-            wpl.log(`[Infoprovider] Method "insertText" is not implemented`);
+        insertText: async (text, kind, pos) => {
+            const document = this.client.activeDocument;
+            const position = pos?.position
+                ? new Position(pos.position.line, pos.position.character)
+                : this.client.activeCursorPosition;
+
+            if (!document || !this.client.webviewManager) {
+                return;
+            }
+
+            if (!position) {
+                return;
+            }
+
+            const targetPosition = kind === 'above'
+                ? new Position(position.line, 0)
+                : position;
+            const start = document.offsetAt(targetPosition);
+            const insertText = kind === 'above' && !text.endsWith('\n') ? `${text}\n` : text;
+
+            this.client.webviewManager.postMessage(document.uri.toString(), {
+                type: MessageType.replaceRange,
+                body: {
+                    start,
+                    end: start,
+                    text: insertText,
+                }
+            });
         },
 
         applyEdit: async (e: WorkspaceEdit) => {
             const document = this.client.activeDocument;
             if (!document || !this.client.webviewManager) {
-                wpl.log(`[InfoProvider] Cannot apply edit: no active document or webviewManager`);
                 return;
             }
             const uri = document.uri.toString();
-            const changes = e.changes?.[uri];
-            if (!changes || changes.length === 0) {
-                wpl.log(`[InfoProvider] No changes for active document`);
+            const changes = e.changes?.[uri] ?? [];
+            const documentChanges = (e.documentChanges ?? []).filter((change: any) =>
+                change?.textDocument?.uri === uri && Array.isArray(change?.edits)
+            ) as Array<{ edits: Array<{ range: { start: { line: number; character: number }; end: { line: number; character: number } }; newText: string }> }>;
+
+            if (changes.length === 0 && documentChanges.length === 0) {
                 return;
             }
+
             for (const change of changes) {
                 const start = document.offsetAt(
                     new Position(change.range.start.line, change.range.start.character)
@@ -351,6 +380,21 @@ export class InfoProvider implements Disposable {
                     type: MessageType.replaceRange,
                     body: { start, end, text: change.newText }
                 });
+            }
+
+            for (const documentChange of documentChanges) {
+                for (const change of documentChange.edits) {
+                    const start = document.offsetAt(
+                        new Position(change.range.start.line, change.range.start.character)
+                    );
+                    const end = document.offsetAt(
+                        new Position(change.range.end.line, change.range.end.character)
+                    );
+                    this.client.webviewManager.postMessage(uri, {
+                        type: MessageType.replaceRange,
+                        body: { start, end, text: change.newText }
+                    });
+                }
             }
         },
 

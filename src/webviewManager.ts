@@ -297,8 +297,8 @@ export class WebviewManager extends EventEmitter {
         switch (msg.type) {
             case MessageType.insert:
                 {
-                    const id: string = this._active.find(msg.body.time)!;
-                    this.postMessage(id, { type: MessageType.insert, body: msg.body });
+                    const routedId: string = this._active.find(msg.body.time)!;
+                    this.postMessage(routedId, { type: MessageType.insert, body: msg.body });
                     break;
                 }
             case MessageType.command:

@@ -94,7 +94,7 @@ export class Waterproof implements Disposable {
     ) {
         wpl.log("Waterproof initialized");
         checkConflictingExtensions();
-        checkLeanConflict();
+        checkLeanConflict(context);
         excludeCoqFileTypes();
         checkTrimmingWhitespace();
 

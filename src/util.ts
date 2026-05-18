@@ -1,8 +1,5 @@
-import { env, extensions, Uri, window, commands, workspace } from "vscode";
+import { env, extensions, ExtensionContext, Uri, window, commands, workspace } from "vscode";
 import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } from "./helpers";
-import { writeFileSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
 
 /**
  * Returns a random alphanumerical string of length 32.
@@ -41,7 +38,7 @@ export function checkConflictingExtensions() {
  * Checks whether the Lean 4 extension is installed and, if so, offers to set up a dedicated
  * VS Code profile where Lean 4 is disabled.
  */
-export function checkLeanConflict() {
+export function checkLeanConflict(context: ExtensionContext) {
     if (!extensions.getExtension("leanprover.lean4")) return;
 
     window.showWarningMessage(
@@ -50,12 +47,12 @@ export function checkLeanConflict() {
         "Dismiss",
     ).then((selection) => {
         if (selection === "Set up Waterproof Profile") {
-            setupWaterproofProfile();
+            setupWaterproofProfile(context);
         }
     });
 }
 
-async function setupWaterproofProfile(): Promise<void> {
+async function setupWaterproofProfile(context: ExtensionContext): Promise<void> {
     try {
         const profileExtensions = [
             ...extensions.all
@@ -71,18 +68,18 @@ async function setupWaterproofProfile(): Promise<void> {
             extensions: JSON.stringify(profileExtensions),
         };
 
-        const profilePath = join(tmpdir(), "waterproof.code-profile");
-        writeFileSync(profilePath, JSON.stringify(profile, null, 2), "utf8");
-        wpl.log("Wrote Waterproof profile to " + profilePath);
+        const profileUri = Uri.joinPath(context.globalStorageUri, "waterproof.code-profile");
+        await workspace.fs.writeFile(profileUri, new TextEncoder().encode(JSON.stringify(profile, null, 2)));
+        wpl.log("Wrote Waterproof profile to " + profileUri.fsPath);
 
         await commands.executeCommand("workbench.profiles.actions.manageProfiles");
 
         const selection = await window.showInformationMessage(
-            `Profile ready. In the Profile Manager, click 'Import Profile...' and select: ${profilePath}`,
+            `Profile ready. In the Profile Manager, click 'Import Profile...' and select: ${profileUri.fsPath}`,
             "Copy Path"
         );
         if (selection === "Copy Path") {
-            await env.clipboard.writeText(profilePath);
+            await env.clipboard.writeText(profileUri.fsPath);
         }
     } catch (err) {
         wpl.log("Failed to write Waterproof profile: " + err);

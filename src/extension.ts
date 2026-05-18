@@ -93,7 +93,7 @@ export class Waterproof implements Disposable {
         private readonly _isWeb = false
     ) {
         wpl.log("Waterproof initialized");
-        checkConflictingExtensions();
+        void checkConflictingExtensions(context);
         excludeCoqFileTypes();
         checkTrimmingWhitespace();
 
@@ -588,6 +588,7 @@ export class Waterproof implements Disposable {
                 return;
             }
         }
+
         return this.client.startWithHandlers(this.webviewManager, allowedLanguages).then(
             (clients) => {
                 this.webviewManager.open("goals");

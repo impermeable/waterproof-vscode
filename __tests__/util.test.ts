@@ -1,0 +1,277 @@
+import { extensions, window, workspace, commands, env } from "vscode";
+import type { ExtensionContext } from "vscode";
+import { checkConflictingExtensions } from "../src/util";
+
+jest.mock("vscode", () => ({
+    Uri: {
+        joinPath: jest.fn((_base: unknown, ...segments: string[]) => ({
+            fsPath: "/global-storage/" + segments.join("/"),
+            toString: () => "file:///global-storage/" + segments.join("/"),
+        })),
+        parse: jest.fn((s: string) => ({ toString: () => s })),
+    },
+    extensions: {
+        getExtension: jest.fn(),
+        all: [],
+    },
+    window: {
+        showWarningMessage:     jest.fn(),
+        showInformationMessage: jest.fn(),
+        showErrorMessage:       jest.fn(),
+    },
+    workspace: {
+        fs: { writeFile: jest.fn() },
+        getConfiguration: jest.fn(() => ({ get: jest.fn((_key: string, def?: unknown) => def) })),
+    },
+    commands: {
+        executeCommand: jest.fn(),
+    },
+    env: {
+        clipboard: { writeText: jest.fn() },
+        openExternal: jest.fn(),
+    },
+}), { virtual: true });
+
+jest.mock("../src/helpers", () => ({
+    WaterproofConfigHelper: { get: jest.fn(() => false) },
+    WaterproofLogger: { log: jest.fn(), debug: jest.fn() },
+    WaterproofSetting: {},
+    qualifiedSettingName: jest.fn((s: string) => s),
+}));
+
+function makeContext(): ExtensionContext {
+    return { globalStorageUri: { fsPath: "/global-storage" } } as ExtensionContext;
+}
+
+function mockGetExtension(installedIds: string[]) {
+    jest.mocked(extensions.getExtension).mockImplementation((id: string) =>
+        installedIds.includes(id) ? { id } as never : undefined
+    );
+}
+
+beforeEach(() => {
+    jest.clearAllMocks();
+    jest.requireMock("vscode").extensions.all = [];
+});
+
+describe("checkConflictingExtensions", () => {
+    it("does nothing when no conflicting extensions are installed", () => {
+        mockGetExtension([]);
+        checkConflictingExtensions(makeContext());
+        expect(window.showWarningMessage).not.toHaveBeenCalled();
+    });
+
+    it("shows warning with Lean 4 name when only lean4 is installed", () => {
+        mockGetExtension(["leanprover.lean4"]);
+        jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
+
+        checkConflictingExtensions(makeContext());
+
+        expect(window.showWarningMessage).toHaveBeenCalledTimes(1);
+        const [msg] = jest.mocked(window.showWarningMessage).mock.calls[0];
+        expect(msg).toContain("Lean 4");
+        expect(msg).not.toContain("Coq LSP");
+        expect(msg).not.toContain("VSCoq");
+    });
+
+    it("shows warning with Coq LSP name when only coq-lsp is installed", () => {
+        mockGetExtension(["ejgallego.coq-lsp"]);
+        jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
+
+        checkConflictingExtensions(makeContext());
+
+        const [msg] = jest.mocked(window.showWarningMessage).mock.calls[0];
+        expect(msg).toContain("Coq LSP");
+    });
+
+    it("shows warning listing all conflicting extensions when multiple are installed", () => {
+        mockGetExtension(["leanprover.lean4", "ejgallego.coq-lsp", "maximedenes.vscoq"]);
+        jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
+
+        checkConflictingExtensions(makeContext());
+
+        const [msg] = jest.mocked(window.showWarningMessage).mock.calls[0];
+        expect(msg).toContain("Lean 4");
+        expect(msg).toContain("Coq LSP");
+        expect(msg).toContain("VSCoq");
+    });
+
+    it("warning message offers 'Set up Waterproof Profile' and 'Dismiss' actions", () => {
+        mockGetExtension(["leanprover.lean4"]);
+        jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
+
+        checkConflictingExtensions(makeContext());
+
+        const args = jest.mocked(window.showWarningMessage).mock.calls[0];
+        expect(args).toContain("Set up Waterproof Profile");
+        expect(args).toContain("Dismiss");
+    });
+
+    it("does not start profile setup when user dismisses the warning", async () => {
+        mockGetExtension(["leanprover.lean4"]);
+        jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
+
+        await checkConflictingExtensions(makeContext());
+
+        expect(workspace.fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it("does not start profile setup when user clicks Dismiss", async () => {
+        mockGetExtension(["leanprover.lean4"]);
+        (window.showWarningMessage as jest.Mock).mockResolvedValue("Dismiss");
+
+        await checkConflictingExtensions(makeContext());
+
+        expect(workspace.fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it("starts profile setup when user clicks 'Set up Waterproof Profile'", async () => {
+        mockGetExtension(["leanprover.lean4"]);
+        (window.showWarningMessage as jest.Mock).mockResolvedValue("Set up Waterproof Profile");
+        jest.mocked(workspace.fs.writeFile).mockResolvedValue(undefined);
+        jest.mocked(commands.executeCommand).mockResolvedValue(undefined);
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+
+        await checkConflictingExtensions(makeContext());
+
+        expect(workspace.fs.writeFile).toHaveBeenCalled();
+    });
+});
+
+describe("setupWaterproofProfile (triggered via checkConflictingExtensions)", () => {
+    type ExtEntry = { id: string; packageJSON: { isBuiltin: boolean; version: string } };
+
+    async function triggerSetup(installedConflicting: string[], allExtensions: ExtEntry[] = []) {
+        mockGetExtension(installedConflicting);
+        jest.requireMock("vscode").extensions.all = allExtensions;
+        (window.showWarningMessage as jest.Mock).mockResolvedValue("Set up Waterproof Profile");
+        jest.mocked(workspace.fs.writeFile).mockResolvedValue(undefined);
+        jest.mocked(commands.executeCommand).mockResolvedValue(undefined);
+
+        await checkConflictingExtensions(makeContext());
+    }
+
+    function readProfileExtensions(data: Uint8Array): { identifier: { id: string }; disabled?: boolean }[] {
+        return JSON.parse(JSON.parse(new TextDecoder().decode(data)).extensions);
+    }
+
+    it("writes a .code-profile file to globalStorageUri", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        await triggerSetup(["leanprover.lean4"]);
+
+        expect(workspace.fs.writeFile).toHaveBeenCalledTimes(1);
+        const [uri] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
+        expect(uri.fsPath).toContain("waterproof.code-profile");
+    });
+
+    it("profile JSON contains a 'Waterproof' name field", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        await triggerSetup(["leanprover.lean4"]);
+
+        const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
+        expect(JSON.parse(new TextDecoder().decode(data)).name).toBe("Waterproof");
+    });
+
+    it("profile disables all conflicting extensions", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        await triggerSetup(["leanprover.lean4", "ejgallego.coq-lsp"]);
+
+        const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
+        const profileExts = readProfileExtensions(data);
+
+        expect(profileExts.find(e => e.identifier.id === "leanprover.lean4")?.disabled).toBe(true);
+        expect(profileExts.find(e => e.identifier.id === "ejgallego.coq-lsp")?.disabled).toBe(true);
+    });
+
+    it("excludes builtin extensions from profile", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        await triggerSetup(["leanprover.lean4"], [
+            { id: "vscode.builtin-ext", packageJSON: { isBuiltin: true,  version: "1.0.0" } },
+            { id: "publisher.user-ext", packageJSON: { isBuiltin: false, version: "2.0.0" } },
+        ]);
+
+        const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
+        const ids = readProfileExtensions(data).map(e => e.identifier.id);
+        expect(ids).not.toContain("vscode.builtin-ext");
+        expect(ids).toContain("publisher.user-ext");
+    });
+
+    it("excludes conflicting extensions from the non-disabled list", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        await triggerSetup(["leanprover.lean4"], [
+            { id: "leanprover.lean4",   packageJSON: { isBuiltin: false, version: "1.0.0" } },
+            { id: "publisher.user-ext", packageJSON: { isBuiltin: false, version: "2.0.0" } },
+        ]);
+
+        const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
+        const lean4Entries = readProfileExtensions(data).filter(e => e.identifier.id === "leanprover.lean4");
+        expect(lean4Entries).toHaveLength(1);
+        expect(lean4Entries[0].disabled).toBe(true);
+    });
+
+    it("executes 'workbench.profiles.actions.manageProfiles' after writing the file", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        await triggerSetup(["leanprover.lean4"]);
+
+        expect(commands.executeCommand).toHaveBeenCalledWith("workbench.profiles.actions.manageProfiles");
+    });
+
+    it("shows an info message containing the profile file path", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        await triggerSetup(["leanprover.lean4"]);
+
+        expect(window.showInformationMessage).toHaveBeenCalledTimes(1);
+        const [msg] = jest.mocked(window.showInformationMessage).mock.calls[0];
+        expect(msg).toContain("waterproof.code-profile");
+    });
+
+    it("copies the profile path to clipboard when user clicks 'Copy Path'", async () => {
+        (window.showInformationMessage as jest.Mock).mockResolvedValue("Copy Path");
+        await triggerSetup(["leanprover.lean4"]);
+
+        expect(env.clipboard.writeText).toHaveBeenCalledTimes(1);
+        const [text] = jest.mocked(env.clipboard.writeText).mock.calls[0];
+        expect(text).toContain("waterproof.code-profile");
+    });
+
+    it("does not copy to clipboard when user dismisses the info message", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        await triggerSetup(["leanprover.lean4"]);
+
+        expect(env.clipboard.writeText).not.toHaveBeenCalled();
+    });
+
+    it("shows an error message when file write fails", async () => {
+        mockGetExtension(["leanprover.lean4"]);
+        (window.showWarningMessage as jest.Mock).mockResolvedValue("Set up Waterproof Profile");
+        jest.mocked(workspace.fs.writeFile).mockRejectedValue(new Error("disk full"));
+        jest.mocked(window.showErrorMessage).mockResolvedValue(undefined);
+
+        await checkConflictingExtensions(makeContext());
+
+        expect(window.showErrorMessage).toHaveBeenCalledTimes(1);
+        expect(window.showInformationMessage).not.toHaveBeenCalled();
+    });
+
+    it("opens bug report URL when user clicks 'Report Bug' after an error", async () => {
+        mockGetExtension(["leanprover.lean4"]);
+        (window.showWarningMessage as jest.Mock).mockResolvedValue("Set up Waterproof Profile");
+        jest.mocked(workspace.fs.writeFile).mockRejectedValue(new Error("disk full"));
+        (window.showErrorMessage as jest.Mock).mockResolvedValue("Report Bug");
+
+        await checkConflictingExtensions(makeContext());
+
+        expect(env.openExternal).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not open URL when user dismisses the error message", async () => {
+        mockGetExtension(["leanprover.lean4"]);
+        (window.showWarningMessage as jest.Mock).mockResolvedValue("Set up Waterproof Profile");
+        jest.mocked(workspace.fs.writeFile).mockRejectedValue(new Error("disk full"));
+        jest.mocked(window.showErrorMessage).mockResolvedValue(undefined);
+
+        await checkConflictingExtensions(makeContext());
+
+        expect(env.openExternal).not.toHaveBeenCalled();
+    });
+});

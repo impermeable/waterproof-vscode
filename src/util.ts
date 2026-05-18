@@ -23,20 +23,19 @@ const CONFLICTING_EXTENSIONS: { id: string; label: string }[] = [
  * Checks whether any conflicting extensions are installed and, if so, offers to set up a
  * dedicated VS Code profile where they are all disabled.
  */
-export function checkConflictingExtensions(context: ExtensionContext) {
+export async function checkConflictingExtensions(context: ExtensionContext): Promise<void> {
     const conflicting = CONFLICTING_EXTENSIONS.filter(e => extensions.getExtension(e.id));
     if (!conflicting.length) return;
 
     const names = conflicting.map(e => e.label).join(", ");
-    window.showWarningMessage(
+    const selection = await window.showWarningMessage(
         `The following extensions conflict with Waterproof: ${names}. Set up a 'Waterproof' profile where they are disabled?`,
         "Set up Waterproof Profile",
         "Dismiss",
-    ).then((selection) => {
-        if (selection === "Set up Waterproof Profile") {
-            setupWaterproofProfile(context, conflicting.map(e => e.id));
-        }
-    });
+    );
+    if (selection === "Set up Waterproof Profile") {
+        await setupWaterproofProfile(context, conflicting.map(e => e.id));
+    }
 }
 
 async function setupWaterproofProfile(context: ExtensionContext, conflictingIds: string[]): Promise<void> {

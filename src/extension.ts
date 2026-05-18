@@ -93,7 +93,7 @@ export class Waterproof implements Disposable {
         private readonly _isWeb = false
     ) {
         wpl.log("Waterproof initialized");
-        checkConflictingExtensions(context);
+        void checkConflictingExtensions(context);
         excludeCoqFileTypes();
         checkTrimmingWhitespace();
 

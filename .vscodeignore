@@ -10,6 +10,7 @@ node_modules/
 !node_modules/@ocaml-wasm/4.12--janestreet-base/bin/dllbase_stubs.wasm
 !node_modules/@ocaml-wasm/4.12--janestreet-base/bin/dllbase_internalhash_types_stubs.wasm
 !node_modules/ocaml-wasm/bin/
+!node_modules/@leanprover/infoview/dist/
 shared/
 src/
 test/

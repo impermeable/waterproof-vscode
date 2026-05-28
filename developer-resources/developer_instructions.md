@@ -59,6 +59,16 @@ Run `npm run typecheck`.
 ## Running the linter
 Run `npm run lint`. Some common problems can be automatically fixed with `npm run lint-fix`.
 
+## Formatting
+Run `npm run format` to auto-format all TypeScript/JavaScript files. Run `npm run format:check` to check without writing.
+
+## Git hooks
+This repository includes a pre-commit hook that blocks commits with formatting issues. To enable it, run once after cloning:
+```
+git config core.hooksPath hooks
+```
+If the hook rejects your commit, run `npm run format` and stage the changes before retrying.
+
 ## Error `Property 'replaceAll' does not exist on type 'string'`.
 VSCode thinks we are targeting an older version of Node than is specified in our build script.<br>
 Insert the following setting into your `.vscode/settings.json` to stop it from displaying:

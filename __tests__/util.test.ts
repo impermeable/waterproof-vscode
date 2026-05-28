@@ -141,8 +141,8 @@ describe("checkConflictingExtensions", () => {
 describe("setupWaterproofProfile (triggered via checkConflictingExtensions)", () => {
     type ExtEntry = { id: string; packageJSON: { isBuiltin: boolean; version: string } };
 
-    async function triggerSetup(installedConflicting: string[], allExtensions: ExtEntry[] = []) {
-        mockGetExtension(installedConflicting);
+    async function triggerSetup(installedConflicting: string[], allExtensions: ExtEntry[] = [], installedAll?: string[]) {
+        mockGetExtension(installedAll ?? installedConflicting);
         jest.requireMock("vscode").extensions.all = allExtensions;
         (window.showWarningMessage as jest.Mock).mockResolvedValue("Set up Waterproof Profile");
         jest.mocked(workspace.fs.writeFile).mockResolvedValue(undefined);
@@ -183,25 +183,54 @@ describe("setupWaterproofProfile (triggered via checkConflictingExtensions)", ()
         expect(profileExts.find(e => e.identifier.id === "ejgallego.coq-lsp")?.disabled).toBe(true);
     });
 
-    it("excludes builtin extensions from profile", async () => {
+    it("includes waterproof extension when installed", async () => {
         jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
-        await triggerSetup(["leanprover.lean4"], [
-            { id: "vscode.builtin-ext", packageJSON: { isBuiltin: true,  version: "1.0.0" } },
-            { id: "publisher.user-ext", packageJSON: { isBuiltin: false, version: "2.0.0" } },
-        ]);
+        await triggerSetup(["leanprover.lean4"], [], ["leanprover.lean4", "waterproof-tue.waterproof"]);
 
         const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
         const ids = readProfileExtensions(data).map(e => e.identifier.id);
-        expect(ids).not.toContain("vscode.builtin-ext");
-        expect(ids).toContain("publisher.user-ext");
+        expect(ids).toContain("waterproof-tue.waterproof");
     });
 
-    it("excludes conflicting extensions from the non-disabled list", async () => {
+    it("includes waterproof-river when installed", async () => {
         jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
-        await triggerSetup(["leanprover.lean4"], [
-            { id: "leanprover.lean4",   packageJSON: { isBuiltin: false, version: "1.0.0" } },
-            { id: "publisher.user-ext", packageJSON: { isBuiltin: false, version: "2.0.0" } },
-        ]);
+        await triggerSetup(["leanprover.lean4"], [], ["leanprover.lean4", "waterproof-tue.waterproof", "waterproof-tue.waterproof-river"]);
+
+        const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
+        const ids = readProfileExtensions(data).map(e => e.identifier.id);
+        expect(ids).toContain("waterproof-tue.waterproof-river");
+    });
+
+    it("omits waterproof-river when not installed", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        mockGetExtension(["leanprover.lean4", "waterproof-tue.waterproof"]);
+
+        await triggerSetup(["leanprover.lean4"]);
+
+        const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
+        const ids = readProfileExtensions(data).map(e => e.identifier.id);
+        expect(ids).not.toContain("waterproof-tue.waterproof-river");
+    });
+
+    it("does not include arbitrary user extensions", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        mockGetExtension(["leanprover.lean4", "waterproof-tue.waterproof"]);
+        jest.requireMock("vscode").extensions.all = [
+            { id: "publisher.some-other-ext", packageJSON: { isBuiltin: false, version: "1.0.0" } },
+        ];
+
+        await triggerSetup(["leanprover.lean4"]);
+
+        const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
+        const ids = readProfileExtensions(data).map(e => e.identifier.id);
+        expect(ids).not.toContain("publisher.some-other-ext");
+    });
+
+    it("conflicting extension appears only once as disabled", async () => {
+        jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
+        mockGetExtension(["leanprover.lean4", "waterproof-tue.waterproof"]);
+
+        await triggerSetup(["leanprover.lean4"]);
 
         const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
         const lean4Entries = readProfileExtensions(data).filter(e => e.identifier.id === "leanprover.lean4");

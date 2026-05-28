@@ -40,11 +40,11 @@ export async function checkConflictingExtensions(context: ExtensionContext): Pro
 
 async function setupWaterproofProfile(context: ExtensionContext, conflictingIds: string[]): Promise<void> {
     try {
-        const conflictingSet = new Set(conflictingIds);
+        const WATERPROOF_EXTENSIONS = ["waterproof-tue.waterproof", "waterproof-tue.waterproof-river"];
         const profileExtensions = [
-            ...extensions.all
-                .filter(ext => !ext.packageJSON.isBuiltin && !conflictingSet.has(ext.id))
-                .map(ext => ({ identifier: { id: ext.id }, version: ext.packageJSON.version })),
+            ...WATERPROOF_EXTENSIONS
+                .filter(id => extensions.getExtension(id))
+                .map(id => ({ identifier: { id } })),
             // Explicitly disable all conflicting extensions, even if application-scoped
             ...conflictingIds.map(id => ({ identifier: { id }, disabled: true })),
         ];

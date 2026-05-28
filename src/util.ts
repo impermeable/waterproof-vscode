@@ -69,7 +69,8 @@ async function setupWaterproofProfile(context: ExtensionContext, conflictingIds:
             await env.clipboard.writeText(profileUri.fsPath);
         }
     } catch (err) {
-        wpl.log("Failed to write Waterproof profile: " + err);
+        const message = err instanceof Error ? err.message : String(err);
+        wpl.log("Failed to write Waterproof profile: " + message);
         window.showErrorMessage(
             "Something went wrong while preparing the Waterproof profile. Please report this as a bug.",
             "Report Bug"

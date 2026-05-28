@@ -73,12 +73,7 @@ async function setupWaterproofProfile(context: ExtensionContext, conflictingIds:
         wpl.log("Failed to write Waterproof profile: " + message);
         window.showErrorMessage(
             "Something went wrong while preparing the Waterproof profile. Please report this as a bug.",
-            "Report Bug"
-        ).then((selection) => {
-            if (selection === "Report Bug") {
-                env.openExternal(Uri.parse("https://github.com/impermeable/waterproof-vscode/issues"));
-            }
-        });
+        );
     }
 }
 

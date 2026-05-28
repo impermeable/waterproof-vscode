@@ -282,18 +282,7 @@ describe("setupWaterproofProfile (triggered via checkConflictingExtensions)", ()
         expect(window.showInformationMessage).not.toHaveBeenCalled();
     });
 
-    it("opens bug report URL when user clicks 'Report Bug' after an error", async () => {
-        mockGetExtension(["leanprover.lean4"]);
-        (window.showWarningMessage as jest.Mock).mockResolvedValue("Set up Waterproof Profile");
-        jest.mocked(workspace.fs.writeFile).mockRejectedValue(new Error("disk full"));
-        (window.showErrorMessage as jest.Mock).mockResolvedValue("Report Bug");
-
-        await checkConflictingExtensions(makeContext());
-
-        expect(env.openExternal).toHaveBeenCalledTimes(1);
-    });
-
-    it("does not open URL when user dismisses the error message", async () => {
+    it("does not show an info message when file write fails", async () => {
         mockGetExtension(["leanprover.lean4"]);
         (window.showWarningMessage as jest.Mock).mockResolvedValue("Set up Waterproof Profile");
         jest.mocked(workspace.fs.writeFile).mockRejectedValue(new Error("disk full"));
@@ -301,6 +290,6 @@ describe("setupWaterproofProfile (triggered via checkConflictingExtensions)", ()
 
         await checkConflictingExtensions(makeContext());
 
-        expect(env.openExternal).not.toHaveBeenCalled();
+        expect(window.showInformationMessage).not.toHaveBeenCalled();
     });
 });

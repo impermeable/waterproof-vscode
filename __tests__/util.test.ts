@@ -55,17 +55,17 @@ beforeEach(() => {
 });
 
 describe("checkConflictingExtensions", () => {
-    it("does nothing when no conflicting extensions are installed", () => {
+    it("does nothing when no conflicting extensions are installed", async () => {
         mockGetExtension([]);
-        checkConflictingExtensions(makeContext());
+        await checkConflictingExtensions(makeContext());
         expect(window.showWarningMessage).not.toHaveBeenCalled();
     });
 
-    it("shows warning with Lean 4 name when only lean4 is installed", () => {
+    it("shows warning with Lean 4 name when only lean4 is installed", async () => {
         mockGetExtension(["leanprover.lean4"]);
         jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
 
-        checkConflictingExtensions(makeContext());
+        await checkConflictingExtensions(makeContext());
 
         expect(window.showWarningMessage).toHaveBeenCalledTimes(1);
         const [msg] = jest.mocked(window.showWarningMessage).mock.calls[0];
@@ -74,21 +74,21 @@ describe("checkConflictingExtensions", () => {
         expect(msg).not.toContain("VSCoq");
     });
 
-    it("shows warning with Coq LSP name when only coq-lsp is installed", () => {
+    it("shows warning with Coq LSP name when only coq-lsp is installed", async () => {
         mockGetExtension(["ejgallego.coq-lsp"]);
         jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
 
-        checkConflictingExtensions(makeContext());
+        await checkConflictingExtensions(makeContext());
 
         const [msg] = jest.mocked(window.showWarningMessage).mock.calls[0];
         expect(msg).toContain("Coq LSP");
     });
 
-    it("shows warning listing all conflicting extensions when multiple are installed", () => {
+    it("shows warning listing all conflicting extensions when multiple are installed", async () => {
         mockGetExtension(["leanprover.lean4", "ejgallego.coq-lsp", "maximedenes.vscoq"]);
         jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
 
-        checkConflictingExtensions(makeContext());
+        await checkConflictingExtensions(makeContext());
 
         const [msg] = jest.mocked(window.showWarningMessage).mock.calls[0];
         expect(msg).toContain("Lean 4");
@@ -96,11 +96,11 @@ describe("checkConflictingExtensions", () => {
         expect(msg).toContain("VSCoq");
     });
 
-    it("warning message offers 'Set up Waterproof Profile' and 'Dismiss' actions", () => {
+    it("warning message offers 'Set up Waterproof Profile' and 'Dismiss' actions", async () => {
         mockGetExtension(["leanprover.lean4"]);
         jest.mocked(window.showWarningMessage).mockResolvedValue(undefined);
 
-        checkConflictingExtensions(makeContext());
+        await checkConflictingExtensions(makeContext());
 
         const args = jest.mocked(window.showWarningMessage).mock.calls[0];
         expect(args).toContain("Set up Waterproof Profile");

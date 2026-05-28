@@ -17,6 +17,7 @@ const CONFLICTING_EXTENSIONS: { id: string; label: string }[] = [
     { id: "leanprover.lean4", label: "Lean 4" },
     { id: "ejgallego.coq-lsp", label: "Coq LSP" },
     { id: "maximedenes.vscoq", label: "VSCoq" },
+    { id: "rocq-prover.vsrocq", label: "VSRocq" }
 ];
 
 /**

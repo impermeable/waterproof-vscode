@@ -570,7 +570,8 @@
     "mocha": {
       "serialize-javascript": "7.0.5",
       "diff": "8.0.3"
-    }
+    },
+    "qs": "^6.15.2"
   },
   "main": "./out/src/mainNode.js",
   "browser": "./out/src/mainBrowser.js",

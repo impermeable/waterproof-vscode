@@ -51,7 +51,7 @@ Run `npm run cypress-tests`.
 
 This will execute the `e2e` tests as defined in [`cypress/e2e`](../cypress/e2e/).
 
-Run `npx cypress open` to start the Cypress app. Similaryly, `npx cypress install` might be needed to install Cypress.
+Run `npx cypress open` to start the Cypress app. Similarly, `npx cypress install` might be needed to install Cypress.
 
 ## Running the typechecker
 Run `npm run typecheck`.

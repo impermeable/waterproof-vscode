@@ -172,15 +172,15 @@ describe("setupWaterproofProfile (triggered via checkConflictingExtensions)", ()
         expect(JSON.parse(new TextDecoder().decode(data)).name).toBe("Waterproof");
     });
 
-    it("profile disables all conflicting extensions", async () => {
+    it("profile does not include conflicting extensions", async () => {
         jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
         await triggerSetup(["leanprover.lean4", "ejgallego.coq-lsp"]);
 
         const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
-        const profileExts = readProfileExtensions(data);
+        const ids = readProfileExtensions(data).map(e => e.identifier.id);
 
-        expect(profileExts.find(e => e.identifier.id === "leanprover.lean4")?.disabled).toBe(true);
-        expect(profileExts.find(e => e.identifier.id === "ejgallego.coq-lsp")?.disabled).toBe(true);
+        expect(ids).not.toContain("leanprover.lean4");
+        expect(ids).not.toContain("ejgallego.coq-lsp");
     });
 
     it("includes waterproof extension when installed", async () => {
@@ -226,16 +226,13 @@ describe("setupWaterproofProfile (triggered via checkConflictingExtensions)", ()
         expect(ids).not.toContain("publisher.some-other-ext");
     });
 
-    it("conflicting extension appears only once as disabled", async () => {
+    it("conflicting extension is not included in the profile", async () => {
         jest.mocked(window.showInformationMessage).mockResolvedValue(undefined);
-        mockGetExtension(["leanprover.lean4", "waterproof-tue.waterproof"]);
-
-        await triggerSetup(["leanprover.lean4"]);
+        await triggerSetup(["leanprover.lean4"], [], ["leanprover.lean4", "waterproof-tue.waterproof"]);
 
         const [, data] = jest.mocked(workspace.fs.writeFile).mock.calls[0];
-        const lean4Entries = readProfileExtensions(data).filter(e => e.identifier.id === "leanprover.lean4");
-        expect(lean4Entries).toHaveLength(1);
-        expect(lean4Entries[0].disabled).toBe(true);
+        const ids = readProfileExtensions(data).map(e => e.identifier.id);
+        expect(ids).not.toContain("leanprover.lean4");
     });
 
     it("executes 'workbench.profiles.actions.manageProfiles' after writing the file", async () => {

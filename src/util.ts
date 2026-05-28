@@ -29,25 +29,21 @@ export async function checkConflictingExtensions(context: ExtensionContext): Pro
 
     const names = conflicting.map(e => e.label).join(", ");
     const selection = await window.showWarningMessage(
-        `The following extensions conflict with Waterproof: ${names}. Set up a 'Waterproof' profile where they are disabled?`,
+        `The following extensions conflict with Waterproof: ${names}. Set up a dedicated 'Waterproof' profile that only includes the Waterproof extensions?`,
         "Set up Waterproof Profile",
         "Dismiss",
     );
     if (selection === "Set up Waterproof Profile") {
-        await setupWaterproofProfile(context, conflicting.map(e => e.id));
+        await setupWaterproofProfile(context);
     }
 }
 
-async function setupWaterproofProfile(context: ExtensionContext, conflictingIds: string[]): Promise<void> {
+async function setupWaterproofProfile(context: ExtensionContext): Promise<void> {
     try {
         const WATERPROOF_EXTENSIONS = ["waterproof-tue.waterproof", "waterproof-tue.waterproof-river"];
-        const profileExtensions = [
-            ...WATERPROOF_EXTENSIONS
-                .filter(id => extensions.getExtension(id))
-                .map(id => ({ identifier: { id } })),
-            // Explicitly disable all conflicting extensions, even if application-scoped
-            ...conflictingIds.map(id => ({ identifier: { id }, disabled: true })),
-        ];
+        const profileExtensions = WATERPROOF_EXTENSIONS
+            .filter(id => extensions.getExtension(id))
+            .map(id => ({ identifier: { id } }));
 
         const profile = {
             name: "Waterproof",

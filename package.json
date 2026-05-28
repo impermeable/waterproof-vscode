@@ -519,7 +519,7 @@
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.0",
     "@vscode/vsce": "^3.9.1",
-    "cypress": "^13.17.0",
+    "cypress": "^15.15.0",
     "esbuild": "^0.25.9",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^10.3.0",
@@ -570,7 +570,8 @@
     "mocha": {
       "serialize-javascript": "7.0.5",
       "diff": "8.0.3"
-    }
+    },
+    "qs": "^6.15.2"
   },
   "main": "./out/src/mainNode.js",
   "browser": "./out/src/mainBrowser.js",

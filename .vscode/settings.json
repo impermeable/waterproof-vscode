@@ -1,4 +1,6 @@
 {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
     "js/ts.implicitProjectConfig.target": "ESNext",
     "files.exclude": {
         "**/*.vo": true,

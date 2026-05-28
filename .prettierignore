@@ -1,0 +1,7 @@
+node_modules/
+out/
+test_out/
+editor_output/
+vendor/
+lib/
+coverage/

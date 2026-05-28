@@ -18,7 +18,6 @@ const CONFLICTING_EXTENSIONS: { id: string; label: string }[] = [
     { id: "ejgallego.coq-lsp", label: "Coq LSP" },
     { id: "maximedenes.vscoq", label: "VSCoq" },
     { id: "rocq-prover.vsrocq", label: "VSRocq" }
-    { id: "rocq-prover.vsrocq", label: "VSRocq" }
 ];
 
 /**

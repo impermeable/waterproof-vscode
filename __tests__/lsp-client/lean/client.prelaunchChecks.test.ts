@@ -1,5 +1,6 @@
 import { extensions } from "vscode";
 import { LeanLspClient } from "../../../src/lsp-client/lean/client";
+import { WaterproofConfigHelper, WaterproofLogger as wpl } from "../../../src/helpers";
 import type { LanguageClientProvider } from "../../../src/lsp-client/clientTypes";
 import type { OutputChannel } from "vscode";
 import { makeClientDouble } from "../../__helpers__/lsp-client-mocks";
@@ -51,7 +52,6 @@ describe("LeanLspClient.prelaunchChecks - lean4 guard", () => {
     });
 
     it("logs that the official Lean 4 extension was detected", async () => {
-        const { WaterproofLogger: wpl } = await import("../../../src/helpers");
         jest.mocked(extensions.getExtension).mockImplementation((id: string) =>
             id === "leanprover.lean4" ? { id } as never : undefined
         );
@@ -62,7 +62,6 @@ describe("LeanLspClient.prelaunchChecks - lean4 guard", () => {
     });
 
     it("skips the Lean client when no lake path is configured", async () => {
-        const { WaterproofConfigHelper } = await import("../../../src/helpers");
         jest.mocked(WaterproofConfigHelper.get).mockReturnValue("");
 
         const result = await makeClient().prelaunchChecks();
@@ -71,7 +70,6 @@ describe("LeanLspClient.prelaunchChecks - lean4 guard", () => {
     });
 
     it("logs that the lake path is missing when no path is configured", async () => {
-        const { WaterproofConfigHelper, WaterproofLogger: wpl } = await import("../../../src/helpers");
         jest.mocked(WaterproofConfigHelper.get).mockReturnValue(false);
 
         await makeClient().prelaunchChecks();

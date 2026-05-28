@@ -93,7 +93,6 @@ export class Waterproof implements Disposable {
         private readonly _isWeb = false
     ) {
         wpl.log("Waterproof initialized");
-        void checkConflictingExtensions(context);
         excludeCoqFileTypes();
         checkTrimmingWhitespace();
 
@@ -535,6 +534,8 @@ export class Waterproof implements Disposable {
         if (this.client?.isRunning()) {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
+
+        checkConflictingExtensions(this.context).catch(err => wpl.log(`Conflict check failed: ${err}`));
 
         const coqServerOptions = CoqLspServerConfig.create(
             // TODO: Support +coqversion versions.

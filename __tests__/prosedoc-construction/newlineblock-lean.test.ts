@@ -32,8 +32,8 @@ test("NewlineBlock (Lean) 2", () => {
     const blocks = topLevelBlocksLean(input);
 
     // Expect: markdown, newline, code (trailing \n is absorbed, not a separate block)
-    expect(blocks.length).toBe(3);
-    const [md, nl1, code] = blocks;
+    expect(blocks.length).toBe(4);
+    const [md, nl1, code, nl2] = blocks;
 
     expect(typeguards.isMarkdownBlock(md)).toBe(true);
     expect(md.stringContent).toBe("Text");
@@ -46,6 +46,9 @@ test("NewlineBlock (Lean) 2", () => {
     expect(code.stringContent).toBe("Compute 1 + 1.");
     expect(code.range).toStrictEqual<BlockRange>({from: 5, to: 31});
     expect(code.innerRange).toStrictEqual<BlockRange>({from: 13, to: 27});
+
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
+    expect(nl2.range).toStrictEqual<BlockRange>({from: 31, to: 32});
 });
 
 test("NewlineBlock (Lean) 3", () => {
@@ -54,8 +57,8 @@ test("NewlineBlock (Lean) 3", () => {
     const input = "\n```lean\nCompute 1 + 1.\n```\n";
     const blocks = topLevelBlocksLean(input);
 
-    expect(blocks.length).toBe(2);
-    const [b1, b2] = blocks;
+    expect(blocks.length).toBe(3);
+    const [b1, b2, nl] = blocks;
     expect(typeguards.isNewlineBlock(b1)).toBe(true);
     expect(b1.stringContent).toBe("");
     expect(b1.range).toStrictEqual<BlockRange>({from: 0, to: 1});
@@ -63,4 +66,6 @@ test("NewlineBlock (Lean) 3", () => {
     expect(b2.stringContent).toBe("Compute 1 + 1.");
     expect(b2.range).toStrictEqual<BlockRange>({from: 1, to: 27});
     expect(b2.innerRange).toStrictEqual<BlockRange>({from: 9, to: 23});
+    expect(typeguards.isNewlineBlock(nl)).toBe(true);
+    expect(nl.range).toStrictEqual<BlockRange>({from: 27, to: 28});
 });

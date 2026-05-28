@@ -1,4 +1,4 @@
-import { extensions, window, workspace } from "vscode";
+import { extensions, window, commands, workspace } from "vscode";
 import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
 
 /**
@@ -50,6 +50,26 @@ export function excludeRocqFileTypes() {
             "**/*.aux": true,
             "**/*.glob": true,
             ...fexc,
+        });
+    }
+}
+
+/**
+ * Checks whether the user has enabled the setting `trimTrailingWhitespace`, and warns the
+ * user in that case.
+ */
+export function checkTrimmingWhitespace() {
+    const config = workspace.getConfiguration('files');
+    const isTrimTrailingWhitespaceEnabled = config.get<boolean>('trimTrailingWhitespace');
+    if (isTrimTrailingWhitespaceEnabled) {
+        window.showWarningMessage(
+            "The setting `Trim Trailing Whitespace` is enabled. This may cause unexpected behaviour in Waterproof, and we thus recommend you to turn it off.",
+            "Open Settings",
+            "Dismiss"
+        ).then((selection: string | undefined) => {
+            if (selection === "Open Settings") {
+                commands.executeCommand('workbench.action.openSettings', 'Trim Trailing Whitespace');
+            }
         });
     }
 }

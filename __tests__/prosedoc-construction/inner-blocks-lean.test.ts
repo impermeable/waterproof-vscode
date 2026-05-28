@@ -34,14 +34,16 @@ test("Verify newlines before and after code are translated into newline nodes (L
     // Lean equivalent of "Verify newlines before and after code..." (Rocq)
     // Note: trailing \n after \n``` is a non-significant newline and does not
     // produce a separate block (it falls below the >1 char threshold).
-    const document = "\n```lean\ndef test := 42\n```\n";
+    const document = "\n#doc (WaterproofGenre) \"Title\" =>\n```lean\ndef test := 42\n```\n";
     const blocks = topLevelBlocksLean(document);
 
     // Expect: newline, code (trailing \n is absorbed)
-    expect(blocks.length).toBe(2);
-    const [nl, b] = blocks;
+    expect(blocks.length).toBe(4);
+    const [pr, nl, b, nl2] = blocks;
+    expect(typeguards.isHintBlock(pr)).toBe(true);
     expect(typeguards.isNewlineBlock(nl)).toBe(true);
     expect(typeguards.isCodeBlock(b)).toBe(true);
+    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
     expect(b.stringContent).toBe("def test := 42");
 });
 

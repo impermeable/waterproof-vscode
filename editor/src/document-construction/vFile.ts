@@ -141,7 +141,8 @@ export function vFileParser(document: string): WaterproofDocument {
 	function closeMarkdown() {
 		if (i > getRangeStart()) {
 			const range = { from: getRangeStart(), to: i + markdownCloseLength };
-            const innerRange = { from: getInnerRangeStart(), to: i };
+            const innerTo = i > getInnerRangeStart() && document[i - 1] === ' ' ? i - 1 : i;
+            const innerRange = { from: getInnerRangeStart(), to: innerTo };
 			const markdownBlock = new MarkdownBlock(
 				document.slice(innerRange.from, innerRange.to),
 				range, innerRange, 0

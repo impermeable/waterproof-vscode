@@ -21,15 +21,21 @@ pandoc tactics-sheet.md -o tactics-sheet.pdf --pdf-engine=lualatex -V 'monofont:
 
 ### Symbol generation
 
-`completions/symbols+lean.json` is a committed, generated file combining the hand-curated `symbols.json` with Lean's unicode abbreviation table.
+`completions/symbols+lean.json` is a generated file combining the hand-curated `symbols.json` with Lean's unicode abbreviation table. It is produced automatically at build time and is not committed to git.
 
-To update it (e.g. after a new Lean release), run:
+The Lean abbreviation table comes from the `@leanprover/unicode-input` npm package, pinned to an exact version in `package.json`.
+
+To update the Lean table (e.g. after a new Lean release), bump the version in `package.json` and run:
 ```bash
-bash update-symbols.sh
+npm install
 ```
-This downloads the abbreviations from the pinned Lean release tag, regenerates `symbols+lean.json`, and runs a diff test against the base.
 
-To regenerate without re-downloading:
+To regenerate manually:
 ```bash
-node generate-symbols.mjs --test
+npm run generate-symbols
+```
+
+To regenerate and run the diff test against the base:
+```bash
+npm run generate-symbols -- --test
 ```

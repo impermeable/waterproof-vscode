@@ -14,16 +14,16 @@
  * Usage:
  *   node generate-symbols.mjs           # merge and write
  *   node generate-symbols.mjs --test    # merge, write, then compare against base
- *
- * Update Lean table:
- *   bash symbols.sh
  */
 
 import fs from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
 
-const BASE   = "../completions/symbols.json";
-const LEAN   = "../completions/lean-abbreviations.json";
-const OUTPUT = "../completions/symbols+lean.json";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BASE   = path.resolve(__dirname, "../completions/symbols.json");
+const LEAN   = path.resolve(__dirname, "../node_modules/@leanprover/unicode-input/dist/abbreviations.json");
+const OUTPUT = path.resolve(__dirname, "../completions/symbols+lean.json");
 const TEST   = process.argv.includes("--test");
 
 // CONFIGURATION

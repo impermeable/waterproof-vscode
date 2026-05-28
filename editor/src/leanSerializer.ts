@@ -18,7 +18,10 @@ export class LeanSerializer extends DocumentSerializer {
     ): string {
         // if a hint is the first node, we assume that it contains the preamble
         if (neighbors(true).nodeAbove === null) {
-            return hintNode.textContent;
+            // TODO: This serialization is used to count newlines, but should not show up in practice.
+            // If it does in the future, we need to keep track of the title somehow.
+            // Except for the title, this preserves the round trip functionality of parsing and serializing
+            return hintNode.textContent + "\n#doc (WaterproofGenre) \"Title\" =>";
         }
         return this.tagSerializer.serializeHint(hintNode);
     }
@@ -49,5 +52,12 @@ export class LeanSerializer extends DocumentSerializer {
         _neighbors: (skipNewlines: boolean) => Neighborhood
     ): string {
         return this.tagSerializer.serializeMath(mathNode);
+    }
+
+    serializeContainer(
+        containerNode: Node, _parentNode: string | null,
+        _neighbors: (skipNewlines: boolean) => Neighborhood
+    ): string {
+        return this.tagSerializer.serializeContainer(containerNode);
     }
 }

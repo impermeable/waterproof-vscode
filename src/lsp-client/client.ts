@@ -220,14 +220,14 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         this.computeInputAreaStatus(document);
     }
 
-    protected abstract determineProofStatus(document: TextDocument, inputArea: Range, diagnostics: Array<Diagnostic>): Promise<InputAreaStatus>;
+    protected abstract determineProofStatus(document: TextDocument, inputArea: Range, diagnostics: Array<Diagnostic>, lowerBound: Position): Promise<InputAreaStatus>;
 
     protected abstract getInputAreas(document: TextDocument): Range[] | undefined;
 
     // This setTimeout creates a NodeJS.Timeout object, but in the browser it is just a number.
     computeInputAreaStatusTimer?: NodeJS.Timeout | number;
 
-    protected async computeInputAreaStatus(document: TextDocument) {
+    protected async computeInputAreaStatus(document: TextDocument): Promise<void> {
         if (this.computeInputAreaStatusTimer) {
             clearTimeout(this.computeInputAreaStatusTimer);
         }
@@ -244,13 +244,18 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
 
             // for each input area, check the proof status
             try {
-                const statuses = await Promise.all(inputAreas.map(a => {
-                    if (this.viewPortBasedChecking && this.viewPortRange && a.intersection(this.viewPortRange) === undefined) {
+                const statuses = await Promise.all(inputAreas.map((area, i) => {
+                    // compute lower bound for this input area: end of previous input area, or (0, 0) for the first one
+                    const lowerBound = i === 0
+                        ? new Position(0, 0)
+                        : inputAreas[i - 1].end;
+
+                    if (this.viewPortBasedChecking && this.viewPortRange && area.intersection(this.viewPortRange) === undefined) {
                         // This input area is outside of the range that has been checked and thus we can't determine its status
                         return Promise.resolve(InputAreaStatus.OutOfView);
-                    } else {
-                        return this.determineProofStatus(document, a, diags);
                     }
+
+                    return this.determineProofStatus(document, area, diags, lowerBound);
                 }));
 
                 // forward statuses to corresponding ProseMirror editor
@@ -278,8 +283,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 webviewManager.has(event.document.uri.toString())
                 && event.document.languageId === this.language
             ) {
-                this.onDocumentChanged();
-
                 this.updateCompletions(event.document);
             }
         }));
@@ -300,12 +303,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     abstract requestGoals(position: Position): Promise<GoalAnswerT | null>;
     /** Sends an LSP request to retrieve the goals at the active cursor position. */
     abstract requestGoals(): Promise<GoalAnswerT | null>;
-
-    /**
-     * Called when the active document changes. Subclasses can use this to
-     * update any state that depends on the document being up to date.
-     */
-    protected abstract onDocumentChanged(): void;
 
     async requestSymbols(document?: TextDocument): Promise<DocumentSymbol[]> {
         // use active document if no document is given

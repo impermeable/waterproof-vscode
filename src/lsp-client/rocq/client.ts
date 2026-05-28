@@ -195,8 +195,4 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
         if (!this.activeCursorPosition) return undefined;
         return this.sentenceManager.getEndOfSentence(this.activeCursorPosition);
     }
-
-    protected onDocumentChanged(): void {
-        // Rocq tracks its own busy state via the coqServerStatus notification.
-    }
 }

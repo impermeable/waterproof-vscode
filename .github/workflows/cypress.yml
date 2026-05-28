@@ -8,14 +8,16 @@ on:
     branches:
       - main
 
-
-
 jobs:
   cypress-run:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 24.x
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:

@@ -1,5 +1,5 @@
-import { extensions, window, workspace } from "vscode";
-import { WaterproofConfigHelper, WaterproofSetting } from "./helpers";
+import { env, extensions, ExtensionContext, Uri, window, commands, workspace } from "vscode";
+import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } from "./helpers";
 
 /**
  * Returns a random alphanumerical string of length 32.
@@ -13,23 +13,63 @@ export function getNonce() {
     return text;
 }
 
+const CONFLICTING_EXTENSIONS: { id: string; label: string }[] = [
+    { id: "leanprover.lean4", label: "Lean 4" },
+    { id: "ejgallego.coq-lsp", label: "Coq LSP" },
+    { id: "maximedenes.vscoq", label: "VSCoq" },
+    { id: "rocq-prover.vsrocq", label: "VSRocq" }
+];
+
 /**
- * Checks whether any conflicting extensions are enabled, and warns the user in that case.
+ * Checks whether any conflicting extensions are installed and, if so, offers to set up a
+ * dedicated VS Code profile where they are all disabled.
  */
-export function checkConflictingExtensions() {
-    const conflicting: string[] = [];
+export async function checkConflictingExtensions(context: ExtensionContext): Promise<void> {
+    const conflicting = CONFLICTING_EXTENSIONS.filter(e => extensions.getExtension(e.id));
+    if (!conflicting.length) return;
 
-    // note: `isActive` can be false, even if extension activates later
-    // this way of checking correctly ignores disabled extensions
-    if (extensions.getExtension("ejgallego.coq-lsp")) conflicting.push("Coq LSP");
-    if (extensions.getExtension("maximedenes.vscoq")) conflicting.push("VSCoq");
-    if (extensions.getExtension("leanprover.lean4")) conflicting.push("Lean 4");
+    const names = conflicting.map(e => e.label).join(", ");
+    const selection = await window.showWarningMessage(
+        `The following extensions conflict with Waterproof: ${names}. Set up a dedicated 'Waterproof' profile that only includes the Waterproof extensions?`,
+        "Set up Waterproof Profile",
+        "Dismiss",
+    );
+    if (selection === "Set up Waterproof Profile") {
+        await setupWaterproofProfile(context);
+    }
+}
 
-    // show warning if any conflicting extensions are present
-    if (conflicting.length) {
+async function setupWaterproofProfile(context: ExtensionContext): Promise<void> {
+    try {
+        const WATERPROOF_EXTENSIONS = ["waterproof-tue.waterproof", "waterproof-tue.waterproof-river"];
+        const profileExtensions = WATERPROOF_EXTENSIONS
+            .filter(id => extensions.getExtension(id))
+            .map(id => ({ identifier: { id } }));
+
+        const profile = {
+            name: "Waterproof",
+            useDefaultFlags: { settings: true, keybindings: true, tasks: true, snippets: true },
+            extensions: JSON.stringify(profileExtensions),
+        };
+
+        const profileUri = Uri.joinPath(context.globalStorageUri, "waterproof.code-profile");
+        await workspace.fs.writeFile(profileUri, new TextEncoder().encode(JSON.stringify(profile, null, 2)));
+        wpl.log("Wrote Waterproof profile to " + profileUri.fsPath);
+
+        await commands.executeCommand("workbench.profiles.actions.manageProfiles");
+
+        const selection = await window.showInformationMessage(
+            `Profile ready. In the Profile Manager, click 'Import Profile...' and select: ${profileUri.fsPath}`,
+            "Copy Path"
+        );
+        if (selection === "Copy Path") {
+            await env.clipboard.writeText(profileUri.fsPath);
+        }
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        wpl.log("Failed to write Waterproof profile: " + message);
         window.showErrorMessage(
-            "The following extensions must be disabled for Waterproof to work properly: " + conflicting.join(", "),
-            "Dismiss"  // although it does nothing, this action item causes the message to be expanded
+            "Something went wrong while preparing the Waterproof profile. Please report this as a bug.",
         );
     }
 }
@@ -50,6 +90,26 @@ export function excludeCoqFileTypes() {
             "**/*.aux": true,
             "**/*.glob": true,
             ...fexc,
+        });
+    }
+}
+
+/**
+ * Checks whether the user has enabled the setting `trimTrailingWhitespace`, and warns the
+ * user in that case.
+ */
+export function checkTrimmingWhitespace() {
+    const config = workspace.getConfiguration('files');
+    const isTrimTrailingWhitespaceEnabled = config.get<boolean>('trimTrailingWhitespace');
+    if (isTrimTrailingWhitespaceEnabled) {
+        window.showWarningMessage(
+            "The setting `Trim Trailing Whitespace` is enabled. This may cause unexpected behaviour in Waterproof, and we thus recommend you to turn it off.",
+            "Open Settings",
+            "Dismiss"
+        ).then((selection) => {
+            if (selection === "Open Settings") {
+                commands.executeCommand('workbench.action.openSettings', 'Trim Trailing Whitespace');
+            }
         });
     }
 }

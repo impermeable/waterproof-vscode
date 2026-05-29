@@ -18,7 +18,7 @@ import { CoqLspServerConfig } from "./lsp-client/rocq";
 import { LeanLspServerConfig } from "./lsp-client/lean";
 import { executeCommand, executeCommandFullOutput } from "./lsp-client/commandExecutor";
 import { CoqEditorProvider } from "./pm-editor";
-import { checkConflictingExtensions, excludeCoqFileTypes } from "./util";
+import { checkConflictingExtensions, excludeCoqFileTypes, checkTrimmingWhitespace } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
@@ -93,8 +93,8 @@ export class Waterproof implements Disposable {
         private readonly _isWeb = false
     ) {
         wpl.log("Waterproof initialized");
-        checkConflictingExtensions();
         excludeCoqFileTypes();
+        checkTrimmingWhitespace();
 
         this.context = context;
         this.getRocqClientProvider = getCoqClientProvider;
@@ -535,6 +535,8 @@ export class Waterproof implements Disposable {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
 
+        checkConflictingExtensions(this.context).catch(err => wpl.log(`Conflict check failed: ${err}`));
+
         const coqServerOptions = CoqLspServerConfig.create(
             // TODO: Support +coqversion versions.
             WaterproofPackageJSON.requiredCoqLspVersion(this.context).slice(2)
@@ -587,6 +589,7 @@ export class Waterproof implements Disposable {
                 return;
             }
         }
+
         return this.client.startWithHandlers(this.webviewManager, allowedLanguages).then(
             (clients) => {
                 this.webviewManager.open("goals");

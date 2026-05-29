@@ -1,6 +1,6 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { EventEmitter, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity } from "vscode";
+import { EventEmitter, extensions, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
 import { LeanDiagnostic, leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams, LeanTag } from "./requestTypes";
@@ -54,6 +54,11 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     }
 
     async prelaunchChecks(): Promise<string[]> {
+        if (extensions.getExtension("leanprover.lean4")) {
+            wpl.log("Lean 4 extension detected, skipping Waterproof Lean client.");
+            return [];
+        }
+
         const lakePath = WaterproofConfigHelper.get(WaterproofSetting.LakePath);
         if (!lakePath) {
             wpl.log("Lean prelaunch check failed: lakePath is empty.");
@@ -82,7 +87,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         });
     }
 
-    protected async onFileProgress(progress: FileProgressParams) {
+    protected onFileProgress(progress: FileProgressParams) {
 
         // Call super first so LSP ranges are converted to VSCode Ranges before we store/use them.
         super.onFileProgress(progress);

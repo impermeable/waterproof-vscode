@@ -54,8 +54,10 @@ export function translateCoqDoc(coqdoc: string) {
     /** 
      * Replace verbatim input according to:
      * https://coq.inria.fr/refman/using/tools/coqdoc.html#verbatim
+     * 
+     * This has been refactored to not be vulnerable to DoS attacks.
      */
-    commentInside = commentInside.replaceAll(/<<\s*?\n([\s\S]+?)\n>>\s*?/g, `\`\`\`\n$1\n\`\`\``);
+    commentInside = commentInside.replaceAll(/<<[^\S\n]*\n((?:[^\n]*\n)*[^\n]*)\n>>[^\S\n]*/g, `\`\`\`\n$1\n\`\`\``);
 
     /**
      * Replace "Preformatted vernacular" according to:

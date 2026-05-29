@@ -44,7 +44,7 @@ jest.mock("vscode", () => {
             event = () => ({ dispose: () => {} });
         },
         workspace: {
-            getConfiguration:         jest.fn(() => ({ get: jest.fn((_key: string, def?: any) => def) })),
+            getConfiguration:         jest.fn(() => ({ get: jest.fn((_key: string, def?: unknown) => def) })),
             onDidChangeConfiguration: jest.fn(() => ({ dispose: jest.fn() })),
             onDidChangeTextDocument:  jest.fn(() => ({ dispose: jest.fn() })),
         },
@@ -79,9 +79,16 @@ jest.mock("@impermeable/waterproof-editor", () => ({
 jest.mock("@leanprover/infoview-api", () => ({}), { virtual: true });
 jest.mock("../../../src/lsp-client/lean/converter", () => ({ patchDiagnosticConverters: jest.fn() }), { virtual: true });
 
-import { Range, Position, DiagnosticSeverity } from "vscode";
+import { Range, Position, DiagnosticSeverity, TextDocument, OutputChannel, Uri, Diagnostic } from "vscode";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
 import { LeanLspClient } from "../../../src/lsp-client/lean/client";
+import type { LanguageClientProvider } from "../../../src/lsp-client/clientTypes";
+import type { FileProgressProcessingInfo } from "../../../src/lsp-client/requestTypes";
+import type { WebviewManager } from "../../../src/webviewManager";
+import type { LeanGoalAnswer } from "../../../lib/types";
+
+/** Constructs a minimal mock LeanGoalAnswer with only the fields tests care about. */
+const goalAnswer = (goals: string[]): LeanGoalAnswer => ({ goals } as unknown as LeanGoalAnswer);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -93,10 +100,10 @@ const FAKE_DOCUMENT = {
     uri:        { toString: () => "file:///test.lean", path: "/test.lean" },
     version:    1,
     getText:    () => ":::input\n\n:::\n",
-    offsetAt:   (pos: any) => pos.line * 100 + pos.character,
+    offsetAt:   (pos: Position) => pos.line * 100 + pos.character,
     positionAt: (offset: number) => new Position(Math.floor(offset / 100), offset % 100),
     lineCount:  10,
-} as any;
+} as unknown as TextDocument;
 
 function makeClientDouble() {
     return {
@@ -105,37 +112,41 @@ function makeClientDouble() {
         dispose:                jest.fn(() => Promise.resolve()),
         onNotification:         jest.fn(() => ({ dispose: jest.fn() })),
         sendRequest:            jest.fn(),
-        middleware:             { handleDiagnostics: undefined as any },
-        protocol2CodeConverter: { asRange: (r: any) => r },
-        code2ProtocolConverter: { asUri: (u: any) => u.toString(), asDiagnostic: (d: any) => d },
+        middleware:             { handleDiagnostics: undefined },
+        protocol2CodeConverter: { asRange: (r: Range) => r },
+        code2ProtocolConverter: { asUri: (u: Uri) => u.toString(), asDiagnostic: (d: Diagnostic) => d },
     };
 }
 
 function makeClient(isBusy = false) {
     const clientDouble = makeClientDouble();
     const instance = new LeanLspClient(
-        jest.fn(() => clientDouble) as any,
-        { appendLine: jest.fn() } as any,
+        jest.fn(() => clientDouble) as unknown as LanguageClientProvider,
+        { appendLine: jest.fn() } as unknown as OutputChannel,
     );
-    (instance as any).activeDocument = FAKE_DOCUMENT;
-    (instance as any).webviewManager = {
+    instance.activeDocument = FAKE_DOCUMENT;
+    instance.webviewManager = {
         postMessage: jest.fn(),
         postAndCacheMessage: jest.fn(),
         has: jest.fn(() => true),
-    };
-    (instance as any).isBusy = isBusy;
+    } as unknown as WebviewManager;
+    // @ts-expect-error private
+    instance.isBusy = isBusy;
     return instance;
 }
 
 const call = (
     instance:   LeanLspClient,
-    diags:      any[]    = [],
-    area:       Range    = INPUT_AREA,
-    lower:      Position = LOWER_BOUND,
-) => (instance as any).determineProofStatus(FAKE_DOCUMENT, area, diags, lower);
+    diags:      Diagnostic[] = [],
+    area:       Range        = INPUT_AREA,
+    lower:      Position     = LOWER_BOUND,
+) => {
+    // @ts-expect-error protected
+    return instance.determineProofStatus(FAKE_DOCUMENT, area, diags, lower);
+};
 
 /** Creates a diagnostic with a given line range and severity. */
-const diag = (startLine: number, endLine: number, severity: number) => ({
+const diag = (startLine: number, endLine: number, severity: DiagnosticSeverity) => ({
     message:  "test",
     severity,
     range: new Range(new Position(startLine, 0), new Position(endLine, 0)),
@@ -175,7 +186,7 @@ function makeDocument(content: string) {
         lineCount:  lines.length,
         positionAt,
         offsetAt,
-    } as any;
+    } as unknown as TextDocument;
 }
 
 function posOf(content: string, needle: string, fromOffset = 0) {
@@ -198,7 +209,7 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("returns Incorrect immediately when isBusy is true (no goal request made)", async () => {
         const instance = makeClient(true);
-        const requestGoals = jest.spyOn(instance, "requestGoals" as any);
+        const requestGoals = jest.spyOn(instance, "requestGoals");
 
         expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
         expect(requestGoals).not.toHaveBeenCalled();
@@ -208,14 +219,14 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("returns Incorrect when there is an Error diagnostic fully inside the area", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         expect(await call(instance, [diag(3, 5, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Incorrect);
     });
 
     it("returns Incorrect when an Error diagnostic overlaps the area boundary", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         // range [5,7] intersects area [2,6]
         expect(await call(instance, [diag(5, 7, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Incorrect);
@@ -223,14 +234,14 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("ignores an Error diagnostic that lies entirely outside the area", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         expect(await call(instance, [diag(10, 12, DiagnosticSeverity.Error)])).toBe(InputAreaStatus.Correct);
     });
 
     it("does not treat Warning, Information, or Hint diagnostics as blocking", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         expect(await call(instance, [
             diag(3, 4, DiagnosticSeverity.Warning),
@@ -243,27 +254,27 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("returns Incorrect when the goals response is null", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue(null);
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(null);
 
         expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
     });
 
     it("returns Incorrect when the goals response is undefined", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue(undefined);
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(undefined as unknown as LeanGoalAnswer);
 
         expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
     });
 
     it("returns Incorrect when the goals array is non-empty", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [{ type: "⊢ False" }] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer(["⊢ False"]));
         expect(await call(instance)).toBe(InputAreaStatus.Incorrect);
     });
 
     it("returns Correct when idle, no errors, and goals are empty", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
         expect(await call(instance)).toBe(InputAreaStatus.Correct);
     });
 
@@ -271,7 +282,7 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("returns Invalid when goals are empty but a sorry diagnostic is inside the area", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         // line 4 is strictly inside [lowerBound=2, areaEnd=6]
         expect(await call(instance, [msgDiag("declaration uses 'sorry'", 4)])).toBe(InputAreaStatus.Invalid);
@@ -279,7 +290,7 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("returns Correct when a sorry diagnostic sits exactly on lowerBound (not strictly after)", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         // line 2 == lowerBound.line, character 0 == lowerBound.character → not after → ignored
         expect(await call(instance, [msgDiag("declaration uses 'sorry'", 2, 0)])).toBe(InputAreaStatus.Correct);
@@ -287,7 +298,7 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("returns Correct when a sorry diagnostic is after the area end", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         // line 7 > area end line 6
         expect(await call(instance, [msgDiag("declaration uses 'sorry'", 7)])).toBe(InputAreaStatus.Correct);
@@ -295,7 +306,7 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("returns Correct when a non-sorry message matches neither sorry nor hints", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         expect(await call(instance, [msgDiag("type mismatch", 4)])).toBe(InputAreaStatus.Correct);
     });
@@ -305,7 +316,7 @@ describe("LeanLspClient.determineProofStatus", () => {
     it("returns Incorrect (not Invalid) when there is both an Error diag and a sorry diag in the area", async () => {
         const instance = makeClient();
         // requestGoals should not even be reached when an error diag is present
-        const requestGoals = jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        const requestGoals = jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
 
         const result = await call(instance, [
             diag(3, 5, DiagnosticSeverity.Error),
@@ -318,13 +329,13 @@ describe("LeanLspClient.determineProofStatus", () => {
 
     it("returns Invalid when a sorry diagnostic sits exactly on inputArea.end (isBeforeOrEqual includes the boundary)", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
         expect(await call(instance, [msgDiag("declaration uses 'sorry'", 6, 0)])).toBe(InputAreaStatus.Invalid);
     });
 
     it("returns Correct when a 'declaration uses sorry' diagnostic is Information severity (not Warning), prevents the user from doing: \"#check declaration uses 'sorry'\"", async () => {
         const instance = makeClient();
-        jest.spyOn(instance, "requestGoals" as any).mockResolvedValue({ goals: [] });
+        jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
         
         const infoSorryDiag = {
             message:  "declaration uses 'sorry'",
@@ -345,7 +356,8 @@ describe("LeanLspClient.getInputAreas", () => {
         const content = "no input areas here\n";
         const document = makeDocument(content);
  
-        const areas = (instance as any).getInputAreas(document) as Range[];
+        // @ts-expect-error protected
+        const areas = instance.getInputAreas(document) as Range[];
  
         expect(areas).toHaveLength(0);
     });
@@ -361,7 +373,8 @@ describe("LeanLspClient.getInputAreas", () => {
         ].join("\n");
         const document = makeDocument(content);
  
-        const areas = (instance as any).getInputAreas(document) as Range[];
+        // @ts-expect-error protected
+        const areas = instance.getInputAreas(document) as Range[];
  
         expect(areas).toHaveLength(1);
  
@@ -383,7 +396,8 @@ describe("LeanLspClient.getInputAreas", () => {
         ].join("\n");
         const document = makeDocument(content);
  
-        const areas = (instance as any).getInputAreas(document) as Range[];
+        // @ts-expect-error protected
+        const areas = instance.getInputAreas(document) as Range[];
  
         expect(areas).toHaveLength(1);
  
@@ -407,7 +421,8 @@ describe("LeanLspClient.getInputAreas", () => {
         ].join("\n");
         const document = makeDocument(content);
  
-        const areas = (instance as any).getInputAreas(document) as Range[];
+        // @ts-expect-error protected
+        const areas = instance.getInputAreas(document) as Range[];
  
         expect(areas).toHaveLength(2);
  
@@ -508,30 +523,30 @@ describe("LeanLspClient.getInputAreas", () => {
         // Collect the ground-truth positions by scanning the content string directly
         // so this test does not depend on line-number constants staying in sync with
         // the content array above.
-        const openPositions: { line: number; character: number }[] = [];
-        const closePositions: { line: number; character: number }[] = [];
- 
+        const openPositions: Position[] = [];
+        const closePositions: Position[] = [];
+
         let searchFrom = 0;
         while (true) {
             const found = posOf(content, ":::input\n", searchFrom);
             if (found.offset === -1) break;
-            openPositions.push({ line: found.line, character: found.character });
+            openPositions.push(new Position(found.line, found.character));
             searchFrom = found.offset + ":::input\n".length;
             if (openPositions.length === 3) break;
         }
- 
+
         searchFrom = 0;
         // Each closing ::: comes after its matching :::input; collect them in order
         // by scanning after each open position we already found.
         for (const open of openPositions) {
             const openOffset = document.offsetAt(open);
             const found = posOf(content, ":::\n", openOffset + ":::input\n".length);
-            closePositions.push({ line: found.line, character: found.character });
+            closePositions.push(new Position(found.line, found.character));
         }
- 
+
         for (let i = 0; i < 3; i++) {
-            expect(areas[i].start).toEqual(new Position(openPositions[i].line,  openPositions[i].character));
-            expect(areas[i].end  ).toEqual(new Position(closePositions[i].line, closePositions[i].character));
+            expect(areas[i].start).toEqual(openPositions[i]);
+            expect(areas[i].end  ).toEqual(closePositions[i]);
         }
  
         // Sanity: areas are in strictly ascending order
@@ -541,7 +556,7 @@ describe("LeanLspClient.getInputAreas", () => {
 });
 
 describe("LeanLspClient.isBusy lifecycle", () => {
-    const progress = (processing: any[], uri = "file:///test.lean") => ({
+    const progress = (processing: FileProgressProcessingInfo[], uri = "file:///test.lean") => ({
         textDocument: { uri, version: 1 },
         processing,
     });
@@ -552,31 +567,37 @@ describe("LeanLspClient.isBusy lifecycle", () => {
 
     it("sets isBusy to true when file progress reports processing", async () => {
         const instance = makeClient(false);
-        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
+        // @ts-expect-error protected
+        jest.spyOn(instance, "computeInputAreaStatus").mockResolvedValue(undefined);
 
         // @ts-expect-error protected
         await instance.onFileProgress(progress(processingRange()));
 
-        expect((instance as any).isBusy).toBe(true);
+        // @ts-expect-error private
+        expect(instance.isBusy).toBe(true);
     });
 
     it("sets isBusy to false when file progress has no processing ranges", async () => {
         const instance = makeClient(true);
-        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
+        // @ts-expect-error protected
+        jest.spyOn(instance, "computeInputAreaStatus").mockResolvedValue(undefined);
 
         // @ts-expect-error protected
         await instance.onFileProgress(progress([]));
 
-        expect((instance as any).isBusy).toBe(false);
+        // @ts-expect-error private
+        expect(instance.isBusy).toBe(false);
     });
 
     it("does not change isBusy for progress notifications of another document", async () => {
         const instance = makeClient(true);
-        jest.spyOn(instance as any, "computeInputAreaStatus").mockResolvedValue(undefined);
+        // @ts-expect-error protected
+        jest.spyOn(instance, "computeInputAreaStatus").mockResolvedValue(undefined);
 
         // @ts-expect-error protected
         await instance.onFileProgress(progress([], "file:///other.lean"));
 
-        expect((instance as any).isBusy).toBe(true);
+        // @ts-expect-error private
+        expect(instance.isBusy).toBe(true);
     });
 });

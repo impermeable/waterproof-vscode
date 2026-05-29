@@ -17,6 +17,10 @@ module.exports = {
       tsconfig: "tsconfig.jest.json",
     }],
   },
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/__helpers__/",
+  ],
   transformIgnorePatterns: [
     "node_modules/(?!(@impermeable|@codemirror|@lezer|prosemirror-model|prosemirror-transform|prosemirror-schema-list|orderedmap|crelt|w3c-keyname|style-mod)/)"
   ],

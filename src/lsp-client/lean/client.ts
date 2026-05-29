@@ -35,14 +35,16 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
         const hndl = this.client.middleware.handleDiagnostics;
         this.client.middleware.handleDiagnostics = (uri, diagnostics_, next) => {
-            if (hndl) hndl(uri, diagnostics_, next);
+                
+            const inputAreas = this.activeDocument ? this.getInputAreas(this.activeDocument) : undefined;
+            const friendlyDiagnostics = this.rewriteDiagnostics(diagnostics_, inputAreas);
+            if (hndl) hndl(uri, friendlyDiagnostics, next);
 
             // diagnostics formatting for infoview
             const c2p = this.client.code2ProtocolConverter;
             const uri_ = c2p.asUri(uri);
 
-            const diagnostics = diagnostics_ as WpDiagnostic[];
-            const infoviewDiagnostics = diagnostics.map(d => ({
+            const infoviewDiagnostics = friendlyDiagnostics.map(d => ({
                 ...c2p.asDiagnostic(d),
                 ...(d.data?.sentenceRange
                     ? { range: { start: d.data.sentenceRange.start, end: d.data.sentenceRange.end } }
@@ -51,6 +53,27 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
             this.diagnosticsEmitter.fire({ uri: uri_, diagnostics: infoviewDiagnostics });
         };
+    }
+
+    /**
+     * Rewrites diagnostics to be more user-friendly,
+     * e.g. by chaning the "unsolved goals" message to not be a wall of scary text.
+     * @param diagnostics The diagnostics to rewrite.
+     * @param inputAreas The input areas in the document 
+     * @returns The rewritten diagnostics.
+     */
+    private rewriteDiagnostics(diagnostics: WpDiagnostic[], inputAreas: Range[] | undefined): WpDiagnostic[] {
+        return diagnostics.map(d => {
+            if ((d as LeanDiagnostic).leanTags?.includes(LeanTag.UnsolvedGoals)) {
+                const isInsideInputArea = inputAreas?.some(area =>
+                    area.intersection(d.range) !== undefined && !area.intersection(d.range)!.isEmpty
+                );
+                if (isInsideInputArea) {
+                    return { ...d, message: `Subproof starting on line ${d.range.start.line + 1} has unsolved goals.` };
+                }
+            }
+            return d;
+        });
     }
 
     async prelaunchChecks(): Promise<string[]> {
@@ -262,12 +285,5 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     async dispose(timeout?: number): Promise<void> {
         await super.dispose(timeout);
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
-    }
-
-    /**
-     * Hides diagnostic when it says 'Unsolved goals'
-     */
-    protected override shouldHideDiagnosticFromBottomPanel(d: Diagnostic): boolean {
-        return (d as LeanDiagnostic).leanTags?.includes(LeanTag.UnsolvedGoals) ?? false;
     }
 }

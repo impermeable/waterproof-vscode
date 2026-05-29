@@ -192,8 +192,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                 message:        d.message,
                 severity:       vscodeSeverityToWaterproof(d.severity),
                 startOffset:    document.offsetAt(d.range.start),
-                endOffset:      document.offsetAt(d.range.end),
-                hideFromBottomPanel:   this.shouldHideDiagnosticFromBottomPanel(d),
+                endOffset:      document.offsetAt(d.range.end)
             };
         });
         this.webviewManager!.postAndCacheMessage(document, {
@@ -372,15 +371,6 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         this.fileProgressComponents.forEach(c => c.dispose());
         this.disposables.forEach(d => d.dispose());
         return this.client.dispose(timeout);
-    }
-
-    /**
-     * Determines whether a diagnostic should be hidden from the bottom panel.
-     * @param _d The diagnostic message to check.
-     * @returns whether the diagnostic should be hidden from the bottom panel.
-     */
-    protected shouldHideDiagnosticFromBottomPanel(_d: Diagnostic): boolean {
-        return false;
     }
 
 }

@@ -1,10 +1,3 @@
-/**
- * generate-symbols.utils.mts
- *
- * Pure utility functions and constants with no dependencies on the broader
- * generate-symbols pipeline. Used by the main script and various report/test modules.
- */
-
 import type { LeanLabelStrategy } from "./generate-symbols.types.mts";
 
 // -- ANSI color helpers --
@@ -75,21 +68,6 @@ export function pairs(arr: string[]): [string, string][] {
 // Lean label strategy filter
 // ---------------------------------------------------------------------------
 
-/**
- * Given a list of Lean labels for the same apply (unicode character), return
- * which labels to keep and which to drop according to the configured strategy.
- *
- *   "all"             - keep everything (no-op)
- *   "longest"         - keep the single longest label (by stem length)
- *   "shortest"        - keep the single shortest label (by stem length)
- *   "longest_prefix"  - group labels whose stems have a prefix relationship
- *                       (i.e. one stem is a prefix of another, such as
- *                       "superseteq" / "superseteqq") and keep the longest
- *                       within each group; isolated labels are always kept
- *   "shortest_prefix" - same grouping, keep the shortest in each group
- *
- * Ties in length are broken lexicographically so the result is deterministic.
- */
 export function filterLeanLabels(
   labels: string[],
   strategy: LeanLabelStrategy,
@@ -98,7 +76,7 @@ export function filterLeanLabels(
     return { kept: [...labels], dropped: [] };
   }
 
-  // ── "longest" / "shortest": pick exactly one label globally ──────────────
+  //"longest" / "shortest": pick exactly one label globally
   if (strategy === "longest" || strategy === "shortest") {
     const pickLongest = strategy === "longest";
     const sorted = [...labels].sort((a, b) => {
@@ -109,7 +87,7 @@ export function filterLeanLabels(
     return { kept: [sorted[0]!], dropped: sorted.slice(1) };
   }
 
-  // ── "longest_prefix" / "shortest_prefix": group by prefix relationship ───
+  // --- "longest_prefix" / "shortest_prefix": group by prefix relationship ---
   // Two labels are in the same group iff one stem is a prefix of the other.
   // Groups are built with union-find so transitive chains are handled correctly
   // (e.g. \sub, \sube, \subseteq would all merge into one group).

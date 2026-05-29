@@ -11,6 +11,7 @@ import {
 
 export function runReports(ctx: ReportContext): void {
   const {
+    multiCodepoint,
     report,
     symbols,
     latexApplyToLabels,
@@ -18,12 +19,15 @@ export function runReports(ctx: ReportContext): void {
     latexBraceLabels,
     leanLabelStrategy,
     VERBOSE,
+    base,
+    baseApplyToLabels,
+    leanApplyToLabels,
   } = ctx;
 
   const ICONS = {
-    warn: "\u26A0\uFE0F",
-    ok: "\u2705",
-    info: "\u2139\uFE0F",
+    warn: "⚠️",
+    ok: "✅",
+    info: "ℹ️",
   };
 
   // R1: Lean applies skipped - apply already in symbols.json
@@ -145,7 +149,10 @@ export function runReports(ctx: ReportContext): void {
         `\n${col(
           C.cyan,
           `${ICONS.info}  Lean label strategy "${leanLabelStrategy}": no labels dropped`,
-        )} ${col(C.gray, "(every lean-only character had at most one eligible label)")}`,
+        )} ${col(
+          C.gray,
+          "(every lean-only character had at most one eligible label)",
+        )}`,
       );
     } else {
       console.log(
@@ -162,8 +169,14 @@ export function runReports(ctx: ReportContext): void {
           .padStart(4, "0")}`;
         console.log(
           `   ${col(C.bold, r.apply)} ${col(C.gray, cp)}  ` +
-            `${col(C.gray, "kept:")} ${col(C.green, fmtLabels(r.keptLabels))}  ` +
-            `${col(C.gray, "dropped:")} ${col(C.red, fmtLabels(r.droppedLabels))}`,
+            `${col(C.gray, "kept:")} ${col(
+              C.green,
+              fmtLabels(r.keptLabels),
+            )}  ` +
+            `${col(C.gray, "dropped:")} ${col(
+              C.red,
+              fmtLabels(r.droppedLabels),
+            )}`,
         );
       }
     }
@@ -187,6 +200,10 @@ export function runReports(ctx: ReportContext): void {
   }
 
   // R4: Final-symbol aliases vs latex-unicode aliases, paired per character
+  console.log("\n" + "-".repeat(47));
+  console.log("    Final symbol list vs LaTeX symbol list");
+  console.log("-".repeat(47));
+
   const finalByApply = new Map<string, string[]>();
   for (const s of symbols) {
     if (!finalByApply.has(s.apply)) finalByApply.set(s.apply, []);
@@ -225,7 +242,7 @@ export function runReports(ctx: ReportContext): void {
       console.log(
         `\n${col(
           C.cyan,
-          `${ICONS.info}  Label resolves to different character than in LaTeX (${byApply.size} chars, ${differApplyItems.length} labels):`,
+          `${ICONS.info}  Final label resolves to different character than in LaTeX (${byApply.size} chars, ${differApplyItems.length} labels):`,
         )}`,
       );
       for (const [apply, labels] of byApply) {
@@ -248,7 +265,7 @@ export function runReports(ctx: ReportContext): void {
       console.log(
         `\n${col(
           C.cyan,
-          `${ICONS.info}  LaTeX uses a different command for same character (${byApply.size} chars, ${diffCmdItems.length} labels):`,
+          `${ICONS.info}  LaTeX uses a different command for same character in final output (${byApply.size} chars, ${diffCmdItems.length} labels):`,
         )}`,
       );
       for (const [apply, latexLabels] of byApply) {
@@ -361,7 +378,7 @@ export function runReports(ctx: ReportContext): void {
     console.log(
       `\n${col(
         C.cyan,
-        `${ICONS.info}  Aliases with matching prefixes - ranked by prefix length (${prefixReport.length} characters):`,
+        `${ICONS.info}  Aliases with matching prefixes in final output - ranked by prefix length (${prefixReport.length} characters):`,
       )}`,
     );
     for (const { apply, labels, maxCommon } of prefixReport) {
@@ -372,4 +389,141 @@ export function runReports(ctx: ReportContext): void {
       );
     }
   }
+
+  // R7: Lean - multi-codepoint applies
+  if (multiCodepoint.length > 0) {
+    const byApply = groupByApply(multiCodepoint);
+    console.log(
+      `\n${col(
+        C.cyan,
+        `${ICONS.info}  Lean symbols - multi-codepoint applies ` +
+          `(${byApply.size} sequences, ${multiCodepoint.length} entries):`,
+      )}`,
+    );
+    for (const [apply, labels] of byApply) {
+      const cps = [...apply]
+        .map(
+          (c) =>
+            `U+${c
+              .codePointAt(0)!
+              .toString(16)
+              .toUpperCase()
+              .padStart(4, "0")}`,
+        )
+        .join(", ");
+      console.log(
+        `   ${col(C.bold, apply)}  ${col(C.gray, `[${cps}]`)}  ${fmtLabels(
+          labels,
+        )}`,
+      );
+    }
+  }
+
+  // R8a: Characters in both symbols.json AND Lean
+  const sharedChars = [...baseApplyToLabels.entries()]
+    .filter(([apply]) => leanApplyToLabels.has(apply))
+    .map(([apply, baseLabelsSet]) => ({
+      apply,
+      baseLabels: [...baseLabelsSet], // Now an array from the Set
+      leanLabels: [...leanApplyToLabels.get(apply)!],
+    }));
+
+  if (sharedChars.length > 0) {
+    console.log(
+      `\n${col(
+        C.cyan,
+        `${ICONS.info}  Characters in both symbols.json and Lean (${sharedChars.length}):`,
+      )}`,
+    );
+    console.log(
+      `   ${"char".padEnd(5)} ${"U+".padEnd(8)} ${"base labels".padEnd(
+        28,
+      )} lean labels`,
+    );
+    console.log(`   ${"─".repeat(80)}`);
+    for (const { apply, baseLabels, leanLabels } of sharedChars) {
+      const cp = `U+${(apply.codePointAt(0) ?? 0)
+        .toString(16)
+        .toUpperCase()
+        .padStart(4, "0")}`;
+
+      // Join aliases with a comma. (Avoid fmtLabels here so ANSI codes don't break padEnd length)
+      const baseLabelStr = baseLabels.join(", ");
+
+      console.log(
+        `   ${apply.padEnd(5)} ${cp.padEnd(8)} ${baseLabelStr.padEnd(
+          28,
+        )} ${fmtLabels(leanLabels)}`,
+      );
+    }
+  }
+
+  // R8b: symbols.json entries absent from Lean
+  const leanAppliesSet = new Set(leanApplyToLabels.keys());
+  const leanLabelsSet = new Set<string>();
+  for (const labels of leanApplyToLabels.values()) {
+    for (const l of labels) leanLabelsSet.add(l);
+  }
+
+  const baseOnlyBoth = base.filter(
+    (s) => !leanLabelsSet.has(s.label) && !leanAppliesSet.has(s.apply),
+  );
+  const baseOnlyLabelOnly = base.filter(
+    (s) => !leanLabelsSet.has(s.label) && leanAppliesSet.has(s.apply),
+  );
+  const baseOnlyApplyOnly = base.filter(
+    (s) => leanLabelsSet.has(s.label) && !leanAppliesSet.has(s.apply),
+  );
+
+  if (baseOnlyBoth.length > 0) {
+    console.log(
+      `\n${col(
+        C.cyan,
+        `${ICONS.info}  symbols.json entries absent from Lean entirely - label AND character (${baseOnlyBoth.length}):`,
+      )}`,
+    );
+    for (const s of baseOnlyBoth)
+      console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
+  }
+  if (baseOnlyLabelOnly.length > 0) {
+    console.log(
+      `\n${col(
+        C.cyan,
+        `${ICONS.info}  symbols.json entries whose label is not in Lean, but character is (${baseOnlyLabelOnly.length}):`,
+      )}`,
+    );
+    for (const s of baseOnlyLabelOnly)
+      console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
+  }
+  if (baseOnlyApplyOnly.length > 0) {
+    console.log(
+      `\n${col(
+        C.cyan,
+        `${ICONS.info}  symbols.json entries whose character is not in Lean, but label is (${baseOnlyApplyOnly.length}):`,
+      )}`,
+    );
+    for (const s of baseOnlyApplyOnly)
+      console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
+  }
+  if (
+    baseOnlyBoth.length === 0 &&
+    baseOnlyLabelOnly.length === 0 &&
+    baseOnlyApplyOnly.length === 0
+  ) {
+    console.log(
+      `${ICONS.ok}  All symbols.json entries have both label and character present in Lean`,
+    );
+  }
+
+  // R8c: Preview of new symbols added from Lean
+  const fromLean = symbols.length - base.length;
+  console.log(`\n${fromLean} new symbols added from Lean table (first 20):`);
+  for (const s of symbols.slice(base.length, base.length + 20)) {
+    console.log(
+      `   ${s.label.padEnd(10)} ${s.apply}  cat=${
+        s.symbolPanelCategory ?? "hidden"
+      }`,
+    );
+  }
+  if (fromLean > 20) console.log(`   ... and ${fromLean - 20} more`);
 }

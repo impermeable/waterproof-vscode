@@ -35,7 +35,7 @@ To regenerate manually:
 npm run generate-symbols
 ```
 
-To regenerate and run the diff test against the base:
+To regenerate and run test/show reports:
 ```bash
 npm run generate-symbols -- --test
 ```

@@ -2,17 +2,7 @@ import type { SymbolEntry, TestContext } from "./generate-symbols.types.mts";
 import { C, col, fmtLabels } from "./generate-symbols.utils.mts";
 
 export function runTests(ctx: TestContext): void {
-  const {
-    base,
-    enriched,
-    report,
-    leanAll,
-    leanApplyToLabels,
-    baseApplyToLabel,
-    overrides,
-    MERGE,
-    fromLean: fromLeanInput,
-  } = ctx;
+  const { base, enriched, report, leanApplyToLabels, overrides, MERGE } = ctx;
 
   const ICONS = {
     info: "\u2139\uFE0F",
@@ -20,115 +10,11 @@ export function runTests(ctx: TestContext): void {
     fail: "\u2717",
   };
 
-  const fromLean = fromLeanInput ?? enriched.length - base.length;
-
-  const leanRaw = [...leanAll.entries()].map(([label, apply]) => ({
-    label,
-    apply,
-  }));
-  const leanLabelsSet = new Set(leanRaw.map((s) => s.label));
-  const leanAppliesSet = new Set(leanRaw.map((s) => s.apply));
-
-  // Informational: Characters in both symbols.json AND Lean
-  const sharedChars = [...baseApplyToLabel.entries()]
-    .filter(([apply]) => leanApplyToLabels.has(apply))
-    .map(([apply, baseLabel]) => ({
-      apply,
-      baseLabel,
-      leanLabels: [...leanApplyToLabels.get(apply)!],
-    }));
-
-  if (sharedChars.length > 0) {
-    console.log(
-      `\n${col(
-        C.cyan,
-        `${ICONS.info}  Characters in both symbols.json and Lean (${sharedChars.length}):`,
-      )}`,
-    );
-    console.log(
-      `   ${"char".padEnd(5)} ${"U+".padEnd(8)} ${"base label".padEnd(
-        28,
-      )} lean labels`,
-    );
-    console.log(`   ${"\u2500".repeat(80)}`);
-    for (const { apply, baseLabel, leanLabels } of sharedChars) {
-      const cp = `U+${apply
-        .codePointAt(0)!
-        .toString(16)
-        .toUpperCase()
-        .padStart(4, "0")}`;
-      console.log(
-        `   ${apply.padEnd(5)} ${cp.padEnd(8)} ${baseLabel.padEnd(
-          28,
-        )} ${fmtLabels(leanLabels)}`,
-      );
-    }
-  }
-
-  // symbols.json entries absent from Lean
-  const baseOnlyBoth = base.filter(
-    (s) => !leanLabelsSet.has(s.label) && !leanAppliesSet.has(s.apply),
-  );
-  const baseOnlyLabelOnly = base.filter(
-    (s) => !leanLabelsSet.has(s.label) && leanAppliesSet.has(s.apply),
-  );
-  const baseOnlyApplyOnly = base.filter(
-    (s) => leanLabelsSet.has(s.label) && !leanAppliesSet.has(s.apply),
-  );
-
-  if (baseOnlyBoth.length > 0) {
-    console.log(
-      `\n${col(
-        C.cyan,
-        `${ICONS.info}  symbols.json entries absent from Lean entirely - label AND character (${baseOnlyBoth.length}):`,
-      )}`,
-    );
-    for (const s of baseOnlyBoth)
-      console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
-  }
-  if (baseOnlyLabelOnly.length > 0) {
-    console.log(
-      `\n${col(
-        C.cyan,
-        `${ICONS.info}  symbols.json entries whose label is not in Lean, but character is (${baseOnlyLabelOnly.length}):`,
-      )}`,
-    );
-    for (const s of baseOnlyLabelOnly)
-      console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
-  }
-  if (baseOnlyApplyOnly.length > 0) {
-    console.log(
-      `\n${col(
-        C.cyan,
-        `${ICONS.info}  symbols.json entries whose character is not in Lean, but label is (${baseOnlyApplyOnly.length}):`,
-      )}`,
-    );
-    for (const s of baseOnlyApplyOnly)
-      console.log(`   ${s.label.padEnd(25)} ${s.apply}`);
-  }
-  if (
-    baseOnlyBoth.length === 0 &&
-    baseOnlyLabelOnly.length === 0 &&
-    baseOnlyApplyOnly.length === 0
-  ) {
-    console.log(
-      `${ICONS.ok}  All symbols.json entries have both label and character present in Lean`,
-    );
-  }
-
-  console.log(`\n${fromLean} new symbols added from Lean table (first 20):`);
-  for (const s of enriched.slice(base.length, base.length + 20)) {
-    console.log(
-      `   ${s.label.padEnd(10)} ${s.apply}  cat=${
-        s.symbolPanelCategory ?? "hidden"
-      }`,
-    );
-  }
-  if (fromLean > 20) console.log(`   ... and ${fromLean - 20} more`);
-
   console.log(`\nRunning tests against base file...`);
 
-  const outMap = new Map<string, SymbolEntry>(enriched.map((s) => [s.label, s]));
+  const outMap = new Map<string, SymbolEntry>(
+    enriched.map((s) => [s.label, s]),
+  );
   let pass = true;
 
   function fail(msg: string): void {
@@ -210,7 +96,9 @@ export function runTests(ctx: TestContext): void {
   }
 
   // 6. No stray "type" fields on Lean-added symbols other than "symbol"
-  const hasType = enriched.slice(base.length).filter((s) => s.type !== "symbol");
+  const hasType = enriched
+    .slice(base.length)
+    .filter((s) => s.type !== "symbol");
   if (hasType.length > 0) {
     fail(
       `Lean-added symbols with unexpected "type" field (${hasType.length}):`,
@@ -339,7 +227,9 @@ export function runTests(ctx: TestContext): void {
     );
   } else {
     const outputApplySet = new Set(enriched.map((s) => s.apply));
-    const conflictApplies = new Set(report.labelConflicts.map((c) => c.leanApply));
+    const conflictApplies = new Set(
+      report.labelConflicts.map((c) => c.leanApply),
+    );
 
     const missingApplies = [...leanApplyToLabels.keys()].filter(
       (apply) => !outputApplySet.has(apply) && !conflictApplies.has(apply),
@@ -355,7 +245,9 @@ export function runTests(ctx: TestContext): void {
           .padStart(4, "0")}`;
         const labels = [...(leanApplyToLabels.get(apply) ?? [])];
         console.log(
-          `   ${apply}  ${col(C.gray, cp.padEnd(10))} lean labels: ${fmtLabels(labels)}`,
+          `   ${apply}  ${col(C.gray, cp.padEnd(10))} lean labels: ${fmtLabels(
+            labels,
+          )}`,
         );
       }
     } else {

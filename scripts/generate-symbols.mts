@@ -9,20 +9,12 @@
  *   2. latex-unicode.json  (ALL lean labels that also appear in latex are added)
  *   3. lean abbreviations  (for applies with no latex match, ALL lean labels are added)
  *
- * Categories:
- *   0  Greek lowercase      1  Greek uppercase
- *   2  Math / logic         3  Arrows
- *   4  Letterlike (N R ...)  5  Super / subscripts
- *   6  Calligraphic         7  Misc
- *   99 Hidden (completion-only, not shown in panel)
- *
  * All tunable options live in generate-symbols-helpers/generate-symbols.config.mts.
  *
  * Usage:
- *   node generate-symbols.mts             # merge and write
- *   node generate-symbols.mts --verbose   # also show lean-fallback list and latex{} notice
- *   node generate-symbols.mts --test      # merge, write, then run validation checks
- *   node generate-symbols.mts --verbose --test
+ *   node generate-symbols.mts                  # merge and write
+ *   node generate-symbols.mts --test           # merge, write, then run validation checks and show reports
+ *   node generate-symbols.mts --test --verbose # also show lean-fallback list and latex{} notice
  */
 
 import fs from "fs";
@@ -67,6 +59,11 @@ const VERBOSE = process.argv.includes("--verbose");
 
 // -- Unicode block helpers --
 
+/**
+ * Determines which Unicode block a codepoint belongs to, and thus which symbol panel category it should be in.
+ * @param cp The codepoint of the character to categorize.
+ * @returns The Unicode block entry for the codepoint, or null if not found.
+ */
 function blockEntry(cp: number): BlockEntry | null {
   for (const entry of BLOCKS) {
     const [[lo, hi]] = entry;
@@ -75,6 +72,11 @@ function blockEntry(cp: number): BlockEntry | null {
   return null;
 }
 
+/**
+ * Given a codepoint, determine the natural symbol panel category it belongs to based on its Unicode block
+ * @param cp The codepoint of the character to categorize.
+ * @returns The natural symbol panel category for the codepoint, or [7, "misc"] if not found.
+ */
 function categoryFromBlock(cp: number): [number, keyof ShowInPanelConfig] {
   const entry = blockEntry(cp);
   if (!entry) return [7, "misc"];
@@ -95,9 +97,13 @@ function computeCategory(label: string, apply: string): number | undefined {
 // -- Step 1: load base symbols
 const base: BaseSymbol[] = JSON.parse(fs.readFileSync(BASE, "utf8"));
 
-const baseApplyToLabel = new Map<string, string>(
-  base.map((s) => [s.apply, s.label]),
-);
+const baseApplyToLabels = new Map<string, Set<string>>();
+for (const s of base) {
+  if (!baseApplyToLabels.has(s.apply)) {
+    baseApplyToLabels.set(s.apply, new Set());
+  }
+  baseApplyToLabels.get(s.apply)!.add(s.label);
+}
 const baseLabelToEntry = new Map<string, BaseSymbol>(
   base.map((s) => [s.label, s]),
 );
@@ -108,9 +114,10 @@ const latexRaw: Record<string, string> = JSON.parse(
   fs.readFileSync(LATEX, "utf8"),
 );
 
-const latexApplyToLabels = new Map<string, Set<string>>(); // apply → Set<label>  (only non-{} labels)
-const latexLabelToApply = new Map<string, string>(); // label → apply       (only non-{} labels)
-const latexBraceLabels: Array<{ label: string; apply: string }> = []; // labels containing {}
+const latexApplyToLabels = new Map<string, Set<string>>(); // apply -> Set<label>  (only non-"{}"" labels, e.g. \mathbb{A})
+const latexLabelToApply = new Map<string, string>(); // label -> apply       (only non-"{}" labels)
+const latexBraceLabels: Array<{ label: string; apply: string }> = []; // labels containing "{}" (for --verbose logging)
+const multiCodepoint: Array<{ label: string; apply: string }> = [];
 
 for (const [label, apply] of Object.entries(latexRaw)) {
   const normalLabel = label.startsWith("\\") ? label : "\\" + label;
@@ -129,18 +136,23 @@ for (const [label, apply] of Object.entries(latexRaw)) {
 const leanJson: Record<string, string | string[]> = JSON.parse(
   fs.readFileSync(LEAN, "utf8"),
 );
-const leanAll = new Map<string, string>(); // label → apply
+const leanAll = new Map<string, string>(); // label -> apply
 
+// filter out multi-codepoint applies and weird entries
 for (const [key, value] of Object.entries(leanJson)) {
   const apply = Array.isArray(value) ? value[0] : value;
-  if (!apply || apply.includes("$CURSOR")) continue;
-  if (apply === "\\" || apply === "\\n") continue;
-  if ([...apply].length !== 1) continue;
+  if (!apply || apply.includes("$CURSOR")) continue; // Some lean entries have this $CURSOR for things like [$CURSOR], we skip those
+  if (apply === "\\" || apply === "\\n") continue; //skip the weird entries for \ and \n
   const label = key.startsWith("\\") ? key : "\\" + key;
+  if ([...apply].length !== 1) {
+    multiCodepoint.push({ label, apply });
+  } // multi-codepoint applies like "⋃₀" or "⁻¹"
+  if ([...apply].length !== 1 && MERGE.skipMultiCodepoint) continue; // skip multi-codepoint applies if configured to do so
   leanAll.set(label, apply);
 }
 
-const leanApplyToLabels = new Map<string, Set<string>>(); // apply → Set<label>
+// Build reverse map for lean: apply -> Set<label>
+const leanApplyToLabels = new Map<string, Set<string>>();
 for (const [label, apply] of leanAll) {
   if (!leanApplyToLabels.has(apply)) leanApplyToLabels.set(apply, new Set());
   leanApplyToLabels.get(apply)!.add(label);
@@ -252,27 +264,8 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
       latexLabels: latexLabelsForApply,
       droppedLean: eligibleLeanLabels.filter((l) => !latexMatches.includes(l)),
     });
-  } else if (latexMatches.length === 0 && MERGE.addViaLean) {
-    // Lean-only fallback path: apply the label strategy filter
-    const { kept, dropped } = filterLeanLabels(
-      eligibleLeanLabels,
-      MERGE.leanLabelStrategy,
-    );
-    labelsToAdd = kept;
-    report.addedViaLean.push({ apply, addedLabels: kept });
-    if (dropped.length > 0) {
-      report.filteredLean.push({
-        apply,
-        keptLabels: kept,
-        droppedLabels: dropped,
-      });
-    }
-  } else if (
-    latexMatches.length > 0 &&
-    !MERGE.addViaLatex &&
-    MERGE.addViaLean
-  ) {
-    // latex match exists but addViaLatex is off; fall through to lean labels
+  } else if (MERGE.addViaLean) {
+    // Lean-fallback path
     const { kept, dropped } = filterLeanLabels(
       eligibleLeanLabels,
       MERGE.leanLabelStrategy,
@@ -305,7 +298,6 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
 }
 
 // -- Step 5: write output
-const baseApplySet = new Set<string>(base.map((s) => s.apply));
 
 // Determine which source a lean-added symbol came from (for boost purposes)
 const latexAddedLabels = new Set<string>([
@@ -323,14 +315,13 @@ const enriched: SymbolEntry[] = symbols.map((s) => {
   const allAliases = new Set(finalLabelsByApply.get(s.apply) ?? []);
   allAliases.delete(s.label);
 
-  // Typed explicitly so TypeScript knows which optional fields are valid.
   const extras: Partial<Pick<SymbolEntry, "detail" | "boost">> = {};
 
   if (ENRICHMENT.includeAliasDetails && allAliases.size > 0) {
     extras.detail = ` Also: ${[...allAliases].join(" ")} `;
   }
 
-  if (baseApplySet.has(s.apply) && base.some((b) => b.label === s.label)) {
+  if (baseLabelToEntry.has(s.label)) {
     // Base symbol
     if (ENRICHMENT.baseBoost) extras.boost = ENRICHMENT.baseBoost;
   } else if (latexAddedLabels.has(s.label)) {
@@ -361,6 +352,7 @@ console.log(
 if (!TEST) process.exit(0);
 
 runReports({
+  multiCodepoint,
   report,
   symbols,
   latexApplyToLabels,
@@ -368,6 +360,9 @@ runReports({
   latexBraceLabels,
   leanLabelStrategy: MERGE.leanLabelStrategy,
   VERBOSE,
+  base,
+  baseApplyToLabels,
+  leanApplyToLabels,
 });
 
 runTests({
@@ -376,7 +371,7 @@ runTests({
   report,
   leanAll,
   leanApplyToLabels,
-  baseApplyToLabel,
+  baseApplyToLabels,
   overrides,
   MERGE,
   fromLean,

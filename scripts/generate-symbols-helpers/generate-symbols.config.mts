@@ -1,14 +1,11 @@
 /**
  * generate-symbols.config.ts
  *
- * All configuration for generate-symbols.ts lives here.
- * Edit this file to control which symbols are added, how they are boosted,
- * what appears in the symbol panel, and where output is written.
- *
- * After editing, re-run:
- *   node --import tsx/esm generate-symbols.ts            # normal run
- *   node --import tsx/esm generate-symbols.ts --test     # run + validation suite
- *   node --import tsx/esm generate-symbols.ts --verbose  # show full lean-fallback list etc.
+ * All configuration for generate-symbols.ts.
+ * After editing, run:
+ *   node --import tsx/esm generate-symbols.ts                   # normal run
+ *   node --import tsx/esm generate-symbols.ts --test            # run + validation suite
+ *   node --import tsx/esm generate-symbols.ts --test --verbose  # show full lean-fallback list etc.
  */
 
 import type {
@@ -19,9 +16,7 @@ import type {
   EnrichmentConfig,
 } from "./generate-symbols.types.mts";
 
-// --- File paths ---
-// All paths are resolved relative to the directory that contains
-// generate-symbols.ts (i.e. the same __dirname equivalent).
+// --- File paths (resolved relative to generate-symbols.mts) ---
 
 export const PATHS: PathsConfig = {
   /** Hand-curated base symbol list.  Never modified by the script. */
@@ -41,41 +36,32 @@ export const PATHS: PathsConfig = {
 };
 
 // --- Symbol-panel visibility ---
-// Controls whether symbols *added from Lean* are visible in the symbol panel.
-//
-//   true  -> the symbol is assigned its natural category (visible in panel)
-//   false -> symbolPanelCategory is omitted (hidden; completion-only)
-//
+// Controls lean-added symbols only; base symbols are always preserved as-is.
+// true  -> assign natural category (visible in panel)
+// false -> omit symbolPanelCategory (hidden; completion-only)
+
 // Base symbols (symbols.json) are ALWAYS preserved exactly as written and are
 // never affected by these flags.
 
 export const SHOW_IN_PANEL: ShowInPanelConfig = {
-  greekLower: false, // α β γ δ ε …
-  greekUpper: false, // Α Β Γ Δ Ε …
-  mathLogic: false, // ∀ ∃ ∈ ∧ ∨ …
-  arrows: false, // → ← ⇒ ↦ ⟶ …
-  letterlike: false, // ℕ ℝ ℤ ℂ ℓ …
-  scripts: false, // superscripts ⁰¹² … / subscripts ₀₁₂ …
-  calligraphic: false, // script A-Z  (𝒜 ℬ 𝒞 …)
-  fraktur: false, // fraktur A-Z a-z (𝔄 𝔅 ℭ …)
-  doubleStruck: false, // blackboard bold A-Z (𝔸 𝔹 ℂ …)
+  greekLower: false, // α β γ …
+  greekUpper: false, // Α Β Γ …
+  mathLogic: false, // ∀ ∃ ∈ ∧ …
+  arrows: false, // → ← ⇒ ↦ …
+  letterlike: false, // ℕ ℝ ℤ …
+  scripts: false, // ⁰¹² … / ₀₁₂ …
+  calligraphic: false, // 𝒜 ℬ 𝒞 …
+  fraktur: false, // 𝔄 𝔅 ℭ …
+  doubleStruck: false, // 𝔸 𝔹 ℂ …
   boldItalic: false, // bold / italic / sans / mono math letters
-  misc: false, // everything else
+  misc: false,
 };
 
-// --- Unicode block → natural category table ---
-// Used to determine the symbolPanelCategory assigned to a Lean-added symbol
-// when the corresponding SHOW_IN_PANEL flag is true.
-//
-// Format of each entry:  [ [loCodepoint, hiCodepoint], category, showInPanelKey ]
-//
-// Category numbers:
-//   0  Greek lowercase      1  Greek uppercase
-//   2  Math / logic         3  Arrows
-//   4  Letterlike (ℕ ℝ …)  5  Super / subscripts
-//   6  Calligraphic         7  Misc
-//
-// Ranges listed earlier take priority over ranges listed later when they overlap.
+// --- Unicode block → natural category ---
+// Format: [ [lo, hi], category, showInPanelKey ]
+// Categories: 0 Greek lower  1 Greek upper  2 Math/logic  3 Arrows
+//             4 Letterlike   5 Scripts      6 Calligraphic 7 Misc
+// Earlier entries take priority on overlap.
 
 export const BLOCKS: BlockEntry[] = [
   [[0x03b1, 0x03ce], 0, "greekLower"],
@@ -96,23 +82,14 @@ export const BLOCKS: BlockEntry[] = [
   [[0x2a00, 0x2aff], 2, "mathLogic"],
   [[0x27c0, 0x27ef], 2, "mathLogic"],
   [[0x2980, 0x29ff], 2, "mathLogic"],
-  // Mathematical Alphanumeric Symbols block (U+1D400-U+1D7FF), split by sub-range;
-  // more-specific ranges must come BEFORE the catch-all at the bottom:
-  [[0x1d504, 0x1d537], 6, "fraktur"], // Fraktur + Bold Fraktur A-Z a-z
-  [[0x1d538, 0x1d56b], 4, "doubleStruck"], // Double-Struck (blackboard bold) A-Z
-  [[0x1d400, 0x1d7ff], 6, "boldItalic"], // everything else (bold, italic, sans, mono)
+  [[0x1d504, 0x1d537], 6, "fraktur"],
+  [[0x1d538, 0x1d56b], 4, "doubleStruck"],
+  [[0x1d400, 0x1d7ff], 6, "boldItalic"],
 ];
 
 // --- Per-label category overrides ---
-// Force a specific symbolPanelCategory for individual Lean-added labels,
-// regardless of their Unicode block or the SHOW_IN_PANEL flags above.
-//
-// Useful to promote a single symbol into the panel without enabling its whole
-// group, or to move a symbol to a different category than its block suggests.
-//
-// Example:
-//   "\\nabla": 2,    // show ∇ in the Math/logic group even if mathLogic is false
-//   "\\star":  7,    // show ⋆ in Misc instead of its block's natural category
+// Force a symbolPanelCategory for specific labels, ignoring block + SHOW_IN_PANEL.
+// Example: "\\nabla": 2  (show ∇ in Math/logic even if mathLogic is false)
 
 export const OVERRIDES: Record<string, number> = {
   // "\\label": categoryNumber,
@@ -122,113 +99,75 @@ export const OVERRIDES: Record<string, number> = {
 
 export const MERGE: MergeConfig = {
   /**
-   * Add extra LaTeX-alias labels for characters that are already covered by
-   * symbols.json
-   *
-   * false (default): if a character's apply value is already in symbols.json,
-   *   keep that base entry unchanged and drop ALL Lean / LaTeX aliases for
-   *   that character (current behaviour).
-   *
-   * true: after preserving the base entry, also add any LaTeX labels for the
-   *   same apply that do not collide with an existing label.  The base entry
-   *   itself is still never modified.
+   * Also add LaTeX alias labels for characters already in symbols.json.
+   * The base entry itself is never modified; only non-colliding aliases are added.
+   * Default: false
    */
   addLatexIfAlreadyInBase: false,
 
   /**
-   * Add new symbols whose Lean label matches a LaTeX command
-   *
-   * true (default): emit entries for Lean labels that also appear in the
-   *   LaTeX table (the "✅ New symbols added - latex alias chosen" group).
-   *
-   * false: skip this entire group.  Combine with addViaLean: false to
-   *   produce a base-only output with no Lean symbols at all.
+   * When a Lean label matches a LaTeX command, treat it as a LaTeX-validated
+   * entry: skip the {@link MergeConfig.leanLabelStrategy} filter and include
+   * all matching labels.
+   * Set false to route these entries through the normal Lean fallback path
+   * (subject to {@link MergeConfig.leanLabelStrategy}) instead.
+   * Default: true
    */
   addViaLatex: true,
 
   /**
-   * Add new symbols that have a Lean label but no LaTeX match
-   *
-   * true (default): emit entries for Lean labels with no LaTeX counterpart
-   *   (the "✅ New symbols added - lean fallback" group).
-   *
-   * false: skip lean-only symbols.  Useful when you want LaTeX-validated
-   *   aliases only.
+   * Add new symbols with a Lean label but no LaTeX match.
+   * Set false to restrict output to LaTeX-validated aliases only.
+   * Default: true
+   * Reasoning: this ensures that every symbol from Lean is added,
+   * even if it does not appear in the LaTeX table.
    */
   addViaLean: true,
 
   /**
-   * Which labels to keep when a lean-only character (no LaTeX match) has
-   * multiple Lean labels for the same unicode character.
+   * Which labels to keep when a lean-only character has multiple Lean labels.
+   *   "all"             - keep all labels
+   *   "longest"         - keep only the longest stem
+   *   "shortest"        - keep only the shortest stem
+   *   "longest_prefix"  - group by prefix relationship, keep longest per group
+   *   "shortest_prefix" - group by prefix relationship, keep shortest per group
+   * Has no effect on addViaLatex entries (already filtered by the LaTeX table).
    *
-   *   "all"             - keep every label
-   *   "longest"         - keep only the single longest label (by stem length,
-   *                       i.e. the label text after stripping the leading \) (default)
-   *   "shortest"        - keep only the single shortest label
-   *   "longest_prefix"  - group labels whose stems have a prefix relationship
-   *                       (one stem is a prefix of the other, e.g. \superseteq
-   *                       and \superseteqq) and keep the longest label in each
-   *                       group; labels with no prefix sibling are kept as-is.
-   *                       Labels like \bbA and \A are NOT grouped because
-   *                       neither stem is a prefix of the other.
-   *   "shortest_prefix" - same grouping as "longest_prefix", but keep the
-   *                       shortest label in each group instead.
+   * Reasoning: Symbols that are prefixes of longer ones are often just short-hand for longer
+   * symbols. In our auto-complete system, all it does is generally add clutter.
    *
-   * A report of which labels were dropped is always printed (no --verbose
-   * flag required) so you can audit the effect of this setting.
-   *
-   * Note: this setting has no effect on the "latex alias chosen" group
-   * (addViaLatex), which is already filtered to labels present in the LaTeX
-   * table.
+   * Why longest_prefix instead of just longest? Some characters like \times and \vectorproduct
+   * resolve to the same symbol, yet they server in different contexts.
    */
-  leanLabelStrategy: "longest",
+  leanLabelStrategy: "longest_prefix",
+
+  /**
+   * Skip Lean entries whose apply value is more than one Unicode codepoint
+   * (e.g. "⋃₀", "⁻¹").  Set true to exclude them from the merged output.
+   * Default: true
+   * Reasoning: they clutter up the auto-complete with characters that can be compoesd from simpler ones
+   */
+  skipMultiCodepoint: true,
 };
 
 // --- Output enrichment ---
 
 export const ENRICHMENT: EnrichmentConfig = {
-  /**
-   * Completion-boost score written to the `boost` field of every symbol that
-   * comes from symbols.json (the hand-curated base list).
-   *
-   * Higher values push these entries to the top of completion pop-ups.
-   * Set to 0 or null to omit the boost field entirely for base symbols.
-   *
-   * Reasoning: hand-curated symbols are probably the most common symbols
-   *
-   * Default: 5
+  /** Boost for hand-curated base symbols. 0/null to omit. Default: 5
+   * Reasoning: Hand-curated symbols are typically the most used ones.
    */
   baseBoost: 5,
 
-  /**
-   * Completion-boost score for symbols added via a LaTeX alias match
-   * (the "latex alias chosen" group).
-   *
-   * Set to 0 or null to omit the boost field for this group.
-   *
-   * Default: 0  (no boost)
-   */
+  /** Boost for symbols added via LaTeX alias. 0/null to omit. Default: 0 */
   latexBoost: 0,
 
-  /**
-   * Completion-boost score for symbols added via the Lean fallback
-   * (no LaTeX match, the "lean fallback" group).
-   *
-   * Set to 0 or null to omit the boost field for this group.
-   *
-   * Default: 0  (no boost)
-   */
+  /** Boost for symbols added via Lean fallback. 0/null to omit. Default: 0 */
   leanBoost: 0,
 
   /**
-   * Populate the `detail` field on each symbol entry with the full set of
-   * known aliases drawn from both the Lean and LaTeX tables?
-   *
-   * The detail string appears as secondary text in completion pop-ups and
-   * lets users discover alternative abbreviations for the same character.
-   *
-   * true  (default): add detail field when aliases exist.
-   * false: never write a detail field.
+   * Populate the `detail` field with known aliases from Lean + LaTeX tables.
+   * Aliases appear as secondary text in completion pop-ups.
+   * Default: true
    */
   includeAliasDetails: true,
 };

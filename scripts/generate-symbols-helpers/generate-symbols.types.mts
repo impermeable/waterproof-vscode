@@ -1,9 +1,3 @@
-/**
- * generate-symbols.types.ts
- *
- * Shared types for the generate-symbols pipeline.
- */
-
 // ---------------------------------------------------------------------------
 // Symbol entries
 // ---------------------------------------------------------------------------
@@ -51,15 +45,6 @@ export type BlockEntry = [[number, number], number, keyof ShowInPanelConfig];
 /**
  * Controls which labels are kept when a Lean character has multiple labels
  * but none of them appear in the LaTeX table (the "lean fallback" group).
- *
- *   "all"             - keep every label (default)
- *   "longest"         - keep only the single longest label (by stem length)
- *   "shortest"        - keep only the single shortest label (by stem length)
- *   "longest_prefix"  - group labels whose stems have a prefix relationship
- *                       (one is a prefix of the other, e.g. \superseteq and
- *                       \superseteqq) and keep the longest within each group;
- *                       labels with no prefix sibling are always kept
- *   "shortest_prefix" - same grouping, but keep the shortest in each group
  */
 export type LeanLabelStrategy =
   | "all"
@@ -74,6 +59,7 @@ export interface MergeConfig {
   addViaLean: boolean;
   /** Which labels to keep when a lean-only character has multiple labels. */
   leanLabelStrategy: LeanLabelStrategy;
+  skipMultiCodepoint: boolean;
 }
 
 export interface EnrichmentConfig {
@@ -137,8 +123,12 @@ export interface ReportContext {
   latexApplyToLabels: Map<string, Set<string>>;
   latexLabelToApply: Map<string, string>;
   latexBraceLabels: Array<{ label: string; apply: string }>;
+  multiCodepoint: Array<{ label: string; apply: string }>;
   leanLabelStrategy: LeanLabelStrategy;
   VERBOSE: boolean;
+  base: BaseSymbol[];
+  baseApplyToLabels: Map<string, Set<string>>;
+  leanApplyToLabels: Map<string, Set<string>>;
 }
 
 export interface TestContext {
@@ -147,7 +137,7 @@ export interface TestContext {
   report: MergeReport;
   leanAll: Map<string, string>;
   leanApplyToLabels: Map<string, Set<string>>;
-  baseApplyToLabel: Map<string, string>;
+  baseApplyToLabels: Map<string, Set<string>>;
   overrides: Record<string, number>;
   MERGE: MergeConfig;
   fromLean?: number;

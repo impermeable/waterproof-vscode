@@ -93,7 +93,6 @@ export class Waterproof implements Disposable {
         private readonly _isWeb = false
     ) {
         wpl.log("Waterproof initialized");
-        checkConflictingExtensions();
         excludeRocqFileTypes();
         checkTrimmingWhitespace();
 
@@ -536,6 +535,8 @@ export class Waterproof implements Disposable {
             return Promise.reject(new Error("Cannot initialize client; one is already running."))
         }
 
+        checkConflictingExtensions(this.context).catch(err => wpl.log(`Conflict check failed: ${err}`));
+
         const rocqServerOptions = RocqLspServerConfig.create(
             // TODO: Support +coqversion versions.
             WaterproofPackageJSON.requiredCoqLspVersion(this.context).slice(2)
@@ -588,6 +589,7 @@ export class Waterproof implements Disposable {
                 return;
             }
         }
+
         return this.client.startWithHandlers(this.webviewManager, allowedLanguages).then(
             (clients) => {
                 this.webviewManager.open("goals");

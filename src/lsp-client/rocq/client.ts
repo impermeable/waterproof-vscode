@@ -1,4 +1,4 @@
-import { ExtensionContext, OutputChannel, Position, Range, TextDocument } from "vscode";
+import { extensions, ExtensionContext, OutputChannel, Position, Range, TextDocument } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageclient";
 
 import { RocqGoalAnswer, RocqGoalRequest, RocqServerStatusToServerStatus, GoalRequest, PpString } from "../../../lib/types";
@@ -65,6 +65,11 @@ export class RocqLspClient extends LspClient<RocqGoalRequest, RocqGoalAnswer<PpS
     }
 
     async prelaunchChecks(): Promise<string[]> {
+        if (extensions.getExtension("ejgallego.coq-lsp") || extensions.getExtension("maximedenes.vscoq")) {
+            wpl.log("Conflicting Rocq extension detected, skipping Waterproof Rocq client.");
+            return [];
+        }
+
         const requiredCoqLspVersion = WaterproofPackageJSON.requiredCoqLspVersion(this.context);
         const requiredCoqWaterproofVersion = WaterproofPackageJSON.requiredCoqWaterproofVersion(this.context);
         const versionChecker = new VersionChecker(this.context, requiredCoqLspVersion, requiredCoqWaterproofVersion);

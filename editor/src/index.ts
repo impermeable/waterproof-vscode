@@ -32,13 +32,17 @@ interface VSCodeAPI {
 
 function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI, editorRef: { current?: WaterproofEditor }) {
 	let formatConf: Pick<WaterproofEditorConfig,
-		"completions" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" | "disableMarkdownFeatures" | "serializer" | "menubarEntries" >;
+		"completionConfig" | "documentConstructor" | "toMarkdown" | "markdownName" | "tagConfiguration" | "languageConfig" | "disableMarkdownFeatures" | "serializer" | "menubarEntries" >;
 
 	// Set format-specific configuration
 	switch (format) {
 		case FileFormat.MarkdownV:
 			formatConf = {
-				completions: waterproofTactics,
+				completionConfig: {
+					completions: waterproofTactics,
+					// bullets | focus brace | period
+					beforeRegex: "^\\s*(?:\\*+|\\++|-+) |^\\s*{ |\\.\\s+"
+				},
 				documentConstructor: (v: string) => markdown.parse(v, {language: "coq"}),
 				toMarkdown: defaultToMarkdown,
 				markdownName: "Markdown",
@@ -52,7 +56,11 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI, editorRef: 
 			break;
 		case FileFormat.RegularV:
 			formatConf = {
-				completions: rocqTactics,
+				completionConfig: {
+					completions: rocqTactics,
+					// bullets | focus brace | period
+					beforeRegex: "^\\s*(?:\\*+|\\++|-+) |^\\s*{ |\\.\\s+"
+				},
 				documentConstructor: vFileParser,
 				toMarkdown: coqdocToMarkdown,
 				markdownName: "Rocq doc",
@@ -67,7 +75,10 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI, editorRef: 
 			break;
 		case FileFormat.Lean:
 			formatConf = {
-				completions: leanTactics,
+				completionConfig: {
+					completions: leanTactics,
+					beforeRegex: "^\\s*· |;\\s+"
+				},
 				documentConstructor: topLevelBlocksLean,
 				toMarkdown: versoMarkdownToMarkdown,
 				markdownName: "Markdown",

@@ -4,6 +4,7 @@ import {
   col,
   hint,
   fmtLabels,
+  fmtCp,
   groupByApply,
   pairs,
   commonPrefixLen,
@@ -29,6 +30,13 @@ export function runReports(ctx: ReportContext): void {
     ok: "✅",
     info: "ℹ️",
   };
+
+  // Map from final symbol -> apply
+  const finalByApply = new Map<string, string[]>();
+  for (const s of symbols) {
+    if (!finalByApply.has(s.apply)) finalByApply.set(s.apply, []);
+    finalByApply.get(s.apply)!.push(s.label);
+  }
 
   // R1: Lean applies skipped - apply already in symbols.json
   if (report.skippedByApply.size > 0) {
@@ -162,13 +170,8 @@ export function runReports(ctx: ReportContext): void {
         )}`,
       );
       for (const r of report.filteredLean) {
-        const cp = `U+${r.apply
-          .codePointAt(0)!
-          .toString(16)
-          .toUpperCase()
-          .padStart(4, "0")}`;
         console.log(
-          `   ${col(C.bold, r.apply)} ${col(C.gray, cp)}  ` +
+          `   ${col(C.bold, r.apply)} ${col(C.gray, fmtCp(r.apply))}  ` +
             `${col(C.gray, "kept:")} ${col(
               C.green,
               fmtLabels(r.keptLabels),
@@ -203,12 +206,6 @@ export function runReports(ctx: ReportContext): void {
   console.log("\n" + "-".repeat(47));
   console.log("    Final symbol list vs LaTeX symbol list");
   console.log("-".repeat(47));
-
-  const finalByApply = new Map<string, string[]>();
-  for (const s of symbols) {
-    if (!finalByApply.has(s.apply)) finalByApply.set(s.apply, []);
-    finalByApply.get(s.apply)!.push(s.label);
-  }
 
   const appliesInBoth = [...finalByApply.keys()].filter((a) =>
     latexApplyToLabels.has(a),
@@ -344,18 +341,12 @@ export function runReports(ctx: ReportContext): void {
   }
 
   // R6: Matching-prefix alias pairs in the final symbol list
-  const labelsByApply = new Map<string, string[]>();
-  for (const s of symbols) {
-    if (!labelsByApply.has(s.apply)) labelsByApply.set(s.apply, []);
-    labelsByApply.get(s.apply)!.push(s.label);
-  }
-
   const prefixReport: Array<{
     apply: string;
     labels: string[];
     maxCommon: number;
   }> = [];
-  for (const [apply, labels] of labelsByApply) {
+  for (const [apply, labels] of finalByApply) {
     if (labels.length < 2) continue;
     let maxCommon = 0;
     const matchingPairs: Array<{ a: string; b: string; common: number }> = [];
@@ -401,16 +392,7 @@ export function runReports(ctx: ReportContext): void {
       )}`,
     );
     for (const [apply, labels] of byApply) {
-      const cps = [...apply]
-        .map(
-          (c) =>
-            `U+${c
-              .codePointAt(0)!
-              .toString(16)
-              .toUpperCase()
-              .padStart(4, "0")}`,
-        )
-        .join(", ");
+      const cps = [...apply].map((c) => fmtCp(c)).join(", ");
       console.log(
         `   ${col(C.bold, apply)}  ${col(C.gray, `[${cps}]`)}  ${fmtLabels(
           labels,
@@ -442,10 +424,7 @@ export function runReports(ctx: ReportContext): void {
     );
     console.log(`   ${"─".repeat(80)}`);
     for (const { apply, baseLabels, leanLabels } of sharedChars) {
-      const cp = `U+${(apply.codePointAt(0) ?? 0)
-        .toString(16)
-        .toUpperCase()
-        .padStart(4, "0")}`;
+      const cp = fmtCp(apply);
 
       // Join aliases with a comma. (Avoid fmtLabels here so ANSI codes don't break padEnd length)
       const baseLabelStr = baseLabels.join(", ");

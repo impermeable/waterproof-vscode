@@ -1,5 +1,5 @@
 import type { SymbolEntry, TestContext } from "./generate-symbols.types.mts";
-import { C, col, fmtLabels } from "./generate-symbols.utils.mts";
+import { C, col, fmtCp, fmtLabels } from "./generate-symbols.utils.mts";
 
 export function runTests(ctx: TestContext): void {
   const { base, enriched, report, leanApplyToLabels, overrides, MERGE } = ctx;
@@ -238,11 +238,7 @@ export function runTests(ctx: TestContext): void {
     if (missingApplies.length > 0) {
       fail(`Lean applies missing from output (${missingApplies.length}):`);
       for (const apply of missingApplies) {
-        const cp = `U+${apply
-          .codePointAt(0)!
-          .toString(16)
-          .toUpperCase()
-          .padStart(4, "0")}`;
+        const cp = fmtCp(apply);
         const labels = [...(leanApplyToLabels.get(apply) ?? [])];
         console.log(
           `   ${apply}  ${col(C.gray, cp.padEnd(10))} lean labels: ${fmtLabels(

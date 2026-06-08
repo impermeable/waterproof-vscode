@@ -1,6 +1,8 @@
 import type { LeanLabelStrategy } from "./generate-symbols.types.mts";
 
-// -- ANSI color helpers --
+// ---------------------------------------------------------------------------
+//  ANSI color helpers
+// ---------------------------------------------------------------------------
 
 export const C = {
   reset: "\x1b[0m",
@@ -23,7 +25,9 @@ export function hint(msg: string): string {
   return col(C.dim, `(${msg})`);
 }
 
-// -- Helpers --
+// ---------------------------------------------------------------------------
+//  General utils
+// ---------------------------------------------------------------------------
 
 /** Strip a leading backslash to get the bare stem, used for length comparisons. */
 export function stem(label: string): string {
@@ -42,6 +46,11 @@ export function commonPrefixLen(a: string, b: string): number {
 /** Format labels as a comma-separated string */
 export function fmtLabels(labels: string[]): string {
   return labels.join(", ");
+}
+
+/** Format a single Unicode codepoint as U+XXXX. */
+export function fmtCp(s: string): string {
+  return `U+${s.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}`;
 }
 
 /** Group an array of {apply, label} items by apply, collecting labels */
@@ -65,7 +74,7 @@ export function pairs(arr: string[]): [string, string][] {
 }
 
 // ---------------------------------------------------------------------------
-// Lean label strategy filter
+// Lean label strategy filter (see generate-symbols.config.mts)
 // ---------------------------------------------------------------------------
 
 export function filterLeanLabels(

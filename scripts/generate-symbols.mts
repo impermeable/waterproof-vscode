@@ -5,16 +5,16 @@
  * adding any characters from Lean that are not already in the base.
  *
  * Priority order (highest to lowest):
- *   1. symbols.json  (sacred, never modified)
- *   2. latex-unicode.json  (ALL lean labels that also appear in latex are added)
- *   3. lean abbreviations  (for applies with no latex match, ALL lean labels are added)
+ *   1. symbols.json         - sacred, never modified
+ *   2. latex-unicode.json   - all lean labels that also appear in latex are added
+ *   3. lean abbreviations   - for applies with no latex match, all lean labels are added
  *
  * All tunable options live in generate-symbols-helpers/generate-symbols.config.mts.
  *
  * Usage:
- *   node generate-symbols.mts                  # merge and write
- *   node generate-symbols.mts --test           # merge, write, then run validation checks and show reports
- *   node generate-symbols.mts --test --verbose # also show lean-fallback list and latex{} notice
+ *   node generate-symbols.mts                   # merge and write
+ *   node generate-symbols.mts --test            # merge, write, then run tests and show reports
+ *   node generate-symbols.mts --test --verbose  # also show lean-fallback list and latex{} notice
  */
 
 import fs from "fs";
@@ -32,7 +32,6 @@ import {
 
 import { runReports } from "./generate-symbols-helpers/generate-symbols.report.mts";
 import { runTests } from "./generate-symbols-helpers/generate-symbols.tests.mts";
-
 import {
   C,
   col,
@@ -57,7 +56,17 @@ const OUTPUT = path.resolve(__dirname, PATHS.output);
 const TEST = process.argv.includes("--test");
 const VERBOSE = process.argv.includes("--verbose");
 
-// -- Unicode block helpers --
+// -- Helpers
+
+/** Build a reverse map: value -> Set<key> from a Map<key, value>. */
+function buildReverseMap<K, V>(map: Map<K, V>): Map<V, Set<K>> {
+  const reverse = new Map<V, Set<K>>();
+  for (const [key, value] of map) {
+    if (!reverse.has(value)) reverse.set(value, new Set());
+    reverse.get(value)!.add(key);
+  }
+  return reverse;
+}
 
 /**
  * Determines which Unicode block a codepoint belongs to, and thus which symbol panel category it should be in.
@@ -65,11 +74,7 @@ const VERBOSE = process.argv.includes("--verbose");
  * @returns The Unicode block entry for the codepoint, or null if not found.
  */
 function blockEntry(cp: number): BlockEntry | null {
-  for (const entry of BLOCKS) {
-    const [[lo, hi]] = entry;
-    if (cp >= lo && cp <= hi) return entry;
-  }
-  return null;
+  return BLOCKS.find(([[lo, hi]]) => cp >= lo && cp <= hi) ?? null;
 }
 
 /**
@@ -84,7 +89,7 @@ function categoryFromBlock(cp: number): [number, keyof ShowInPanelConfig] {
   return [cat, key];
 }
 
-/** Compute the symbolPanelCategory for a new lean-added label+apply */
+/** Compute the symbolPanelCategory for a label+apply pair, or undefined if hidden. */
 function computeCategory(label: string, apply: string): number | undefined {
   const cp = apply.codePointAt(0);
   if (cp === undefined) return undefined;
@@ -94,18 +99,21 @@ function computeCategory(label: string, apply: string): number | undefined {
   return SHOW_IN_PANEL[groupKey] ? naturalCat : undefined;
 }
 
+/** Build a SymbolEntry, attaching symbolPanelCategory only when defined. */
+function makeEntry(label: string, apply: string): SymbolEntry {
+  const cat = computeCategory(label, apply);
+  return cat !== undefined
+    ? { label, type: "symbol", apply, symbolPanelCategory: cat }
+    : { label, type: "symbol", apply };
+}
+
 // -- Step 1: load base symbols
+
 const base: BaseSymbol[] = JSON.parse(fs.readFileSync(BASE, "utf8"));
 
-const baseApplyToLabels = new Map<string, Set<string>>();
-for (const s of base) {
-  if (!baseApplyToLabels.has(s.apply)) {
-    baseApplyToLabels.set(s.apply, new Set());
-  }
-  baseApplyToLabels.get(s.apply)!.add(s.label);
-}
-const baseLabelToEntry = new Map<string, BaseSymbol>(
-  base.map((s) => [s.label, s]),
+const baseLabelToEntry = new Map(base.map((s) => [s.label, s]));
+const baseApplyToLabels = buildReverseMap(
+  new Map(base.map((s) => [s.label, s.apply])),
 );
 
 // -- Step 2: load latex-unicode
@@ -114,51 +122,47 @@ const latexRaw: Record<string, string> = JSON.parse(
   fs.readFileSync(LATEX, "utf8"),
 );
 
-const latexApplyToLabels = new Map<string, Set<string>>(); // apply -> Set<label>  (only non-"{}"" labels, e.g. \mathbb{A})
-const latexLabelToApply = new Map<string, string>(); // label -> apply       (only non-"{}" labels)
+const latexLabelToApply = new Map<string, string>(); // label -> apply (only non-"{}" labels)
 const latexBraceLabels: Array<{ label: string; apply: string }> = []; // labels containing "{}" (for --verbose logging)
 const multiCodepoint: Array<{ label: string; apply: string }> = [];
 
-for (const [label, apply] of Object.entries(latexRaw)) {
-  const normalLabel = label.startsWith("\\") ? label : "\\" + label;
-  if (normalLabel.includes("{")) {
-    latexBraceLabels.push({ label: normalLabel, apply });
-    // intentionally NOT added to latexApplyToLabels or latexLabelToApply
+for (const [rawLabel, apply] of Object.entries(latexRaw)) {
+  const label = rawLabel.startsWith("\\") ? rawLabel : "\\" + rawLabel;
+  if (label.includes("{")) {
+    latexBraceLabels.push({ label, apply }); // logged with --verbose
+    // NOT added!
   } else {
-    latexLabelToApply.set(normalLabel, apply);
-    if (!latexApplyToLabels.has(apply))
-      latexApplyToLabels.set(apply, new Set());
-    latexApplyToLabels.get(apply)!.add(normalLabel);
+    latexLabelToApply.set(label, apply);
   }
 }
 
+// apply -> Set<label>  (only non-"{}"" labels, e.g. \mathbb{A})
+const latexApplyToLabels = buildReverseMap(latexLabelToApply);
+
 // -- Step 3: load & normalize lean symbols
-const leanJson: Record<string, string | string[]> = JSON.parse(
+
+const leanRaw: Record<string, string | string[]> = JSON.parse(
   fs.readFileSync(LEAN, "utf8"),
 );
+
 const leanAll = new Map<string, string>(); // label -> apply
 
-// filter out multi-codepoint applies and weird entries
-for (const [key, value] of Object.entries(leanJson)) {
+for (const [key, value] of Object.entries(leanRaw)) {
   const apply = Array.isArray(value) ? value[0] : value;
   if (!apply || apply.includes("$CURSOR")) continue; // Some lean entries have this $CURSOR for things like [$CURSOR], we skip those
-  if (apply === "\\" || apply === "\\n") continue; //skip the weird entries for \ and \n
+  if (apply === "\\" || apply === "\\n") continue; //skip the entries for \ and \n
   const label = key.startsWith("\\") ? key : "\\" + key;
-  if ([...apply].length !== 1) {
-    multiCodepoint.push({ label, apply });
-  } // multi-codepoint applies like "⋃₀" or "⁻¹"
-  if ([...apply].length !== 1 && MERGE.skipMultiCodepoint) continue; // skip multi-codepoint applies if configured to do so
+  // multi-codepoint applies like "⋃₀" or "⁻¹" (skip if configured)
+  const isMulti = [...apply].length !== 1;
+  if (isMulti) multiCodepoint.push({ label, apply });
+  if (isMulti && MERGE.skipMultiCodepoint) continue;
   leanAll.set(label, apply);
 }
 
-// Build reverse map for lean: apply -> Set<label>
-const leanApplyToLabels = new Map<string, Set<string>>();
-for (const [label, apply] of leanAll) {
-  if (!leanApplyToLabels.has(apply)) leanApplyToLabels.set(apply, new Set());
-  leanApplyToLabels.get(apply)!.add(label);
-}
+const leanApplyToLabels = buildReverseMap(leanAll);
 
 // -- Step 4: merge
+
 const symbols: SymbolEntry[] = [...base];
 const seenLabels = new Set<string>(base.map((s) => s.label));
 const seenApplies = new Set<string>(base.map((s) => s.apply));
@@ -185,8 +189,18 @@ const report: MergeReport = {
   labelConflicts: [], // { label, baseApply, leanApply }
 };
 
+/** Emit symbol entries for a batch of labels and mark them as seen. */
+function addEntries(labels: string[], apply: string) {
+  seenApplies.add(apply);
+  for (const label of labels) {
+    if (seenLabels.has(label)) continue;
+    seenLabels.add(label);
+    symbols.push(makeEntry(label, apply));
+  }
+}
+
 for (const [apply, leanLabels] of leanApplyToLabels) {
-  // -- Case A: apply already in symbols.json
+  // Case A: apply already covered by base. Record skipped lean labels for logging, optionally add latex aliases.
   if (seenApplies.has(apply)) {
     const baseLabelsForApply = base
       .filter((s) => s.apply === apply)
@@ -203,65 +217,45 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
       });
     }
 
-    // Optionally add extra LaTeX labels for already-covered applies
     if (MERGE.addLatexIfAlreadyInBase) {
-      const latexLabels = latexApplyToLabels.get(apply) ?? new Set<string>();
-      for (const latexLabel of latexLabels) {
+      for (const latexLabel of latexApplyToLabels.get(apply) ?? []) {
         if (seenLabels.has(latexLabel)) continue;
         seenLabels.add(latexLabel);
         latexBaseAliasLabels.add(latexLabel);
-        const cat = computeCategory(latexLabel, apply);
-        const entry: SymbolEntry =
-          cat !== undefined
-            ? {
-                label: latexLabel,
-                type: "symbol",
-                apply,
-                symbolPanelCategory: cat,
-              }
-            : { label: latexLabel, type: "symbol", apply };
-        symbols.push(entry);
+        symbols.push(makeEntry(latexLabel, apply));
       }
     }
     continue;
   }
 
-  // -- Case B: detect label conflicts
-  for (const leanLabel of leanLabels) {
-    if (seenLabels.has(leanLabel)) {
-      const baseEntry = baseLabelToEntry.get(leanLabel);
-      if (baseEntry && baseEntry.apply !== apply) {
-        report.labelConflicts.push({
-          label: leanLabel,
-          baseApply: baseEntry.apply,
-          leanApply: apply,
-        });
-      }
+  // Case B: detect label conflicts (lean label already used for a different apply).
+  for (const label of leanLabels) {
+    const baseEntry = baseLabelToEntry.get(label);
+    if (baseEntry && baseEntry.apply !== apply) {
+      report.labelConflicts.push({
+        label,
+        baseApply: baseEntry.apply,
+        leanApply: apply,
+      });
     }
   }
 
   const eligibleLeanLabels = [...leanLabels].filter((l) => !seenLabels.has(l));
   if (eligibleLeanLabels.length === 0) continue;
 
-  // -- Case C: add labels
+  // Case C: new apply; add via latex match, or fall back to lean-only.
   const latexMatches = eligibleLeanLabels.filter((l) =>
     latexLabelToApply.has(l),
   );
-  const latexLabelsForApply = latexApplyToLabels.get(apply)
-    ? [...latexApplyToLabels.get(apply)!]
-    : [];
-
-  // Labels to actually add as symbol entries this round
-  let labelsToAdd: string[];
 
   if (latexMatches.length > 0 && MERGE.addViaLatex) {
     // LaTeX-matched path: no leanLabelStrategy filtering applied here
     // (the latex table is already a quality filter)
-    labelsToAdd = latexMatches;
+    addEntries(latexMatches, apply);
     report.addedViaLatex.push({
       apply,
       addedLabels: latexMatches,
-      latexLabels: latexLabelsForApply,
+      latexLabels: [...(latexApplyToLabels.get(apply) ?? [])],
       droppedLean: eligibleLeanLabels.filter((l) => !latexMatches.includes(l)),
     });
   } else if (MERGE.addViaLean) {
@@ -270,7 +264,7 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
       eligibleLeanLabels,
       MERGE.leanLabelStrategy,
     );
-    labelsToAdd = kept;
+    addEntries(kept, apply);
     report.addedViaLean.push({ apply, addedLabels: kept });
     if (dropped.length > 0) {
       report.filteredLean.push({
@@ -279,32 +273,18 @@ for (const [apply, leanLabels] of leanApplyToLabels) {
         droppedLabels: dropped,
       });
     }
-  } else {
-    continue; // both sources disabled for this apply
-  }
-
-  // Emit one symbol entry per label
-  seenApplies.add(apply);
-  for (const label of labelsToAdd) {
-    if (seenLabels.has(label)) continue; // guard against duplicates within batch
-    seenLabels.add(label);
-    const cat = computeCategory(label, apply);
-    const entry: SymbolEntry =
-      cat !== undefined
-        ? { label, type: "symbol", apply, symbolPanelCategory: cat }
-        : { label, type: "symbol", apply };
-    symbols.push(entry);
   }
 }
 
-// -- Step 5: write output
+// -- Step 5: Enrich and write output
 
 // Determine which source a lean-added symbol came from (for boost purposes)
-const latexAddedLabels = new Set<string>([
+const latexAddedLabels = new Set([
   ...report.addedViaLatex.flatMap((r) => r.addedLabels),
   ...latexBaseAliasLabels,
 ]);
 
+// Pre-build per-apply label lists for alias details.
 const finalLabelsByApply = new Map<string, string[]>();
 for (const s of symbols) {
   if (!finalLabelsByApply.has(s.apply)) finalLabelsByApply.set(s.apply, []);
@@ -312,12 +292,12 @@ for (const s of symbols) {
 }
 
 const enriched: SymbolEntry[] = symbols.map((s) => {
-  const allAliases = new Set(finalLabelsByApply.get(s.apply) ?? []);
-  allAliases.delete(s.label);
-
+  const allAliases = (finalLabelsByApply.get(s.apply) ?? []).filter(
+    (l) => l !== s.label,
+  );
   const extras: Partial<Pick<SymbolEntry, "detail" | "boost">> = {};
 
-  if (ENRICHMENT.includeAliasDetails && allAliases.size > 0) {
+  if (ENRICHMENT.includeAliasDetails && allAliases.length > 0) {
     extras.detail = ` Also: ${[...allAliases].join(" ")} `;
   }
 

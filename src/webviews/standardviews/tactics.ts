@@ -1,7 +1,7 @@
 import {
     Uri,
 } from "vscode";
-import { CoqWebview, WebviewEvents, WebviewState } from "../coqWebview";
+import { WaterproofPanel, WebviewEvents, WebviewState } from "../waterproofPanel";
 
 // Import the JSON data containing the Rocq tactics
 import dataRocq from "../../../completions/tactics.json";
@@ -12,7 +12,7 @@ import { RocqLspClient } from "../../lsp-client/rocq";
 import { LeanLspClient } from "../../lsp-client/lean";
 import type { TacticsData } from "../../../shared";
 
-export class TacticsPanel extends CoqWebview {
+export class TacticsPanel extends WaterproofPanel {
     private lastClient?: RocqLspClient | LeanLspClient;
 
     constructor(extensionUri: Uri) {

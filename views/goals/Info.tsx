@@ -32,7 +32,7 @@ export function InfoPanel() {
   const [isHelpLoading, setIsHelpLoading] = useState(false);
   const [helpInfo, setHelpInfo] = useState<string[] | RocqGoalAnswer<PpString> | undefined>(undefined);
   //handles the message
-  //event : CoqMessageEvent as defined above
+  //event : RocqMessageEvent as defined above
   function infoViewDispatch(msg: Message) { 
     switch (msg.type) {
       case MessageType.renderGoals: {

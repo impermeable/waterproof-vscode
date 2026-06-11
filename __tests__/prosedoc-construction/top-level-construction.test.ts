@@ -228,7 +228,7 @@ test("Parse and serialize document (Lean)", () => {
 })
 
 test("Markdown and Code (Lean)", () => {
-    // Lean equivalent of "Markdown and Code" (Coq)
+    // Lean equivalent of "Markdown and Code" (Rocq)
     const input = `Test\n\`\`\`lean\nCompute 3 + 3.\n\`\`\``;
     const blocks = topLevelBlocksLean(input);
     expect(blocks.length).toBe(3);
@@ -250,7 +250,7 @@ test("Markdown and Code (Lean)", () => {
 });
 
 test("1 input area with math and code (Lean)", () => {
-    // Lean equivalent of "1 input area with math and code" (Coq)
+    // Lean equivalent of "1 input area with math and code" (Rocq)
     const input = `\n:::input\n\$\$\`a^2 + b^2 = c^2\`\n\`\`\`lean\ndef trivial := True\n\`\`\`\n:::`;
     const blocks = topLevelBlocksLean(input);
 
@@ -272,7 +272,7 @@ test("1 input area with math and code (Lean)", () => {
 });
 
 test("Markdown and input (Lean)", () => {
-    // Lean equivalent of "Markdown and input" (Coq)
+    // Lean equivalent of "Markdown and input" (Rocq)
     const input = `# Header\n:::input\n\`\`\`lean\nGoal False.\n\`\`\`\n\`\`\`lean\nGoal True.\n\`\`\`\n:::`;
     const blocks = topLevelBlocksLean(input);
 

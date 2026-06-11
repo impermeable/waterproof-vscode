@@ -3,13 +3,13 @@ import { RocqGoalAnswer, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { IGoalsComponent } from "../../components";
 import { LspClientConfig } from "../../lsp-client/clientTypes";
-import { CoqWebview } from "../coqWebview";
+import { WaterproofPanel } from "../waterproofPanel";
 import { WaterproofConfigHelper, WaterproofSetting } from "../../helpers";
 import { RocqLspClient } from "../../lsp-client/rocq";
 import { WaterproofLogger as wpl } from "../../helpers";
 
 //class for panels that need Goals objects from coq-lsp
-export abstract class GoalsBase extends CoqWebview implements IGoalsComponent {
+export abstract class GoalsBase extends WaterproofPanel implements IGoalsComponent {
 
     protected config: LspClientConfig;
 

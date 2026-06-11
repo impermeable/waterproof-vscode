@@ -11,7 +11,7 @@ import "@impermeable/waterproof-editor/styles.css";
 // import the style sheet mapping waterproof style properties to vscode styles
 import "./vscodemapping.css";
 import { vFileParser } from "./document-construction/vFile";
-import { coqdocToMarkdown } from "./coqdoc";
+import { rocqdocToMarkdown } from "./rocqdoc";
 import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import * as langWp from "@impermeable/codemirror-lang-waterproof";
@@ -54,7 +54,7 @@ function createConfiguration(format: FileFormat, codeAPI: VSCodeAPI, editorRef: 
 			formatConf = {
 				completions: rocqTactics,
 				documentConstructor: vFileParser,
-				toMarkdown: coqdocToMarkdown,
+				toMarkdown: rocqdocToMarkdown,
 				markdownName: "Rocq doc",
 				tagConfiguration: tagConfigurationV,
 				disableMarkdownFeatures: ["code"],

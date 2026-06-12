@@ -19,7 +19,7 @@ test("Inner input area (and hint) blocks", () => {
     expect(math.range.from).toBe(0);
     expect(math.range.to).toBe(17);
 
-    // CoqBlock content:
+    // RocqBlock content:
     expect(code.stringContent).toBe("Compute 1028 + 23.");
     expect(code.range.from).toBe(18);
     expect(code.range.to).toBe(inputAreaContent.length);

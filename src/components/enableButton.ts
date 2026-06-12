@@ -6,7 +6,7 @@ import { IStatusComponent } from "../components";
  * bar element displaying the lsp client status
  * @public
  */
-export class CoqnitiveStatusBar implements IStatusComponent {
+export class WaterproofStatusBar implements IStatusComponent {
     // The status bar item this class wraps around
     private item: StatusBarItem;
 

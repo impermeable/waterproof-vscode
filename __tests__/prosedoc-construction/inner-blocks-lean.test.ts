@@ -8,7 +8,7 @@ import { topLevelBlocksLean } from "../../editor/src/document-construction/const
  */
 
 test("Inner input area blocks (Lean)", () => {
-    // Lean equivalent of "Inner input area (and hint) blocks" (Coq)
+    // Lean equivalent of "Inner input area (and hint) blocks" (Rocq)
     // An input area containing math display and a code block
     const document = "# Header\n:::input\n$$`1028 + 23 = ?`\n```lean\nCompute 1028 + 23.\n```\n:::\n";
     const blocks = topLevelBlocksLean(document);
@@ -31,7 +31,7 @@ test("Inner input area blocks (Lean)", () => {
 });
 
 test("Verify newlines before and after code are translated into newline nodes (Lean)", () => {
-    // Lean equivalent of "Verify newlines before and after code..." (Coq)
+    // Lean equivalent of "Verify newlines before and after code..." (Rocq)
     // Note: trailing \n after \n``` is a non-significant newline and does not
     // produce a separate block (it falls below the >1 char threshold).
     const document = "\n#doc (WaterproofGenre) \"Title\" =>\n```lean\ndef test := 42\n```\n";
@@ -48,7 +48,7 @@ test("Verify newlines before and after code are translated into newline nodes (L
 });
 
 test("Inner input area blocks with code (Lean) #2", () => {
-    // Lean equivalent of "Inner input area (and hint) blocks #2" (Coq)
+    // Lean equivalent of "Inner input area (and hint) blocks #2" (Rocq)
     // Input area with math and code, checking that inner block offsets are correct
     const document = "# Preamble\n:::input\n$$`1028 + 23 = ?`\n```lean\nCompute 1028 + 23.\n```\n:::\n";
     const blocks = topLevelBlocksLean(document);
@@ -77,7 +77,7 @@ test("Inner input area blocks with code (Lean) #2", () => {
 });
 
 test("Inner input area with markdown only (Lean) #3", () => {
-    // Lean equivalent of "Inner input area (and hint) blocks #3" (Coq)
+    // Lean equivalent of "Inner input area (and hint) blocks #3" (Rocq)
     // Input area containing only markdown text.
     // Note: the tokenizer only creates Text tokens for gaps >1 char between matches
     // (see lean.ts: `pos > prev.range.to + 1`), so "t" (1 char) is lost.

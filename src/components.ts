@@ -34,7 +34,7 @@ export interface ILineNumberComponent extends Disposable {
 
 /**
  * This defines the interface of a component that displays
- * the progress of coq checking a file
+ * the progress of rocq checking a file
  */
 export interface IFileProgressComponent extends Disposable {
     /**

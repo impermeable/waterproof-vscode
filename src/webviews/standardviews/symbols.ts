@@ -1,9 +1,9 @@
 import {
     Uri, 
 } from "vscode";
-import { CoqWebview, WebviewEvents, WebviewState } from "../coqWebview";
+import { WaterproofPanel, WebviewEvents, WebviewState } from "../waterproofPanel";
 
-export class SymbolsPanel extends CoqWebview {
+export class SymbolsPanel extends WaterproofPanel {
     constructor(extensionUri: Uri) {
         // Initialize the symbols panel with the extension Uri and the webview name
         super(extensionUri, "symbols");

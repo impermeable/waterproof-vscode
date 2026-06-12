@@ -5,12 +5,12 @@ import { FileProgressParams } from "../requestTypes";
 /**
  * LSP request to obtain the goals at a specific point in the doc.
  */
-export const coqGoalRequestType = new RequestType<RocqGoalRequest, RocqGoalAnswer<PpString>, void>("proof/goals");
+export const rocqGoalRequestType = new RequestType<RocqGoalRequest, RocqGoalAnswer<PpString>, void>("proof/goals");
 
 /**
  * LSP notification regarding the progress on processing the document server side
  */
-export const coqFileProgressNotificationType = new NotificationType<FileProgressParams>("$/coq/fileProgress");
+export const rocqFileProgressNotificationType = new NotificationType<FileProgressParams>("$/coq/fileProgress");
 
 /**
  * LSP notification regarding the execution information of the sentence currently being checked.
@@ -25,4 +25,4 @@ export const executionInformationNotificationType = new NotificationType<Executi
  * Notification type for the coq-lsp specific `serverStatus` notification. Returns a `CoqServerStatus` object that
  * can be either Busy or Idle.
  */
-export const coqServerStatusNotificationType = new NotificationType<RocqServerStatus>("$/coq/serverStatus");
+export const rocqServerStatusNotificationType = new NotificationType<RocqServerStatus>("$/coq/serverStatus");

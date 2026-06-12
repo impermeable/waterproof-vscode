@@ -27,7 +27,7 @@ export function Debug() {
   const [isLoading, setIsLoading] = useState(false);
 
   //handles the message
-  //event : CoqMessageEvent as defined above
+  //event : RocqMessageEvent as defined above
   function infoViewDispatch(msg: Message) { 
     if (msg.type === MessageType.renderGoals) {
       const goals = msg.body.goals;

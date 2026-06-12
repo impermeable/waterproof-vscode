@@ -75,10 +75,10 @@ async function setupWaterproofProfile(context: ExtensionContext): Promise<void> 
 }
 
 /**
- * Checks whether the user wants to ignore Coq object files and adjusts the workspace
+ * Checks whether the user wants to ignore Rocq object files and adjusts the workspace
  * configuration accordingly.
  */
-export function excludeCoqFileTypes() {
+export function excludeRocqFileTypes() {
     const updateIgnores = WaterproofConfigHelper.get(WaterproofSetting.UpdateIgnores);
     if (updateIgnores) {
         const config = workspace.getConfiguration();

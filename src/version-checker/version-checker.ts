@@ -20,15 +20,15 @@ export class VersionChecker {
     private _wpPath: string | undefined;
     private _context: ExtensionContext;
 
-    private _reqVersionCoqLSP: VersionRequirement;
-    private _reqVersionCoqWP: VersionRequirement;
+    private _reqVersionRocqLSP: VersionRequirement;
+    private _reqVersionRocqWP: VersionRequirement;
 
-    constructor(context: ExtensionContext, coqLspVersion: string, coqWaterproofVersion: string) {
+    constructor(context: ExtensionContext, rocqLspVersion: string, rocqWaterproofVersion: string) {
         this._context = context;
         this._wpPath = WaterproofConfigHelper.get(WaterproofSetting.Path);
 
-        this._reqVersionCoqLSP = VersionRequirement.fromString(coqLspVersion);
-        this._reqVersionCoqWP = VersionRequirement.fromString(coqWaterproofVersion);
+        this._reqVersionRocqLSP = VersionRequirement.fromString(rocqLspVersion);
+        this._reqVersionRocqWP = VersionRequirement.fromString(rocqWaterproofVersion);
 
     }
 
@@ -43,8 +43,8 @@ export class VersionChecker {
         const version = await this.checkLSPBinary();
         wpl.log(`Version of coq-lsp: ${version}`);
         if (!isVersionError(version)) {
-            if (version.needsUpdate(this._reqVersionCoqLSP)) {
-                this.informUpdateAvailable("coq-lsp", this._reqVersionCoqLSP, version);
+            if (version.needsUpdate(this._reqVersionRocqLSP)) {
+                this.informUpdateAvailable("coq-lsp", this._reqVersionRocqLSP, version);
             }
         } else {
 
@@ -59,14 +59,14 @@ export class VersionChecker {
      * Run version checks asynchronously.
      */
     public async run(): Promise<void> {
-        const coqWaterproofResult = await this.checkWaterproofLib();
+        const rocqWaterproofResult = await this.checkWaterproofLib();
 
-        if (isVersionError(coqWaterproofResult)) {
+        if (isVersionError(rocqWaterproofResult)) {
             this.informWaterproofLibNotFound();
         } else {
-            const wpV = coqWaterproofResult.wpVersion;
-            if (wpV.needsUpdate(this._reqVersionCoqWP)) {
-                this.informUpdateAvailable("coq-waterproof", this._reqVersionCoqWP, wpV);
+            const wpV = rocqWaterproofResult.wpVersion;
+            if (wpV.needsUpdate(this._reqVersionRocqWP)) {
+                this.informUpdateAvailable("coq-waterproof", this._reqVersionRocqWP, wpV);
             }
         }
     }
@@ -75,7 +75,7 @@ export class VersionChecker {
      * Check the version of coq-waterproof.
      * @returns
      */
-    public async checkWaterproofLib(): Promise<{ wpVersion: Version, requiredCoqVersion: Version } | VersionError> {
+    public async checkWaterproofLib(): Promise<{ wpVersion: Version, requiredRocqVersion: Version } | VersionError> {
         if (this._wpPath === undefined) return { reason: "Waterproof.path is undefined" };
         const ext = process.platform === "win32" ? ".exe" : "";
         const ocamlfindPath = WaterproofFileUtil.join(WaterproofFileUtil.getDirectory(this._wpPath), `ocamlfind${ext}`);
@@ -91,10 +91,10 @@ export class VersionChecker {
         try {
             const stdout = await this.exec(command, extra_env);
             wpl.log(`Waterproof version: ${stdout}`);
-            const [wpVersion, reqCoqVersion] = stdout.trim().split("+");
-            const versionCoqWaterproof = Version.fromString(wpVersion);
-            const versionRequiredCoq = Version.fromString(reqCoqVersion);
-            return { wpVersion: versionCoqWaterproof, requiredCoqVersion: versionRequiredCoq };
+            const [wpVersion, reqRocqVersion] = stdout.trim().split("+");
+            const versionRocqWaterproof = Version.fromString(wpVersion);
+            const versionRequiredRocq = Version.fromString(reqRocqVersion);
+            return { wpVersion: versionRocqWaterproof, requiredRocqVersion: versionRequiredRocq };
         } catch (err: unknown) {
             return err instanceof Error
                 ? { reason: err.message }

@@ -1,11 +1,11 @@
 import {
     Uri,
 } from "vscode";
-import { CoqWebview, WebviewEvents, WebviewState } from "../coqWebview";
+import { WaterproofPanel, WebviewEvents, WebviewState } from "../waterproofPanel";
 import { MessageType } from "../../../shared";
 import { IExecutor } from "../../components";
 
-export class Search extends CoqWebview implements IExecutor {
+export class Search extends WaterproofPanel implements IExecutor {
     // Initialize the data for the results
     private data: string[] = ['no results'];
 

@@ -4,13 +4,13 @@ import { LanguageClient, LanguageClientOptions } from "vscode-languageclient/bro
 import { Waterproof } from "./extension";
 
 /**
- * This function is responsible for creating Coq language client providers
+ * This function is responsible for creating Rocq language client providers
  *
  * @param clientOptions the options available for a LanguageClient (see vscode api)
  * @param wsConfig the workspace configuration of Waterproof
- * @returns an LSP client with the added functionality of `CoqFeatures`
+ * @returns an LSP client with the added functionality of `RocqFeatures`
  */
-const getCoqClientProvider: LanguageClientProviderFactory = (
+const getRocqClientProvider: LanguageClientProviderFactory = (
     context: ExtensionContext,
     clientOptions: LanguageClientOptions,
     _wsConfig: WorkspaceConfiguration
@@ -33,7 +33,7 @@ const getCoqClientProvider: LanguageClientProviderFactory = (
  *
  * @param clientOptions the options available for a LanguageClient (see vscode api)
  * @param wsConfig the workspace configuration of Waterproof
- * @returns an LSP client with the added functionality of `CoqFeatures`
+ * @returns an LSP client with the added functionality of `LeanFeatures`
  */
 const getLeanClientProvider: LanguageClientProviderFactory = (
     _context: ExtensionContext,
@@ -45,7 +45,7 @@ const getLeanClientProvider: LanguageClientProviderFactory = (
 
 export function activate(context: ExtensionContext): void {
     console.log("Browser activate function");
-    const extension: Waterproof = new Waterproof(context, getCoqClientProvider, getLeanClientProvider, true);
+    const extension: Waterproof = new Waterproof(context, getRocqClientProvider, getLeanClientProvider, true);
     context.subscriptions.push(extension);
     // start the lsp client
     extension.initializeClient();

@@ -1,6 +1,7 @@
 import { Code2ProtocolConverter, Protocol2CodeConverter } from "vscode-languageclient";
-import { LeanDiagnostic } from "./requestTypes";
+import { LeanDiagnostic, LeanTag } from "./requestTypes";
 import { Diagnostic } from "vscode";
+import * as code from 'vscode'
 
 import * as async from 'vscode-languageclient/lib/common/utils/async'
 
@@ -28,10 +29,10 @@ export function patchDiagnosticConverters(p2c: Protocol2CodeConverter, c2p: Code
         async.map(diags, d => p2c.asDiagnostic(d), token)
 
     const origC2p = c2p.asDiagnostic.bind(c2p);
-    c2p.asDiagnostic = (diag: Diagnostic) => {
-        const leanDiag = diag as LeanDiagnostic;
+    c2p.asDiagnostic = (diag: Diagnostic & { fullRange?: code.Range; isSilent?: boolean; leanTags?: LeanTag[] }) => {
+        const leanDiag = diag;
         const protDiag = origC2p(diag) as LeanDiagnostic;
-        protDiag.fullRange = c2p.asRange(leanDiag.fullRange) as any;
+        protDiag.fullRange = c2p.asRange(leanDiag.fullRange) ?? undefined;
         protDiag.leanTags = leanDiag.leanTags;
         protDiag.isSilent = leanDiag.isSilent;
         return protDiag;

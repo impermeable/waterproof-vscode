@@ -1,6 +1,6 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { EventEmitter, extensions, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity } from "vscode";
+import { EventEmitter, extensions, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity, workspace } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
 import { LeanDiagnostic, leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams, LeanTag } from "./requestTypes";
@@ -35,9 +35,13 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
         const hndl = this.client.middleware.handleDiagnostics;
         this.client.middleware.handleDiagnostics = (uri, diagnostics_, next) => {
-                
-            const inputAreas = this.activeDocument ? this.getInputAreas(this.activeDocument) : undefined;
-            const friendlyDiagnostics = this.rewriteDiagnostics(diagnostics_, inputAreas);
+
+            const diagnostics = diagnostics_ as WpDiagnostic[];
+            // Find the document these diagnostics actually belong to
+            const document = workspace.textDocuments.find(d => d.uri.toString() === uri.toString());
+            const inputAreas = document ? this.getInputAreas(document) : [];
+            const friendlyDiagnostics = this.rewriteDiagnostics(diagnostics, inputAreas);
+
             if (hndl) hndl(uri, friendlyDiagnostics, next);
 
             // diagnostics formatting for infoview
@@ -62,14 +66,16 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
      * @param inputAreas The input areas in the document 
      * @returns The rewritten diagnostics.
      */
-    private rewriteDiagnostics(diagnostics: WpDiagnostic[], inputAreas: Range[] | undefined): WpDiagnostic[] {
+    private rewriteDiagnostics(diagnostics: WpDiagnostic[], inputAreas: Range[]): WpDiagnostic[] {
         return diagnostics.map(d => {
             if ((d as LeanDiagnostic).leanTags?.includes(LeanTag.UnsolvedGoals)) {
-                const isInsideInputArea = inputAreas?.some(area =>
-                    area.intersection(d.range) !== undefined && !area.intersection(d.range)!.isEmpty
-                );
+                const isInsideInputArea = inputAreas.some(area => {
+                    const intersection = area.intersection(d.range);
+                    return intersection !== undefined && !intersection.isEmpty;
+                });
                 if (isInsideInputArea) {
-                    return { ...d, message: `Subproof starting on line ${d.range.start.line + 1} has unsolved goals.` };
+                    // rewrite unsolved goals messages inside input areas to be more user-friendly
+                    return { ...d, message: `(Sub)proof starting on line ${d.range.start.line + 1} is not finished yet.` };
                 }
             }
             return d;
@@ -187,7 +193,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         return lang;
     }
 
-    protected getInputAreas(document: TextDocument): Range[] | undefined {
+    protected getInputAreas(document: TextDocument): Range[] {
         const content = document.getText();
 
         // find (positions of) opening and closings tags for input areas, and check that they're valid

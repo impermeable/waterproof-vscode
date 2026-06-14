@@ -8,6 +8,7 @@ import * as async from 'vscode-languageclient/lib/common/utils/async'
 * Preserve Lean-specific diagnostic fields (e.g. leanTags) during protocol<->code conversion.
 * Vscode does not preserve them on its own.
 * Inspired by the lean4 vscode extension's approach:
+* https://github.com/leanprover/vscode-lean4/blob/17d1d086d9cce16f885dde102adb056cad15cb50/vscode-lean4/src/utils/converters.ts
 */
 export function patchDiagnosticConverters(p2c: Protocol2CodeConverter, c2p: Code2ProtocolConverter): void {
 

@@ -632,7 +632,7 @@ describe("LeanLspClient.rewriteDiagnostics", () => {
         
         const result = rewrite(instance, [unsolvedDiag(3, 5)], [AREA]);
         
-        expect(result[0].message).toBe("Subproof starting on line 4 has unsolved goals.");
+        expect(result[0].message).toBe("(Sub)proof starting on line 4 is not finished yet.");
     });
 
     it("leaves the message unchanged when the UnsolvedGoals diagnostic is outside all input areas", () => {
@@ -654,11 +654,11 @@ describe("LeanLspClient.rewriteDiagnostics", () => {
         expect(result[0].message).toBe("type mismatch");
     });
 
-    it("leaves the message unchanged when inputAreas is undefined", () => {
+    it("leaves the message unchanged when inputAreas is empty", () => {
         const instance = makeClient();
         const d = unsolvedDiag(3, 5);
         
-        const result = rewrite(instance, [d], undefined);
+        const result = rewrite(instance, [d], []);
         
         expect(result[0].message).toBe(d.message);
     });

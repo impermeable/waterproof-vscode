@@ -1,9 +1,9 @@
 import { WaterproofConfigHelper, WaterproofSetting } from "../../helpers";
 
 /**
- * The Coq LSP server configuration
+ * The Rocq LSP server configuration
  */
-export interface CoqLspServerConfig {
+export interface RocqLspServerConfig {
     client_version: string;
     eager_diagnostics: boolean;
     goal_after_tactic: boolean;
@@ -21,10 +21,10 @@ export interface CoqLspServerConfig {
 
 // TODO: Rewrite namespace to modern syntax
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace CoqLspServerConfig {
+export namespace RocqLspServerConfig {
     export function create(
         client_version: string
-    ): CoqLspServerConfig {
+    ): RocqLspServerConfig {
         return {
             client_version: client_version,
             eager_diagnostics: WaterproofConfigHelper.get(WaterproofSetting.EagerDiagnostics),

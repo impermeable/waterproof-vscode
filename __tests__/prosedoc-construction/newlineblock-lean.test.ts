@@ -8,7 +8,7 @@ import { topLevelBlocksLean } from "../../editor/src/document-construction/const
  */
 
 test("NewlineBlock (Lean) 1", () => {
-    // Lean equivalent of "NewlineBlock 1" (Coq)
+    // Lean equivalent of "NewlineBlock 1" (Rocq)
     // Starting with a newline before a code block
     const input = "\n```lean\nCompute 1 + 1.\n```";
     const blocks = topLevelBlocksLean(input);
@@ -24,7 +24,7 @@ test("NewlineBlock (Lean) 1", () => {
 });
 
 test("NewlineBlock (Lean) 2", () => {
-    // Lean equivalent of "NewlineBlock 2" (Coq)
+    // Lean equivalent of "NewlineBlock 2" (Rocq)
     // In Lean, code blocks need a preceding newline, so we use markdown before.
     // Note: the trailing \n after \n``` is a non-significant newline and does not
     // produce a separate block (range.to - range.from is 1, below the >1 threshold).
@@ -52,7 +52,7 @@ test("NewlineBlock (Lean) 2", () => {
 });
 
 test("NewlineBlock (Lean) 3", () => {
-    // Lean equivalent of "NewlineBlock 3" (Coq)
+    // Lean equivalent of "NewlineBlock 3" (Rocq)
     // Newline before a code block; trailing \n after \n``` does not produce a block.
     const input = "\n```lean\nCompute 1 + 1.\n```\n";
     const blocks = topLevelBlocksLean(input);

@@ -1,12 +1,12 @@
 import {
     Uri,
 } from "vscode";
-import { CoqWebview, WebviewEvents, WebviewState } from "../coqWebview";
+import { WaterproofPanel, WebviewEvents, WebviewState } from "../waterproofPanel";
 import { MessageType } from "../../../shared";
 import { IExecutor } from "../../components";
 import { RocqGoalAnswer, PpString } from "../../../lib/types";
 
-export class ExecutePanel extends CoqWebview implements IExecutor {
+export class ExecutePanel extends WaterproofPanel implements IExecutor {
     // Initialize the data for the results
     public data: string[] | RocqGoalAnswer<PpString> = ['No results'];
 

@@ -11,7 +11,7 @@ import { LeanSerializer } from "../../editor/src/leanSerializer";
 // --- Input block tests (equivalents of "Identify input blocks" #1, #2, #3) ---
 
 test("Identify input blocks (Lean)", () => {
-    // Lean equivalent of "Identify input blocks" (Coq)
+    // Lean equivalent of "Identify input blocks" (Rocq)
     const document = "# Example\n:::input\n# Test input area\n:::\n";
     const blocks = topLevelBlocksLean(document);
 
@@ -28,7 +28,7 @@ test("Identify input blocks (Lean)", () => {
 });
 
 test("Identify input blocks (Lean) #2", () => {
-    // Lean equivalent of "Identity input blocks #2" (Coq)
+    // Lean equivalent of "Identity input blocks #2" (Rocq)
     const document = "\n:::input\n# Test input area\n:::\n";
     const blocks = topLevelBlocksLean(document);
 
@@ -45,7 +45,7 @@ test("Identify input blocks (Lean) #2", () => {
 });
 
 test("Identify input blocks (Lean) #3", () => {
-    // Lean equivalent of "Identify input blocks #3" (Coq, two consecutive input areas)
+    // Lean equivalent of "Identify input blocks #3" (Rocq, two consecutive input areas)
     const document = "\n:::input\nFirst\n:::\n:::input\nSecond\n:::\n";
     const blocks = topLevelBlocksLean(document);
 
@@ -63,7 +63,7 @@ test("Identify input blocks (Lean) #3", () => {
 // --- Hint block tests (equivalents of "Identify hint blocks" #1, #2) ---
 
 test("Identify hint blocks (Lean)", () => {
-    // Lean equivalent of "Identify hint blocks" (Coq)
+    // Lean equivalent of "Identify hint blocks" (Rocq)
     const document = "# Example\n:::hint \"hint-title-test\"\n# Test hint\n:::\n";
     const blocks = topLevelBlocksLean(document);
 
@@ -76,7 +76,7 @@ test("Identify hint blocks (Lean)", () => {
 });
 
 test("Identify hint blocks (Lean) #2", () => {
-    // Lean equivalent of "Identify hint blocks #2" (Coq, two consecutive hints)
+    // Lean equivalent of "Identify hint blocks #2" (Rocq, two consecutive hints)
     const document = "# Example\n:::hint \"hint-title-test\"\n# Test hint\n:::\n:::hint \"hint title 2\"\nTest\n:::\n";
     const blocks = topLevelBlocksLean(document);
 
@@ -97,7 +97,7 @@ test("Identify hint blocks (Lean) #2", () => {
 // --- Math display block tests (equivalents of "Parse Math Display blocks" #1, #2) ---
 
 test("Parse Math Display blocks (Lean)", () => {
-    // Lean equivalent of "Parse Math Display blocks" (Coq)
+    // Lean equivalent of "Parse Math Display blocks" (Rocq)
     // Lean uses $$`...` instead of $$...$$
     const document = "# Example\n$$`\\frac{1}{2}`\n";
     const blocks = topLevelBlocksLean(document);
@@ -109,7 +109,7 @@ test("Parse Math Display blocks (Lean)", () => {
 });
 
 test("Parse Math Display blocks (Lean) #2", () => {
-    // Lean equivalent of "Parse Math Display blocks #2" (Coq)
+    // Lean equivalent of "Parse Math Display blocks #2" (Rocq)
     const document = "# Example\n$$`\\frac{1}{3}`\n$$`\\frac{1}{2}`\n";
     const blocks = topLevelBlocksLean(document);
 
@@ -121,10 +121,10 @@ test("Parse Math Display blocks (Lean) #2", () => {
     expect(mathBlocks[1].stringContent).toBe("\\frac{1}{2}");
 });
 
-// --- Code block tests (equivalents of "Parse Coq blocks" #1, #2, #3) ---
+// --- Code block tests (equivalents of "Parse Rocq blocks" #1, #2, #3) ---
 
 test("Parse Lean code blocks #1", () => {
-    // Lean equivalent of "Parse Coq blocks #1" (Coq)
+    // Lean equivalent of "Parse Rocq blocks #1" (Rocq)
     const document = "# Example\n```lean\ndef test := 42\n```";
     const blocks = topLevelBlocksLean(document);
 
@@ -146,7 +146,7 @@ test("Parse Lean code blocks #1", () => {
 });
 
 test("Parse Lean code blocks #2", () => {
-    // Lean equivalent of "Parse Coq blocks #2" (Coq, two code blocks)
+    // Lean equivalent of "Parse Rocq blocks #2" (Rocq, two code blocks)
     const document = "\n```lean\nimport Mathlib\n```\n# Example\n```lean\ndef trivial := true\n```";
     const blocks = topLevelBlocksLean(document);
 
@@ -177,7 +177,7 @@ test("Parse Lean code blocks #2", () => {
 });
 
 test("Parse Lean code blocks #3", () => {
-    // Lean equivalent of "Parse Coq Blocks #3" (Coq, single code block via topLevel)
+    // Lean equivalent of "Parse Rocq Blocks #3" (Rocq, single code block via topLevel)
     const content = "\n```lean\ndef test := 42\n```";
     const blocks = topLevelBlocksLean(content);
 

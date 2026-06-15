@@ -1,2 +1,2 @@
 // Export class
-export { CoqEditorProvider } from "./coqEditor";
+export { WaterproofEditorProvider } from "./waterproofEditor";

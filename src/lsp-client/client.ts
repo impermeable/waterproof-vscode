@@ -340,7 +340,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
     async updateCompletions(document: TextDocument): Promise<void> {
         if (!this.client.isRunning()) return;
         if (!this.webviewManager?.has(document)) {
-            throw new Error("Cannot update completions; no ProseMirror webview is known for " + document.uri.toString());
+            throw new Error("Cannot update completions; no Waterproof webview is known for " + document.uri.toString());
         }
 
         // request symbols for `document`

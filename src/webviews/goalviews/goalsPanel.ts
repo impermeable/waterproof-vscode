@@ -1,6 +1,6 @@
 import { Uri } from "vscode";
 import { LspClientConfig } from "../../lsp-client/clientTypes";
-import { WebviewEvents, WebviewState } from "../coqWebview";
+import { WebviewEvents, WebviewState } from "../waterproofPanel";
 import { MessageType } from "../../../shared";
 import { GoalsBase } from "./goalsBase";
 import { IExecutor } from "../../components";

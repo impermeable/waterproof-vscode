@@ -520,7 +520,7 @@
     "@vscode/test-electron": "^2.3.0",
     "@vscode/vsce": "^3.9.1",
     "cypress": "^15.15.0",
-    "esbuild": "^0.25.9",
+    "esbuild": "^0.28.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^10.3.0",
     "fs-extra": "^11.1.1",
@@ -577,7 +577,7 @@
   "browser": "./out/src/mainBrowser.js",
   "scripts": {
     "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
-    "generate-symbols": "node scripts/generate-symbols.mjs",
+    "generate-symbols": "node scripts/generate-symbols.mts",
     "esbuild": "npm run generate-symbols && node esbuild.mjs",
     "typecheck": "npm run generate-symbols && tsc -b",
     "compile": "npm run esbuild",

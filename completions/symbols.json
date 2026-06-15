@@ -361,7 +361,7 @@
         "label": "\\abs",
         "type": "symbol",
         "apply": "∣",
-        "symbolPanelCategory": 
+        "symbolPanelCategory": 2
     },
     {
         "label": "\\intersection",

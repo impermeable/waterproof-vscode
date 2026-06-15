@@ -160,7 +160,7 @@ From this page in vscode, you can just click on the "Install" button.
 If you want to use the (Verbose) Lean functionality in Waterproof, you will need to have `elan` installed,
 which will automatically install the right dependencies.
 You can do this by following the instructions [here](https://lean-lang.org/install/).
-Note: You can currently only use Lean files that use the [Waterproof Genre](https://github.com/impermeable/waterproof-editor/pull/81).
+Note: You can currently only use Lean files that use the [Waterproof Genre](https://github.com/impermeable/waterproof-genre/).
 
 
 

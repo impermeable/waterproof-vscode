@@ -342,6 +342,11 @@
         "symbolPanelCategory": 2
     },
     {
+        "label": "\\wedge",
+        "type": "symbol",
+        "apply": "∧"
+    },
+    {
         "label": "\\or",
         "type": "symbol",
         "apply": "∨",
@@ -356,7 +361,7 @@
         "label": "\\abs",
         "type": "symbol",
         "apply": "∣",
-        "symbolPanelCategory": 2
+        "symbolPanelCategory": 
     },
     {
         "label": "\\intersection",

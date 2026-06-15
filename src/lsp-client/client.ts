@@ -143,8 +143,7 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
                     const start = d.data?.sentenceRange?.start ?? d.range.start;
                     const end = d.data?.sentenceRange?.end ?? d.range.end;
                     return {
-                        message: d.message,
-                        severity: d.severity,
+                        ...d,
                         range: new Range(start, end),
                     };
                 }));
@@ -373,4 +372,5 @@ export abstract class LspClient<GoalRequestT extends GoalRequest, GoalAnswerT ex
         this.disposables.forEach(d => d.dispose());
         return this.client.dispose(timeout);
     }
+
 }

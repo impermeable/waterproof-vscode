@@ -1,9 +1,9 @@
 import { LeanGoalAnswer, LeanGoalRequest } from "../../../lib/types";
 import { LspClient } from "../client";
-import { EventEmitter, extensions, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity } from "vscode";
+import { EventEmitter, extensions, Position, TextDocument, Disposable, Range, OutputChannel, Diagnostic, DiagnosticSeverity, workspace } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
-import { leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams } from "./requestTypes";
+import { LeanDiagnostic, leanFileProgressNotificationType, leanGoalRequestType, LeanPublishDiagnosticsParams, LeanTag } from "./requestTypes";
 import { WaterproofConfigHelper, WaterproofLogger as wpl, WaterproofSetting } from "../../helpers";
 import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
@@ -12,6 +12,7 @@ import { InputAreaStatus } from "@impermeable/waterproof-editor";
 import { ServerStoppedReason } from "@leanprover/infoview-api";
 import { DidChangeTextDocumentParams, DidCloseTextDocumentParams } from "vscode-languageclient";
 import { FileProgressKind, MessageType } from "../../../shared";
+import { patchDiagnosticConverters } from "./converter";
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     language = "lean4";
@@ -25,6 +26,8 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     constructor(clientProvider: LanguageClientProvider, channel: OutputChannel) {
         super(clientProvider, channel);
 
+        patchDiagnosticConverters(this.client.protocol2CodeConverter, this.client.code2ProtocolConverter);
+
         // call each file progress component when the server has processed a part
         this.disposables.push(this.client.onNotification(leanFileProgressNotificationType, params => {
             this.onFileProgress(params);
@@ -32,14 +35,20 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
         const hndl = this.client.middleware.handleDiagnostics;
         this.client.middleware.handleDiagnostics = (uri, diagnostics_, next) => {
-            if (hndl) hndl(uri, diagnostics_, next);
+
+            const diagnostics = diagnostics_ as WpDiagnostic[];
+            // Find the document these diagnostics actually belong to
+            const document = workspace.textDocuments.find(d => d.uri.toString() === uri.toString());
+            const inputAreas = document ? this.getInputAreas(document) : [];
+            const friendlyDiagnostics = this.rewriteDiagnostics(diagnostics, inputAreas);
+
+            if (hndl) hndl(uri, friendlyDiagnostics, next);
 
             // diagnostics formatting for infoview
             const c2p = this.client.code2ProtocolConverter;
             const uri_ = c2p.asUri(uri);
 
-            const diagnostics = diagnostics_ as WpDiagnostic[];
-            const infoviewDiagnostics = diagnostics.map(d => ({
+            const infoviewDiagnostics = friendlyDiagnostics.map(d => ({
                 ...c2p.asDiagnostic(d),
                 ...(d.data?.sentenceRange
                     ? { range: { start: d.data.sentenceRange.start, end: d.data.sentenceRange.end } }
@@ -48,6 +57,29 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
 
             this.diagnosticsEmitter.fire({ uri: uri_, diagnostics: infoviewDiagnostics });
         };
+    }
+
+    /**
+     * Rewrites diagnostics to be more user-friendly,
+     * e.g. by chaning the "unsolved goals" message to not be a wall of scary text.
+     * @param diagnostics The diagnostics to rewrite.
+     * @param inputAreas The input areas in the document 
+     * @returns The rewritten diagnostics.
+     */
+    private rewriteDiagnostics(diagnostics: WpDiagnostic[], inputAreas: Range[]): WpDiagnostic[] {
+        return diagnostics.map(d => {
+            if ((d as LeanDiagnostic).leanTags?.includes(LeanTag.UnsolvedGoals)) {
+                const isInsideInputArea = inputAreas.some(area => {
+                    const intersection = area.intersection(d.range);
+                    return intersection !== undefined && !intersection.isEmpty;
+                });
+                if (isInsideInputArea) {
+                    // rewrite unsolved goals messages inside input areas to be more user-friendly
+                    return { ...d, message: `(Sub)proof starting on line ${d.range.start.line + 1} is not finished yet.` };
+                }
+            }
+            return d;
+        });
     }
 
     async prelaunchChecks(): Promise<string[]> {
@@ -161,7 +193,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         return lang;
     }
 
-    protected getInputAreas(document: TextDocument): Range[] | undefined {
+    protected getInputAreas(document: TextDocument): Range[] {
         const content = document.getText();
 
         // find (positions of) opening and closings tags for input areas, and check that they're valid
@@ -260,6 +292,4 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         await super.dispose(timeout);
         this.clientStoppedEmitter.fire({message: 'Lean server has stopped', reason: ''});
     }
-
-
 }

@@ -12,7 +12,9 @@ jest.mock("vscode", () => ({
     ...lspMocks().vscode(),
     extensions: { getExtension: jest.fn() },
 }), { virtual: true });
-
+jest.mock("../../../src/lsp-client/lean/converter", () => ({
+    patchDiagnosticConverters: jest.fn(),
+}), { virtual: true });
 jest.mock("vscode-languageclient",          () => lspMocks().languageClient(),      { virtual: true });
 jest.mock("vscode-languageserver-types",    () => lspMocks().languageServerTypes(), { virtual: true });
 jest.mock("../../../shared",                () => lspMocks().shared(),               { virtual: true });

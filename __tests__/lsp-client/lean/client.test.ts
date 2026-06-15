@@ -73,37 +73,30 @@ jest.mock("vscode-languageserver-types", () => ({
     VersionedTextDocumentIdentifier: { create: jest.fn((uri, v) => ({ uri, version: v })) },
 }), { virtual: true });
 
-jest.mock("../../../shared",        () => ({ MessageType: {}, FileProgressKind: { Processing: 1 } }), { virtual: true });
-jest.mock("../../../lib/types",     () => ({}), { virtual: true });
-jest.mock("../../../src/helpers",   () => ({
-    WaterproofConfigHelper: { get: jest.fn(() => false) },
-    WaterproofLogger:       { log: jest.fn(), debug: jest.fn() },
-    WaterproofSetting:      {},
-    qualifiedSettingName:   jest.fn(s => s),
-}));
-jest.mock("../sentenceManager",     () => ({ SentenceManager: class { onProgress() {} dispose() {} } }), { virtual: true });
-jest.mock("../clientTypes",         () => ({}), { virtual: true });
-jest.mock("../requestTypes",        () => ({ convertToSimple: jest.fn() }), { virtual: true });
-
-jest.mock("./requestTypes",         () => ({
-    leanFileProgressNotificationType: "$/lean/fileProgress",
-    leanGoalRequestType:              "$/lean/plainGoal",
-}), { virtual: true });
 jest.mock("@impermeable/waterproof-editor", () => ({
     InputAreaStatus: { Correct: "Correct", Incorrect: "Incorrect", Invalid: "Invalid" },
 }), { virtual: true });
 jest.mock("@leanprover/infoview-api", () => ({}), { virtual: true });
+jest.mock("../../../src/lsp-client/lean/converter", () => ({ patchDiagnosticConverters: jest.fn() }), { virtual: true });
+
+jest.mock("../../../src/lsp-client/lean/requestTypes", () => ({
+    leanFileProgressNotificationType: { type: "$/lean/fileProgress" },
+    leanGoalRequestType:              { type: "$/lean/goal" },
+    LeanTag: { UnsolvedGoals: "UnsolvedGoals" },
+    LeanPublishDiagnosticsParams:     {},
+}));
 
 import { Range, Position, DiagnosticSeverity, TextDocument, OutputChannel, Uri, Diagnostic } from "vscode";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
 import { LeanLspClient } from "../../../src/lsp-client/lean/client";
-import type { LanguageClientProvider } from "../../../src/lsp-client/clientTypes";
+import type { LanguageClientProvider, WpDiagnostic } from "../../../src/lsp-client/clientTypes";
 import type { FileProgressProcessingInfo } from "../../../src/lsp-client/requestTypes";
 import type { WebviewManager } from "../../../src/webviewManager";
 import type { LeanGoalAnswer } from "../../../lib/types";
+import { LeanTag } from "../../../src/lsp-client/lean/requestTypes";
 
 /** Constructs a minimal mock LeanGoalAnswer with only the fields tests care about. */
-const goalAnswer = (goals: string[]): LeanGoalAnswer => ({ goals } as unknown as LeanGoalAnswer);
+const goalAnswer = (goals: string[]): LeanGoalAnswer => ({ goals } as LeanGoalAnswer);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -118,7 +111,7 @@ const FAKE_DOCUMENT = {
     offsetAt:   (pos: Position) => pos.line * 100 + pos.character,
     positionAt: (offset: number) => new Position(Math.floor(offset / 100), offset % 100),
     lineCount:  10,
-} as unknown as TextDocument;
+} as TextDocument;
 
 function makeClientDouble() {
     return {
@@ -362,8 +355,6 @@ describe("LeanLspClient.determineProofStatus", () => {
     });
 });
 
-// The most important test is the order in which the input areas are returned, since the proof status logic assumes they are in document order. 
-// The other tests just verify that the getInputAreas logic correctly identifies the start and end of input areas in various scenarios.
 describe("LeanLspClient.getInputAreas", () => {
  
     it("returns an empty array when there are no input areas", () => {
@@ -614,5 +605,75 @@ describe("LeanLspClient.isBusy lifecycle", () => {
 
         // @ts-expect-error private
         expect(instance.isBusy).toBe(true);
+    });
+});
+
+describe("LeanLspClient.rewriteDiagnostics", () => {
+    const rewrite = (
+        instance:   LeanLspClient,
+        diags:      WpDiagnostic[],
+        areas:      Range[] | undefined,
+    ) => {
+        // @ts-expect-error private
+        return instance.rewriteDiagnostics(diags, areas) as WpDiagnostic[];
+    };
+
+    const AREA = new Range(new Position(2, 0), new Position(6, 0));
+
+    const unsolvedDiag = (startLine: number, endLine: number): WpDiagnostic => ({
+        message:  "unsolved goals\n⊢ False",
+        severity: DiagnosticSeverity.Error,
+        range:    new Range(new Position(startLine, 0), new Position(endLine, 0)),
+        leanTags: [LeanTag.UnsolvedGoals],
+    } as WpDiagnostic);
+
+    it("rewrites the message when an UnsolvedGoals diagnostic intersects an input area", () => {
+        const instance = makeClient();
+        
+        const result = rewrite(instance, [unsolvedDiag(3, 5)], [AREA]);
+        
+        expect(result[0].message).toBe("(Sub)proof starting on line 4 is not finished yet.");
+    });
+
+    it("leaves the message unchanged when the UnsolvedGoals diagnostic is outside all input areas", () => {
+        const instance = makeClient();
+        const d = unsolvedDiag(10, 12);
+        
+        const result = rewrite(instance, [d], [AREA]);
+        
+        expect(result[0].message).toBe(d.message);
+    });
+
+    it("leaves the message unchanged when the diagnostic has no UnsolvedGoals tag, even if inside an area", () => {
+        const instance = makeClient();
+        const plain = { message: "type mismatch", severity: DiagnosticSeverity.Error,
+            range: new Range(new Position(3, 0), new Position(5, 0)) } as WpDiagnostic;
+        
+        const result = rewrite(instance, [plain], [AREA]);
+
+        expect(result[0].message).toBe("type mismatch");
+    });
+
+    it("leaves the message unchanged when inputAreas is empty", () => {
+        const instance = makeClient();
+        const d = unsolvedDiag(3, 5);
+        
+        const result = rewrite(instance, [d], []);
+        
+        expect(result[0].message).toBe(d.message);
+    });
+
+    it("leaves the message unchanged when the diagnostic has only a GoalsAccomplished tag, even if inside an area", () => {
+        const instance = makeClient();
+        const accomplished = {
+            message:  "Goals accomplished 🎉",
+            severity: DiagnosticSeverity.Error,
+            range:    new Range(new Position(3, 0), new Position(5, 0)),
+            leanTags: [LeanTag.GoalsAccomplished],
+        } as WpDiagnostic;
+        
+        const result = rewrite(instance, [accomplished], [AREA]);
+        
+        expect(result[0].message).toBe("Goals accomplished 🎉");
     });
 });

@@ -124,6 +124,8 @@ export interface WpDiagnostic {
     };
     relatedInformation?: DiagnosticRelatedInformation[];
     tags?: DiagnosticTag[];
+    // Lean-LSP specific diagnostic tags.
+    leanTags?: number[];
 
     // Coq-LSP specific (see https://github.com/ejgallego/coq-lsp/blob/main/etc/doc/PROTOCOL.md#extra-diagnostics-data)
     data?: DiagnosticsData;

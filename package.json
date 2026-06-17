@@ -563,6 +563,7 @@
     "react-tooltip": "5.28.0",
     "throttle-debounce": "5.0.2",
     "vscode-languageclient": "8.1.0",
+    "vscode-languageserver-protocol": "3.17.5",
     "vscode-languageserver-types": "3.17.5",
     "vscode-uri": "3.1.0"
   },

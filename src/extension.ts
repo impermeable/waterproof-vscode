@@ -146,7 +146,7 @@ export class Waterproof implements Disposable {
             // update active document and cursor
             this.client.activeDocument = document;
             this.client.activeCursorPosition = position;
-            this.updateGoals(document, position, "cursorChange");
+            this.updateGoals(document, position);
         });
         this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
             if (command == "createHelp") {
@@ -654,8 +654,8 @@ export class Waterproof implements Disposable {
      * This function gets called on TextEditorSelectionChange events and it requests the goals
      * if needed
      */
-    private async updateGoals(document: TextDocument, position: Position, source?: string): Promise<void> {
-        wpl.debug(`[ext:updateGoals] source=${source ?? "unknown"}, pos=${position.line}:${position.character}, doc=${document.uri.toString().split('/').pop()}`);
+    private async updateGoals(document: TextDocument, position: Position): Promise<void> {
+        wpl.debug(`[ext:updateGoals] pos=${position.line}:${position.character}, doc=${document.uri.toString().split('/').pop()}`);
         if (!this.client.isRunning()) {
             wpl.debug("Client is not running, cannot update goals.");
             return;

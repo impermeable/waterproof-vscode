@@ -35,7 +35,8 @@ export class CompositeGoalsPanel implements IGoalsComponent {
 
         if (client.activeClient instanceof LeanLspClient) {
             const cursorPos = client.activeCursorPosition;
-            wpl.debug(`[compositeGoals] Lean path, lastState=${this.lastState}, cursorPos=${cursorPos ? `${cursorPos.line}:${cursorPos.character}` : "undefined"}, activeDoc=${client.activeDocument?.uri.toString().split('/').pop()}`);
+            const cursorStr = cursorPos ? `${cursorPos.line}:${cursorPos.character}` : "undefined";
+            wpl.debug(`[compositeGoals] Lean path, lastState=${this.lastState}, cursorPos=${cursorStr}, activeDoc=${client.activeDocument?.uri.toString().split('/').pop()}`);
             if (this.lastState !== 'infoview') {
                 this.lastState = 'infoview';
                 this.panel.showView("infoview");

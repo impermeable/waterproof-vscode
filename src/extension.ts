@@ -4,7 +4,6 @@ import {
     Position,
     TextDocument,
     commands,
-    languages,
     workspace,
     window,
     ConfigurationTarget,
@@ -81,7 +80,6 @@ export class Waterproof implements Disposable {
     private sidePanelProvider: SidePanelProvider;
 
     private clientRunning: boolean = false;
-    private _diagnosticsGoalsTimer: ReturnType<typeof setTimeout> | undefined;
 
     /**
      * Constructs the extension lifecycle object.
@@ -150,18 +148,6 @@ export class Waterproof implements Disposable {
             this.client.activeCursorPosition = position;
             this.updateGoals(document, position, "cursorChange");
         });
-        this.disposables.push(languages.onDidChangeDiagnostics(e => {
-            const document = this.client.activeDocument;
-            const position = this.client.activeCursorPosition;
-            if (!document || !position) return;
-            if (!e.uris.some(uri => uri.toString() === document.uri.toString())) return;
-            wpl.debug(`[ext:diagnostics] scheduling updateGoals, pos=${position.line}:${position.character}`);
-            clearTimeout(this._diagnosticsGoalsTimer);
-            this._diagnosticsGoalsTimer = setTimeout(() => {
-                wpl.debug(`[ext:diagnostics] timer fired, pos=${position.line}:${position.character}`);
-                this.updateGoals(document, position, "diagnostics");
-            }, 200);
-        }));
         this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
             if (command == "createHelp") {
                 source.setResults(["createHelp"]);

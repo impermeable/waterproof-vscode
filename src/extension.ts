@@ -4,6 +4,7 @@ import {
     Position,
     TextDocument,
     commands,
+    languages,
     workspace,
     window,
     ConfigurationTarget,
@@ -80,6 +81,7 @@ export class Waterproof implements Disposable {
     private sidePanelProvider: SidePanelProvider;
 
     private clientRunning: boolean = false;
+    private _diagnosticsGoalsTimer: ReturnType<typeof setTimeout> | undefined;
 
     /**
      * Constructs the extension lifecycle object.
@@ -142,11 +144,24 @@ export class Waterproof implements Disposable {
             this.tacticsPanel.update(this.client);
         });
         this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
+            wpl.debug(`[ext:cursorChange] pos=${position.line}:${position.character}, doc=${document.uri.toString().split('/').pop()}`);
             // update active document and cursor
             this.client.activeDocument = document;
             this.client.activeCursorPosition = position;
-            this.updateGoals(document, position);  // TODO: error handling
+            this.updateGoals(document, position, "cursorChange");
         });
+        this.disposables.push(languages.onDidChangeDiagnostics(e => {
+            const document = this.client.activeDocument;
+            const position = this.client.activeCursorPosition;
+            if (!document || !position) return;
+            if (!e.uris.some(uri => uri.toString() === document.uri.toString())) return;
+            wpl.debug(`[ext:diagnostics] scheduling updateGoals, pos=${position.line}:${position.character}`);
+            clearTimeout(this._diagnosticsGoalsTimer);
+            this._diagnosticsGoalsTimer = setTimeout(() => {
+                wpl.debug(`[ext:diagnostics] timer fired, pos=${position.line}:${position.character}`);
+                this.updateGoals(document, position, "diagnostics");
+            }, 200);
+        }));
         this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
             if (command == "createHelp") {
                 source.setResults(["createHelp"]);
@@ -653,8 +668,8 @@ export class Waterproof implements Disposable {
      * This function gets called on TextEditorSelectionChange events and it requests the goals
      * if needed
      */
-    private async updateGoals(document: TextDocument, position: Position): Promise<void> {
-        wpl.debug(`Updating goals for document: ${document.uri.toString()} at position: ${position.line}:${position.character}`);
+    private async updateGoals(document: TextDocument, position: Position, source?: string): Promise<void> {
+        wpl.debug(`[ext:updateGoals] source=${source ?? "unknown"}, pos=${position.line}:${position.character}, doc=${document.uri.toString().split('/').pop()}`);
         if (!this.client.isRunning()) {
             wpl.debug("Client is not running, cannot update goals.");
             return;

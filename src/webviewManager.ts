@@ -249,19 +249,26 @@ export class WebviewManager extends EventEmitter {
                 break;
             case MessageType.cursorChange:
                 {
-                    const pos = document.positionAt(message.body);
-                    this._lineStatus.update(pos);
+                    const offset = message.body;
                     // Update goals components
                     const webview = this._waterproofWebviews.get(document.uri.toString());
                     if (!webview) break;
                     if (webview.documentIsUpToDate) {
+                        const pos = document.positionAt(offset);
+                        wpl.debug(`[cursorChange] offset=${offset} → pos=${pos.line}:${pos.character}, docUpToDate=true`);
+                        this._lineStatus.update(pos);
                         this.emit(WebviewManagerEvents.cursorChange, document, pos);
                     } else {
-                        // Document is updating wait for completion
+                        // Defer positionAt until the document is up-to-date,
+                        // otherwise the offset maps to a wrong line.
                         const callback = () => {
+                            const pos = document.positionAt(offset);
+                            wpl.debug(`[cursorChange] offset=${offset} → pos=${pos.line}:${pos.character}, docUpToDate=true (deferred)`);
+                            this._lineStatus.update(pos);
                             this.emit(WebviewManagerEvents.cursorChange, document, pos);
                         };
                         if (webview.listeners(WebviewEvents.finishUpdate).length == 0) webview.once(WebviewEvents.finishUpdate, callback);
+                        else wpl.debug(`[cursorChange] finishUpdate listener already registered, skipping`);
                     }
                     break;
                 }

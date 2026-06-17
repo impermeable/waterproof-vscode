@@ -135,6 +135,7 @@ export class InfoProvider implements Disposable {
 
     private subscribeDiagnosticsNotification(client: LeanLspClient, method: string) {
         const h = client.diagnostics(params => {
+            wpl.debug(`[infoProvider] diagnostics→infoview, uri=${params.uri}, count=${params.diagnostics.length}, ranges=${JSON.stringify(params.diagnostics.map(d => d.range))}`);
             void this.api?.gotServerNotification?.(method, params)
         })
         return h
@@ -432,6 +433,7 @@ export class InfoProvider implements Disposable {
      * @param loc Location in the document
      */
     public async sendPosition(loc: Location) {
+        wpl.debug(`[infoProvider] sendPosition uri=${loc.uri}, pos=${JSON.stringify(loc.range.start)}, apiExists=${!!this.api}`);
         await this.api?.changedCursorLocation(loc)
     }
 

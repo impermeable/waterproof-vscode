@@ -101,67 +101,14 @@ export class Waterproof implements Disposable {
         this.getLeanClientProvider = getLeanClientProvider;
 
         this.webviewManager = new WebviewManager();
-        this.webviewManager.on(WebviewManagerEvents.editorReady, (document: TextDocument) => {
-            this.client.updateCompletions(document);
-        });
-        this.webviewManager.on(WebviewManagerEvents.viewportHint, ({document, start, end}) => {
-            this.client.sendViewportHint(document, start, end);
-        });
-
-        this.webviewManager.on(WebviewManagerEvents.focus, async (document: TextDocument) => {
-            wpl.log("Focus event received");
-
-            // Wait for client to initialize
-            if (!this.clientRunning) {
-                console.warn("Focus event received before client is ready. Waiting...");
-                const waitForClient = async (): Promise<void> => {
-                    return new Promise(resolve => {
-                        const interval = setInterval(() => {
-                            if (this.clientRunning) {
-                                clearInterval(interval);
-                                resolve();
-                            }
-                        }, 100);
-                    });
-                };
-                await waitForClient();
-                wpl.log("Client ready. Proceeding with focus event.");
-            }
-
-            wpl.log("Client state");
-
-            // update active document
-            // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
-            if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
-                this.client.activeDocument = document;
-                this.client.activeCursorPosition = undefined;
-                this.webviewManager.open("goals");
-                for (const g of this.goalsComponents) g.updateGoals(this.client);
-            }
-
-            this.tacticsPanel.update(this.client);
-        });
-        this.webviewManager.on(WebviewManagerEvents.cursorChange, (document: TextDocument, position: Position) => {
-            wpl.debug(`[ext:cursorChange] pos=${position.line}:${position.character}, doc=${document.uri.toString().split('/').pop()}`);
-            // update active document and cursor
-            this.client.activeDocument = document;
-            this.client.activeCursorPosition = position;
-            this.updateGoals(document, position);
-        });
-        this.webviewManager.on(WebviewManagerEvents.command, (source: IExecutor, command: string) => {
-            if (command == "createHelp") {
-                source.setResults(["createHelp"]);
-            } else {
-                executeCommand(this.client.rocqClient, command).then(
-                    results => {
-                        source.setResults(results);
-                    },
-                    (error: Error) => {
-                        source.setResults(["Error: " + error.message]);  // (temp)
-                    }
-                );
-            }
-        });
+        // Wire up the webview-manager events. The handlers are defined as methods
+        // below; they're bound here so they can be passed as plain references (and
+        // unit tested in isolation).
+        this.webviewManager.on(WebviewManagerEvents.editorReady, this.onEditorReady.bind(this));
+        this.webviewManager.on(WebviewManagerEvents.viewportHint, this.onViewportHint.bind(this));
+        this.webviewManager.on(WebviewManagerEvents.focus, this.onFocus.bind(this));
+        this.webviewManager.on(WebviewManagerEvents.cursorChange, this.onCursorChange.bind(this));
+        this.webviewManager.on(WebviewManagerEvents.command, this.onCommand.bind(this));
 
         this.disposables.push(WaterproofEditorProvider.register(context, this.webviewManager));
 
@@ -299,6 +246,91 @@ export class Waterproof implements Disposable {
             WaterproofConfigHelper.update(WaterproofSetting.ShowLineNumbersInEditor, updated);
             window.showInformationMessage(`Waterproof: Line numbers in editor are now ${updated ? "shown" : "hidden"}.`);
         });
+    }
+
+    /**
+     * Handles the {@link WebviewManagerEvents.editorReady} event: refresh the
+     * completions for the document that just became ready.
+     */
+    private onEditorReady(document: TextDocument): void {
+        this.client.updateCompletions(document);
+    }
+
+    /**
+     * Handles the {@link WebviewManagerEvents.viewportHint} event: forward the
+     * visible line range to the client.
+     */
+    private onViewportHint({ document, start, end }: { document: TextDocument, start: number, end: number }): void {
+        this.client.sendViewportHint(document, start, end);
+    }
+
+    /**
+     * Handles the {@link WebviewManagerEvents.focus} event: make the focused
+     * document the active one and refresh the goals/tactics components.
+     */
+    private async onFocus(document: TextDocument): Promise<void> {
+        wpl.log("Focus event received");
+
+        // Wait for client to initialize
+        if (!this.clientRunning) {
+            console.warn("Focus event received before client is ready. Waiting...");
+            const waitForClient = async (): Promise<void> => {
+                return new Promise(resolve => {
+                    const interval = setInterval(() => {
+                        if (this.clientRunning) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 100);
+                });
+            };
+            await waitForClient();
+            wpl.log("Client ready. Proceeding with focus event.");
+        }
+
+        wpl.log("Client state");
+
+        // update active document
+        // only unset cursor when focussing different document (otherwise cursor position is often lost and user has to double click)
+        if (this.client.activeDocument?.uri.toString() !== document.uri.toString()) {
+            this.client.activeDocument = document;
+            this.client.activeCursorPosition = undefined;
+            this.webviewManager.open("goals");
+            for (const g of this.goalsComponents) g.updateGoals(this.client);
+        }
+
+        this.tacticsPanel.update(this.client);
+    }
+
+    /**
+     * Handles the {@link WebviewManagerEvents.cursorChange} event: update the
+     * active document/cursor and request fresh goals.
+     */
+    private onCursorChange(document: TextDocument, position: Position): void {
+        wpl.debug(`[ext:cursorChange] pos=${position.line}:${position.character}, doc=${document.uri.toString().split('/').pop()}`);
+        // update active document and cursor
+        this.client.activeDocument = document;
+        this.client.activeCursorPosition = position;
+        this.updateGoals(document, position);
+    }
+
+    /**
+     * Handles the {@link WebviewManagerEvents.command} event: run the given
+     * command and feed its output back to the requesting executor.
+     */
+    private onCommand(source: IExecutor, command: string): void {
+        if (command == "createHelp") {
+            source.setResults(["createHelp"]);
+        } else {
+            executeCommand(this.client.rocqClient, command).then(
+                results => {
+                    source.setResults(results);
+                },
+                (error: Error) => {
+                    source.setResults(["Error: " + error.message]);  // (temp)
+                }
+            );
+        }
     }
 
     /**

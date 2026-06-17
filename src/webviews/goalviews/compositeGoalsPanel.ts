@@ -29,7 +29,7 @@ export class CompositeGoalsPanel implements IGoalsComponent {
 
     async updateGoals(client: CompositeClient): Promise<void> {
         wpl.debug(`[compositeGoals] updateGoals called, panelOpen=${this.panel.isOpened}, clientExists=${!!client}`);
-        if (!this.panel.isOpened || !client) return;
+        if (!this.panel.isOpened) return;
 
         this.lastClient = client;
 

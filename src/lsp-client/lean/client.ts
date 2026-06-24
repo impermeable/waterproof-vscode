@@ -55,6 +55,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
                     : {})
             }));
 
+            wpl.debug(`[leanClient] handleDiagnostics uri=${uri_.split('/').pop()}, count=${infoviewDiagnostics.length}, diags=${JSON.stringify(infoviewDiagnostics.map(d => ({ range: d.range, msg: d.message?.substring(0, 40) })))}`);
             this.diagnosticsEmitter.fire({ uri: uri_, diagnostics: infoviewDiagnostics });
         };
     }

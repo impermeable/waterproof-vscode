@@ -9,7 +9,6 @@ import {
 } from "@leanprover/infoview-api";
 import { Rpc } from "./helpers/rpc";
 import { MessageType } from "../shared";
-import { State } from "vscode-languageclient";
 import {
   ConfigurationTarget,
   Disposable,
@@ -480,21 +479,20 @@ export class InfoProvider implements Disposable {
       await this.sendPosition(loc);
     } else {
       // Client not yet ready, notify the infoview once it starts (race condition guard).
-      const disposable = this.client.client.onDidChangeState(async (e) => {
-        if (e.newState === State.Running) {
-          disposable.dispose();
-          if (!this.api) return;
-          await this.resetServerState();
-          const cursorPos = this.client.activeCursorPosition;
-          const docUri = this.client.activeDocument?.uri.toString() ?? loc.uri;
-          await this.sendPosition({
-            uri: docUri,
-            range: {
-              start: cursorPos ?? loc.range.start,
-              end: cursorPos ?? loc.range.end,
-            },
-          });
-        }
+      const disposable = this.client.client.onDidChangeState(async (_e) => {
+        if (!this.client.client.initializeResult) return;
+        disposable.dispose();
+        if (!this.api) return;
+        await this.resetServerState();
+        const cursorPos = this.client.activeCursorPosition;
+        const docUri = this.client.activeDocument?.uri.toString() ?? loc.uri;
+        await this.sendPosition({
+          uri: docUri,
+          range: {
+            start: cursorPos ?? loc.range.start,
+            end: cursorPos ?? loc.range.end,
+          },
+        });
       });
       this.disposables.push(disposable);
     }

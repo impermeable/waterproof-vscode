@@ -85,7 +85,7 @@ export class WebviewManager extends EventEmitter {
 
   // Callbacks used by request, response pattern
   // TODO: See if we can fix this any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   private readonly _callbacks: Map<number, (response: any) => void> = new Map<
     number,
     (response: any) => void

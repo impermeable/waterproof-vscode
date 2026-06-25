@@ -227,8 +227,8 @@ export class InfoProvider implements Disposable {
     saveConfig: async (config: InfoviewConfig) => {
       try {
         const cfg = workspace.getConfiguration("lean4.infoview");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         for (const [key, value] of Object.entries(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           config as Record<string, any>,
         )) {
           await cfg.update(key, value, ConfigurationTarget.Global);
@@ -238,12 +238,13 @@ export class InfoProvider implements Disposable {
       }
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     sendClientRequest: async (
       _uri: string,
       method: string,
       params: any,
     ): Promise<any> => {
+      /* eslint-enable @typescript-eslint/no-explicit-any */
       const client = this.client.client;
       if (client) {
         try {
@@ -257,11 +258,10 @@ export class InfoProvider implements Disposable {
       }
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendClientNotification: async (
       _uri: string,
       method: string,
-      params: any,
+      params: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     ): Promise<void> => {
       const client = this.client.client;
       if (client) {

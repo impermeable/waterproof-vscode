@@ -364,10 +364,9 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     return this.diagnosticsEmitter.event(cb);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private customNotificationEmitter = new EventEmitter<{
     method: string;
-    params: any;
+    params: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   }>();
 
   /** Fires whenever a custom notification (i.e. one not defined in LSP) is received. */

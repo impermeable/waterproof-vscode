@@ -7,10 +7,10 @@ import { Message, MessageType } from "../../shared/Messages";
  * @param initialDocument The initial document to load in the editor.
  * @param edits Array where the `docChange` events will be stored.
  */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export function setupTest(
   initialDocument: string,
   edits: (DocChange | WrappingDocChange)[],
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   callbacks?: Partial<Record<MessageType, Function>>,
 ) {
   cy.visit("../../__test_harness/index.html", {

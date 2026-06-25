@@ -6,8 +6,8 @@ import { makeClientDouble } from "../../__helpers__/lsp-client-mocks";
 import type { mocks as MockFactories } from "../../__helpers__/lsp-client-mocks";
 
 function lspMocks(): typeof MockFactories {
-  return require("../../__helpers__/lsp-client-mocks").mocks;
-} // eslint-disable-line @typescript-eslint/no-require-imports
+  return require("../../__helpers__/lsp-client-mocks").mocks; // eslint-disable-line @typescript-eslint/no-require-imports
+}
 
 jest.mock(
   "vscode",

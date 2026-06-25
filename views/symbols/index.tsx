@@ -7,10 +7,10 @@ import Symbols from "./symbols";
 
 const container = document.getElementById("root");
 // createRoot(container!) if you use TypeScript
-const root = createRoot(container!); 
+const root = createRoot(container!);
 // render the symbols panel
 root.render(
-    <React.StrictMode>
-        <Symbols />
-    </React.StrictMode>
+  <React.StrictMode>
+    <Symbols />
+  </React.StrictMode>,
 );

@@ -1,44 +1,39 @@
 import React from "react";
-import { PropsWithChildren} from "react";
+import { PropsWithChildren } from "react";
 import "../styles/box.css";
 import {
   VersionedTextDocumentIdentifier,
   Position,
 } from "vscode-languageserver-types";
 
-//type that makes sure the children components are also passed 
-export type DetailsP = PropsWithChildren<
-  {
-    summary: React.ReactNode;
-    pos: Position //the position within the file (line number and character)
-    textDox: VersionedTextDocumentIdentifier //the file
-  } 
->;
-
+//type that makes sure the children components are also passed
+export type DetailsP = PropsWithChildren<{
+  summary: React.ReactNode;
+  pos: Position; //the position within the file (line number and character)
+  textDox: VersionedTextDocumentIdentifier; //the file
+}>;
 
 //Modular component that can be used to display info together with the location
 //the summmary is the title of the box
 //children are all child components
 //position is the position in the textdocument
 //textDox is the corresponding file
-export function Box({ summary, children, pos, textDox  }: DetailsP) {
-    const uri = textDox.uri.split("/").slice(-1)[0];
-    const line = pos.line + 1; // 1-based position
-    const character = pos.character + 1; // 1-based character
-    const info = (
+export function Box({ summary, children, pos, textDox }: DetailsP) {
+  const uri = textDox.uri.split("/").slice(-1)[0];
+  const line = pos.line + 1; // 1-based position
+  const character = pos.character + 1; // 1-based character
+  const info = (
     <span>
       {uri}:{line}:{character}
     </span>
-    )
+  );
   return (
     <div className="box">
       <div className="box__header">
         {summary}
         <div className="box__header__info">{info}</div>
       </div>
-      <div className="box__content">
-        {children}
-      </div>
+      <div className="box__content">{children}</div>
     </div>
   );
 }

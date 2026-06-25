@@ -8,20 +8,20 @@ import { ILspClient } from "./lsp-client/clientTypes";
  * the status of the underlying lsp client
  */
 export interface IStatusComponent extends Disposable {
-    /**
-     * Update the status bar component to display current status
-     * of client
-     *
-     * @param clientsRunning indicates which clients are running
-     */
-    update(clientsRunning: string[]): void;
+  /**
+   * Update the status bar component to display current status
+   * of client
+   *
+   * @param clientsRunning indicates which clients are running
+   */
+  update(clientsRunning: string[]): void;
 
-    /**
-     * Update the status bar to indicate failure to start client
-     *
-     * @param emsg the error that resulted in failure to start
-     */
-    failed(emsg: string): void;
+  /**
+   * Update the status bar to indicate failure to start client
+   *
+   * @param emsg the error that resulted in failure to start
+   */
+  failed(emsg: string): void;
 }
 
 /**
@@ -29,7 +29,7 @@ export interface IStatusComponent extends Disposable {
  * the status of the underlying lsp client
  */
 export interface ILineNumberComponent extends Disposable {
-    update(pos: Position): void;
+  update(pos: Position): void;
 }
 
 /**
@@ -37,11 +37,11 @@ export interface ILineNumberComponent extends Disposable {
  * the progress of rocq checking a file
  */
 export interface IFileProgressComponent extends Disposable {
-    /**
-     * Called when the LSP client receives a notification that part of the document has been
-     * processed.
-     */
-    onProgress(params: FileProgressParams): void;
+  /**
+   * Called when the LSP client receives a notification that part of the document has been
+   * processed.
+   */
+  onProgress(params: FileProgressParams): void;
 }
 
 /**
@@ -49,32 +49,31 @@ export interface IFileProgressComponent extends Disposable {
  * goal and message related information
  */
 export interface IGoalsComponent extends Disposable {
+  /**
+   * Update the goals component with the latest goals answer
+   * from the coq-lsp server
+   *
+   * @param goals the goal answer object received from coq-lsp
+   */
+  updateGoals(client: ILspClient): Promise<void>;
 
-    /**
-     * Update the goals component with the latest goals answer
-     * from the coq-lsp server
-     *
-     * @param goals the goal answer object received from coq-lsp
-     */
-    updateGoals(client: ILspClient): Promise<void>;
+  /**
+   * Update the status bar to indicate failure to start client
+   *
+   * @param e the error that resulted in failure to receive
+   *          goal answer
+   */
+  failedGoals(e: unknown): void;
 
-    /**
-     * Update the status bar to indicate failure to start client
-     *
-     * @param e the error that resulted in failure to receive
-     *          goal answer
-     */
-    failedGoals(e: unknown): void;
-
-    /**
-     * Disable the GoalsComponent
-     */
-    disable(): void;
+  /**
+   * Disable the GoalsComponent
+   */
+  disable(): void;
 }
 
 /**
  * This defines the interface of components that execute commands
-*/
+ */
 export interface IExecutor {
-    setResults(results: RocqGoalAnswer<PpString> | string[]): void;
+  setResults(results: RocqGoalAnswer<PpString> | string[]): void;
 }

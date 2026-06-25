@@ -1,5 +1,4 @@
-import { topLevelBlocksLean } from '../editor/src/document-construction/lean';
-
+import { topLevelBlocksLean } from "../editor/src/document-construction/lean";
 
 /**
  * This test file aims at testing functionality of splitting waterproof lean document into a list of blocks.
@@ -60,9 +59,11 @@ notation:50 u:80 " converges to " l => sequence_tendsto u l
 `;
 
 it('should put preamble ending with "#doc ... =>" as the first block, but "#doc ... =>" line should not be visible', () => {
-    const outputDocument = topLevelBlocksLean(input);
-    // Check that the visible part of the first block is preamble without "#doc ... =>"
-    expect(outputDocument[0].stringContent).toBe(firstBlock);
-    // Check that the second block does not contain "#doc ... =>" line either
-    expect(outputDocument[1].stringContent).not.toContain('#doc (WaterproofGenre) "Index" =>');
-})
+  const outputDocument = topLevelBlocksLean(input);
+  // Check that the visible part of the first block is preamble without "#doc ... =>"
+  expect(outputDocument[0].stringContent).toBe(firstBlock);
+  // Check that the second block does not contain "#doc ... =>" line either
+  expect(outputDocument[1].stringContent).not.toContain(
+    '#doc (WaterproofGenre) "Index" =>',
+  );
+});

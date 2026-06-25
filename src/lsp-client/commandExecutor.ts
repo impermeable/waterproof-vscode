@@ -1,51 +1,68 @@
 import { Position } from "vscode";
 import { RocqGoalAnswer, GoalConfig } from "../../lib/types";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
-import { GetStateAtPosParams, getStateAtPosReq, GoalParams, goalsReq, RunParams, runReq, RunResult } from "./petanque";
+import {
+  GetStateAtPosParams,
+  getStateAtPosReq,
+  GoalParams,
+  goalsReq,
+  RunParams,
+  runReq,
+  RunResult,
+} from "./petanque";
 import { RocqLspClient } from "./rocq";
 
 /**
  * Base function for executing tactics/commands in a client.
  */
 async function executeCommandBase(client: RocqLspClient, command: string) {
-    const document = client.activeDocument;
+  const document = client.activeDocument;
 
-    if (!document) {
-        throw new Error("Cannot execute command; there is no active document.");
-    }
+  if (!document) {
+    throw new Error("Cannot execute command; there is no active document.");
+  }
 
-    // We execute the command at the end of the previous sentence.
-    const commandPosition = client.getBeginningOfCurrentSentence();
-    if (!commandPosition) {
-        throw new Error("Cannot execute command; the document contains no Rocq code.");
-    }
+  // We execute the command at the end of the previous sentence.
+  const commandPosition = client.getBeginningOfCurrentSentence();
+  if (!commandPosition) {
+    throw new Error(
+      "Cannot execute command; the document contains no Rocq code.",
+    );
+  }
 
-    const pos = { line: commandPosition.line, character: commandPosition.character - 1 };
-    const params: GetStateAtPosParams = {
-        // Make sure that the position is **before** the dot, otherwise there is no node at the position.
-        position: pos,
-        uri: document.uri.toString()
-    }
+  const pos = {
+    line: commandPosition.line,
+    character: commandPosition.character - 1,
+  };
+  const params: GetStateAtPosParams = {
+    // Make sure that the position is **before** the dot, otherwise there is no node at the position.
+    position: pos,
+    uri: document.uri.toString(),
+  };
 
-    try {
-        // The underlying (VS Code) language client
-        const languageClient = client.client;
+  try {
+    // The underlying (VS Code) language client
+    const languageClient = client.client;
 
-        const stateRes = await languageClient.sendRequest(getStateAtPosReq, params);
-        // Create the RunParams object, st is the state to execute in, tac the command
-        // to execute.
-        const runParams: RunParams = { st: stateRes.st, tac: command };
-        const runRes = await languageClient.sendRequest(runReq, runParams);
-        // The state on which to query the goals is the state *after* the command has been run.
-        const goalParams: GoalParams = { st: runRes.st };
-        const goalsRes = await languageClient.sendRequest(goalsReq, goalParams);
+    const stateRes = await languageClient.sendRequest(getStateAtPosReq, params);
+    // Create the RunParams object, st is the state to execute in, tac the command
+    // to execute.
+    const runParams: RunParams = { st: stateRes.st, tac: command };
+    const runRes = await languageClient.sendRequest(runReq, runParams);
+    // The state on which to query the goals is the state *after* the command has been run.
+    const goalParams: GoalParams = { st: runRes.st };
+    const goalsRes = await languageClient.sendRequest(goalsReq, goalParams);
 
-        return {
-            goalsRes, runRes, document
-        };
-    } catch (error) {
-        throw new Error(`Error when trying to execute command '${command}': ${error}`);
-    }
+    return {
+      goalsRes,
+      runRes,
+      document,
+    };
+  } catch (error) {
+    throw new Error(
+      `Error when trying to execute command '${command}': ${error}`,
+    );
+  }
 }
 
 /**
@@ -55,19 +72,32 @@ async function executeCommandBase(client: RocqLspClient, command: string) {
  * @returns The output of executing `command` formatted as a valid `GoalAnswer<string>` object, this can be passed to any component that
  * implement `IGoalsComponent`.
  */
-export async function executeCommand(client: RocqLspClient, command: string): Promise<RocqGoalAnswer<string>> {
-    try {
-        const { goalsRes, runRes, document } = await executeCommandBase(client, command);
-        // This should form a valid `GoalAnswer<string>`
-        return {
-            messages: runRes.feedback.map((val) => { return { level: val[0], text: val[1] } }),
-            position: new Position(0, 0),
-            textDocument: VersionedTextDocumentIdentifier.create(document.uri.toString(), document.version),
-            goals: goalsRes
-        };
-    } catch (error) {
-        throw new Error(`Error when trying to execute command '${command}': ${error}`);
-    }
+export async function executeCommand(
+  client: RocqLspClient,
+  command: string,
+): Promise<RocqGoalAnswer<string>> {
+  try {
+    const { goalsRes, runRes, document } = await executeCommandBase(
+      client,
+      command,
+    );
+    // This should form a valid `GoalAnswer<string>`
+    return {
+      messages: runRes.feedback.map((val) => {
+        return { level: val[0], text: val[1] };
+      }),
+      position: new Position(0, 0),
+      textDocument: VersionedTextDocumentIdentifier.create(
+        document.uri.toString(),
+        document.version,
+      ),
+      goals: goalsRes,
+    };
+  } catch (error) {
+    throw new Error(
+      `Error when trying to execute command '${command}': ${error}`,
+    );
+  }
 }
 
 /**
@@ -77,11 +107,16 @@ export async function executeCommand(client: RocqLspClient, command: string): Pr
  * @param command The command/tactic to execute. It is allowed to execute multiple tactics/commands by seperating them using `.`'s.
  * @returns The full output of running `command` using `client`.
  */
-export async function executeCommandFullOutput(client: RocqLspClient, command: string): Promise<GoalConfig<string> & RunResult<number>> {
-    try {
-        const { goalsRes, runRes } = await executeCommandBase(client, command);
-        return { ...goalsRes, ...runRes };
-    } catch (error) {
-        throw new Error(`Error when trying to execute command '${command}': ${error}`);
-    }
+export async function executeCommandFullOutput(
+  client: RocqLspClient,
+  command: string,
+): Promise<GoalConfig<string> & RunResult<number>> {
+  try {
+    const { goalsRes, runRes } = await executeCommandBase(client, command);
+    return { ...goalsRes, ...runRes };
+  } catch (error) {
+    throw new Error(
+      `Error when trying to execute command '${command}': ${error}`,
+    );
+  }
 }

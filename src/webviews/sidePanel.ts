@@ -1,81 +1,81 @@
-import * as vscode from 'vscode';
-import { getNonce } from '../util';
-import { WebviewManager, WebviewManagerEvents } from '../webviewManager';
+import * as vscode from "vscode";
+import { getNonce } from "../util";
+import { WebviewManager, WebviewManagerEvents } from "../webviewManager";
 // this function add the side panel to the vs code side panel
-export function addSidePanel(context: vscode.ExtensionContext, manager: WebviewManager) {
-    const provider = new SidePanelProvider(context.extensionUri, manager);
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("sidePanel", provider));
-    return provider;
+export function addSidePanel(
+  context: vscode.ExtensionContext,
+  manager: WebviewManager,
+) {
+  const provider = new SidePanelProvider(context.extensionUri, manager);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("sidePanel", provider),
+  );
+  return provider;
 }
 
 export class SidePanelProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'sidePanel';
+  public static readonly viewType = "sidePanel";
 
-    private _view?: vscode.WebviewView;
-    private _transparencyMap: Map<string, boolean> = new Map();
-    private readonly _greyedOutButtons: Set<string> = new Set();
+  private _view?: vscode.WebviewView;
+  private _transparencyMap: Map<string, boolean> = new Map();
+  private readonly _greyedOutButtons: Set<string> = new Set();
 
+  constructor(
+    private readonly _extensionUri: vscode.Uri,
+    private readonly _manager: WebviewManager,
+  ) {
+    this._manager.on(WebviewManagerEvents.buttonClick, (e) => {
+      // Button flashes when clicked
+      this.flashButton(e.name);
+    });
+  }
 
-    constructor(
-        private readonly _extensionUri: vscode.Uri,
-        private readonly _manager: WebviewManager,
-    ) {
-        this._manager.on(WebviewManagerEvents.buttonClick, (e) => {
-            // Button flashes when clicked
-            this.flashButton(e.name);
+  private flashButton(buttonId: string) {
+    // If the view is not available, return without flashing
+    if (!this._view) return;
+    // Post a message to the webview to flash the button
+    this._view.webview.postMessage({
+      type: "flash",
+      buttonId: buttonId,
+    });
+  }
+
+  public resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    _context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken,
+  ) {
+    this._view = webviewView;
+
+    // Set options for the webview
+    webviewView.webview.options = {
+      enableScripts: true,
+    };
+
+    // Set the HTML content for the webview
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+    webviewView.webview.onDidReceiveMessage((message) => {
+      // Handle messages received from the webview
+      if (message.command === "executeScript") {
+        // If the message is for executing a script, forward it to the webview
+        webviewView.webview.postMessage({
+          command: "executeScript",
+          script: message.script,
         });
-    }
+      } else {
+        // Handle other messages by opening the command in the manager
+        this._manager.open(message.command);
+      }
+    });
+  }
 
+  // Now we create the actual web page
+  private _getHtmlForWebview(_webview: vscode.Webview) {
+    const nonce = getNonce();
 
-    private flashButton(buttonId: string) {
-        // If the view is not available, return without flashing
-        if (!this._view) return;
-        // Post a message to the webview to flash the button
-        this._view.webview.postMessage({
-            type: 'flash',
-            buttonId: buttonId,
-        });
-    }
-
-
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        _context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken,
-    ) {
-        this._view = webviewView;
-       
-        // Set options for the webview
-        webviewView.webview.options = {
-            enableScripts: true,
-        };
-
-        // Set the HTML content for the webview
-        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
-        webviewView.webview.onDidReceiveMessage(message => {
-            // Handle messages received from the webview
-            if (message.command === 'executeScript') {
-                // If the message is for executing a script, forward it to the webview
-                webviewView.webview.postMessage({
-                    command: 'executeScript',
-                    script: message.script,
-                });
-            }
-             else {
-                // Handle other messages by opening the command in the manager
-                this._manager.open(message.command);
-            }
-        });        
-    }
-
-    // Now we create the actual web page
-    private _getHtmlForWebview(_webview: vscode.Webview) {
-        const nonce = getNonce();
-
-        // html code for the webview
-        return `<!DOCTYPE html>
+    // html code for the webview
+    return `<!DOCTYPE html>
             <html lang="en">
             <head>
                 <!-- CSS styles -->
@@ -176,5 +176,5 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                 </script>
             </body>
         </html>`;
-    }
+  }
 }

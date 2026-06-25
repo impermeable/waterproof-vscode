@@ -9,7 +9,7 @@ import { RocqPp } from "../goals/RocqPp";
 import React from "react";
 import {
   Position,
-  VersionedTextDocumentIdentifier
+  VersionedTextDocumentIdentifier,
 } from "vscode-languageserver-types";
 import "../styles/goals.css";
 
@@ -28,7 +28,6 @@ export function HypEl({ hyp: { names, def, ty } }: { hyp: Hyp<PpString> }) {
         <RocqPp content={pp} inline={true} />
       </span>
     ) : null;
-
 
   return (
     <div className={className}>
@@ -56,8 +55,12 @@ function Hyps({ hyps }: HypsP) {
     </>
   );
 }
-//type that has the goals, position and textdocument and takes its children 
-type GoalsParams = PropsWithChildren< { goals?: GoalConfig<PpString>, pos: Position, textDoc:VersionedTextDocumentIdentifier }>;
+//type that has the goals, position and textdocument and takes its children
+type GoalsParams = PropsWithChildren<{
+  goals?: GoalConfig<PpString>;
+  pos: Position;
+  textDoc: VersionedTextDocumentIdentifier;
+}>;
 
 //the exported Hypothesis funtion that takes in a GoalsParams
 export function Hypothesis({ goals, pos, textDoc }: GoalsParams) {
@@ -77,25 +80,24 @@ export function Hypothesis({ goals, pos, textDoc }: GoalsParams) {
   //checking of goals and hypotheses exist
   if (!goals) return null;
   if (!goals.goals) {
-    return <Box summary="Hypothesis" pos={pos} textDox={textDoc}>
-    No hypothesis at this point.
-  </Box>
+    return (
+      <Box summary="Hypothesis" pos={pos} textDox={textDoc}>
+        No hypothesis at this point.
+      </Box>
+    );
   }
   //if a goal does exist the Box component is used to display them
   //the list of hypothesis is mapped to display all hypothesis that are connected to a goal
   return (
     <div className="rocq-goal-env" ref={ref}>
-    <Box summary={'Hypothesis'} pos={pos} textDox={textDoc}>
-      {goals.goals.map((value, _idx) => {
-        const key = objectHash(value);
-        //another chekc for when a goal does not have hypothesis
-        if (value.hyps.length ==0 ) return "No Hypothesis at this point!";
-        else return <Hyps hyps={value.hyps} key={key}/>
+      <Box summary={"Hypothesis"} pos={pos} textDox={textDoc}>
+        {goals.goals.map((value, _idx) => {
+          const key = objectHash(value);
+          //another chekc for when a goal does not have hypothesis
+          if (value.hyps.length == 0) return "No Hypothesis at this point!";
+          else return <Hyps hyps={value.hyps} key={key} />;
         })}
       </Box>
     </div>
   );
 }
-
-
-

@@ -527,7 +527,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "mocha": "^11.7.5",
-    "prettier": "^2.8.1",
+    "prettier": "^3.8.3",
     "ts-jest": "^29.4.11",
     "typescript": "^5.1.3",
     "typescript-eslint": "^8.59.3"
@@ -595,6 +595,8 @@
     "cypress-tests": "npx cypress run",
     "lint": "npx eslint .",
     "lint-fix": "npx eslint . --fix",
+    "format": "npx prettier --write \"**/*.{ts,tsx,js,mjs}\"",
+    "format:check": "npx prettier --check \"**/*.{ts,tsx,js,mjs}\"",
     "test": "npm run unit-tests && npm run cypress-tests",
     "install-extension": "npm run test-package && code --install-extension test_out/extension.vsix --force"
   }

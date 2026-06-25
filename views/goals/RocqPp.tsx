@@ -3,7 +3,6 @@ import { FormatPrettyPrint } from "../../lib/format-pprint/js/main";
 
 import "../styles/rocqpp.css";
 
-
 //function that can display a Pp string in the correct format
 export function RocqPp({
   content,
@@ -15,12 +14,16 @@ export function RocqPp({
   //if the content is already of string format it can be easily displayed
   if (typeof content == "string") {
     if (inline) {
-      return <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{content}</p>;
+      return (
+        <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+          {content}
+        </p>
+      );
     } else {
       return <pre className="coqpp">{content}</pre>;
     }
   } else {
-    //if it is not a sring we use FormatPrettyPrint 
+    //if it is not a sring we use FormatPrettyPrint
     //to find out more how to use this:
     // https://reactjs.org/docs/integrating-with-other-libraries.html
     if (inline) {

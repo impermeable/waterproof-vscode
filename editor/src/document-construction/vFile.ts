@@ -1,23 +1,31 @@
-import { Block, CodeBlock, HintBlock, InputAreaBlock, MarkdownBlock, MathDisplayBlock, NewlineBlock, WaterproofDocument } from "@impermeable/waterproof-editor";
-
+import {
+  Block,
+  CodeBlock,
+  HintBlock,
+  InputAreaBlock,
+  MarkdownBlock,
+  MathDisplayBlock,
+  NewlineBlock,
+  WaterproofDocument,
+} from "@impermeable/waterproof-editor";
 
 enum VParserState {
-	/** Parsing regular code content */
-	Code,
-	/** Parsing a hint title (after begin details : ... until *) */
-	HintTitle,
-	/** Parsing markdown block ((** ... *)) */
-	Markdown,
-	/** Parsing math display ($$ ... $$) inside markdown */
-	MathDisplay,
-	/** Parse a newline after Markdown, Hints, InputAreas */
-	Newline,
+  /** Parsing regular code content */
+  Code,
+  /** Parsing a hint title (after begin details : ... until *) */
+  HintTitle,
+  /** Parsing markdown block ((** ... *)) */
+  Markdown,
+  /** Parsing math display ($$ ... $$) inside markdown */
+  MathDisplay,
+  /** Parse a newline after Markdown, Hints, InputAreas */
+  Newline,
 }
 
 enum VNestedState {
-	None,
-	Hint,
-	Input,
+  None,
+  Hint,
+  Input,
 }
 
 /**
@@ -32,287 +40,305 @@ enum VNestedState {
  * @returns An array of Block forming a WaterproofDocument
  */
 export function vFileParser(document: string): WaterproofDocument {
-	const blocks: Block[] = [];
-	let nested: VNestedState = VNestedState.None;
-	let innerBlocks: Block[] = [];
-    // Here state is initialized to Code
-	let state: VParserState = VParserState.Code;
-	let rangeStart = 0;
-	let innerRangeStart = 0;
-	let rangeStartNested = 0;
-	let innerRangeStartNested = 0;
-	let hintTitle = "";
-	let i = 0;
+  const blocks: Block[] = [];
+  let nested: VNestedState = VNestedState.None;
+  let innerBlocks: Block[] = [];
+  // Here state is initialized to Code
+  let state: VParserState = VParserState.Code;
+  let rangeStart = 0;
+  let innerRangeStart = 0;
+  let rangeStartNested = 0;
+  let innerRangeStartNested = 0;
+  let hintTitle = "";
+  let i = 0;
 
-	const hintOpen = '(* begin details : ', hintOpenLength = hintOpen.length;
-    const hintTitleEnd = ' *)\n', hintTitleEndLength = hintTitleEnd.length;
-	const hintClose = '\n(* end details *)', hintCloseLength = hintClose.length;
-	const inputOpen = '(* begin input *)\n', inputOpenLength = inputOpen.length;
-	const inputClose = '\n(* end input *)', inputCloseLength = inputClose.length;
-	const markdownOpen = '(** ', markdownOpenLength = markdownOpen.length;
-	const markdownClose = '*)', markdownCloseLength = markdownClose.length;
-	const mathOpen = '$', mathOpenLength = mathOpen.length;
-	const mathClose = '$', mathCloseLength = mathClose.length;
+  const hintOpen = "(* begin details : ",
+    hintOpenLength = hintOpen.length;
+  const hintTitleEnd = " *)\n",
+    hintTitleEndLength = hintTitleEnd.length;
+  const hintClose = "\n(* end details *)",
+    hintCloseLength = hintClose.length;
+  const inputOpen = "(* begin input *)\n",
+    inputOpenLength = inputOpen.length;
+  const inputClose = "\n(* end input *)",
+    inputCloseLength = inputClose.length;
+  const markdownOpen = "(** ",
+    markdownOpenLength = markdownOpen.length;
+  const markdownClose = "*)",
+    markdownCloseLength = markdownClose.length;
+  const mathOpen = "$",
+    mathOpenLength = mathOpen.length;
+  const mathClose = "$",
+    mathCloseLength = mathClose.length;
 
+  function pushBlock(block: Block) {
+    if (nested === VNestedState.None) {
+      blocks.push(block);
+    } else {
+      innerBlocks.push(block);
+    }
+  }
 
-	function pushBlock(block: Block) {
-		if (nested === VNestedState.None) {
-			blocks.push(block);
-		} else {
-			innerBlocks.push(block);
-		}
-	}
+  function setRangeStart() {
+    if (nested === VNestedState.None) {
+      rangeStart = i;
+    } else {
+      rangeStartNested = i;
+    }
+  }
 
-	function setRangeStart() {
-		if (nested === VNestedState.None) {
-			rangeStart = i;
-		} else {
-			rangeStartNested = i;
-		}
-	}
+  function setInnerRangeStart() {
+    if (nested === VNestedState.None) {
+      innerRangeStart = i;
+    } else {
+      innerRangeStartNested = i;
+    }
+  }
 
-	function setInnerRangeStart() {
-		if (nested === VNestedState.None) {
-			innerRangeStart = i;
-		} else {
-			innerRangeStartNested = i;
-		}
-	}
+  function getRangeStart(): number {
+    return nested === VNestedState.None ? rangeStart : rangeStartNested;
+  }
 
-	function getRangeStart(): number {
-		return nested === VNestedState.None ? rangeStart : rangeStartNested;
-	}
+  function getInnerRangeStart(): number {
+    return nested === VNestedState.None
+      ? innerRangeStart
+      : innerRangeStartNested;
+  }
 
-	function getInnerRangeStart(): number {
-		return nested === VNestedState.None ? innerRangeStart : innerRangeStartNested;
-	}
+  function lookAhead(str: string): boolean {
+    return document.slice(i, i + str.length) === str;
+  }
 
-	function lookAhead(str: string): boolean {
-		return document.slice(i, i + str.length) === str;
-	}
+  function opensHintBlock(): boolean {
+    return lookAhead(hintOpen);
+  }
+  function closesHintBlock(): boolean {
+    return lookAhead(hintClose);
+  }
+  function opensInputBlock(): boolean {
+    return lookAhead(inputOpen);
+  }
+  function closesInputBlock(): boolean {
+    return lookAhead(inputClose);
+  }
 
-	function opensHintBlock(): boolean {
-		return lookAhead(hintOpen);
-	}
-	function closesHintBlock(): boolean {
-		return lookAhead(hintClose);
-	}
-	function opensInputBlock(): boolean {
-		return lookAhead(inputOpen);
-	}
-	function closesInputBlock(): boolean {
-		return lookAhead(inputClose);
-	}
+  function backToCode(clearNestedBlocks: boolean = false) {
+    state = VParserState.Code;
+    setRangeStart();
+    setInnerRangeStart();
+    if (clearNestedBlocks) {
+      innerBlocks = [];
+    }
+  }
 
-	function backToCode(clearNestedBlocks: boolean = false) {
-		state = VParserState.Code;
-		setRangeStart();
-		setInnerRangeStart();
-		if (clearNestedBlocks) {
-			innerBlocks = [];
-		}
-	}
+  function closeCode() {
+    if (i > getRangeStart()) {
+      const range = { from: getRangeStart(), to: i };
+      const codeBlock = new CodeBlock(
+        document.slice(range.from, range.to),
+        range,
+        range,
+        0,
+      );
+      pushBlock(codeBlock);
+    }
+  }
 
-	function closeCode() {
-		if (i > getRangeStart()) {
-			const range = { from: getRangeStart(), to: i };
-			const codeBlock = new CodeBlock(
-				document.slice(range.from, range.to),
-				range, range, 0
-			);
-			pushBlock(codeBlock);
-		}
-	}
+  function opensMarkdownBlock(): boolean {
+    return lookAhead(markdownOpen);
+  }
+  function closesMarkdownBlock(): boolean {
+    return lookAhead(markdownClose);
+  }
+  function opensMathBlock(): boolean {
+    return lookAhead(mathOpen);
+  }
+  function closesMathBlock(): boolean {
+    return lookAhead(mathClose);
+  }
 
+  function closeMarkdown() {
+    if (i > getRangeStart()) {
+      const range = { from: getRangeStart(), to: i + markdownCloseLength };
+      const innerTo =
+        i > getInnerRangeStart() && document[i - 1] === " " ? i - 1 : i;
+      const innerRange = { from: getInnerRangeStart(), to: innerTo };
+      const markdownBlock = new MarkdownBlock(
+        document.slice(innerRange.from, innerRange.to),
+        range,
+        innerRange,
+        0,
+      );
+      pushBlock(markdownBlock);
+    }
+  }
 
-	function opensMarkdownBlock(): boolean {
-		return lookAhead(markdownOpen);
-	}
-	function closesMarkdownBlock(): boolean {
-		return lookAhead(markdownClose);
-	}
-	function opensMathBlock(): boolean {
-		return lookAhead(mathOpen);
-	}
-	function closesMathBlock(): boolean {
-		return lookAhead(mathClose);
-	}
+  function closeMathDisplay() {
+    if (i > getRangeStart()) {
+      const range = { from: getRangeStart(), to: i };
+      const mathBlock = new MathDisplayBlock(
+        document.slice(getRangeStart(), i),
+        range,
+        range,
+        0,
+      );
+      pushBlock(mathBlock);
+    }
+  }
 
-	function closeMarkdown() {
-		if (i > getRangeStart()) {
-			const range = { from: getRangeStart(), to: i + markdownCloseLength };
-            const innerTo = i > getInnerRangeStart() && document[i - 1] === ' ' ? i - 1 : i;
-            const innerRange = { from: getInnerRangeStart(), to: innerTo };
-			const markdownBlock = new MarkdownBlock(
-				document.slice(innerRange.from, innerRange.to),
-				range, innerRange, 0
-			);
-			pushBlock(markdownBlock);
-		}
-	}
+  while (i < document.length) {
+    switch (state) {
+      case VParserState.Code: {
+        if (opensHintBlock() && nested === VNestedState.None) {
+          closeCode();
+          setRangeStart();
+          i += hintOpenLength;
+          state = VParserState.HintTitle;
+          nested = VNestedState.Hint;
+          hintTitle = "";
+          continue;
+        } else if (opensInputBlock() && nested === VNestedState.None) {
+          closeCode();
+          setRangeStart();
+          i += inputOpenLength;
+          setInnerRangeStart();
+          innerRangeStartNested = i;
+          rangeStartNested = i;
+          nested = VNestedState.Input;
+          continue;
+        } else if (opensMarkdownBlock()) {
+          closeCode();
+          setRangeStart();
+          i += markdownOpenLength;
+          setInnerRangeStart();
+          state = VParserState.Markdown;
+          continue;
+        } else if (nested === VNestedState.Hint && closesHintBlock()) {
+          closeCode();
+          nested = VNestedState.None;
+          const range = { from: getRangeStart(), to: i + hintCloseLength };
+          const innerRange = { from: getInnerRangeStart(), to: i };
+          const hintBlock = new HintBlock(
+            document.slice(innerRange.from, innerRange.to),
+            hintTitle,
+            range,
+            innerRange,
+            0,
+            innerBlocks,
+          );
+          pushBlock(hintBlock);
+          i += hintCloseLength;
 
-	function closeMathDisplay() {
-		if (i > getRangeStart()) {
-			const range = { from: getRangeStart(), to: i };
-			const mathBlock = new MathDisplayBlock(
-				document.slice(getRangeStart(), i),
-				range, range, 0
-			);
-			pushBlock(mathBlock);
-		}
-	}
+          state = VParserState.Newline;
+          setRangeStart();
+          setInnerRangeStart();
+          innerBlocks = [];
 
-	while (i < document.length) {
-		switch (state) {
-			case VParserState.Code: {
-				if (opensHintBlock() && nested === VNestedState.None) {
-					closeCode();
-					setRangeStart();
-					i += hintOpenLength;
-					state = VParserState.HintTitle;
-					nested = VNestedState.Hint;
-					hintTitle = "";
-					continue;
-				} else if (opensInputBlock() && nested === VNestedState.None) {
-					closeCode();
-					setRangeStart();
-					i += inputOpenLength;
-					setInnerRangeStart();
-					innerRangeStartNested = i;
-					rangeStartNested = i;
-					nested = VNestedState.Input;
-					continue;
-				} else if (opensMarkdownBlock()) {
-					closeCode();
-					setRangeStart();
-					i += markdownOpenLength;
-					setInnerRangeStart();
-					state = VParserState.Markdown;
-					continue;
-				} else if (nested === VNestedState.Hint && closesHintBlock()) {
-					closeCode();
-					nested = VNestedState.None;
-					const range = { from: getRangeStart(), to: i + hintCloseLength };
-					const innerRange = { from: getInnerRangeStart(), to: i };
-					const hintBlock = new HintBlock(
-						document.slice(innerRange.from, innerRange.to),
-						hintTitle,
-						range, innerRange,
-						0,
-						innerBlocks
-					);
-					pushBlock(hintBlock);
-					i += hintCloseLength;
+          hintTitle = "";
+          continue;
+        } else if (nested === VNestedState.Input && closesInputBlock()) {
+          closeCode();
+          nested = VNestedState.None;
+          const range = { from: getRangeStart(), to: i + inputCloseLength };
+          const innerRange = { from: getInnerRangeStart(), to: i };
+          const inputBlock = new InputAreaBlock(
+            document.slice(innerRange.from, innerRange.to),
+            range,
+            innerRange,
+            0,
+            innerBlocks,
+          );
+          pushBlock(inputBlock);
+          i += inputCloseLength;
 
-					state = VParserState.Newline;
-					setRangeStart();
-					setInnerRangeStart();
-					innerBlocks = [];
+          state = VParserState.Newline;
+          setRangeStart();
+          setInnerRangeStart();
+          innerBlocks = [];
 
-					hintTitle = "";
-					continue;
-				} else if (nested === VNestedState.Input && closesInputBlock()) {
-					closeCode();
-					nested = VNestedState.None;
-					const range = { from: getRangeStart(), to: i + inputCloseLength };
-					const innerRange = { from: getInnerRangeStart(), to: i };
-					const inputBlock = new InputAreaBlock(
-						document.slice(innerRange.from, innerRange.to),
-						range, innerRange,
-						0,
-						innerBlocks
-					);
-					pushBlock(inputBlock);
-					i += inputCloseLength;
-
-					state = VParserState.Newline;
-					setRangeStart();
-					setInnerRangeStart();
-					innerBlocks = [];
-
-					continue;
-				} else {
-					if (document[i] === '\n') {
-						i++;
-						if (opensHintBlock() || opensInputBlock() || opensMarkdownBlock()) {
-							i--;
-							closeCode();
-							// create a newline block
-							const range = { from: i, to: i + 1 };
-							const newlineBlock = new NewlineBlock(range, range, 0);
-							pushBlock(newlineBlock);
-							i++;
-							setRangeStart();
-							setInnerRangeStart();
-							continue;
-						}
-					} else {
-						i++;
-					}
-					continue;
-				}
-			}
-			case VParserState.Markdown: {
-				if (opensMathBlock()) {
-					closeMarkdown();
-					setRangeStart();
-					i += mathOpenLength;
-					setInnerRangeStart();
-					state = VParserState.MathDisplay;
-					continue;
-				} else if (closesMarkdownBlock()) {
-					closeMarkdown();
-					i += markdownCloseLength;
-					state = VParserState.Newline;
-					setRangeStart();
-					setInnerRangeStart();
-					continue;
-				} else {
-					i++;
-					continue;
-				}
-			}
-			case VParserState.Newline: {
-				if (document[i] === '\n') {
-					i++;
-					// create a newline block
-					const range = { from: getRangeStart(), to: i };
-					const newlineBlock = new NewlineBlock(range, range, 0);
-					pushBlock(newlineBlock);
-				}
-				backToCode();
-				continue;
-			}
-			case VParserState.MathDisplay: {
-				if (closesMathBlock()) {
-					closeMathDisplay();
-					i += mathCloseLength;
-					state = VParserState.Markdown;
-					setRangeStart();
-					setInnerRangeStart();
-					continue;
-				} else {
-					i++;
-					continue;
-				}
-			}
-			case VParserState.HintTitle: {
-				while (i < document.length) {
-					if (lookAhead(hintTitleEnd)) {
-						i += hintTitleEndLength;
-						backToCode();
-						innerRangeStart = i;
-						break;
-					} else {
-						hintTitle += document[i];
-						i++;
-					}
-				}
-				break;
-			}
-		}
-	}
-	// Final code block
-	closeCode();
-	return blocks;
+          continue;
+        } else {
+          if (document[i] === "\n") {
+            i++;
+            if (opensHintBlock() || opensInputBlock() || opensMarkdownBlock()) {
+              i--;
+              closeCode();
+              // create a newline block
+              const range = { from: i, to: i + 1 };
+              const newlineBlock = new NewlineBlock(range, range, 0);
+              pushBlock(newlineBlock);
+              i++;
+              setRangeStart();
+              setInnerRangeStart();
+              continue;
+            }
+          } else {
+            i++;
+          }
+          continue;
+        }
+      }
+      case VParserState.Markdown: {
+        if (opensMathBlock()) {
+          closeMarkdown();
+          setRangeStart();
+          i += mathOpenLength;
+          setInnerRangeStart();
+          state = VParserState.MathDisplay;
+          continue;
+        } else if (closesMarkdownBlock()) {
+          closeMarkdown();
+          i += markdownCloseLength;
+          state = VParserState.Newline;
+          setRangeStart();
+          setInnerRangeStart();
+          continue;
+        } else {
+          i++;
+          continue;
+        }
+      }
+      case VParserState.Newline: {
+        if (document[i] === "\n") {
+          i++;
+          // create a newline block
+          const range = { from: getRangeStart(), to: i };
+          const newlineBlock = new NewlineBlock(range, range, 0);
+          pushBlock(newlineBlock);
+        }
+        backToCode();
+        continue;
+      }
+      case VParserState.MathDisplay: {
+        if (closesMathBlock()) {
+          closeMathDisplay();
+          i += mathCloseLength;
+          state = VParserState.Markdown;
+          setRangeStart();
+          setInnerRangeStart();
+          continue;
+        } else {
+          i++;
+          continue;
+        }
+      }
+      case VParserState.HintTitle: {
+        while (i < document.length) {
+          if (lookAhead(hintTitleEnd)) {
+            i += hintTitleEndLength;
+            backToCode();
+            innerRangeStart = i;
+            break;
+          } else {
+            hintTitle += document[i];
+            i++;
+          }
+        }
+        break;
+      }
+    }
+  }
+  // Final code block
+  closeCode();
+  return blocks;
 }

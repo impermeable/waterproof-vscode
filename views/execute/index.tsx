@@ -10,7 +10,7 @@ const container = document.getElementById("root");
 const root = createRoot(container!);
 // render the execute panel
 root.render(
-    <React.StrictMode>
-        <Execute />
-    </React.StrictMode>
+  <React.StrictMode>
+    <Execute />
+  </React.StrictMode>,
 );

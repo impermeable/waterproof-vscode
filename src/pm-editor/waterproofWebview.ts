@@ -1,269 +1,356 @@
 import { EventEmitter } from "events";
-import { ColorThemeKind, Disposable, EndOfLine, Range, TextDocument, Uri, WebviewPanel, WorkspaceEdit, commands, window, workspace } from "vscode";
+import {
+  ColorThemeKind,
+  Disposable,
+  EndOfLine,
+  Range,
+  TextDocument,
+  Uri,
+  WebviewPanel,
+  WorkspaceEdit,
+  commands,
+  window,
+  workspace,
+} from "vscode";
 
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/waterproofPanel";
 import { SequentialEditor } from "./edit";
-import {getFormatFromExtension, isIllegalFileName } from "./fileUtils";
+import { getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
-import { qualifiedSettingName, WaterproofConfigHelper, WaterproofFileUtil, WaterproofLogger, WaterproofSetting } from "../helpers";
+import {
+  qualifiedSettingName,
+  WaterproofConfigHelper,
+  WaterproofFileUtil,
+  WaterproofLogger,
+  WaterproofSetting,
+} from "../helpers";
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { WaterproofEditorProvider } from "./waterproofEditor";
 import { FileFormat, Message, MessageType } from "../../shared";
-import { DocChange, HistoryChange, ThemeStyle, WrappingDocChange } from "@impermeable/waterproof-editor";
+import {
+  DocChange,
+  HistoryChange,
+  ThemeStyle,
+  WrappingDocChange,
+} from "@impermeable/waterproof-editor";
 
 export class WaterproofWebview extends EventEmitter {
-    /** The webview panel of this ProseMirror instance */
-    private _panel: WebviewPanel;
+  /** The webview panel of this ProseMirror instance */
+  private _panel: WebviewPanel;
 
-    /** The document associated with this ProseMirror instance */
-    private readonly _document: TextDocument;
+  /** The document associated with this ProseMirror instance */
+  private readonly _document: TextDocument;
 
-    /** The file format of the doc associated with this ProseMirror instance */
-    private readonly _format: FileFormat = FileFormat.MarkdownV;
+  /** The file format of the doc associated with this ProseMirror instance */
+  private readonly _format: FileFormat = FileFormat.MarkdownV;
 
-    /** The editor that appends changes to the document associated with this panel */
-    private readonly _workspaceEditor = new SequentialEditor();
+  /** The editor that appends changes to the document associated with this panel */
+  private readonly _workspaceEditor = new SequentialEditor();
 
-    /** Disposables */
-    private readonly _disposables: Disposable[] = [];
+  /** Disposables */
+  private readonly _disposables: Disposable[] = [];
 
-    private _teacherMode: boolean;
-    private _enforceCorrectNonInputArea: boolean;
-    private _lastCorrectDocString: string;
+  private _teacherMode: boolean;
+  private _enforceCorrectNonInputArea: boolean;
+  private _lastCorrectDocString: string;
 
-    private _provider: WaterproofEditorProvider;
+  private _provider: WaterproofEditorProvider;
 
-    private _showLineNrsInEditor: boolean = WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
-    private _showMenuItemsInEditor: boolean = WaterproofConfigHelper.get(WaterproofSetting.ShowMenuItemsInEditor);
+  private _showLineNrsInEditor: boolean = WaterproofConfigHelper.get(
+    WaterproofSetting.ShowLineNumbersInEditor,
+  );
+  private _showMenuItemsInEditor: boolean = WaterproofConfigHelper.get(
+    WaterproofSetting.ShowMenuItemsInEditor,
+  );
 
-    /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
-    private _nonInputRegions: {
-        to: number,
-        from: number,
-        content: string
-     }[];
+  /** These regions contain the strings that are outside of the <input-area> tags, but including the tags themselves */
+  private _nonInputRegions: {
+    to: number;
+    from: number;
+    content: string;
+  }[];
 
-    /**
-     * Collection of messages that were sent before, and should be resent if the editor
-     * reinitializes (because the LSP server does not re-emit them if the document did not change).
-     * Whether a message should be cached is specified in the `postMessage` method. Only one message
-     * per type is cached.
-     */
-    private _cachedMessages: Map<MessageType, Message>;
+  /**
+   * Collection of messages that were sent before, and should be resent if the editor
+   * reinitializes (because the LSP server does not re-emit them if the document did not change).
+   * Whether a message should be cached is specified in the `postMessage` method. Only one message
+   * per type is cached.
+   */
+  private _cachedMessages: Map<MessageType, Message>;
 
-    /** Checks whether the document is currently being changed */
-    get documentIsUpToDate() {
-        return !this._workspaceEditor.isInProgress;
+  /** Checks whether the document is currently being changed */
+  get documentIsUpToDate() {
+    return !this._workspaceEditor.isInProgress;
+  }
+
+  // Handlers for undo and redo actions.
+  // These can either be triggered by the user via a keybinding or by the undo/redo command
+  //     under `edit > edit` and `edit > undo` in the menubar.
+  private undoHandler() {
+    this.sendHistoryChangeToEditor(HistoryChange.Undo);
+  }
+  private redoHandler() {
+    this.sendHistoryChangeToEditor(HistoryChange.Redo);
+  }
+
+  private constructor(
+    webviewPanel: WebviewPanel,
+    extensionUri: Uri,
+    doc: TextDocument,
+    provider: WaterproofEditorProvider,
+  ) {
+    super();
+
+    this._provider = provider;
+    this._provider.disposeHistoryCommandListeners(this);
+    this._provider.registerHistoryCommandListeners(
+      this,
+      this.undoHandler.bind(this),
+      this.redoHandler.bind(this),
+    );
+
+    const fileName = WaterproofFileUtil.getBasename(doc.uri);
+
+    if (isIllegalFileName(fileName)) {
+      const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "-", "(", ")". Please rename the file.`;
+      window
+        .showErrorMessage(error, { modal: true }, SAVE_AS)
+        .then(this.handleFileNameSaveAs);
+      WaterproofLogger.log("Error: Illegal file name encountered.");
     }
 
+    this._panel = webviewPanel;
+    this._workspaceEditor.onFinish(() => {
+      this.emit(WebviewEvents.finishUpdate);
+    });
+    this._cachedMessages = new Map();
+    this._document = doc;
 
-    // Handlers for undo and redo actions.
-    // These can either be triggered by the user via a keybinding or by the undo/redo command
-    //     under `edit > edit` and `edit > undo` in the menubar.
-    private undoHandler() {
-        this.sendHistoryChangeToEditor(HistoryChange.Undo);
+    this._nonInputRegions = getNonInputRegions(doc.getText());
 
-    };
-    private redoHandler() {
-        this.sendHistoryChangeToEditor(HistoryChange.Redo);
-    };
+    this._teacherMode = WaterproofConfigHelper.get(
+      WaterproofSetting.TeacherMode,
+    );
+    this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(
+      WaterproofSetting.EnforceCorrectNonInputArea,
+    );
+    this._lastCorrectDocString = doc.getText();
 
-    private constructor(webviewPanel: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: WaterproofEditorProvider) {
-        super();
+    const format = getFormatFromExtension(doc);
+    if (format === undefined) {
+      // FIXME: We should never encounter this, as the extension is only activated for .v and .mv files?
+      WaterproofLogger.log(
+        "Aborting creation of Waterproof editor. Encountered a file with extension different from .mv, .v, or .lean!",
+      );
+      return;
+    }
+    this._format = format;
+    this.initWebview(extensionUri);
+  }
 
-        this._provider = provider;
-        this._provider.disposeHistoryCommandListeners(this);
-        this._provider.registerHistoryCommandListeners(this,
-            this.undoHandler.bind(this),
-            this.redoHandler.bind(this));
+  private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {
+    if (value === SAVE_AS)
+      commands.executeCommand("workbench.action.files.saveAs");
+  }
 
-        const fileName = WaterproofFileUtil.getBasename(doc.uri)
-
-        if (isIllegalFileName(fileName)) {
-            const error = `The file "${fileName}" cannot be opened, most likely because it either contains a space " ", or one of the characters: "-", "(", ")". Please rename the file.`
-            window.showErrorMessage(error, { modal: true }, SAVE_AS).then(this.handleFileNameSaveAs);
-            WaterproofLogger.log("Error: Illegal file name encountered.");
-        }
-
-
-        this._panel = webviewPanel;
-        this._workspaceEditor.onFinish(() => {
-            this.emit(WebviewEvents.finishUpdate);
+  /**
+   * Create a ProseMirror webview.
+   *
+   * @param webviewPanel - VScode panel in which ProseMirror webview is displayed.
+   * @param extensionUri - Uri of the directory containing Waterproof extension.
+   * @param doc - Rocq of lean text document for which webview is created.
+   * @param provider - Waterproof text editor provider.
+   */
+  public static async createWaterproofView(
+    webviewPanel: WebviewPanel,
+    extensionUri: Uri,
+    doc: TextDocument,
+    provider: WaterproofEditorProvider,
+  ) {
+    // Check if the line endings of file are windows
+    if (doc.eol == EndOfLine.CRLF) {
+      window.showErrorMessage(
+        " Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
+          "We will convert the document to use unix line endings (LF).",
+      );
+      const editor = await window.showTextDocument(doc);
+      if (editor !== null) {
+        await editor.edit((builder) => {
+          builder.setEndOfLine(EndOfLine.LF);
         });
-        this._cachedMessages = new Map();
-        this._document = doc;
+        await commands.executeCommand("workbench.action.files.save");
+        await commands.executeCommand("workbench.action.closeActiveEditor");
+      } else {
+        window.showErrorMessage("Failed to open document for conversion");
+      }
+    }
+    return new WaterproofWebview(webviewPanel, extensionUri, doc, provider);
+  }
 
-        this._nonInputRegions = getNonInputRegions(doc.getText());
+  /**
+   * Posts a message to the webview.
+   * @param cache whether to store `message` and resend it after the editor reinitializes (default: `false`)
+   */
+  public postMessage(message: Message, cache: boolean = false) {
+    this._panel.webview.postMessage(message);
+    if (cache) {
+      this._cachedMessages.set(message.type, message);
+    }
+  }
 
-        this._teacherMode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
-        this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(WaterproofSetting.EnforceCorrectNonInputArea);
-        this._lastCorrectDocString = doc.getText();
+  /**
+   * Get the document associated with the ProseMirror instance
+   */
+  public get document() {
+    return this._document;
+  }
 
-        const format = getFormatFromExtension(doc);
-        if (format === undefined) {
-            // FIXME: We should never encounter this, as the extension is only activated for .v and .mv files?
-            WaterproofLogger.log("Aborting creation of Waterproof editor. Encountered a file with extension different from .mv, .v, or .lean!");
-            return;
+  /**
+   * Initialize the Waterproof webview
+   *
+   * @param extensionUri
+   */
+  private initWebview(extensionUri: Uri) {
+    this._panel.webview.options = { enableScripts: true };
+
+    // Convert path of `index.js` from local file uri to webview relative path.
+    const scriptUri = this._panel.webview.asWebviewUri(
+      Uri.joinPath(extensionUri, "editor_output", "index.js"),
+    );
+
+    // Convert path of `main.css` from local file uri to webview relative path.
+    const styleUri = this._panel.webview.asWebviewUri(
+      Uri.joinPath(extensionUri, "editor_output", "index.css"),
+    );
+
+    // Register listener for when the document is saved, to trigger a refresh of the editor content.
+    this._disposables.push(
+      workspace.onDidSaveTextDocument((e) => {
+        if (e.uri.toString() === this._document.uri.toString()) {
+          this.refreshOnSave();
         }
-        this._format = format;
-        this.initWebview(extensionUri);
-    }
+      }),
+    );
 
-    private handleFileNameSaveAs(value: typeof SAVE_AS | undefined) {
-        if (value === SAVE_AS) commands.executeCommand("workbench.action.files.saveAs");
-    }
-
-    /**
-     * Create a ProseMirror webview.
-     *
-     * @param webviewPanel - VScode panel in which ProseMirror webview is displayed.
-     * @param extensionUri - Uri of the directory containing Waterproof extension.
-     * @param doc - Rocq of lean text document for which webview is created.
-     * @param provider - Waterproof text editor provider.
-     */
-    public static async createWaterproofView(webviewPanel: WebviewPanel, extensionUri: Uri, doc: TextDocument, provider: WaterproofEditorProvider) {
-        // Check if the line endings of file are windows
-        if (doc.eol == EndOfLine.CRLF) {
-            window.showErrorMessage(" Reopen the document!!! The document, you opened uses windows line endings (CRLF) and the editor does not support this! " +
-                "We will convert the document to use unix line endings (LF).");
-            const editor = await window.showTextDocument(doc);
-            if (editor !== null) {
-                await editor.edit(builder => {
-                    builder.setEndOfLine(EndOfLine.LF);
-                });
-                await commands.executeCommand('workbench.action.files.save');
-                await commands.executeCommand('workbench.action.closeActiveEditor');
-            } else {
-                window.showErrorMessage("Failed to open document for conversion");
-            }
+    // Register various listeners
+    this._disposables.push(
+      workspace.onDidChangeTextDocument((e) => {
+        if (!e.reason) return;
+        if (e.document.uri.toString() === this._document.uri.toString()) {
+          this.syncWebview();
         }
-        return new WaterproofWebview(webviewPanel, extensionUri, doc, provider);
-    }
+      }),
+    );
 
-    /**
-     * Posts a message to the webview.
-     * @param cache whether to store `message` and resend it after the editor reinitializes (default: `false`)
-     */
-    public postMessage(message: Message, cache: boolean = false) {
-        this._panel.webview.postMessage(message);
-        if (cache) {
-            this._cachedMessages.set(message.type, message);
+    this._disposables.push(
+      workspace.onDidChangeConfiguration((e) => {
+        if (
+          e.affectsConfiguration(
+            qualifiedSettingName(WaterproofSetting.TeacherMode),
+          )
+        ) {
+          this.updateTeacherMode();
         }
-    }
 
-    /**
-     * Get the document associated with the ProseMirror instance
-     */
-    public get document() {
-        return this._document;
-    }
+        if (
+          e.affectsConfiguration(
+            qualifiedSettingName(WaterproofSetting.EnforceCorrectNonInputArea),
+          )
+        ) {
+          this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(
+            WaterproofSetting.EnforceCorrectNonInputArea,
+          );
+        }
 
-    /**
-     * Initialize the Waterproof webview
-     *
-     * @param extensionUri
-     */
-    private initWebview(extensionUri: Uri) {
-        this._panel.webview.options = { enableScripts: true };
+        if (
+          e.affectsConfiguration(
+            qualifiedSettingName(WaterproofSetting.ShowLineNumbersInEditor),
+          )
+        ) {
+          this._showLineNrsInEditor = WaterproofConfigHelper.get(
+            WaterproofSetting.ShowLineNumbersInEditor,
+          );
+          this.updateLineNumberStatusInEditor();
+        }
 
-        // Convert path of `index.js` from local file uri to webview relative path.
-        const scriptUri = this._panel.webview.asWebviewUri(Uri.joinPath(
-            extensionUri, 'editor_output', 'index.js'));
+        if (
+          e.affectsConfiguration(
+            qualifiedSettingName(WaterproofSetting.ShowMenuItemsInEditor),
+          )
+        ) {
+          this._showMenuItemsInEditor = WaterproofConfigHelper.get(
+            WaterproofSetting.ShowMenuItemsInEditor,
+          );
+          WaterproofLogger.log(
+            `Menu items will now be ${this._showMenuItemsInEditor ? "shown" : "hidden"} in student mode`,
+          );
+          this.updateMenuItemsInEditor();
+        }
+      }),
+    );
 
-        // Convert path of `main.css` from local file uri to webview relative path.
-        const styleUri = this._panel.webview.asWebviewUri(Uri.joinPath(
-            extensionUri, 'editor_output', 'index.css'));
-        
-        // Register listener for when the document is saved, to trigger a refresh of the editor content.
-        this._disposables.push(workspace.onDidSaveTextDocument(e => {
-            if (e.uri.toString() === this._document.uri.toString()) {
-                this.refreshOnSave();
-            }
-        }));
+    this._disposables.push(
+      this._panel.webview.onDidReceiveMessage((msg) => {
+        this.handleMessage(msg);
+      }),
+    );
 
+    this._disposables.push(
+      window.onDidChangeActiveColorTheme(() => {
+        // When the color theme changes we need to update the colors used for syntax highlighting
+        this.themeUpdate();
+      }),
+    );
 
-        // Register various listeners
-        this._disposables.push(workspace.onDidChangeTextDocument(e => {
-            if (!e.reason) return;
-            if (e.document.uri.toString() === this._document.uri.toString()) {
-                this.syncWebview();
-            }
-        }));
+    this._disposables.push(
+      this._panel.onDidDispose(() => {
+        this._panel.dispose();
+        for (const d of this._disposables) {
+          d.dispose();
+        }
+        this.emit(WebviewEvents.dispose);
+      }),
+    );
 
-        this._disposables.push(workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.TeacherMode))) {
-                this.updateTeacherMode();
-            }
+    this._disposables.push(
+      this._panel.onDidChangeViewState((e) => {
+        if (e.webviewPanel.active) {
+          this.syncWebview();
+          this.emit(WebviewEvents.change, WebviewState.focus);
 
-            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.EnforceCorrectNonInputArea))) {
-                this._enforceCorrectNonInputArea = WaterproofConfigHelper.get(WaterproofSetting.EnforceCorrectNonInputArea);
-            }
+          // Overwrite the undo and redo commands
+          this._provider.registerHistoryCommandListeners(
+            this,
+            this.undoHandler.bind(this),
+            this.redoHandler.bind(this),
+          );
+          // TODO: Handle this properly
+          this.themeUpdate();
+        } else {
+          // Dispose of the overwritten undo and redo commands when the editor is not active.
+          this._provider.disposeHistoryCommandListeners(this);
+        }
+      }),
+    );
 
-            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.ShowLineNumbersInEditor))) {
-                this._showLineNrsInEditor = WaterproofConfigHelper.get(WaterproofSetting.ShowLineNumbersInEditor);
-                this.updateLineNumberStatusInEditor();
-            }
+    // Get the nonce.
+    const nonce = getNonce();
 
-            if (e.affectsConfiguration(qualifiedSettingName(WaterproofSetting.ShowMenuItemsInEditor))) {
-                this._showMenuItemsInEditor = WaterproofConfigHelper.get(WaterproofSetting.ShowMenuItemsInEditor);
-                WaterproofLogger.log(`Menu items will now be ${this._showMenuItemsInEditor ? "shown" : "hidden"} in student mode`);
-                this.updateMenuItemsInEditor();
-            }
-        }));
+    const themeKind: "dark" | "light" = (() => {
+      switch (window.activeColorTheme.kind) {
+        case ColorThemeKind.HighContrast:
+        case ColorThemeKind.Dark:
+          return "dark";
+        case ColorThemeKind.HighContrastLight:
+        case ColorThemeKind.Light:
+          return "light";
+      }
+    })();
 
-        this._disposables.push(this._panel.webview.onDidReceiveMessage((msg) => {
-            this.handleMessage(msg);
-        }));
-
-        this._disposables.push(window.onDidChangeActiveColorTheme(() => {
-            // When the color theme changes we need to update the colors used for syntax highlighting
-            this.themeUpdate();
-        }));
-
-        this._disposables.push(this._panel.onDidDispose(() => {
-            this._panel.dispose();
-            for (const d of this._disposables) {
-                d.dispose();
-            }
-            this.emit(WebviewEvents.dispose);
-        }));
-
-        this._disposables.push(this._panel.onDidChangeViewState((e) => {
-            if (e.webviewPanel.active) {
-                this.syncWebview();
-                this.emit(WebviewEvents.change, WebviewState.focus);
-
-                // Overwrite the undo and redo commands
-                this._provider.registerHistoryCommandListeners(
-                    this,
-                    this.undoHandler.bind(this),
-                    this.redoHandler.bind(this));
-                // TODO: Handle this properly
-                this.themeUpdate();
-            } else {
-                // Dispose of the overwritten undo and redo commands when the editor is not active.
-                this._provider.disposeHistoryCommandListeners(this);
-            }
-        }));
-
-        // Get the nonce.
-        const nonce = getNonce();
-
-        const themeKind: "dark" | "light" = (() => {
-            switch (window.activeColorTheme.kind) {
-                case ColorThemeKind.HighContrast:
-                case ColorThemeKind.Dark:
-                    return "dark";
-                case ColorThemeKind.HighContrastLight:
-                case ColorThemeKind.Light:
-                    return "light";
-            }
-        })();
-        
-        // Fill the webview panel with initial HTML of our ProseMirror based editor.
-        this._panel.webview.html = `
+    // Fill the webview panel with initial HTML of our ProseMirror based editor.
+    this._panel.webview.html = `
         <!doctype html>
         <html>
         <head>
@@ -283,191 +370,211 @@ export class WaterproofWebview extends EventEmitter {
         </body>
         </html>
         `;
-        // TODO: find a proper way to do this
-        this.themeUpdate();
+    // TODO: find a proper way to do this
+    this.themeUpdate();
+  }
+
+  private themeUpdate() {
+    // Get kind of active ColorTheme (dark or light)
+    const themeType: ThemeStyle = (() => {
+      switch (window.activeColorTheme.kind) {
+        // TODO: For now HighContrast Light and Dark are
+        // considered "normal" Light and Dark respectively.
+        case ColorThemeKind.Dark:
+        case ColorThemeKind.HighContrast:
+          return ThemeStyle.Dark;
+        case ColorThemeKind.Light:
+        case ColorThemeKind.HighContrastLight:
+          return ThemeStyle.Light;
+      }
+    })();
+    this.postMessage(
+      {
+        type: MessageType.themeUpdate,
+        body: {
+          theme: themeType,
+          lang: this.document.languageId,
+        },
+      },
+      true,
+    );
+  }
+
+  private syncWebview() {
+    // send document content
+    this.postMessage({
+      type: MessageType.init,
+      body: {
+        value: this._document.getText(),
+        version: this._document.version,
+      },
+    });
+
+    this.updateLineNumberStatusInEditor();
+
+    // send any cached messages
+    for (const m of this._cachedMessages.values()) this.postMessage(m);
+  }
+
+  private refreshOnSave() {
+    this.postMessage({
+      type: MessageType.refreshDocument,
+      body: {
+        value: this._document.getText(),
+        version: this._document.version,
+      },
+    });
+    this.updateLineNumberStatusInEditor();
+    // send any cached messages
+    for (const m of this._cachedMessages.values()) this.postMessage(m);
+  }
+
+  private updateLineNumberStatusInEditor() {
+    this.postMessage(
+      {
+        type: MessageType.setShowLineNumbers,
+        body: this._showLineNrsInEditor,
+      },
+      true,
+    );
+  }
+
+  private updateMenuItemsInEditor() {
+    this.postMessage(
+      {
+        type: MessageType.setShowMenuItems,
+        body: this._showMenuItemsInEditor,
+      },
+      true,
+    );
+  }
+
+  /** Toggle the teacher mode */
+  private updateTeacherMode() {
+    const mode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
+    this._teacherMode = mode;
+    this.postMessage(
+      {
+        type: MessageType.teacher,
+        body: mode,
+      },
+      true,
+    );
+  }
+
+  /** Apply new doc changes to the underlying file */
+  private applyChangeToWorkspace(change: DocChange, edit: WorkspaceEdit) {
+    if (change.startInFile === change.endInFile) {
+      edit.insert(
+        this.document.uri,
+        this.document.positionAt(change.startInFile),
+        change.finalText,
+      );
+    } else if (change.finalText.length === 0) {
+      edit.delete(
+        this.document.uri,
+        new Range(
+          this._document.positionAt(change.startInFile),
+          this.document.positionAt(change.endInFile),
+        ),
+      );
+    } else {
+      edit.replace(
+        this.document.uri,
+        new Range(
+          this._document.positionAt(change.startInFile),
+          this.document.positionAt(change.endInFile),
+        ),
+        change.finalText,
+      );
     }
+  }
 
-    private themeUpdate() {
-        // Get kind of active ColorTheme (dark or light)
-        const themeType: ThemeStyle = (() => {
-            switch (window.activeColorTheme.kind) {
-                // TODO: For now HighContrast Light and Dark are
-                // considered "normal" Light and Dark respectively.
-                case ColorThemeKind.Dark:
-                case ColorThemeKind.HighContrast:
-                    return ThemeStyle.Dark;
-                case ColorThemeKind.Light:
-                case ColorThemeKind.HighContrastLight:
-                    return ThemeStyle.Light;
-            }
-        })();
-        this.postMessage({
-            type: MessageType.themeUpdate,
-            body: {
-                theme: themeType,
-                lang: this.document.languageId
-            }
-        }, true);
-    }
+  // Restore the document to the last correct state, that is, a state for which the content
+  //  outside of the <input-area> tags is correct.
+  private restore() {
+    this._workspaceEditor.edit((edit) => {
+      edit.replace(
+        this.document.uri,
+        new Range(
+          this._document.positionAt(0),
+          this.document.positionAt(this.document.getText().length),
+        ),
+        this._lastCorrectDocString,
+      );
+    });
+    // We save the document and call sync webview to make sure that the editor is up to date
+    this.document.save().then(() => {
+      this.syncWebview();
+    });
+  }
 
-    private syncWebview() {
-        // send document content
-        this.postMessage({
-            type: MessageType.init,
-            body: {
-                value: this._document.getText(),
-                version: this._document.version,
-            }
-        });
+  /** Handle a doc change sent from prosemirror */
+  private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
+    // const e = new WorkspaceEdit();
 
-        this.updateLineNumberStatusInEditor();
+    this._workspaceEditor.edit((e) => {
+      if ("firstEdit" in change) {
+        this.applyChangeToWorkspace(change.firstEdit, e);
+        this.applyChangeToWorkspace(change.secondEdit, e);
+      } else {
+        this.applyChangeToWorkspace(change, e);
+      }
+    });
+    // workspace.applyEdit(e).then((val) => {
+    //     if (val) {
+    //         this.document.save();
+    //     } else {
+    //         WaterproofLogger.log("Failed to apply edit to workspace");
+    //     }
+    // },
+    // (reason) => console.log("REJECTED EDIT", reason));
 
-        // send any cached messages
-        for (const m of this._cachedMessages.values()) this.postMessage(m);
-    }
-
-    private refreshOnSave() {
-        this.postMessage({
-            type: MessageType.refreshDocument,
-            body: {
-                value: this._document.getText(),
-                version: this._document.version,
-            }
-        });
-        this.updateLineNumberStatusInEditor();
-        // send any cached messages
-        for (const m of this._cachedMessages.values()) this.postMessage(m);
-    }
-
-    private updateLineNumberStatusInEditor() {
-        this.postMessage({
-            type: MessageType.setShowLineNumbers,
-            body: this._showLineNrsInEditor
-        }, true);
-
-    }
-
-    private updateMenuItemsInEditor() {
-        this.postMessage({
-            type: MessageType.setShowMenuItems,
-            body: this._showMenuItemsInEditor
-        }, true);
-    }
-
-    /** Toggle the teacher mode */
-    private updateTeacherMode() {
-        const mode = WaterproofConfigHelper.get(WaterproofSetting.TeacherMode);
-        this._teacherMode = mode;
-        this.postMessage({
-            type: MessageType.teacher,
-            body: mode
-        }, true);
-    }
-
-    /** Apply new doc changes to the underlying file */
-    private applyChangeToWorkspace(change: DocChange, edit: WorkspaceEdit) {
-        if (change.startInFile === change.endInFile) {
-            edit.insert(
-                this.document.uri,
-                this.document.positionAt(change.startInFile),
-                change.finalText
-            );
-        } else if (change.finalText.length === 0) {
-            edit.delete(
-                this.document.uri,
-                new Range(this._document.positionAt(change.startInFile), this.document.positionAt(change.endInFile))
-            );
-        } else {
-            edit.replace(
-                this.document.uri,
-                new Range(this._document.positionAt(change.startInFile), this.document.positionAt(change.endInFile)),
-                change.finalText
-            );
+    // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
+    if (!this._teacherMode && this._enforceCorrectNonInputArea) {
+      let foundDefect = false;
+      const nonInputRegions = getNonInputRegions(this._document.getText());
+      if (nonInputRegions.length !== this._nonInputRegions.length) {
+        foundDefect = true;
+      } else {
+        for (let i = 0; i < this._nonInputRegions.length; i++) {
+          if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
+            foundDefect = true;
+            break;
+          }
         }
+      }
+
+      if (foundDefect) {
+        showRestoreMessage(this.restore.bind(this));
+      } else {
+        this._lastCorrectDocString = this._document.getText();
+      }
     }
+  }
 
-    // Restore the document to the last correct state, that is, a state for which the content
-    //  outside of the <input-area> tags is correct.
-    private restore() {
-        this._workspaceEditor.edit(edit => {
-            edit.replace(
-                this.document.uri,
-                new Range(this._document.positionAt(0), this.document.positionAt(this.document.getText().length)),
-                this._lastCorrectDocString
-            )
-        });
-        // We save the document and call sync webview to make sure that the editor is up to date
-        this.document.save().then(() => {
-            this.syncWebview();
-        });
+  private sendHistoryChangeToEditor(type: HistoryChange) {
+    this.postMessage({
+      type: MessageType.editorHistoryChange,
+      body: type,
+    });
+  }
+
+  /** Handle the messages received from prosemirror */
+  private handleMessage(msg: Message) {
+    switch (msg.type) {
+      case MessageType.docChange:
+        this.handleChangeFromEditor(msg.body);
+        break;
+      case MessageType.ready:
+        this.syncWebview();
+        // When ready send the state of the teacher mode and show menu items settings to editor
+        this.updateTeacherMode();
+        this.updateMenuItemsInEditor();
+        break;
+      default:
+        this.emit(WebviewEvents.message, msg);
+        break;
     }
-
-    /** Handle a doc change sent from prosemirror */
-    private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
-        // const e = new WorkspaceEdit();
-
-        this._workspaceEditor.edit(e => {
-            if ("firstEdit" in change) {
-                this.applyChangeToWorkspace(change.firstEdit, e);
-                this.applyChangeToWorkspace(change.secondEdit, e);
-            } else {
-                this.applyChangeToWorkspace(change, e);
-            }
-        });
-            // workspace.applyEdit(e).then((val) => {
-            //     if (val) {
-            //         this.document.save();
-            //     } else {
-            //         WaterproofLogger.log("Failed to apply edit to workspace");
-            //     }
-            // },
-            // (reason) => console.log("REJECTED EDIT", reason));
-
-        // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
-        if (!this._teacherMode && this._enforceCorrectNonInputArea) {
-            let foundDefect = false;
-            const nonInputRegions = getNonInputRegions(this._document.getText());
-            if (nonInputRegions.length !== this._nonInputRegions.length) {
-                foundDefect = true;
-            } else {
-                for (let i = 0; i < this._nonInputRegions.length; i++) {
-                    if (this._nonInputRegions[i].content !== nonInputRegions[i].content) {
-                        foundDefect = true;
-                        break;
-                    }
-                }
-            }
-
-            if (foundDefect) {
-                showRestoreMessage(this.restore.bind(this));
-            } else {
-                this._lastCorrectDocString = this._document.getText();
-            }
-        }
-    }
-
-    private sendHistoryChangeToEditor(type: HistoryChange) {
-        this.postMessage({
-            type: MessageType.editorHistoryChange,
-            body: type
-        });
-    }
-
-    /** Handle the messages received from prosemirror */
-    private handleMessage(msg: Message) {
-        switch (msg.type) {
-            case MessageType.docChange:
-                this.handleChangeFromEditor(msg.body);
-                break;
-            case MessageType.ready:
-                this.syncWebview();
-                // When ready send the state of the teacher mode and show menu items settings to editor
-                this.updateTeacherMode();
-                this.updateMenuItemsInEditor();
-                break;
-            default:
-                this.emit(WebviewEvents.message, msg);
-                break;
-        }
-    }
+  }
 }

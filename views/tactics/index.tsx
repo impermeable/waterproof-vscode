@@ -12,7 +12,7 @@ const container = document.getElementById("root");
 const root = createRoot(container!);
 // render the tactics panel
 root.render(
-    <React.StrictMode>
-        <Tactics data={data} />
-    </React.StrictMode>
+  <React.StrictMode>
+    <Tactics data={data} />
+  </React.StrictMode>,
 );

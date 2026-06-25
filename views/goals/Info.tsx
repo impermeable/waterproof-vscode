@@ -3,7 +3,7 @@ import { RocqGoalAnswer, HypVisibility, PpString } from "../../lib/types";
 import { ErrorBrowser } from "./ErrorBrowser";
 import { Goals } from "./Goals";
 import { Messages } from "./Messages";
-import {Help} from "./help";
+import { Help } from "./help";
 
 import "../styles/info.css";
 import { Message, MessageType } from "../../shared";
@@ -17,7 +17,7 @@ const VSCodeDivider = lazy(async () => {
   const { VSCodeDivider } = await import("@vscode/webview-ui-toolkit/react");
   return { default: VSCodeDivider };
 });
- 
+
 export function InfoPanel() {
   // visibility of the hypotheses in the goals panel
 
@@ -27,31 +27,36 @@ export function InfoPanel() {
   //boolean to check if the goals are still loading
   const [goalsLoading, setGoalsLoading] = useState(false);
   //visibility of the hypotheses in the goals panel as State
-  const [visibility, setVisibility] = useState<HypVisibility>(HypVisibility.None);
-  
+  const [visibility, setVisibility] = useState<HypVisibility>(
+    HypVisibility.None,
+  );
+
   const [isHelpLoading, setIsHelpLoading] = useState(false);
-  const [helpInfo, setHelpInfo] = useState<string[] | RocqGoalAnswer<PpString> | undefined>(undefined);
+  const [helpInfo, setHelpInfo] = useState<
+    string[] | RocqGoalAnswer<PpString> | undefined
+  >(undefined);
   //handles the message
   //event : RocqMessageEvent as defined above
-  function infoViewDispatch(msg: Message) { 
+  function infoViewDispatch(msg: Message) {
     switch (msg.type) {
       case MessageType.renderGoals: {
-          const newGoals = msg.body.goals;
-          const prevGoals = goalsRef.current;
+        const newGoals = msg.body.goals;
+        const prevGoals = goalsRef.current;
 
-          const goalsChanged = JSON.stringify(newGoals.goals) !== JSON.stringify(prevGoals?.goals);
-          if (goalsChanged) {
-            setHelpInfo(undefined);
-            setIsHelpLoading(false);
-          }
+        const goalsChanged =
+          JSON.stringify(newGoals.goals) !== JSON.stringify(prevGoals?.goals);
+        if (goalsChanged) {
+          setHelpInfo(undefined);
+          setIsHelpLoading(false);
+        }
 
-          goalsRef.current = newGoals;
-          setGoals(newGoals); //setting the information
-          setGoalsLoading(false);
-          setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None  
-          break;
+        goalsRef.current = newGoals;
+        setGoals(newGoals); //setting the information
+        setGoalsLoading(false);
+        setVisibility(msg.body.visibility ?? HypVisibility.None); //set visibility if it exists, otherwise set to None
+        break;
       }
-      case MessageType.setData:{
+      case MessageType.setData: {
         setHelpInfo(msg.body);
         setIsHelpLoading(false);
         break;
@@ -61,7 +66,9 @@ export function InfoPanel() {
 
   // Set the callback
   useEffect(() => {
-    const callback = (ev: MessageEvent<Message>) => {infoViewDispatch(ev.data);};
+    const callback = (ev: MessageEvent<Message>) => {
+      infoViewDispatch(ev.data);
+    };
     window.addEventListener("message", callback);
     return () => window.removeEventListener("message", callback);
   }, []);
@@ -78,7 +85,11 @@ export function InfoPanel() {
   if (goalsLoading) return <div>Loading...</div>;
 
   if (!goals) {
-    return <div>Place your cursor in the document to show the goals at that position.</div>
+    return (
+      <div>
+        Place your cursor in the document to show the goals at that position.
+      </div>
+    );
   }
 
   //The goal and message are displayed along with the error at the position (if it exists)
@@ -86,8 +97,13 @@ export function InfoPanel() {
   return (
     <div className="info-panel-container">
       <div className="info-panel">
-          <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} visibility={visibility}/>
-          <Messages answer={goals} />
+        <Goals
+          goals={goals.goals}
+          pos={goals.position}
+          textDoc={goals.textDocument}
+          visibility={visibility}
+        />
+        <Messages answer={goals} />
       </div>
       {!goals.error ? null : (
         <div className="error-browser">
@@ -98,7 +114,11 @@ export function InfoPanel() {
         </div>
       )}
       <div className="help-panel">
-          <Help helpInfo ={helpInfo} isLoading={isHelpLoading} onRequestHelp={requestHelp}/>
+        <Help
+          helpInfo={helpInfo}
+          isLoading={isHelpLoading}
+          onRequestHelp={requestHelp}
+        />
       </div>
     </div>
   );

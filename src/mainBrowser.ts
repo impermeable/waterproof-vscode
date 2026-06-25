@@ -1,6 +1,9 @@
 import { ExtensionContext, Uri, WorkspaceConfiguration } from "vscode";
 import { LanguageClientProviderFactory } from "./lsp-client/clientTypes";
-import { LanguageClient, LanguageClientOptions } from "vscode-languageclient/browser";
+import {
+  LanguageClient,
+  LanguageClientOptions,
+} from "vscode-languageclient/browser";
 import { Waterproof } from "./extension";
 
 /**
@@ -11,20 +14,26 @@ import { Waterproof } from "./extension";
  * @returns an LSP client with the added functionality of `RocqFeatures`
  */
 const getRocqClientProvider: LanguageClientProviderFactory = (
-    context: ExtensionContext,
-    clientOptions: LanguageClientOptions,
-    _wsConfig: WorkspaceConfiguration
+  context: ExtensionContext,
+  clientOptions: LanguageClientOptions,
+  _wsConfig: WorkspaceConfiguration,
 ) => {
-    const serverMain = Uri.joinPath(context.extensionUri, 'out/src/mainBrowser.js');
-    // Start our own webworker
-    new Worker(serverMain.toString(true));
-    const lspWorker = new Worker(Uri.joinPath(context.extensionUri, 'out/wacoq_worker.js').toString(true));
-    lspWorker.postMessage(context.extensionUri.toString());
-    return () => new LanguageClient(
-        "waterproof",
-        "Waterproof Document Checker",
-        clientOptions,
-        lspWorker
+  const serverMain = Uri.joinPath(
+    context.extensionUri,
+    "out/src/mainBrowser.js",
+  );
+  // Start our own webworker
+  new Worker(serverMain.toString(true));
+  const lspWorker = new Worker(
+    Uri.joinPath(context.extensionUri, "out/wacoq_worker.js").toString(true),
+  );
+  lspWorker.postMessage(context.extensionUri.toString());
+  return () =>
+    new LanguageClient(
+      "waterproof",
+      "Waterproof Document Checker",
+      clientOptions,
+      lspWorker,
     );
 };
 
@@ -36,22 +45,27 @@ const getRocqClientProvider: LanguageClientProviderFactory = (
  * @returns an LSP client with the added functionality of `LeanFeatures`
  */
 const getLeanClientProvider: LanguageClientProviderFactory = (
-    _context: ExtensionContext,
-    _clientOptions: LanguageClientOptions,
-    _wsConfig: WorkspaceConfiguration
+  _context: ExtensionContext,
+  _clientOptions: LanguageClientOptions,
+  _wsConfig: WorkspaceConfiguration,
 ) => {
-    throw new Error("Not implemented");
+  throw new Error("Not implemented");
 };
 
 export function activate(context: ExtensionContext): void {
-    console.log("Browser activate function");
-    const extension: Waterproof = new Waterproof(context, getRocqClientProvider, getLeanClientProvider, true);
-    context.subscriptions.push(extension);
-    // start the lsp client
-    extension.initializeClient();
+  console.log("Browser activate function");
+  const extension: Waterproof = new Waterproof(
+    context,
+    getRocqClientProvider,
+    getLeanClientProvider,
+    true,
+  );
+  context.subscriptions.push(extension);
+  // start the lsp client
+  extension.initializeClient();
 }
 
 export function deactivate(): void {
-    // TODO: stop client
-    return;
+  // TODO: stop client
+  return;
 }

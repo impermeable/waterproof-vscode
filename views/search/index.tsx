@@ -7,10 +7,10 @@ import Search from "./search";
 
 const container = document.getElementById("root");
 // createRoot(container!) if you use TypeScript
-const root = createRoot(container!); 
+const root = createRoot(container!);
 //render the common execute panel
 root.render(
   <React.StrictMode>
-    <Search/>
-  </React.StrictMode>
+    <Search />
+  </React.StrictMode>,
 );

@@ -5,7 +5,6 @@ import { ErrorBrowser } from "../goals/ErrorBrowser";
 import { Goals } from "../goals/Goals";
 import { Messages } from "../goals/Messages";
 
-
 import "../styles/info.css";
 import { Message, MessageType } from "../../shared";
 
@@ -17,10 +16,9 @@ const VSCodeDivider = lazy(async () => {
   return { default: VSCodeDivider };
 });
 
-
 export function Debug() {
   // visibility of the hypotheses in the goals panel
-  
+
   //saves the goal
   const [goals, setGoals] = useState<GoalAnswer<PpString>>();
   //boolean to check if the goals are still loading
@@ -28,7 +26,7 @@ export function Debug() {
 
   //handles the message
   //event : RocqMessageEvent as defined above
-  function infoViewDispatch(msg: Message) { 
+  function infoViewDispatch(msg: Message) {
     if (msg.type === MessageType.renderGoals) {
       const goals = msg.body.goals;
 
@@ -39,7 +37,9 @@ export function Debug() {
 
   // Set the callback
   useEffect(() => {
-    const callback = (ev: MessageEvent<Message>) => {infoViewDispatch(ev.data);};
+    const callback = (ev: MessageEvent<Message>) => {
+      infoViewDispatch(ev.data);
+    };
     window.addEventListener("message", callback);
     return () => window.removeEventListener("message", callback);
   }, []);
@@ -48,7 +48,11 @@ export function Debug() {
   if (isLoading) return <div>Loading...</div>;
 
   if (!goals) {
-    return <div>Place your cursor in the document to show the goals at that position.</div>
+    return (
+      <div>
+        Place your cursor in the document to show the goals at that position.
+      </div>
+    );
   }
 
   //The goal and message are displayed along with the error at the position (if it exists)
@@ -56,8 +60,13 @@ export function Debug() {
   return (
     <div className="info-panel-container">
       <div className="info-panel">
-          <Goals goals={goals.goals} pos={goals.position} textDoc={goals.textDocument} visibility={HypVisibility.All}/>
-          <Messages answer={goals} />
+        <Goals
+          goals={goals.goals}
+          pos={goals.position}
+          textDoc={goals.textDocument}
+          visibility={HypVisibility.All}
+        />
+        <Messages answer={goals} />
       </div>
       {!goals.error ? null : (
         <div className="error-browser">
@@ -72,4 +81,3 @@ export function Debug() {
 }
 
 export default Debug;
-

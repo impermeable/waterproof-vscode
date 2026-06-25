@@ -1,7 +1,9 @@
+import { Uri } from "vscode";
 import {
-    Uri,
-} from "vscode";
-import { WaterproofPanel, WebviewEvents, WebviewState } from "../waterproofPanel";
+  WaterproofPanel,
+  WebviewEvents,
+  WebviewState,
+} from "../waterproofPanel";
 
 // Import the JSON data containing the Rocq tactics
 import dataRocq from "../../../completions/tactics.json";
@@ -13,48 +15,47 @@ import { LeanLspClient } from "../../lsp-client/lean";
 import type { TacticsData } from "../../../shared";
 
 export class TacticsPanel extends WaterproofPanel {
-    private lastClient?: RocqLspClient | LeanLspClient;
+  private lastClient?: RocqLspClient | LeanLspClient;
 
-    constructor(extensionUri: Uri) {
-        // Initialize the tactics panel with the extension Uri and the webview name
-        super(extensionUri, "tactics");
+  constructor(extensionUri: Uri) {
+    // Initialize the tactics panel with the extension Uri and the webview name
+    super(extensionUri, "tactics");
 
-        this.readyPanel();
-        // Set up an event listener for WebviewEvents.change event
-        this.on(WebviewEvents.change,(_e) => {
-            switch(this.state) { // Check the state of the webview
-                // If the webview is open
-                case WebviewState.open:
-                    break;
-                // If the webview is ready
-                case WebviewState.ready:
-                    break;
-                // If the webview is visible
-                case WebviewState.visible:
-                    break;
-                // If the webview is closed
-                case WebviewState.closed:
-                    // Get panel ready
-                    this.readyPanel()
-                    break;
-            }
-        });
-    }
+    this.readyPanel();
+    // Set up an event listener for WebviewEvents.change event
+    this.on(WebviewEvents.change, (_e) => {
+      switch (
+        this.state // Check the state of the webview
+      ) {
+        // If the webview is open
+        case WebviewState.open:
+          break;
+        // If the webview is ready
+        case WebviewState.ready:
+          break;
+        // If the webview is visible
+        case WebviewState.visible:
+          break;
+        // If the webview is closed
+        case WebviewState.closed:
+          // Get panel ready
+          this.readyPanel();
+          break;
+      }
+    });
+  }
 
-    showView(_name: string, data?: TacticsData) {
-        if (data)
-            super.showView("tactics", data);
-        else if (this.lastClient instanceof LeanLspClient)
-            super.showView("tactics", dataLean);
-        else
-            super.showView("tactics", dataRocq);
-    }
+  showView(_name: string, data?: TacticsData) {
+    if (data) super.showView("tactics", data);
+    else if (this.lastClient instanceof LeanLspClient)
+      super.showView("tactics", dataLean);
+    else super.showView("tactics", dataRocq);
+  }
 
-    update(client: CompositeClient) {
-        if (!client || this.lastClient === client.activeClient)
-            return;
+  update(client: CompositeClient) {
+    if (!client || this.lastClient === client.activeClient) return;
 
-        this.lastClient = client.activeClient;
-        this.showView("tactics");
-    }
+    this.lastClient = client.activeClient;
+    this.showView("tactics");
+  }
 }

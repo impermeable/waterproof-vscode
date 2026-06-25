@@ -1,8 +1,16 @@
 /* eslint-disable no-useless-escape */
 // Disable due to latex code in sample data
 
-import { BlockRange, MarkdownBlock, typeguards, constructDocument } from "@impermeable/waterproof-editor";
-import { topLevelBlocksMV, topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
+import {
+  BlockRange,
+  MarkdownBlock,
+  typeguards,
+  constructDocument,
+} from "@impermeable/waterproof-editor";
+import {
+  topLevelBlocksMV,
+  topLevelBlocksLean,
+} from "../../editor/src/document-construction/construct-document";
 import { LeanSerializer } from "../../editor/src/leanSerializer";
 
 const inputDocumentMV = `# Example document
@@ -50,108 +58,145 @@ A list:
   3. \`Inline code\`
 `;
 
-
 // FIXME: Add checks for prewhite and postwhite here.
 test("Parse top level blocks (MV)", () => {
-    const blocks = topLevelBlocksMV(inputDocumentMV);
-    expect(blocks.length).toBe(10);
+  const blocks = topLevelBlocksMV(inputDocumentMV);
+  expect(blocks.length).toBe(10);
 
-    expect(typeguards.isMarkdownBlock(blocks[0])).toBe(true);
-    expect(blocks[0].stringContent).toBe("# Example document\n");
+  expect(typeguards.isMarkdownBlock(blocks[0])).toBe(true);
+  expect(blocks[0].stringContent).toBe("# Example document\n");
 
-    expect(typeguards.isHintBlock(blocks[1])).toBe(true);
-    expect(blocks[1].stringContent).toBe("\n```coq\nRequire Import ZArith.\n```\n");
+  expect(typeguards.isHintBlock(blocks[1])).toBe(true);
+  expect(blocks[1].stringContent).toBe(
+    "\n```coq\nRequire Import ZArith.\n```\n",
+  );
 
-    expect(typeguards.isMarkdownBlock(blocks[2])).toBe(true);
-    expect((blocks[2] as MarkdownBlock).isNewLineOnly).toBe(true);
+  expect(typeguards.isMarkdownBlock(blocks[2])).toBe(true);
+  expect((blocks[2] as MarkdownBlock).isNewLineOnly).toBe(true);
 
-    expect(typeguards.isInputAreaBlock(blocks[3])).toBe(true);
-    expect(blocks[3].stringContent).toBe("\n$$1028 + 23 = ?$$\n```coq\nCompute 1028 + 23.\n```\n");
+  expect(typeguards.isInputAreaBlock(blocks[3])).toBe(true);
+  expect(blocks[3].stringContent).toBe(
+    "\n$$1028 + 23 = ?$$\n```coq\nCompute 1028 + 23.\n```\n",
+  );
 
-    expect(typeguards.isMarkdownBlock(blocks[4])).toBe(true);
-    expect(blocks[4].stringContent).toBe("\n#### Markdown content\n");
+  expect(typeguards.isMarkdownBlock(blocks[4])).toBe(true);
+  expect(blocks[4].stringContent).toBe("\n#### Markdown content\n");
 
-    expect(typeguards.isMathDisplayBlock(blocks[5])).toBe(true);
-    expect(blocks[5].stringContent).toBe(" \int_0^2 x dx ");
+  expect(typeguards.isMathDisplayBlock(blocks[5])).toBe(true);
+  expect(blocks[5].stringContent).toBe(" \int_0^2 x dx ");
 
-    expect(typeguards.isNewlineBlock(blocks[6])).toBe(true);
+  expect(typeguards.isNewlineBlock(blocks[6])).toBe(true);
 
-    expect(typeguards.isCodeBlock(blocks[7])).toBe(true);
-    expect(blocks[7].stringContent).toBe("Compute 1 + 1.");
+  expect(typeguards.isCodeBlock(blocks[7])).toBe(true);
+  expect(blocks[7].stringContent).toBe("Compute 1 + 1.");
 
-    expect(typeguards.isNewlineBlock(blocks[8])).toBe(true);
+  expect(typeguards.isNewlineBlock(blocks[8])).toBe(true);
 
-    expect(typeguards.isMarkdownBlock(blocks[9])).toBe(true);
-    expect(blocks[9].stringContent).toBe("Random Markdown list:\n    1. Item 3\n    2. Item 0\n    3. $1 + 1$\n");
+  expect(typeguards.isMarkdownBlock(blocks[9])).toBe(true);
+  expect(blocks[9].stringContent).toBe(
+    "Random Markdown list:\n    1. Item 3\n    2. Item 0\n    3. $1 + 1$\n",
+  );
 });
 
 test("Markdown and Code", () => {
-    const input = `Test
+  const input = `Test
 \`\`\`coq
 Compute 3 + 3.
 \`\`\``;
-    const blocks = topLevelBlocksMV(input);
-    expect(blocks.length).toBe(3);
+  const blocks = topLevelBlocksMV(input);
+  expect(blocks.length).toBe(3);
 
-    const [md, nl, code] = blocks;
+  const [md, nl, code] = blocks;
 
-    expect(typeguards.isMarkdownBlock(md)).toBe(true);
-    expect(md.stringContent).toBe("Test");
-    expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 4 });
-    expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 4 });
+  expect(typeguards.isMarkdownBlock(md)).toBe(true);
+  expect(md.stringContent).toBe("Test");
+  expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 4 });
+  expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 4 });
 
-    expect(typeguards.isNewlineBlock(nl)).toBe(true);
-    expect(nl.stringContent).toBe("");
-    expect(nl.range).toStrictEqual<BlockRange>({ from: 4, to: 5 });
-    expect(nl.innerRange).toStrictEqual<BlockRange>({ from: 4, to: 5 });
+  expect(typeguards.isNewlineBlock(nl)).toBe(true);
+  expect(nl.stringContent).toBe("");
+  expect(nl.range).toStrictEqual<BlockRange>({ from: 4, to: 5 });
+  expect(nl.innerRange).toStrictEqual<BlockRange>({ from: 4, to: 5 });
 
-    expect(typeguards.isCodeBlock(code)).toBe(true);
-    expect(code.stringContent).toBe("Compute 3 + 3.");
-    expect(code.range).toStrictEqual<BlockRange>({ from: 5, to:  input.length });
-    expect(code.innerRange).toStrictEqual<BlockRange>({ from: 12, to:  input.length - 4 });
+  expect(typeguards.isCodeBlock(code)).toBe(true);
+  expect(code.stringContent).toBe("Compute 3 + 3.");
+  expect(code.range).toStrictEqual<BlockRange>({ from: 5, to: input.length });
+  expect(code.innerRange).toStrictEqual<BlockRange>({
+    from: 12,
+    to: input.length - 4,
+  });
 });
 
 test("1 input area with math and code", () => {
-    const input = `<input-area>$$a^2 + b^2 = c^2$$
+  const input = `<input-area>$$a^2 + b^2 = c^2$$
 \`\`\`coq
 Lemma trivial : True.
 Proof. auto. Qed.
 \`\`\`
 </input-area>`;
-    const blocks = topLevelBlocksMV(input);
-    expect(blocks.length).toBe(1);
-    const [ia] = blocks;
+  const blocks = topLevelBlocksMV(input);
+  expect(blocks.length).toBe(1);
+  const [ia] = blocks;
 
-    expect(typeguards.isInputAreaBlock(ia)).toBe(true);
-    expect(ia.stringContent).toBe("$$a^2 + b^2 = c^2$$\n```coq\nLemma trivial : True.\nProof. auto. Qed.\n```\n");
-    expect(ia.range).toStrictEqual<BlockRange>({ from: 0, to: input.length });
-    expect(ia.innerRange).toStrictEqual<BlockRange>({ from: 12, to: input.length - "</input-area>".length });
-    expect(ia.innerBlocks).toBeDefined();
-    expect(ia.innerBlocks?.length).toBe(4);
+  expect(typeguards.isInputAreaBlock(ia)).toBe(true);
+  expect(ia.stringContent).toBe(
+    "$$a^2 + b^2 = c^2$$\n```coq\nLemma trivial : True.\nProof. auto. Qed.\n```\n",
+  );
+  expect(ia.range).toStrictEqual<BlockRange>({ from: 0, to: input.length });
+  expect(ia.innerRange).toStrictEqual<BlockRange>({
+    from: 12,
+    to: input.length - "</input-area>".length,
+  });
+  expect(ia.innerBlocks).toBeDefined();
+  expect(ia.innerBlocks?.length).toBe(4);
 
-    const [math, nl, code, nl2] = ia.innerBlocks!;
-    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
-    expect(typeguards.isCodeBlock(code)).toBe(true);
-    expect(typeguards.isNewlineBlock(nl)).toBe(true);
-    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
+  const [math, nl, code, nl2] = ia.innerBlocks!;
+  expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+  expect(typeguards.isCodeBlock(code)).toBe(true);
+  expect(typeguards.isNewlineBlock(nl)).toBe(true);
+  expect(typeguards.isNewlineBlock(nl2)).toBe(true);
 
-    expect(math.stringContent).toBe("a^2 + b^2 = c^2");
-    expect(math.range).toStrictEqual<BlockRange>({ from: 12, to: 12 + "$$a^2 + b^2 = c^2$$".length });
-    expect(math.innerRange).toStrictEqual<BlockRange>({ from: 12 + 2, to: 12 + "$$a^2 + b^2 = c^2$$".length - 2 });
+  expect(math.stringContent).toBe("a^2 + b^2 = c^2");
+  expect(math.range).toStrictEqual<BlockRange>({
+    from: 12,
+    to: 12 + "$$a^2 + b^2 = c^2$$".length,
+  });
+  expect(math.innerRange).toStrictEqual<BlockRange>({
+    from: 12 + 2,
+    to: 12 + "$$a^2 + b^2 = c^2$$".length - 2,
+  });
 
-    expect(nl.range).toStrictEqual<BlockRange>({ from: 12 + "$$a^2 + b^2 = c^2$$".length, to: 12 + "$$a^2 + b^2 = c^2$$".length + 1 });
-    expect(nl.innerRange).toStrictEqual<BlockRange>({ from: 12 + "$$a^2 + b^2 = c^2$$".length, to: 12 + "$$a^2 + b^2 = c^2$$".length + 1 });
+  expect(nl.range).toStrictEqual<BlockRange>({
+    from: 12 + "$$a^2 + b^2 = c^2$$".length,
+    to: 12 + "$$a^2 + b^2 = c^2$$".length + 1,
+  });
+  expect(nl.innerRange).toStrictEqual<BlockRange>({
+    from: 12 + "$$a^2 + b^2 = c^2$$".length,
+    to: 12 + "$$a^2 + b^2 = c^2$$".length + 1,
+  });
 
-    expect(code.stringContent).toBe("Lemma trivial : True.\nProof. auto. Qed.");
-    expect(code.range).toStrictEqual<BlockRange>({ from: 32, to: ia.range.to - "</input-area>".length - 1});
-    expect(code.innerRange).toStrictEqual<BlockRange>({ from: 32 + "```coq\n".length, to: ia.range.to - "</input-area>".length - "\n```\n".length });
+  expect(code.stringContent).toBe("Lemma trivial : True.\nProof. auto. Qed.");
+  expect(code.range).toStrictEqual<BlockRange>({
+    from: 32,
+    to: ia.range.to - "</input-area>".length - 1,
+  });
+  expect(code.innerRange).toStrictEqual<BlockRange>({
+    from: 32 + "```coq\n".length,
+    to: ia.range.to - "</input-area>".length - "\n```\n".length,
+  });
 
-    expect(nl2.range).toStrictEqual<BlockRange>({ from: ia.range.to - "</input-area>".length - 1, to: ia.range.to - "</input-area>".length });
-    expect(nl2.innerRange).toStrictEqual<BlockRange>({ from: ia.range.to - "</input-area>".length - 1, to: ia.range.to - "</input-area>".length });
+  expect(nl2.range).toStrictEqual<BlockRange>({
+    from: ia.range.to - "</input-area>".length - 1,
+    to: ia.range.to - "</input-area>".length,
+  });
+  expect(nl2.innerRange).toStrictEqual<BlockRange>({
+    from: ia.range.to - "</input-area>".length - 1,
+    to: ia.range.to - "</input-area>".length,
+  });
 });
 
 test("Markdown and input", () => {
-    const input = `# Header<input-area>
+  const input = `# Header<input-area>
 \`\`\`coq
 Goal False.
 \`\`\`
@@ -159,137 +204,145 @@ Goal False.
 Goal True.
 \`\`\`
 </input-area>`;
-    const blocks = topLevelBlocksMV(input);
+  const blocks = topLevelBlocksMV(input);
 
-    expect(blocks.length).toBe(2);
-    const [md, ia] = blocks;
+  expect(blocks.length).toBe(2);
+  const [md, ia] = blocks;
 
-    expect(typeguards.isMarkdownBlock(md)).toBe(true);
-    expect(md.stringContent).toBe("# Header");
-    expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 8 });
-    expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 8 });
+  expect(typeguards.isMarkdownBlock(md)).toBe(true);
+  expect(md.stringContent).toBe("# Header");
+  expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 8 });
+  expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 8 });
 
-    expect(typeguards.isInputAreaBlock(ia)).toBe(true);
-    expect(ia.stringContent).toBe("\n```coq\nGoal False.\n```\n```coq\nGoal True.\n```\n");
-    expect(ia.range).toStrictEqual<BlockRange>({ from: 8, to: input.length });
-    expect(ia.innerRange).toStrictEqual<BlockRange>({ from: 8 + "<input-area>".length, to: input.length - "</input-area>".length });
-    expect(ia.innerBlocks).toBeDefined();
+  expect(typeguards.isInputAreaBlock(ia)).toBe(true);
+  expect(ia.stringContent).toBe(
+    "\n```coq\nGoal False.\n```\n```coq\nGoal True.\n```\n",
+  );
+  expect(ia.range).toStrictEqual<BlockRange>({ from: 8, to: input.length });
+  expect(ia.innerRange).toStrictEqual<BlockRange>({
+    from: 8 + "<input-area>".length,
+    to: input.length - "</input-area>".length,
+  });
+  expect(ia.innerBlocks).toBeDefined();
 
-
-    expect(ia.innerBlocks?.length).toBe(5);
-
-
+  expect(ia.innerBlocks?.length).toBe(5);
 });
 
 test("Parse top level blocks (Lean)", () => {
-    const blocks = topLevelBlocksLean(inputDocumentLean);
-    expect(blocks.length).toBe(9);
+  const blocks = topLevelBlocksLean(inputDocumentLean);
+  expect(blocks.length).toBe(9);
 
-    const [preamble, nl0, md1, nl1, container, nl2, md2, math, md3] = blocks;
+  const [preamble, nl0, md1, nl1, container, nl2, md2, math, md3] = blocks;
 
-    expect(typeguards.isHintBlock(preamble)).toBe(true);
-    expect(preamble.stringContent).toBe("import Some.Library");
+  expect(typeguards.isHintBlock(preamble)).toBe(true);
+  expect(preamble.stringContent).toBe("import Some.Library");
 
-    expect(typeguards.isNewlineBlock(nl0)).toBe(true);
+  expect(typeguards.isNewlineBlock(nl0)).toBe(true);
 
-    expect(typeguards.isMarkdownBlock(md1)).toBe(true);
-    expect(md1.stringContent).toBe("# A Header");
+  expect(typeguards.isMarkdownBlock(md1)).toBe(true);
+  expect(md1.stringContent).toBe("# A Header");
 
-    expect(typeguards.isNewlineBlock(nl1)).toBe(true);
+  expect(typeguards.isNewlineBlock(nl1)).toBe(true);
 
-    expect(typeguards.isContainerBlock(container)).toBe(true);
-    expect(container.innerBlocks!.length).toBe(3);
-    const [innerCode, innerNl, innerInput] = container.innerBlocks!;
-    expect(typeguards.isCodeBlock(innerCode)).toBe(true);
-    expect(innerCode.stringContent).toBe("def fortyTwo :=\n  30 +");
-    expect(typeguards.isNewlineBlock(innerNl)).toBe(true);
-    expect(typeguards.isInputAreaBlock(innerInput)).toBe(true);
-    expect(innerInput.stringContent).toBe("```lean\n  12\n```");
+  expect(typeguards.isContainerBlock(container)).toBe(true);
+  expect(container.innerBlocks!.length).toBe(3);
+  const [innerCode, innerNl, innerInput] = container.innerBlocks!;
+  expect(typeguards.isCodeBlock(innerCode)).toBe(true);
+  expect(innerCode.stringContent).toBe("def fortyTwo :=\n  30 +");
+  expect(typeguards.isNewlineBlock(innerNl)).toBe(true);
+  expect(typeguards.isInputAreaBlock(innerInput)).toBe(true);
+  expect(innerInput.stringContent).toBe("```lean\n  12\n```");
 
-    expect(typeguards.isNewlineBlock(nl2)).toBe(true);
+  expect(typeguards.isNewlineBlock(nl2)).toBe(true);
 
-    expect(typeguards.isMarkdownBlock(md2)).toBe(true);
-    expect(md2.stringContent).toBe("## Markdown Content\n");
+  expect(typeguards.isMarkdownBlock(md2)).toBe(true);
+  expect(md2.stringContent).toBe("## Markdown Content\n");
 
-    expect(typeguards.isMathDisplayBlock(math)).toBe(true);
-    expect(math.stringContent).toBe("x^2 + y = z");
+  expect(typeguards.isMathDisplayBlock(math)).toBe(true);
+  expect(math.stringContent).toBe("x^2 + y = z");
 
-    expect(typeguards.isMarkdownBlock(md3)).toBe(true);
-    expect(md3.stringContent)
-        .toBe("\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n  3. `Inline code`\n");
-})
+  expect(typeguards.isMarkdownBlock(md3)).toBe(true);
+  expect(md3.stringContent).toBe(
+    "\nA list:\n  1. *Italicized* text\n  2. $`y = z - x^2`\n  3. `Inline code`\n",
+  );
+});
 
 test("Parse and serialize document (Lean)", () => {
-    const doc = constructDocument(topLevelBlocksLean(inputDocumentLean));
-    const out = new LeanSerializer().serializeDocument(doc);
+  const doc = constructDocument(topLevelBlocksLean(inputDocumentLean));
+  const out = new LeanSerializer().serializeDocument(doc);
 
-    // Serialization is the identity: multilean tags are preserved.
-    expect(out).toBe(inputDocumentLean);
-})
+  // Serialization is the identity: multilean tags are preserved.
+  expect(out).toBe(inputDocumentLean);
+});
 
 test("Markdown and Code (Lean)", () => {
-    // Lean equivalent of "Markdown and Code" (Rocq)
-    const input = `Test\n\`\`\`lean\nCompute 3 + 3.\n\`\`\``;
-    const blocks = topLevelBlocksLean(input);
-    expect(blocks.length).toBe(3);
+  // Lean equivalent of "Markdown and Code" (Rocq)
+  const input = `Test\n\`\`\`lean\nCompute 3 + 3.\n\`\`\``;
+  const blocks = topLevelBlocksLean(input);
+  expect(blocks.length).toBe(3);
 
-    const [md, nl, code] = blocks;
+  const [md, nl, code] = blocks;
 
-    expect(typeguards.isMarkdownBlock(md)).toBe(true);
-    expect(md.stringContent).toBe("Test");
-    expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 4 });
-    expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 4 });
+  expect(typeguards.isMarkdownBlock(md)).toBe(true);
+  expect(md.stringContent).toBe("Test");
+  expect(md.range).toStrictEqual<BlockRange>({ from: 0, to: 4 });
+  expect(md.innerRange).toStrictEqual<BlockRange>({ from: 0, to: 4 });
 
-    expect(typeguards.isNewlineBlock(nl)).toBe(true);
-    expect(nl.range).toStrictEqual<BlockRange>({ from: 4, to: 5 });
+  expect(typeguards.isNewlineBlock(nl)).toBe(true);
+  expect(nl.range).toStrictEqual<BlockRange>({ from: 4, to: 5 });
 
-    expect(typeguards.isCodeBlock(code)).toBe(true);
-    expect(code.stringContent).toBe("Compute 3 + 3.");
-    expect(code.range).toStrictEqual<BlockRange>({ from: 5, to: input.length });
-    expect(code.innerRange).toStrictEqual<BlockRange>({ from: 13, to: input.length - 4 });
+  expect(typeguards.isCodeBlock(code)).toBe(true);
+  expect(code.stringContent).toBe("Compute 3 + 3.");
+  expect(code.range).toStrictEqual<BlockRange>({ from: 5, to: input.length });
+  expect(code.innerRange).toStrictEqual<BlockRange>({
+    from: 13,
+    to: input.length - 4,
+  });
 });
 
 test("1 input area with math and code (Lean)", () => {
-    // Lean equivalent of "1 input area with math and code" (Rocq)
-    const input = `\n:::input\n\$\$\`a^2 + b^2 = c^2\`\n\`\`\`lean\ndef trivial := True\n\`\`\`\n:::`;
-    const blocks = topLevelBlocksLean(input);
+  // Lean equivalent of "1 input area with math and code" (Rocq)
+  const input = `\n:::input\n\$\$\`a^2 + b^2 = c^2\`\n\`\`\`lean\ndef trivial := True\n\`\`\`\n:::`;
+  const blocks = topLevelBlocksLean(input);
 
-    const inputBlocks = blocks.filter(b => typeguards.isInputAreaBlock(b));
-    expect(inputBlocks.length).toBe(1);
-    const [ia] = inputBlocks;
+  const inputBlocks = blocks.filter((b) => typeguards.isInputAreaBlock(b));
+  expect(inputBlocks.length).toBe(1);
+  const [ia] = inputBlocks;
 
-    expect(typeguards.isInputAreaBlock(ia)).toBe(true);
-    expect(ia.innerBlocks).toBeDefined();
+  expect(typeguards.isInputAreaBlock(ia)).toBe(true);
+  expect(ia.innerBlocks).toBeDefined();
 
-    // Inner blocks should contain math, code (and possibly newlines)
-    const innerMath = ia.innerBlocks!.filter(b => typeguards.isMathDisplayBlock(b));
-    const innerCode = ia.innerBlocks!.filter(b => typeguards.isCodeBlock(b));
-    expect(innerMath.length).toBe(1);
-    expect(innerCode.length).toBe(1);
+  // Inner blocks should contain math, code (and possibly newlines)
+  const innerMath = ia.innerBlocks!.filter((b) =>
+    typeguards.isMathDisplayBlock(b),
+  );
+  const innerCode = ia.innerBlocks!.filter((b) => typeguards.isCodeBlock(b));
+  expect(innerMath.length).toBe(1);
+  expect(innerCode.length).toBe(1);
 
-    expect(innerMath[0].stringContent).toBe("a^2 + b^2 = c^2");
-    expect(innerCode[0].stringContent).toBe("def trivial := True");
+  expect(innerMath[0].stringContent).toBe("a^2 + b^2 = c^2");
+  expect(innerCode[0].stringContent).toBe("def trivial := True");
 });
 
 test("Markdown and input (Lean)", () => {
-    // Lean equivalent of "Markdown and input" (Rocq)
-    const input = `# Header\n:::input\n\`\`\`lean\nGoal False.\n\`\`\`\n\`\`\`lean\nGoal True.\n\`\`\`\n:::`;
-    const blocks = topLevelBlocksLean(input);
+  // Lean equivalent of "Markdown and input" (Rocq)
+  const input = `# Header\n:::input\n\`\`\`lean\nGoal False.\n\`\`\`\n\`\`\`lean\nGoal True.\n\`\`\`\n:::`;
+  const blocks = topLevelBlocksLean(input);
 
-    const mdBlocks = blocks.filter(b => typeguards.isMarkdownBlock(b));
-    const inputBlocks = blocks.filter(b => typeguards.isInputAreaBlock(b));
+  const mdBlocks = blocks.filter((b) => typeguards.isMarkdownBlock(b));
+  const inputBlocks = blocks.filter((b) => typeguards.isInputAreaBlock(b));
 
-    expect(mdBlocks.length).toBeGreaterThanOrEqual(1);
-    expect(inputBlocks.length).toBe(1);
+  expect(mdBlocks.length).toBeGreaterThanOrEqual(1);
+  expect(inputBlocks.length).toBe(1);
 
-    expect(mdBlocks[0].stringContent).toBe("# Header");
+  expect(mdBlocks[0].stringContent).toBe("# Header");
 
-    const [ia] = inputBlocks;
-    expect(typeguards.isInputAreaBlock(ia)).toBe(true);
-    expect(ia.innerBlocks).toBeDefined();
+  const [ia] = inputBlocks;
+  expect(typeguards.isInputAreaBlock(ia)).toBe(true);
+  expect(ia.innerBlocks).toBeDefined();
 
-    const innerCode = ia.innerBlocks!.filter(b => typeguards.isCodeBlock(b));
-    expect(innerCode.length).toBe(2);
-    expect(innerCode[0].stringContent).toBe("Goal False.");
-    expect(innerCode[1].stringContent).toBe("Goal True.");
+  const innerCode = ia.innerBlocks!.filter((b) => typeguards.isCodeBlock(b));
+  expect(innerCode.length).toBe(2);
+  expect(innerCode[0].stringContent).toBe("Goal False.");
+  expect(innerCode[1].stringContent).toBe("Goal True.");
 });

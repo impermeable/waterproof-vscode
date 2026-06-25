@@ -25,43 +25,45 @@ const watchPlugin = (fileName) => {
   return {
     name: "log build status",
     setup(build) {
-      build.onEnd(result => {
+      build.onEnd((result) => {
         const errCount = result.errors.length;
         if (errCount > 0) {
-          console.error(`❌ Build for ${fileName} failed with ${errCount} error${errCount > 1 ? "s" : ""}`);
+          console.error(
+            `❌ Build for ${fileName} failed with ${errCount} error${errCount > 1 ? "s" : ""}`,
+          );
         } else {
           console.log(`✅ Build finished for ${fileName}`);
         }
       });
-    }
+    },
   };
-}
-  
+};
+
 // Build prosemirror editor.
 const fontLoader = "copy";
 
 const editorConfig = {
-	entryPoints: ["./editor/src/index.ts"],
-	bundle: true,
-	outdir: "./editor_output",
+  entryPoints: ["./editor/src/index.ts"],
+  bundle: true,
+  outdir: "./editor_output",
   ...sourcemap_client,
   platform: "browser",
   loader: {
-		".woff": fontLoader,
-		".woff2": fontLoader,
-		".ttf": fontLoader,
-    ".grammar": "file"
-	},
+    ".woff": fontLoader,
+    ".woff2": fontLoader,
+    ".ttf": fontLoader,
+    ".grammar": "file",
+  },
   alias: {
-    '@codemirror/autocomplete': resolvePackage('@codemirror/autocomplete'),
-    '@codemirror/commands': resolvePackage('@codemirror/commands'),
-    '@codemirror/language': resolvePackage('@codemirror/language'),
-    '@codemirror/lint': resolvePackage('@codemirror/lint'),
-    '@codemirror/state': resolvePackage('@codemirror/state'),
-    '@codemirror/view': resolvePackage('@codemirror/view'),
+    "@codemirror/autocomplete": resolvePackage("@codemirror/autocomplete"),
+    "@codemirror/commands": resolvePackage("@codemirror/commands"),
+    "@codemirror/language": resolvePackage("@codemirror/language"),
+    "@codemirror/lint": resolvePackage("@codemirror/lint"),
+    "@codemirror/state": resolvePackage("@codemirror/state"),
+    "@codemirror/view": resolvePackage("@codemirror/view"),
   },
   minify,
-  plugins: [watchPlugin("editor")]
+  plugins: [watchPlugin("editor")],
 };
 
 if (!watch) {
@@ -83,7 +85,7 @@ const nodeConfig = {
   loader: {
     ".html": "text",
   },
-  plugins: [watchPlugin("extension/node")]
+  plugins: [watchPlugin("extension/node")],
 };
 
 // Build of the VS Code extension, for electron (hence cjs + node)
@@ -109,13 +111,18 @@ const browserConfig = {
   plugins: [
     copy({
       assets: {
-        from: ['./vendor/*.zip', './vendor/*.bc', './vendor/*.js', './vendor/*.wasm'],
-        to: ['..'],
+        from: [
+          "./vendor/*.zip",
+          "./vendor/*.bc",
+          "./vendor/*.js",
+          "./vendor/*.wasm",
+        ],
+        to: [".."],
       },
       keepStructure: false,
     }),
     watchPlugin("extension/browser"),
-  ]
+  ],
 };
 
 // Build browser sources:
@@ -135,8 +142,8 @@ const viewConfig = (file) => {
     outdir: "out",
     outbase: ".",
     minify,
-    plugins: [watchPlugin(file)]
-  }
+    plugins: [watchPlugin(file)],
+  };
 };
 
 // Build of the VS Code view, for modern Chrome (webview)

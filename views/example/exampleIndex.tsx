@@ -9,10 +9,10 @@ import Example from "./example";
 
 const container = document.getElementById("root");
 const root = createRoot(container!); // createRoot(container!) if you use TypeScript
-// here we add the react panel, if a panel consists out of a lot of things, 
+// here we add the react panel, if a panel consists out of a lot of things,
 // consider making them apart and adding them here seperately
 root.render(
   <React.StrictMode>
-    <Example/>
-  </React.StrictMode>
+    <Example />
+  </React.StrictMode>,
 );

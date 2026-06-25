@@ -16,8 +16,8 @@ export function Message({
     typeof message === "string"
       ? message
       : typeof message === "object" && "text" in message
-      ? message.text
-      : message;
+        ? message.text
+        : message;
 
   // Filter out the correct messages
   if (isMessage(message) && message.level !== 4) return;
@@ -42,18 +42,26 @@ export function Message({
     if (text.startsWith(replace)) {
       return (
         <li key={key}>
-          <p>Hint: <code>{text.substring(replace.length)}</code></p>
+          <p>
+            Hint: <code>{text.substring(replace.length)}</code>
+          </p>
         </li>
       );
     } else if (text.startsWith(insert)) {
-      return (<li key={key}>
-        <p>Hint: <code>{text.substring(insert.length)}</code></p>
-      </li>);
+      return (
+        <li key={key}>
+          <p>
+            Hint: <code>{text.substring(insert.length)}</code>
+          </p>
+        </li>
+      );
     }
 
     // If this is not a special message we just render as we normally would.
-    return (<li key={key}>
-      <RocqPp content={text} inline={true} />
-      </li>);
+    return (
+      <li key={key}>
+        <RocqPp content={text} inline={true} />
+      </li>
+    );
   }
 }

@@ -3,15 +3,18 @@
 import { setupTest } from "./util";
 
 const edits = [];
-const initialDocument = "# Title\n<input-area>\n```coq\nDefinition foo := 42.\n```\n</input-area>\n";
+const initialDocument =
+  "# Title\n<input-area>\n```coq\nDefinition foo := 42.\n```\n</input-area>\n";
 
-describe('Input area', () => {
-  beforeEach(() => { setupTest(initialDocument, edits); });
+describe("Input area", () => {
+  beforeEach(() => {
+    setupTest(initialDocument, edits);
+  });
 
   it("Basic input area functionality", () => {
     // We should have an input area in the document.
     cy.inputAreas().should("exist");
-    
+
     // Teacher mode disabled => we should not be able to edit
     //   the markdown
     cy.get("H1").click();
@@ -24,7 +27,7 @@ describe('Input area', () => {
 
     // cy.get(".menubar .menubar-item").filter(":lt(6)")
     //     .invoke("attr", "disabled").should("exist");
-    
+
     // // The menubar buttons should be enabled when in the input area.
     // cy.get(".cm-content").click();
     // cy.get(".menubar .menubar-item").filter(":lt(6)").then((buttons) => {
@@ -34,7 +37,7 @@ describe('Input area', () => {
     //                 return false;
     //             }
     //         }
-    //         return true;    
+    //         return true;
     //     });
     // });
 
@@ -42,4 +45,4 @@ describe('Input area', () => {
     cy.get(".cm-content").type("\nDefinition bar := 42.");
     cy.get(".cm-content").should("contain.text", "Definition bar := 42.");
   });
-})
+});

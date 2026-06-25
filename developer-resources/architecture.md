@@ -31,7 +31,7 @@ graph LR
         direction TB
         EXT["Waterproof<br/><small>extension.ts</small>"]
         WVM["WebviewManager<br/><small>webviewManager.ts</small>"]
-        PROV["CoqEditorProvider<br/><small>CustomTextEditorProvider</small>"]
+        WPWV["WaterproofWebview<br/><small>waterproofWebview.ts</small>"]
         COMP["CompositeClient<br/><small>composite.ts</small>"]
         ROCQ_C["RocqLspClient<br/><small>lsp-client/rocq/client.ts</small>"]
         LEAN_C["LeanLspClient<br/><small>lsp-client/lean/client.ts</small>"]
@@ -48,34 +48,33 @@ graph LR
         EXT --- COMP
         COMP --- ROCQ_C
         COMP --- LEAN_C
-        EXT --- PROV
         WVM --- PANELS
-        WVM --- PROV
+        WVM --- WPWV
     end
 
     subgraph "LSP"
         direction TB
-        COQ_LSP["coq-lsp<br/><small>Rocq Language Server</small>"]
+        ROCQ_LSP["rocq-lsp<br/><small>Rocq Language Server</small>"]
         LEAN_LSP["lake serve<br/><small>Lean Language Server</small>"]
     end
 
-    PM -- "Messages<br/>(postMessage)" --> WVM
-    WVM -- "Messages<br/>(postMessage)" --> PM
+    PM -- "Messages<br/>(postMessage)" --> WPWV
+    WPWV -- "Messages<br/>(postMessage)" --> PM
 
-    PROV -- "TextDocument<br/>read/write" --> VSCODE_API
+    WPWV -- "TextDocument<br/>read/write" --> VSCODE_API
     EXT -- "Extension API<br/>commands, config" --> VSCODE_API
 
-    ROCQ_C -- "LSP Protocol<br/>(JSON-RPC)" --> COQ_LSP
-    COQ_LSP -- "Diagnostics, Goals,<br/>Completions" --> ROCQ_C
+    ROCQ_C -- "LSP Protocol<br/>(JSON-RPC)" --> ROCQ_LSP
+    ROCQ_LSP -- "Diagnostics, Goals,<br/>Completions" --> ROCQ_C
     LEAN_C -- "LSP Protocol<br/>(JSON-RPC)" --> LEAN_LSP
     LEAN_LSP -- "Diagnostics, Goals" --> LEAN_C
 ```
 
 ### Interaction Flow
 
-1. **Document open**: VS Code opens an `.mv`, `.v`, or `.lean` file and activates the `CoqEditorProvider`, which creates a `ProseMirrorWebview`. The webview loads the `waterproof-editor` bundle with the appropriate document serializer and mapping for the file format, and initializes a ProseMirror editor instance with the document content.
+1. **Document open**: VS Code opens an `.mv`, `.v`, or `.lean` file and activates the `WaterproofEditorProvider`, which creates a `WaterproofWebview`. The webview loads the `waterproof-editor` bundle with the appropriate document serializer and mapping for the file format, and initializes a ProseMirror editor instance with the document content.
 
-2. **Editing**: When the user edits the document in the ProseMirror editor, changes are sent as `docChange` messages to the extension host via `postMessage`. The `ProseMirrorWebview` applies these changes to the VS Code `TextDocument` through a `SequentialEditor`. VS Code's document model then notifies the appropriate LSP client of the change.
+2. **Editing**: When the user edits the document in the ProseMirror editor, changes are sent as `docChange` messages to the extension host via `postMessage`. The `WaterproofWebview` applies these changes to the VS Code `TextDocument` through a `SequentialEditor`. VS Code's document model then notifies the appropriate LSP client of the change.
 
 3. **Language routing**: The `CompositeClient` inspects `document.languageId` to route requests to the correct LSP client. Documents with `languageId === 'lean4'` (`.lean` files) are handled by `LeanLspClient`; all others (`.mv`, `.v`) are handled by `RocqLspClient`.
 
@@ -106,11 +105,11 @@ graph TB
     subgraph "Rocq Installation (opam / installer)"
         direction TB
         ROCQ_LSP["rocq-lsp<br/><small>Language Server</small>"]
-        COQ_WP["coq-waterproof<br/><small>Proof automation library<br/>included in local Rocq install</small>"]
-        COQ_STDLIB["Rocq Standard Library"]
+        ROCQ_WP["rocq-waterproof<br/><small>Proof automation library<br/>included in local Rocq install</small>"]
+        ROCQ_STDLIB["Rocq Standard Library"]
 
-        ROCQ_LSP --- COQ_WP
-        ROCQ_LSP --- COQ_STDLIB
+        ROCQ_LSP --- ROCQ_WP
+        ROCQ_LSP --- ROCQ_STDLIB
     end
 
     subgraph "Lean Installation (elan)"
@@ -140,7 +139,7 @@ graph TB
         LAKE_PKGS --- VERBOSE_LEAN
     end
 
-    WP_EXT -- "LSP (JSON-RPC / stdio)" --> COQ_LSP
+    WP_EXT -- "LSP (JSON-RPC / stdio)" --> ROCQ_LSP
     WP_EXT -- "LSP (JSON-RPC / stdio)" --> LEAN_LSP
     ROCQ_LSP -- "reads" --> MV_FILES
     LEAN_LSP -- "reads" --> LEAN_FILES
@@ -150,9 +149,9 @@ graph TB
     WP_EXT -- "File I/O" --> LEAN_FILES
 
     %% Force vertical layout: VS Code above installations, installations above local folders
-    EDITOR_WV ~~~ COQ_LSP
+    EDITOR_WV ~~~ ROCQ_LSP
     SIDE_PANELS ~~~ LEAN_LSP
-    COQ_WP ~~~ MV_FILES
+    ROCQ_WP ~~~ MV_FILES
     LEAN_TOOLCHAIN ~~~ LEAN_FILES
 ```
 
@@ -160,8 +159,8 @@ graph TB
 
 For Rocq-based projects, the language server is **rocq-lsp**. The extension communicates with it over JSON-RPC. The required libraries are part of the local Rocq/opam installation:
 
-- **coq-lsp** is installed via opam
-- **coq-waterproof** is a Rocq plugin that provides proof automation tactics tailored for Waterproof. It is installed into the same opam switch, making it available to coq-lsp at runtime.
+- **rocq-lsp** is installed via opam
+- **rocq-waterproof** is a Rocq plugin that provides proof automation tactics tailored for Waterproof. It is installed into the same opam switch, making it available to rocq-lsp at runtime.
 - On Windows, a bundled installer can set up all Rocq dependencies in a self-contained folder.
 
 

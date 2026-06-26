@@ -291,7 +291,7 @@
         "properties": {
           "waterproof.showLineNumbersInEditor": {
             "type": "boolean",
-            "default": true,
+            "default": false,
             "description": "Show line numbers in the Waterproof editor"
           },
           "waterproof.showMenuItemsInEditor": {

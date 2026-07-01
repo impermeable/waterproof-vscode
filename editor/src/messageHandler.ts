@@ -38,9 +38,6 @@ export function handleEditorMessage(
       break;
     case MessageType.qedStatus: {
       const statuses = msg.body; // one status for each input area, in order
-      console.log(
-        `[WEBVIEW] qedStatus received, applying input area statuses: ${JSON.stringify(statuses)}`,
-      );
       editor.setInputAreaStatus(statuses);
       break;
     }

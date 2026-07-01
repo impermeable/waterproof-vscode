@@ -166,6 +166,26 @@ const FAKE_DOCUMENT = {
   lineCount: 10,
 } as TextDocument;
 
+// A realistic document whose `offsetAt`/`positionAt` are consistent with its text, and which
+// places the proof-closing marker (`□`) in a `lean` block *after* the input area — mirroring
+// the Yalep/Verbose Lean layout. `determineProofStatus` searches the text for this marker, so
+// these tests need a document where the marker actually exists at a consistent offset.
+// INPUT_AREA = lines 2..6, LOWER_BOUND = line 2; the `□` marker sits on line 8.
+const PROOF_CONTENT = [
+  "before", // 0
+  "", // 1
+  ":::input", // 2  <- INPUT_AREA start
+  "  proof a", // 3
+  "  proof b", // 4
+  "  proof c", // 5
+  ":::", // 6  <- INPUT_AREA end
+  "```lean", // 7
+  "□", // 8  <- closing marker
+  "```", // 9
+  "", // 10
+].join("\n");
+const PROOF_DOCUMENT = makeDocument(PROOF_CONTENT);
+
 function makeClientDouble() {
   return {
     isRunning: jest.fn(() => true),
@@ -204,9 +224,10 @@ const call = (
   diags: Diagnostic[] = [],
   area: Range = INPUT_AREA,
   lower: Position = LOWER_BOUND,
+  document: TextDocument = PROOF_DOCUMENT,
 ) => {
   // @ts-expect-error protected
-  return instance.determineProofStatus(FAKE_DOCUMENT, area, diags, lower);
+  return instance.determineProofStatus(document, area, diags, lower);
 };
 
 /** Creates a diagnostic with a given line range and severity. */
@@ -357,6 +378,95 @@ describe("LeanLspClient.determineProofStatus", () => {
     const instance = makeClient();
     jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
     expect(await call(instance)).toBe(InputAreaStatus.Correct);
+  });
+
+  // ---- closing marker (□ / QED) ------------------------------------------
+
+  it("requests goals at the closing marker (after the □), not at the input-area boundary", async () => {
+    const instance = makeClient();
+    const requestGoals = jest
+      .spyOn(instance, "requestGoals")
+      .mockResolvedValue(goalAnswer([]));
+
+    await call(instance);
+
+    // The □ sits on line 8; goals must be requested just after it (not at area end, line 6).
+    expect(requestGoals).toHaveBeenCalledTimes(1);
+    const params = requestGoals.mock.calls[0][0] as unknown as {
+      position: { line: number };
+    };
+    expect(params.position.line).toBe(8);
+  });
+
+  it("returns Incorrect (without requesting goals) when there is no closing marker", async () => {
+    const instance = makeClient();
+    const requestGoals = jest
+      .spyOn(instance, "requestGoals")
+      .mockResolvedValue(goalAnswer([]));
+
+    const noMarkerDoc = makeDocument(
+      ["before", "", ":::input", "  proof a", ":::", ""].join("\n"),
+    );
+
+    expect(await call(instance, [], INPUT_AREA, LOWER_BOUND, noMarkerDoc)).toBe(
+      InputAreaStatus.Incorrect,
+    );
+    expect(requestGoals).not.toHaveBeenCalled();
+  });
+
+  it("recognizes QED as a closing marker (Verbose Lean) and returns Correct when goals are empty", async () => {
+    const instance = makeClient();
+    jest.spyOn(instance, "requestGoals").mockResolvedValue(goalAnswer([]));
+
+    const qedDoc = makeDocument(
+      [
+        "before",
+        "",
+        ":::input",
+        "  proof a",
+        ":::",
+        "```lean",
+        "QED",
+        "```",
+        "",
+      ].join("\n"),
+    );
+
+    expect(await call(instance, [], INPUT_AREA, LOWER_BOUND, qedDoc)).toBe(
+      InputAreaStatus.Correct,
+    );
+  });
+
+  it("uses the nearest marker and stays Incorrect for an unclosed proof followed by a later proof's marker", async () => {
+    const instance = makeClient();
+    jest
+      .spyOn(instance, "requestGoals")
+      .mockResolvedValue(goalAnswer(["⊢ False"]));
+
+    // First input area (lines 2..6) has no marker before the next :::input; the QED below
+    // belongs to the *second* proof and must not be borrowed to mark the first one complete.
+    const twoProofsDoc = makeDocument(
+      [
+        "before", // 0
+        "", // 1
+        ":::input", // 2  first area start
+        "  proof a", // 3
+        ":::", // 4  first area end (use a 5-line area for this doc)
+        "between", // 5
+        ":::input", // 6  second area start
+        "  proof b", // 7
+        ":::", // 8
+        "```lean", // 9
+        "QED", // 10
+        "```", // 11
+        "", // 12
+      ].join("\n"),
+    );
+
+    const firstArea = new Range(new Position(2, 0), new Position(4, 0));
+    expect(
+      await call(instance, [], firstArea, new Position(2, 0), twoProofsDoc),
+    ).toBe(InputAreaStatus.Incorrect);
   });
 
   // ---- sorry detection (Invalid) -----------------------------------------

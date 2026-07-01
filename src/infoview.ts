@@ -2,6 +2,7 @@ import {
   EditorApi,
   InfoviewApi,
   InfoviewConfig,
+  defaultInfoviewConfig,
   RpcConnected,
   RpcConnectParams,
   RpcKeepAliveParams,
@@ -478,7 +479,21 @@ export class InfoProvider implements Disposable {
       this.resetServerState();
       await this.sendPosition(loc);
     }
+    await this.applyInfoviewConfig();
     this.isInitialized = true;
+  }
+
+  /**
+   * Pushes an {@link InfoviewConfig} that starts every config-controllable
+   * section collapsed, decluttering the panel on open.
+   */
+  private async applyInfoviewConfig(): Promise<void> {
+    const config: InfoviewConfig = {
+      ...defaultInfoviewConfig,
+      autoOpenShowsGoal: true, // keep "All Messages" folded
+      expectedTypeVisibility: "Collapsed by default",
+    };
+    await this.api?.changedInfoviewConfig(config);
   }
 
   /**

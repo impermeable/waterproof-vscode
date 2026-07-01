@@ -408,9 +408,9 @@ describe("LeanLspClient.determineProofStatus", () => {
       ["before", "", ":::input", "  proof a", ":::", ""].join("\n"),
     );
 
-    expect(
-      await call(instance, [], INPUT_AREA, LOWER_BOUND, noMarkerDoc),
-    ).toBe(InputAreaStatus.Incorrect);
+    expect(await call(instance, [], INPUT_AREA, LOWER_BOUND, noMarkerDoc)).toBe(
+      InputAreaStatus.Incorrect,
+    );
     expect(requestGoals).not.toHaveBeenCalled();
   });
 

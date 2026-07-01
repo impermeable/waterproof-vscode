@@ -454,7 +454,11 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     let bestLength = 0;
     for (const marker of markers) {
       const idx = content.indexOf(marker, fromOffset);
-      if (idx >= 0 && idx < searchLimit && (bestStart === undefined || idx < bestStart)) {
+      if (
+        idx >= 0 &&
+        idx < searchLimit &&
+        (bestStart === undefined || idx < bestStart)
+      ) {
         bestStart = idx;
         bestLength = marker.length;
       }

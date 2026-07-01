@@ -1,0 +1,6 @@
+/* Declutter overrides for the upstream Lean infoview. */
+
+/* Hide each goal block's `filename:line:col` summary header. */
+details[data-vscode-context*="pinId"] > summary {
+  display: none !important;
+}

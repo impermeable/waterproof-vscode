@@ -1,3 +1,4 @@
+import "./trim.css";
 import { MessageType } from "../../shared";
 import type {
   EditorApi,

@@ -4,3 +4,8 @@
 details[data-vscode-context*="pinId"] > summary {
   display: none !important;
 }
+
+/* Hide the settings gear (does nothing here, overlaps visibilityOfHypotheses). */
+.codicon-settings-gear {
+  display: none !important;
+}

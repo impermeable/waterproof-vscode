@@ -578,16 +578,15 @@
   "main": "./out/src/mainNode.js",
   "browser": "./out/src/mainBrowser.js",
   "scripts": {
-    "vscode:prepublish": "npm run typecheck && npm run dev -- --minify --sourcemap=no",
+    "vscode:prepublish": "npm run build",
     "generate-symbols": "node scripts/generate-symbols.mts",
     "dev": "npm run generate-symbols && node esbuild.mjs",
+    "build": "npm run typecheck && npm run dev -- --minify --sourcemap=no",
     "typecheck": "npm run generate-symbols && tsc -b",
     "watch": "npm run dev -- --watch",
-    "test-package": "node_modules/.bin/vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
-    "test-pre-release": "node_modules/.bin/vsce package --pre-release --ignoreFile .vscodeignore -o test_out/extension.vsix",
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
-    "package": "npm run clean && npm run test-package",
-    "package-pre-release": "npm run clean && npm run test-pre-release",
+    "package": "npm run clean && npx vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
+    "package-pre-release": "npm run package -- --pre-release",
     "unit-tests": "npx jest",
     "unit-tests-cov": "npx jest --coverage",
     "lezer-generator": "npx lezer-generator ./editor/src/waterproof-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/waterproof-editor/codeview/lang-pack/syntax.ts",
@@ -597,6 +596,6 @@
     "format": "npx prettier --write \"**/*.{ts,tsx,js,mjs}\"",
     "format:check": "npx prettier --check \"**/*.{ts,tsx,js,mjs}\"",
     "test": "npm run unit-tests && npm run cypress-tests",
-    "install-extension": "npm run test-package && code --install-extension test_out/extension.vsix --force"
+    "install-extension": "npm run package && code --install-extension test_out/extension.vsix --force"
   }
 }

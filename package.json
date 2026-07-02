@@ -585,7 +585,8 @@
     "typecheck": "npm run generate-symbols && tsc -b",
     "watch": "npm run dev -- --watch",
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
-    "package": "npm run clean && npx vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
+    "package:vsix": "mkdir -p test_out && npx vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
+    "package": "npm run clean && npm run package:vsix",
     "package-pre-release": "npm run package -- --pre-release",
     "unit-tests": "npx jest",
     "unit-tests-cov": "npx jest --coverage",
@@ -596,6 +597,6 @@
     "format": "npx prettier --write \"**/*.{ts,tsx,js,mjs}\"",
     "format:check": "npx prettier --check \"**/*.{ts,tsx,js,mjs}\"",
     "test": "npm run unit-tests && npm run cypress-tests",
-    "install-extension": "npm run package && code --install-extension test_out/extension.vsix --force"
+    "install-extension": "npm run package:vsix && code --install-extension test_out/extension.vsix --force"
   }
 }

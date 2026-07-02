@@ -1,5 +1,6 @@
 import "./trim.css";
 import { MessageType } from "../../shared";
+import { defaultInfoviewConfig } from "@leanprover/infoview-api";
 import type {
   EditorApi,
   InfoviewApi,
@@ -113,5 +114,12 @@ if (div && script) {
         );
       }
     }
+
+    // Start every config-controllable section collapsed, decluttering the panel on open.
+    await api.changedInfoviewConfig({
+      ...defaultInfoviewConfig,
+      autoOpenShowsGoal: true, // keep "All Messages" folded
+      expectedTypeVisibility: "Collapsed by default",
+    });
   });
 }

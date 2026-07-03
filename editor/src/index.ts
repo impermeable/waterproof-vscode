@@ -10,6 +10,7 @@ import {
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import waterproofTactics from "../../completions/tactics.json";
 import leanTactics from "../../completions/tacticsLean.json";
+import yalepTactics from "../../completions/tacticsYalep.json";
 import rocqTactics from "../../completions/tacticsRocq.json";
 import symbols from "../../completions/symbols+lean.json";
 
@@ -87,6 +88,9 @@ function createConfiguration(
         },
       };
       break;
+    // Yalep files share the Lean configuration, only the tactics completions
+    // differ (overridden after this switch).
+    case FileFormat.Yalep:
     case FileFormat.Lean:
       formatConf = {
         completions: leanTactics,
@@ -119,6 +123,11 @@ function createConfiguration(
         ],
       };
       break;
+  }
+
+  // Yalep files use the Lean configuration but with Yalep-specific tactics.
+  if (format === FileFormat.Yalep) {
+    formatConf.completions = yalepTactics;
   }
 
   // Create the WaterproofEditorConfig object

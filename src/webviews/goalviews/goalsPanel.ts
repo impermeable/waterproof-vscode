@@ -4,16 +4,14 @@ import { WebviewEvents, WebviewState } from "../waterproofPanel";
 import { MessageType } from "../../../shared";
 import { GoalsBase } from "./goalsBase";
 import { IExecutor } from "../../components";
-import { PpString, RocqGoalAnswer } from "../../../lib/types";
 
 //the goals panel extends the GoalsBase class
 export class GoalsPanel extends GoalsBase implements IExecutor {
-  private previousGoal: RocqGoalAnswer<PpString> | undefined;
   private data: string[] = ["no results"];
 
   // constructor to define the name and to listen for webview events
   constructor(extensionUri: Uri, config: LspClientConfig) {
-    super(extensionUri, config, "goals", true);
+    super(extensionUri, config, "goals");
     this.on(WebviewEvents.change, () => {
       if (this.state === WebviewState.visible) {
         // TODO: show last goals?

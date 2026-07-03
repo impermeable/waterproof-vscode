@@ -845,7 +845,7 @@ describe("LeanLspClient.rewriteDiagnostics", () => {
     const result = rewrite(instance, [unsolvedDiag(3, 5)], [AREA]);
 
     expect(result[0].message).toBe(
-      "(Sub)proof starting on line 4 is not finished yet.",
+      "(Sub)proof is not finished yet.",
     );
   });
 

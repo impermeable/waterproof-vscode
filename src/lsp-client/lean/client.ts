@@ -125,7 +125,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
           return {
             ...d,
             // NOTE: If we have line numbers again, we may want to include them in the message, e.g.:
-            // `(Sub)proof starting on line ${d.range.start.line + 1} is not finished yet.`
+            // `(Sub)proof on line ${d.range.start.line + 1} is not finished yet.`
             message: "(Sub)proof is not finished yet.",
           };
         }

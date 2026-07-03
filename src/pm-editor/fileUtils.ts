@@ -17,6 +17,10 @@ export function getFormatFromExtension(
   } else if (extension === "v") {
     return FileFormat.RegularV;
   } else if (extension === "lean") {
+    // Yalep files are Lean files that end in `_yalep.lean`.
+    if (doc.uri.fsPath.endsWith("_yalep.lean")) {
+      return FileFormat.Yalep;
+    }
     return FileFormat.Lean;
   }
 

@@ -177,6 +177,12 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         (p) => p.kind === undefined || p.kind === FileProgressKind.Processing,
       );
       if (firstProcessing && this.webviewManager) {
+        if (!this.isBusy) {
+          wpl.debug(
+            `[leanClient.onFileProgress] isBusy false -> true (processing range starting at ` +
+              `line ${firstProcessing.range.start.line})`,
+          );
+        }
         this.isBusy = true;
         const { line, character } = firstProcessing.range.start;
         const from = this.activeDocument.offsetAt(
@@ -195,8 +201,18 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
           body: { from, to },
         });
       } else {
+        if (this.isBusy) {
+          wpl.debug(
+            `[leanClient.onFileProgress] isBusy true -> false (no processing ranges remain)`,
+          );
+        }
         this.isBusy = false;
       }
+      wpl.debug(
+        `[leanClient.onFileProgress] progress for active doc; ` +
+          `processingRanges=${progress.processing.length}, isBusy=${this.isBusy}; ` +
+          `recomputing input area status`,
+      );
       this.computeInputAreaStatus(this.activeDocument);
     }
   }
@@ -271,13 +287,26 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     // find (positions of) opening and closings tags for input areas, and check that they're valid
     const openOffsets = findOccurrences(":::input\n", content);
 
-    return openOffsets.map((openPos) => {
+    const inputAreas = openOffsets.map((openPos) => {
       const closePos = content.indexOf(":::\n", openPos);
       return new Range(
         document.positionAt(openPos),
         document.positionAt(closePos),
       );
     });
+
+    wpl.debug(
+      `[leanClient.getInputAreas] doc=${document.uri.toString().split("/").pop()}, ` +
+        `':::input\\n' openOffsets=${JSON.stringify(openOffsets)}, ` +
+        `found ${inputAreas.length} input area(s): ${JSON.stringify(
+          inputAreas.map((a) => ({
+            start: { line: a.start.line, ch: a.start.character },
+            end: { line: a.end.line, ch: a.end.character },
+          })),
+        )}`,
+    );
+
+    return inputAreas;
   }
 
   protected async determineProofStatus(
@@ -286,11 +315,22 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     diags: Array<Diagnostic>,
     lowerBound: Position,
   ): Promise<InputAreaStatus> {
+    wpl.debug(
+      `[leanClient.determineProofStatus] called for inputArea ` +
+        `start=(${inputArea.start.line},${inputArea.start.character}) ` +
+        `end=(${inputArea.end.line},${inputArea.end.character}), ` +
+        `lowerBound=(${lowerBound.line},${lowerBound.character}), ` +
+        `isBusy=${this.isBusy}, totalDiags=${diags.length}`,
+    );
+
     // If Lean hasn't finished processing up to the end of this input area, an empty goals
     // response simply means "not checked yet" rather than "proof complete".  Guard against
     // that to prevent the bar from turning green prematurely (e.g. while typing "We ap" or
     // when the proof has invalid syntax like "Help\n• Fix a : ℝ\n" without a closing Qed).
     if (this.isBusy) {
+      wpl.debug(
+        `[leanClient.determineProofStatus] -> Incorrect (server still busy, status undetermined)`,
+      );
       return InputAreaStatus.Incorrect;
     }
 
@@ -306,25 +346,68 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     const hasErrorDiagnostic = diagsInArea.some(
       (d) => d.severity === DiagnosticSeverity.Error,
     );
+    wpl.debug(
+      `[leanClient.determineProofStatus] diagsInArea=${diagsInArea.length}, ` +
+        `hasErrorDiagnostic=${hasErrorDiagnostic}, ` +
+        `diagsInArea=${JSON.stringify(
+          diagsInArea.map((d) => ({
+            severity: d.severity,
+            range: {
+              start: { line: d.range.start.line, ch: d.range.start.character },
+              end: { line: d.range.end.line, ch: d.range.end.character },
+            },
+            msg: d.message?.substring(0, 60),
+          })),
+        )}`,
+    );
     if (hasErrorDiagnostic) {
+      wpl.debug(
+        `[leanClient.determineProofStatus] -> Incorrect (error-level diagnostic inside input area)`,
+      );
       return InputAreaStatus.Incorrect;
     }
 
-    // Request goals
-    const goalsPosition = inputArea.end.translate(0, 0);
+    // The proof's closing marker (`□` in Yalep, `QED` in Verbose Lean) lives in a `lean`
+    // block *after* the input area's closing `:::`. In these dialects the marker is an active
+    // step that discharges the final goal, so proof completion must be measured at the marker
+    // rather than at `inputArea.end` (which would still show an open goal for a finished
+    // proof). This mirrors the Rocq client, which queries goals at the `Qed.` after the input
+    // area. If no marker is present, the proof isn't closed and the area is incorrect.
+    const markerPosition = this.findProofEndPosition(document, inputArea.end);
+    if (!markerPosition) {
+      wpl.debug(
+        `[leanClient.determineProofStatus] -> Incorrect (no closing marker '□'/'QED' after input area)`,
+      );
+      return InputAreaStatus.Incorrect;
+    }
 
     const goalsParams = this.createGoalsRequestParameters(
       document,
-      goalsPosition,
+      markerPosition,
     );
     const response = await this.requestGoals(goalsParams);
 
+    wpl.debug(
+      `[leanClient.determineProofStatus] goals requested at marker position ` +
+        `(${markerPosition.line},${markerPosition.character}), ` +
+        `response=${response ? `present, goals.length=${response.goals.length}` : "null"}, ` +
+        `goals=${response ? JSON.stringify(response.goals) : "n/a"}`,
+    );
+
     if (!response) {
+      wpl.debug(
+        `[leanClient.determineProofStatus] -> Incorrect (no goals response)`,
+      );
       return InputAreaStatus.Incorrect;
     }
 
     // return incorrect if there are still goals remaining
-    if (response.goals.length > 0) return InputAreaStatus.Incorrect;
+    if (response.goals.length > 0) {
+      wpl.debug(
+        `[leanClient.determineProofStatus] -> Incorrect (${response.goals.length} goal(s) remaining)`,
+      );
+      return InputAreaStatus.Incorrect;
+    }
 
     // Goals are empty, proof looks complete, but check for sorry
     // The Lean LSP prefixes all sorry-like aliases with "declaration uses " including hint
@@ -339,7 +422,51 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
         d.range.start.isBeforeOrEqual(inputArea.end) &&
         d.message.startsWith(SORRY_PREFIX),
     );
-    return hasSorry ? InputAreaStatus.Invalid : InputAreaStatus.Correct;
+    const status = hasSorry ? InputAreaStatus.Invalid : InputAreaStatus.Correct;
+    wpl.debug(
+      `[leanClient.determineProofStatus] no goals remaining; hasSorry=${hasSorry} -> ${status}`,
+    );
+    return status;
+  }
+
+  /**
+   * Finds the position just after the proof-closing marker (`□` in Yalep, `QED` in Verbose
+   * Lean) that follows `searchFrom` in the document. In these dialects the marker lives in a
+   * `lean` block *after* the input area's closing `:::`, and it is the step that discharges
+   * the final goal — so proof completion must be measured here rather than at the input-area
+   * boundary. Returns the earliest marker's end position, or `undefined` when no marker is
+   * present (i.e. the proof isn't closed yet).
+   */
+  private findProofEndPosition(
+    document: TextDocument,
+    searchFrom: Position,
+  ): Position | undefined {
+    const content = document.getText();
+    const fromOffset = document.offsetAt(searchFrom);
+
+    // Bound the search to before the next input area, so an unclosed proof can't borrow the
+    // closing marker of a later proof (which would falsely mark this area complete).
+    const nextInputArea = content.indexOf(":::input\n", fromOffset);
+    const searchLimit = nextInputArea >= 0 ? nextInputArea : content.length;
+
+    const markers = ["□", "QED"];
+    let bestStart: number | undefined;
+    let bestLength = 0;
+    for (const marker of markers) {
+      const idx = content.indexOf(marker, fromOffset);
+      if (
+        idx >= 0 &&
+        idx < searchLimit &&
+        (bestStart === undefined || idx < bestStart)
+      ) {
+        bestStart = idx;
+        bestLength = marker.length;
+      }
+    }
+
+    return bestStart === undefined
+      ? undefined
+      : document.positionAt(bestStart + bestLength);
   }
 
   // Emitters for infoview

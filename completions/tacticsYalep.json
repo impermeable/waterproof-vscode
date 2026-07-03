@@ -1,0 +1,47 @@
+[
+    {
+        "label": "let (*name*) be (*description*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "let ${n} be ${an integer}${}",
+        "description": "Introducing a variable",
+        "example": "let n be an integer",
+        "boost": 2
+    },
+    {
+        "label": "there exists (*description*) such that (*condition*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "there exists ${an integer p} such that ${p = p}${}",
+        "description": "There exists statement",
+        "example": "there exists an integer p such that p = p",
+        "boost": 2
+    },
+    {
+        "label": "for all (*domain*), (*condition*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "for all ${integers z}, ${z = z}${}",
+        "description": "For all statement",
+        "example": "for all integers z, z = z",
+        "boost": 2
+    },
+    {
+        "label": "assume (*condition*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "assume ${1 > 0}${}",
+        "description": "Assuming a condition",
+        "example": "assume 1 > 0",
+        "boost": 2
+    },
+    {
+        "label": "obtain such (*variable*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "obtain such ${p}${}",
+        "description": "Obtaining a variable ",
+        "example": "assume 1 > 0",
+        "boost": 2
+    } 
+]

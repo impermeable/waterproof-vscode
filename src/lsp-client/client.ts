@@ -275,7 +275,16 @@ export abstract class LspClient<
   protected async onCheckingCompleted(): Promise<void> {
     // ensure there is an active document
     const document = this.activeDocument;
-    if (!document) return;
+    if (!document) {
+      wpl.debug(
+        `[onCheckingCompleted] 'document fully checked' received but no active document`,
+      );
+      return;
+    }
+    wpl.debug(
+      `[onCheckingCompleted] 'document fully checked' for ` +
+        `${document.uri.toString().split("/").pop()}; recomputing input area status`,
+    );
 
     // send message to ProseMirror editor that checking is done
     // (in addition to LSP message that indicates last Markdown is still being processed)
@@ -311,10 +320,21 @@ export abstract class LspClient<
       // get input areas based on tags
       const inputAreas = this.getInputAreas(document);
       if (!inputAreas) {
+        wpl.debug(
+          `[computeInputAreaStatus] getInputAreas returned undefined for ` +
+            `${document.uri.toString()} -> illegal input areas`,
+        );
         throw new Error("Cannot check proof status; illegal input areas.");
       }
 
       const diags = languages.getDiagnostics(document.uri);
+
+      wpl.debug(
+        `[computeInputAreaStatus] doc=${document.uri.toString().split("/").pop()}, ` +
+          `inputAreas=${inputAreas.length}, diagnostics=${diags.length}, ` +
+          `viewPortBasedChecking=${this.viewPortBasedChecking}, ` +
+          `viewPortRange=${this.viewPortRange ? JSON.stringify({ start: { line: this.viewPortRange.start.line, ch: this.viewPortRange.start.character }, end: { line: this.viewPortRange.end.line, ch: this.viewPortRange.end.character } }) : "undefined"}`,
+      );
 
       // for each input area, check the proof status
       try {
@@ -335,6 +355,12 @@ export abstract class LspClient<
 
             return this.determineProofStatus(document, area, diags, lowerBound);
           }),
+        );
+
+        wpl.debug(
+          `[computeInputAreaStatus] computed statuses for ` +
+            `doc=${document.uri.toString().split("/").pop()}: ${JSON.stringify(statuses)} ` +
+            `(sending qedStatus message to editor)`,
         );
 
         // forward statuses to corresponding ProseMirror editor

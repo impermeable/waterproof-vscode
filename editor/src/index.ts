@@ -2,10 +2,13 @@ import { FileFormat, Message, MessageType } from "../../shared";
 import {
   defaultToMarkdown,
   markdown,
+  Node,
   ThemeStyle,
   WaterproofEditor,
   WaterproofEditorConfig,
+  Widget,
   wrapInContainer,
+  WrappingWidget,
 } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import waterproofTactics from "../../completions/tactics.json";
@@ -29,6 +32,203 @@ import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
 import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
 import { handleEditorMessage } from "./messageHandler";
+
+type OwnAnswerState = {
+  checked: boolean;
+};
+
+class OwnAnswerContainerWidget extends WrappingWidget<OwnAnswerState> {
+  protected createView(state: OwnAnswerState, hole: HTMLElement): HTMLElement {
+    console.log("HERE");
+    const container = document.createElement("div");
+    const input = document.createElement("input");
+    const label = document.createElement("label");
+
+    container.appendChild(label);
+    container.appendChild(input);
+    container.appendChild(hole);
+
+    label.textContent = "I declare that I provided my own answers ";
+
+    input.type = "checkbox";
+    input.value = "" + state.checked;
+    input.addEventListener("change", () => {
+      this.state.checked = input.checked;
+      if (this.state.checked) {
+        this.setCodeContent("Yes.");
+      } else {
+        this.setCodeContent("...");
+      }
+    });
+
+    return container;
+  }
+
+  setCodeContent(_str: string) {
+    // this.info.view
+    // this.getPos()/
+    // this.info.node.maybeChild(1)?.text;
+    // console.log(this.info.node.maybeChild(1));
+    const pos = this.getPos();
+    if (pos === undefined) return;
+
+    const code = this.node.maybeChild(1);
+    if (!code) return;
+
+    const childPos = pos + 2;
+
+    const from = childPos + 1;
+    const to = childPos + code.nodeSize - 1;
+
+    const tr = this.tr.replaceWith(from, to, this.view.state.schema.text(_str));
+
+    this.dispatchTransaction(tr);
+  }
+
+  initState(): OwnAnswerState {
+    return {
+      checked: false,
+    };
+  }
+
+  updateState(): void {
+    throw new Error("Method not implemented.");
+  }
+  updateView(): void {
+    throw new Error("Method not implemented.");
+  }
+}
+
+type VariableInputState = {
+  nr: number;
+  varname: string;
+};
+
+class VariableInputContainerWidget extends WrappingWidget<VariableInputState> {
+  protected createView(
+    state: VariableInputState,
+    hole: HTMLElement,
+  ): HTMLElement {
+    const container = document.createElement("div");
+    const input = document.createElement("input");
+    const label = document.createElement("label");
+
+    container.appendChild(label);
+    container.appendChild(input);
+    container.appendChild(hole);
+
+    label.textContent = state.varname;
+
+    input.type = "number";
+    input.value = "" + state.nr;
+    input.addEventListener("change", () => {
+      this.state.nr = Number(input.value);
+      this.setCodeContent(
+        "Definition " + this.state.varname + " := " + this.state.nr + ".",
+      );
+    });
+
+    return container;
+  }
+
+  setCodeContent(_str: string) {
+    // this.info.view
+    // this.getPos()/
+    // this.info.node.maybeChild(1)?.text;
+    // console.log(this.info.node.maybeChild(1));
+    const pos = this.getPos();
+    if (pos === undefined) return;
+
+    const code = this.node.maybeChild(1);
+    if (!code) return;
+
+    const childPos = pos + 2;
+
+    const from = childPos + 1;
+    const to = childPos + code.nodeSize - 1;
+
+    const tr = this.tr.replaceWith(from, to, this.view.state.schema.text(_str));
+
+    this.dispatchTransaction(tr);
+  }
+
+  initState(node: Node): VariableInputState {
+    const nodeContent = node.textContent;
+    console.log("HELLO YES YES", nodeContent);
+    const regex = /Definition\s+([A-Za-z_][A-Za-z0-9_']*)\s*:=\s*([0-9]+)\./g;
+    const match = regex.exec(nodeContent);
+    console.log(match);
+    if (match === null) {
+      return { nr: 0, varname: "unkown" };
+    }
+    return {
+      nr: Number(match[2]),
+      varname: match[1],
+    };
+  }
+
+  updateState(): void {
+    throw new Error("Method not implemented.");
+  }
+  updateView(): void {
+    throw new Error("Method not implemented.");
+  }
+}
+
+class VariableInputWidget extends Widget<VariableInputState> {
+  initState(nodeContent: string): VariableInputState {
+    // /^\s*Definition\s+([A-Za-z_][A-Za-z0-9_']*)\s*:=\s*([0-9]+)\.\s*$/
+
+    const regex = /Definition\s+([A-Za-z_][A-Za-z0-9_']*)\s*:=\s*([0-9]+)\./g;
+    const match = regex.exec(nodeContent);
+    console.log(match);
+    if (match === null) {
+      return { nr: 0, varname: "unkown" };
+    }
+    return {
+      nr: Number(match[2]),
+      varname: match[1],
+    };
+  }
+
+  updateState(): void {
+    throw new Error("Method not implemented.");
+  }
+
+  protected createView(state: VariableInputState): HTMLElement {
+    const container = document.createElement("div");
+    const input = document.createElement("input");
+    const label = document.createElement("label");
+    // const hole = document.createElement("div");
+
+    container.appendChild(label);
+    container.appendChild(input);
+    // container.appendChild(hole);
+
+    // this.contentDOM = hole;
+
+    label.textContent = state.varname;
+
+    input.type = "number";
+    input.value = "" + state.nr;
+    input.addEventListener("change", () => {
+      this.state.nr = Number(input.value);
+      this.setContent(
+        "\n```coq\nDefinition " +
+          this.state.varname +
+          " := " +
+          this.state.nr +
+          ".\n```\n",
+      );
+    });
+
+    return container;
+  }
+
+  updateView(): void {
+    throw new Error("Method not implemented.");
+  }
+}
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -172,6 +372,15 @@ function createConfiguration(
           type: MessageType.viewportHint,
           body: { start, end },
         });
+      },
+    },
+    widgets: {
+      simple: {
+        "variable-input": VariableInputWidget,
+      },
+      container: {
+        "variable-input-container": VariableInputContainerWidget,
+        "own-answer": OwnAnswerContainerWidget,
       },
     },
   };

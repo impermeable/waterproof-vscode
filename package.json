@@ -587,7 +587,7 @@
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
     "package:vsix": "mkdir -p test_out && npx vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
     "package": "npm run clean && npm run package:vsix",
-    "package-pre-release": "npm run package -- --pre-release",
+    "package-pre-release": "npm run clean && npm run package:vsix -- --pre-release",
     "unit-tests": "npx jest",
     "unit-tests-cov": "npx jest --coverage",
     "lezer-generator": "npx lezer-generator ./editor/src/waterproof-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/waterproof-editor/codeview/lang-pack/syntax.ts",

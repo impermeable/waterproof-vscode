@@ -8,8 +8,12 @@ import {
   Disposable,
   DiagnosticSeverity,
   Diagnostic,
+  CancellationToken,
+  CancellationTokenSource,
 } from "vscode";
 import {
+  CodeActionParams,
+  CodeActionRequest,
   DocumentSymbol,
   DocumentSymbolParams,
   DocumentSymbolRequest,
@@ -28,7 +32,9 @@ import {
 
 import {
   InputAreaStatus,
+  OffsetCodeAction,
   OffsetDiagnostic,
+  OffsetEdit,
   Severity,
   WaterproofCompletion,
 } from "@impermeable/waterproof-editor";
@@ -252,20 +258,118 @@ export abstract class LspClient<
     this.fileProgressComponents.forEach((c) => c.onProgress(params));
   }
 
-  protected processDiagnostics() {
+  private async resolveCodeActionsFor(
+    document: TextDocument,
+    diag: Diagnostic,
+    token: CancellationToken,
+  ): Promise<OffsetCodeAction[]> {
+    if (diag.severity === DiagnosticSeverity.Error) return [];
+
+    const c2p = this.client.code2ProtocolConverter;
+    const p2c = this.client.protocol2CodeConverter;
+
+    const params: CodeActionParams = {
+      textDocument: { uri: document.uri.toString() },
+      range: c2p.asRange(diag.range),
+      context: {
+        diagnostics: await c2p.asDiagnostics([diag]),
+      },
+    };
+
+    try {
+      // Passing the token means an in-flight request is aborted (and rejects here)
+      // as soon as a newer diagnostics pass supersedes this one, instead of running
+      // to completion in the background only to have its result discarded.
+      const results = await this.client.sendRequest(
+        CodeActionRequest.type,
+        params,
+        token,
+      );
+      if (!results) return [];
+
+      const actions: OffsetCodeAction[] = [];
+      for (const result of results) {
+        if (!("edit" in result) || !result.edit) continue;
+
+        // asWorkspaceEdit normalizes both the `changes` and `documentChanges` forms of
+        // a LSP WorkspaceEdit into one iterable - some servers only populate
+        // `documentChanges`, so this must not be replaced with manual `changes[uri]`
+        // access or those edits are silently dropped.
+        const edit = await p2c.asWorkspaceEdit(result.edit);
+
+        const edits: OffsetEdit[] = [];
+
+        // Now 'edit' is a fully parsed native vscode.WorkspaceEdit
+        for (const [uri, textEdits] of edit.entries()) {
+          if (uri.toString() !== document.uri.toString()) continue;
+
+          for (const te of textEdits) {
+            edits.push({
+              start: document.offsetAt(te.range.start),
+              end: document.offsetAt(te.range.end),
+              newText: te.newText,
+            });
+          }
+        }
+
+        if (edits.length > 0) {
+          actions.push({ title: result.title, edits });
+        }
+      }
+      return actions;
+    } catch (e) {
+      // Cancellation (LSP RequestCancelled = -32800) is expected whenever a newer
+      // diagnostics pass supersedes this one; don't spam the log for that case.
+      if (!token.isCancellationRequested) {
+        wpl.log(`[LspClient] Failed to resolve code actions: ${e}`);
+      }
+      console.log("[LspClient] Cancel");
+      return [];
+    }
+  }
+
+  protected async processDiagnostics(): Promise<void> {
     const document = this.activeDocument;
     if (!document) return;
 
-    const diagnostics = languages.getDiagnostics(document.uri);
+    // Cancel any code-action resolution still in flight from a previous call - its
+    // result would be stale by the time it resolves anyway.
+    this.diagnosticsCts?.cancel();
+    this.diagnosticsCts?.dispose();
+    const cts = new CancellationTokenSource();
+    this.diagnosticsCts = cts;
+    const token = cts.token;
 
-    const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map((d) => {
-      return {
-        message: d.message,
-        severity: vscodeSeverityToWaterproof(d.severity),
-        startOffset: document.offsetAt(d.range.start),
-        endOffset: document.offsetAt(d.range.end),
-      };
-    });
+    const diagnostics = languages.getDiagnostics(document.uri);
+    const docVersionAtStart = document.version;
+    console.time("processDiagnostics");
+    const positionedDiagnostics: OffsetDiagnostic[] = await Promise.all(
+      diagnostics.map(async (d) => {
+        const codeActions = await this.resolveCodeActionsFor(
+          document,
+          d,
+          token,
+        );
+        return {
+          message: d.message,
+          severity: vscodeSeverityToWaterproof(d.severity),
+          startOffset: document.offsetAt(d.range.start),
+          endOffset: document.offsetAt(d.range.end),
+          ...(codeActions.length > 0 ? { codeActions } : {}),
+        };
+      }),
+    );
+    console.timeEnd("processDiagnostics");
+
+    // Guard against the document having changed, or this pass having been superseded
+    // by a newer one, while we were awaiting resolveCodeActionsFor.
+    if (
+      token.isCancellationRequested ||
+      document.version !== docVersionAtStart
+    ) {
+      return;
+    }
+
     this.webviewManager!.postAndCacheMessage(document, {
       type: MessageType.diagnostics,
       body: { positionedDiagnostics, version: document.version },
@@ -307,6 +411,13 @@ export abstract class LspClient<
 
   // This setTimeout creates a NodeJS.Timeout object, but in the browser it is just a number.
   computeInputAreaStatusTimer?: NodeJS.Timeout | number;
+
+  /**
+   * Tracks the most recent in-flight `processDiagnostics` pass so it can be cancelled
+   * when a newer one supersedes it (e.g. the user keeps typing while code actions are
+   * still being resolved against the previous diagnostics snapshot).
+   */
+  private diagnosticsCts?: CancellationTokenSource;
 
   protected async computeInputAreaStatus(
     document: TextDocument,
@@ -495,6 +606,8 @@ export abstract class LspClient<
   }
 
   dispose(timeout?: number): Promise<void> {
+    this.diagnosticsCts?.cancel();
+    this.diagnosticsCts?.dispose();
     this.fileProgressComponents.forEach((c) => c.dispose());
     this.disposables.forEach((d) => d.dispose());
     return this.client.dispose(timeout);

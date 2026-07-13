@@ -24,6 +24,7 @@ import {
 } from "vscode-languageserver-protocol";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 import {
+  qualifiedSettingName,
   WaterproofConfigHelper,
   WaterproofLogger as wpl,
   WaterproofSetting,
@@ -465,7 +466,7 @@ export class InfoProvider implements Disposable {
 
   constructor(
     private client: LeanLspClient,
-    panel: GoalsPanel,
+    private panel: GoalsPanel,
   ) {
     const rpc = new Rpc((m) => panel.postMessage(m));
     rpc.register(this.editorApi);
@@ -479,8 +480,33 @@ export class InfoProvider implements Disposable {
 
     this.disposables.push(sub);
 
+    this.disposables.push(
+      workspace.onDidChangeConfiguration((e) => {
+        if (
+          e.affectsConfiguration(
+            qualifiedSettingName(WaterproofSetting.VisibilityOfHypotheses),
+          )
+        ) {
+          this.postHypothesisVisibility();
+        }
+      }),
+    );
+
     client.clientStopped((reason) => {
       void this.onClientStopped(reason);
+    });
+  }
+
+  /**
+   * Mirrors the `visibilityOfHypotheses` setting into the infoview webview so
+   * trim.css can hide the built-in "Tactic state" block.
+   */
+  private postHypothesisVisibility() {
+    this.panel.postMessage({
+      type: MessageType.setHypothesisVisibility,
+      body: WaterproofConfigHelper.get(
+        WaterproofSetting.VisibilityOfHypotheses,
+      ),
     });
   }
 
@@ -495,6 +521,7 @@ export class InfoProvider implements Disposable {
       return;
     }
     await api.initialize(loc);
+    this.postHypothesisVisibility();
 
     if (this.client.client.initializeResult) {
       this.resetServerState();

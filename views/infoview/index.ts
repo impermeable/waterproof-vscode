@@ -24,6 +24,7 @@ interface PersistentInfoviewState {
   cursorLoc?: Location;
   initializeResult?: InitializeResult;
   diags?: LeanPublishDiagnosticsParams;
+  hypothesisVisibility?: string;
 }
 
 const vscodeApi = acquireVsCodeApi<PersistentInfoviewState>();
@@ -34,12 +35,24 @@ function modifyState(
   vscodeApi.setState(f(vscodeApi.getState() ?? {}));
 }
 
+function setHypothesisVisibility(value: string) {
+  document.documentElement.setAttribute("data-wp-hyp-visibility", value);
+  modifyState((s) => ({ ...s, hypothesisVisibility: value }));
+}
+
 // The exact type or shape of an Rpc message does not matter to us
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpc = new Rpc((m: any) =>
   vscodeApi.postMessage({ type: MessageType.infoviewRpc, body: m }),
 );
 window.addEventListener("message", (e) => rpc.messageReceived(e.data));
+
+window.addEventListener("message", (e) => {
+  if (e.data?.type === MessageType.setHypothesisVisibility) {
+    setHypothesisVisibility(e.data.body);
+  }
+});
+
 const editorApi: EditorApi = rpc.getApi<EditorApi>();
 
 const div: HTMLElement | null = document.querySelector("#root");
@@ -112,6 +125,9 @@ if (div && script) {
           "textDocument/publishDiagnostics",
           previousState.diags,
         );
+      }
+      if (previousState.hypothesisVisibility !== undefined) {
+        setHypothesisVisibility(previousState.hypothesisVisibility);
       }
     }
 

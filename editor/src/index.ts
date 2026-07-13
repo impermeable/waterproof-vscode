@@ -53,7 +53,7 @@ function createConfiguration(
     | "languageConfig"
     | "disableMarkdownFeatures"
     | "serializer"
-    | "exampleTemplate"
+    | "templates"
     | "menubarEntries"
   >;
 
@@ -66,7 +66,10 @@ function createConfiguration(
           markdown.parse(v, { language: "coq" }),
         toMarkdown: defaultToMarkdown,
         markdownName: "Markdown",
-        exampleTemplate: "Example example: True.\nProof.\n\nQed.",
+        templates: {
+          example: 'Example "example"\nGiven:\nAssume:\nConclusion:\nProof:\n\nQED',
+          exercise: ""
+        },
         tagConfiguration: markdown.configuration("coq"),
         languageConfig: {
           highlightDark: langWp.highlight_dark,
@@ -81,7 +84,10 @@ function createConfiguration(
         documentConstructor: vFileParser,
         toMarkdown: rocqdocToMarkdown,
         markdownName: "Rocq doc",
-        exampleTemplate: "",
+        templates: {
+          example: "",
+          exercise: ""
+        },
         tagConfiguration: tagConfigurationV,
         disableMarkdownFeatures: ["code"],
         languageConfig: {
@@ -100,7 +106,10 @@ function createConfiguration(
         documentConstructor: topLevelBlocksLean,
         toMarkdown: versoMarkdownToMarkdown,
         markdownName: "Markdown",
-        exampleTemplate: 'Example "example"\nGiven:\nAssume:\nConclusion:\nProof:\n\nQED',
+        templates: {
+          example: 'Example "example"\nGiven:\nAssume:\nConclusion:\nProof:\n\nQED',
+          exercise: ""
+        },
         tagConfiguration: tagConfigurationLean,
         serializer: new LeanSerializer(),
         languageConfig: {

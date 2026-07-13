@@ -32,6 +32,8 @@ import { WebviewEvents } from "./webviews/waterproofPanel";
 
 const keepAlivePeriodMs = 10000;
 
+type GetWidgetsResponse = { widgets: { id?: string }[] };
+
 /**
  * Connects client to server and returns result
  */
@@ -203,6 +205,25 @@ export class InfoProvider implements Disposable {
     return hyps;
   }
 
+  private static readonly SUGGESTIONS_WIDGET_ID = "suggestion";
+
+  /** Drops the Lean "Suggestions" panel widget from a `getWidgets` response. */
+  static filterSuggestionWidgets(
+    response: unknown,
+    params: { method?: string },
+  ): unknown {
+    if (params.method !== "Lean.Widget.getWidgets") return response;
+    const widgetsResponse = response as GetWidgetsResponse | null;
+    if (!widgetsResponse?.widgets) return response;
+    widgetsResponse.widgets = widgetsResponse.widgets.filter(
+      (widget) =>
+        !(widget.id ?? "")
+          .toLowerCase()
+          .includes(InfoProvider.SUGGESTIONS_WIDGET_ID),
+    );
+    return widgetsResponse;
+  }
+
   /** Filters hypotheses in an rpc response depending on visibility setting */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static filterHypotheses(response: any, params: any): any {
@@ -250,6 +271,7 @@ export class InfoProvider implements Disposable {
         try {
           let result = await this.client.client.sendRequest(method, params);
           result = InfoProvider.filterHypotheses(result, params);
+          result = InfoProvider.filterSuggestionWidgets(result, params);
 
           return result;
         } catch (e) {

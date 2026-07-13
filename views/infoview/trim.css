@@ -9,3 +9,8 @@ details[data-vscode-context*="pinId"] > summary {
 .codicon-settings-gear {
   display: none !important;
 }
+
+/* Hide the built-in "All Messages" section. */
+details[data-vscode-context*="AllMessagesId"] {
+  display: none !important;
+}

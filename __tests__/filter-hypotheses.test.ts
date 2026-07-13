@@ -140,3 +140,50 @@ describe("Testing InfoProvider.filterHypotheses() function when rpc method is ge
     expect(result.hyps).toHaveLength(0);
   });
 });
+
+describe("Testing InfoProvider.filterSuggestionWidgets() function", () => {
+  // Runs the filter over a getWidgets response built from `ids` and returns the ids that survive.
+  function survivingIds(ids: string[], method = "Lean.Widget.getWidgets") {
+    const response = { widgets: ids.map((id) => ({ id })) };
+    const result = InfoProvider.filterSuggestionWidgets(response, { method });
+    return (result as { widgets: { id: string }[] }).widgets.map((w) => w.id);
+  }
+
+  it("drops the suggestions panel for every language namespace", () => {
+    expect(
+      survivingIds([
+        "GoalsPanel",
+        "Verbose.English.suggestionsPanel",
+        "Verbose.French.suggestionsPanel",
+        "PlainWidget",
+      ]),
+    ).toEqual(["GoalsPanel", "PlainWidget"]);
+  });
+
+  it("matches 'suggestion' case-insensitively, anywhere in the id", () => {
+    expect(
+      survivingIds([
+        "GoalsPanel",
+        "Verbose.German.SuggestionsPanel",
+        "some.other.SuGGeSTion.widget",
+      ]),
+    ).toEqual(["GoalsPanel"]);
+  });
+
+  it("leaves responses from other rpc methods untouched", () => {
+    expect(
+      survivingIds(
+        ["Verbose.English.suggestionsPanel"],
+        "Lean.Widget.getInteractiveGoals",
+      ),
+    ).toEqual(["Verbose.English.suggestionsPanel"]);
+  });
+
+  it("passes a null response through", () => {
+    expect(
+      InfoProvider.filterSuggestionWidgets(null, {
+        method: "Lean.Widget.getWidgets",
+      }),
+    ).toBeNull();
+  });
+});

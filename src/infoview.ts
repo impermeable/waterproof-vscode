@@ -215,7 +215,7 @@ export class InfoProvider implements Disposable {
   ): unknown {
     if (params.method !== "Lean.Widget.getWidgets") return response;
     const widgetsResponse = response as GetWidgetsResponse | null;
-    if (!widgetsResponse?.widgets) return response;
+    if (!Array.isArray(widgetsResponse?.widgets)) return response;
     widgetsResponse.widgets = widgetsResponse.widgets.filter(
       (widget) =>
         !(widget.id ?? "")

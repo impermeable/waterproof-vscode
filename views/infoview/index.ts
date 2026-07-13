@@ -1,5 +1,9 @@
 import "./trim.css";
 import { MessageType } from "../../shared";
+import {
+  handleHypothesisVisibilityMessage,
+  setHypothesisVisibility,
+} from "./hypothesisVisibility";
 import { defaultInfoviewConfig } from "@leanprover/infoview-api";
 import type {
   EditorApi,
@@ -35,10 +39,8 @@ function modifyState(
   vscodeApi.setState(f(vscodeApi.getState() ?? {}));
 }
 
-function setHypothesisVisibility(value: string) {
-  document.documentElement.setAttribute("data-wp-hyp-visibility", value);
+const persistHypothesisVisibility = (value: string) =>
   modifyState((s) => ({ ...s, hypothesisVisibility: value }));
-}
 
 // The exact type or shape of an Rpc message does not matter to us
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,11 +49,9 @@ const rpc = new Rpc((m: any) =>
 );
 window.addEventListener("message", (e) => rpc.messageReceived(e.data));
 
-window.addEventListener("message", (e) => {
-  if (e.data?.type === MessageType.setHypothesisVisibility) {
-    setHypothesisVisibility(e.data.body);
-  }
-});
+window.addEventListener("message", (e) =>
+  handleHypothesisVisibilityMessage(e.data, persistHypothesisVisibility),
+);
 
 const editorApi: EditorApi = rpc.getApi<EditorApi>();
 
@@ -127,7 +127,10 @@ if (div && script) {
         );
       }
       if (previousState.hypothesisVisibility !== undefined) {
-        setHypothesisVisibility(previousState.hypothesisVisibility);
+        setHypothesisVisibility(
+          previousState.hypothesisVisibility,
+          persistHypothesisVisibility,
+        );
       }
     }
 

@@ -563,6 +563,7 @@ export class Waterproof implements Disposable {
     if (firstBefore === undefined) {
       throw new Error("Could not find lemma before cursor.");
     }
+
     const startRegex = new RegExp(
       String.raw`(?:Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+${firstBefore.name}\s*:\s*[^.]*\.\s+(?:Proof\.)?`,
       "g",

@@ -169,11 +169,7 @@ type Ctx = {
   };
 };
 
-function makeCtx(
-  document: unknown,
-  cursor: unknown,
-  symbols: Sym[],
-): Ctx {
+function makeCtx(document: unknown, cursor: unknown, symbols: Sym[]): Ctx {
   return {
     client: {
       activeDocument: document,
@@ -258,8 +254,7 @@ describe("Waterproof.proofContext", () => {
       const result = await proofContext.call(ctx);
 
       const barIdx = SOURCE.indexOf("Lemma bar");
-      const expectedStart =
-        SOURCE.indexOf("Proof.", barIdx) + "Proof.".length;
+      const expectedStart = SOURCE.indexOf("Proof.", barIdx) + "Proof.".length;
       const expectedEnd = SOURCE.indexOf("Qed.", barIdx);
 
       expect(result.proofRange.start).toEqual(doc.positionAt(expectedStart));
@@ -342,9 +337,13 @@ describe("Waterproof.proofContext", () => {
     it("throws when the lemma keyword is not recognised", async () => {
       // `Example` is not in the accepted keyword list, so the start regex
       // fails even though a closer is present.
-      const text = ["Example ex : True.", "Proof.", "exact I.", "Qed.", ""].join(
-        "\n",
-      );
+      const text = [
+        "Example ex : True.",
+        "Proof.",
+        "exact I.",
+        "Qed.",
+        "",
+      ].join("\n");
       const doc = makeDocument(text);
       const ctx = makeCtx(doc, new Position(2, 0), [
         { name: "ex", range: { start: { line: 0, character: 0 } } },

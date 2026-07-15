@@ -53,7 +53,8 @@ function makeFakeClient(overrides: ClientOverrides = {}) {
   };
 
   const client = {
-    activeDocument: "activeDocument" in overrides ? overrides.activeDocument : document,
+    activeDocument:
+      "activeDocument" in overrides ? overrides.activeDocument : document,
     getBeginningOfCurrentSentence: jest.fn(() =>
       "sentenceStart" in overrides
         ? overrides.sentenceStart
@@ -74,7 +75,11 @@ const RUN_RES = {
     [2, "world"],
   ] as [number, string][],
 };
-const GOALS_RES = { goals: [{ ty: "True", hyps: [] }], stack: [], bullet: null };
+const GOALS_RES = {
+  goals: [{ ty: "True", hyps: [] }],
+  stack: [],
+  bullet: null,
+};
 
 /**
  * Route `sendRequest` responses by request type so that the three sequential
@@ -93,7 +98,8 @@ function stubRequests(
       if (req === getStateAtPosReq)
         return Promise.resolve(responses.state ?? STATE_RES);
       if (req === runReq) return Promise.resolve(responses.run ?? RUN_RES);
-      if (req === goalsReq) return Promise.resolve(responses.goals ?? GOALS_RES);
+      if (req === goalsReq)
+        return Promise.resolve(responses.goals ?? GOALS_RES);
       return Promise.reject(new Error("unexpected request"));
     },
   );
@@ -105,7 +111,11 @@ describe("commandExecutor", () => {
       const { client, languageClient } = makeFakeClient();
       stubRequests(languageClient);
 
-      const result = await executeCommand(client, "reflexivity.", new Position(1, 2));
+      const result = await executeCommand(
+        client,
+        "reflexivity.",
+        new Position(1, 2),
+      );
 
       expect(result.messages).toEqual([
         { level: 1, text: "hello" },

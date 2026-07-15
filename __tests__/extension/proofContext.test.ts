@@ -355,14 +355,12 @@ describe("Waterproof.proofContext", () => {
     });
   });
 
-  describe("known breakage: statement contains an internal period", () => {
-    // The start regex consumes the statement body with `[^.]*`, which stops at
-    // the FIRST period. A statement containing an internal period -- e.g. a
-    // qualified name like `Nat.add` -- therefore fails to match, even though it
-    // is a perfectly valid lemma. This test documents that limitation; see the
-    // NOTE on `startRegex` in src/extension.ts. It is expected to fail (throw)
-    // and would need to change if the regex is ever fixed.
-    it("throws on a valid lemma whose statement uses a qualified name", async () => {
+  describe("statement contains an internal period", () => {
+    // Regression test for the `[\s\S]*?` fix to `startRegex`: a statement with
+    // an internal period (e.g. a qualified name) must still be handled, since
+    // the sentence terminator is a period *followed by whitespace*, not the
+    // first period in the statement.
+    it("extracts a lemma whose statement uses a qualified name", async () => {
       const text = [
         "Lemma bar : Nat.add 0 0 = 0.",
         "Proof.",
@@ -375,9 +373,21 @@ describe("Waterproof.proofContext", () => {
         { name: "bar", range: { start: { line: 0, character: 0 } } },
       ]);
 
-      await expect(proofContext.call(ctx)).rejects.toThrow(
-        "Could not find start of proof",
+      const result = await proofContext.call(ctx);
+
+      expect(result.name).toBe("bar");
+      expect(result.full).toBe(
+        "Lemma bar : Nat.add 0 0 = 0. Proof. reflexivity. Qed. ",
       );
+      // The marker lands at the start of the proof body, after `Proof.`.
+      expect(result.withCursorMarker).toBe(
+        "Lemma bar : Nat.add 0 0 = 0. Proof. {!* CURSOR *!}reflexivity. Qed. ",
+      );
+
+      const expectedStart = text.indexOf("Proof.") + "Proof.".length;
+      const expectedEnd = text.indexOf("Qed.");
+      expect(result.proofRange.start).toEqual(doc.positionAt(expectedStart));
+      expect(result.proofRange.end).toEqual(doc.positionAt(expectedEnd));
     });
   });
 });

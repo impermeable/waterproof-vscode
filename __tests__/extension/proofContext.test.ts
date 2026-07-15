@@ -354,4 +354,30 @@ describe("Waterproof.proofContext", () => {
       );
     });
   });
+
+  describe("known breakage: statement contains an internal period", () => {
+    // The start regex consumes the statement body with `[^.]*`, which stops at
+    // the FIRST period. A statement containing an internal period -- e.g. a
+    // qualified name like `Nat.add` -- therefore fails to match, even though it
+    // is a perfectly valid lemma. This test documents that limitation; see the
+    // NOTE on `startRegex` in src/extension.ts. It is expected to fail (throw)
+    // and would need to change if the regex is ever fixed.
+    it("throws on a valid lemma whose statement uses a qualified name", async () => {
+      const text = [
+        "Lemma bar : Nat.add 0 0 = 0.",
+        "Proof.",
+        "reflexivity.",
+        "Qed.",
+        "",
+      ].join("\n");
+      const doc = makeDocument(text);
+      const ctx = makeCtx(doc, new Position(2, 0), [
+        { name: "bar", range: { start: { line: 0, character: 0 } } },
+      ]);
+
+      await expect(proofContext.call(ctx)).rejects.toThrow(
+        "Could not find start of proof",
+      );
+    });
+  });
 });

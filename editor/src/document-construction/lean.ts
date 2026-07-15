@@ -8,6 +8,7 @@ import {
   MarkdownBlock,
   MathDisplayBlock,
   NewlineBlock,
+  StudentHiddenBlock,
   WaterproofDocument,
 } from "@impermeable/waterproof-editor";
 
@@ -144,14 +145,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
     const child = new CodeBlock(content, range, innerRange, token.line);
     blocks.push(
-      new HintBlock(
-        content,
-        "🛠 Technical details",
-        range,
-        innerRange,
-        token.line,
-        [child],
-      ),
+      new StudentHiddenBlock(content, range, innerRange, token.line, [child]),
     );
     const newlineRange = { from: token.range.to - 1, to: token.range.to };
     blocks.push(new NewlineBlock(newlineRange, newlineRange, token.line));
@@ -222,16 +216,28 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
     if (token.kind === Kind.HintOpen) {
       const title = token.namedGroups?.HintTitle ?? "";
-      blocks.push(
-        new HintBlock(
-          content,
-          title,
-          range,
-          innerRange,
-          token.line,
-          innerBlocks,
-        ),
-      );
+      if (title === "student-hidden") {
+        blocks.push(
+          new StudentHiddenBlock(
+            content,
+            range,
+            innerRange,
+            token.line,
+            innerBlocks,
+          ),
+        );
+      } else {
+        blocks.push(
+          new HintBlock(
+            content,
+            title,
+            range,
+            innerRange,
+            token.line,
+            innerBlocks,
+          ),
+        );
+      }
     } else {
       blocks.push(
         new InputAreaBlock(content, range, innerRange, token.line, innerBlocks),

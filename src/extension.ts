@@ -565,7 +565,9 @@ export class Waterproof implements Disposable {
     }
 
     const startRegex = new RegExp(
-      String.raw`(?:Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+${firstBefore.name}\s*:\s*[\s\S]*?\.\s+(?:Proof\.)?`,
+      firstBefore.name === "_"
+        ? String.raw`Goal\s*[\s\S]*?\.\s+(?:Proof\.)?`
+        : String.raw`(?:Example|Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+${firstBefore.name}\s*:\s*[\s\S]*?\.\s+(?:Proof\.)?`,
       "g",
     );
     // Compute the offset into the document where the proof starts (will be the position before Lemma)

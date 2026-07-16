@@ -466,7 +466,7 @@ export class InfoProvider implements Disposable {
 
   constructor(
     private client: LeanLspClient,
-    private panel: GoalsPanel,
+    private readonly panel: GoalsPanel,
   ) {
     const rpc = new Rpc((m) => panel.postMessage(m));
     rpc.register(this.editorApi);
@@ -478,9 +478,8 @@ export class InfoProvider implements Disposable {
       this.rpc?.messageReceived(msg.body);
     });
 
-    this.disposables.push(sub);
-
     this.disposables.push(
+      sub,
       workspace.onDidChangeConfiguration((e) => {
         if (
           e.affectsConfiguration(

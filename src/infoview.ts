@@ -473,13 +473,22 @@ export class InfoProvider implements Disposable {
     this.rpc = rpc;
     this.api = rpc.getApi();
 
-    const sub = panel.on(WebviewEvents.message, (msg) => {
+    // `panel` is an EventEmitter whose `.on` returns the emitter itself, so we
+    // build our own Disposable that detaches only this listener on dispose
+    // (disposing the emitter's return value would tear down the whole panel).
+    const messageHandler = (msg: { type?: MessageType; body?: unknown }) => {
       if (msg.type !== MessageType.infoviewRpc) return;
       this.rpc?.messageReceived(msg.body);
-    });
+    };
+    panel.on(WebviewEvents.message, messageHandler);
+    const messageSubscription: Disposable = {
+      dispose: () => {
+        panel.off(WebviewEvents.message, messageHandler);
+      },
+    };
 
     this.disposables.push(
-      sub,
+      messageSubscription,
       workspace.onDidChangeConfiguration((e) => {
         if (
           e.affectsConfiguration(
@@ -489,11 +498,10 @@ export class InfoProvider implements Disposable {
           this.postHypothesisVisibility();
         }
       }),
+      client.clientStopped((reason) => {
+        void this.onClientStopped(reason);
+      }),
     );
-
-    client.clientStopped((reason) => {
-      void this.onClientStopped(reason);
-    });
   }
 
   /**

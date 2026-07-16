@@ -8,9 +8,10 @@
  * disposables. These tests exercise that wiring by mocking `Rpc`, `vscode`
  * and the logger, and by driving fake `panel`/`client` objects.
  *
- * NOTE: a handful of tests below (grouped under "disposal") encode the
- * *intended* behaviour rather than the current behaviour, and are expected
- * to fail until the corresponding bugs are fixed. They are documented inline.
+ * The tests grouped under "disposal" are regression tests for three resource
+ * leaks that once lived in the constructor: disposing the provider used to
+ * tear down the shared panel, leak its message listener, and leak the
+ * client-stopped subscription. They are documented inline.
  */
 import { EventEmitter } from "events";
 
@@ -263,13 +264,13 @@ describe("InfoProvider constructor: disposal", () => {
     expect(configDisposable.dispose).toHaveBeenCalledTimes(1);
   });
 
-  // ---- Intended-behaviour tests (expected to FAIL until the bugs are fixed) ----
+  // ---- Regression tests for constructor resource leaks ----
 
-  // BUG: `const sub = panel.on(...)` returns the panel itself (Node's
-  // EventEmitter.on returns `this`), and `sub` is pushed into `disposables`.
-  // So `dispose()` currently calls `panel.dispose()`, tearing down the whole
-  // goals-panel webview. Disposing the InfoProvider should only detach its own
-  // message listener, never dispose the panel.
+  // REGRESSION: `panel.on(...)` (Node's EventEmitter) returns the panel itself.
+  // Pushing that return value into `disposables` used to make `dispose()` call
+  // `panel.dispose()`, tearing down the whole goals-panel webview. Disposing
+  // the InfoProvider must only detach its own message listener, never dispose
+  // the shared panel.
   it("does NOT dispose the shared panel when the provider is disposed", () => {
     const { provider, panel } = makeProvider();
 
@@ -278,8 +279,8 @@ describe("InfoProvider constructor: disposal", () => {
     expect(panel.dispose).not.toHaveBeenCalled();
   });
 
-  // BUG (same root cause): the message listener is never removed, so the
-  // subscription leaks after disposal.
+  // REGRESSION (same root cause): the message listener must be removed on
+  // dispose rather than leaking.
   it("removes its panel message listener on dispose", () => {
     const { provider, panel } = makeProvider();
 
@@ -288,8 +289,9 @@ describe("InfoProvider constructor: disposal", () => {
     expect(panel.listenerCount(WebviewEvents.message)).toBe(0);
   });
 
-  // BUG: the Disposable returned by `client.clientStopped(...)` is discarded in
-  // the constructor and never tracked, so the listener leaks past dispose().
+  // REGRESSION: the Disposable returned by `client.clientStopped(...)` was
+  // discarded in the constructor; it must be tracked so the listener is
+  // released on dispose.
   it("disposes the clientStopped subscription on dispose", () => {
     const { provider, client } = makeProvider();
 

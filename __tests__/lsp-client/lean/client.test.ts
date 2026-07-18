@@ -844,9 +844,7 @@ describe("LeanLspClient.rewriteDiagnostics", () => {
 
     const result = rewrite(instance, [unsolvedDiag(3, 5)], [AREA]);
 
-    expect(result[0].message).toBe(
-      "(Sub)proof starting on line 4 is not finished yet.",
-    );
+    expect(result[0].message).toBe("(Sub)proof is not finished yet.");
   });
 
   it("leaves the message unchanged when the UnsolvedGoals diagnostic is outside all input areas", () => {

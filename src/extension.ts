@@ -96,7 +96,7 @@ export class Waterproof implements Disposable {
   /** Main executor that allows for arbitrary execution */
   public readonly executorComponent: IExecutor;
 
-  private sidePanelProvider: SidePanelProvider;
+  private readonly sidePanelProvider: SidePanelProvider;
 
   private clientRunning: boolean = false;
 

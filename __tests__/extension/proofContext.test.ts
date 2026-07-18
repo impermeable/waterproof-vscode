@@ -334,11 +334,36 @@ describe("Waterproof.proofContext", () => {
       );
     });
 
-    it("throws when the lemma keyword is not recognised", async () => {
-      // `Example` is not in the accepted keyword list, so the start regex
-      // fails even though a closer is present.
+    it("recognises the `Example` keyword", async () => {
+      // `Example` is part of the accepted keyword list, so the start regex
+      // matches and the proof context is extracted successfully.
       const text = [
         "Example ex : True.",
+        "Proof.",
+        "exact I.",
+        "Qed.",
+        "",
+      ].join("\n");
+      const doc = makeDocument(text);
+      const ctx = makeCtx(doc, new Position(2, 0), [
+        { name: "ex", range: { start: { line: 0, character: 0 } } },
+      ]);
+
+      const result = await proofContext.call(ctx);
+
+      expect(result.name).toBe("ex");
+      expect(result.full).toBe("Example ex : True. Proof. exact I. Qed. ");
+      // The marker lands at the start of the proof body, after `Proof.`.
+      expect(result.withCursorMarker).toBe(
+        "Example ex : True. Proof. {!* CURSOR *!}exact I. Qed. ",
+      );
+    });
+
+    it("throws when the lemma keyword is not recognised", async () => {
+      // `NonExistantKeyword` is not in the accepted keyword list, so the start
+      // regex fails even though a closer is present.
+      const text = [
+        "NonExistantKeyword ex : True.",
         "Proof.",
         "exact I.",
         "Qed.",

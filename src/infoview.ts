@@ -24,6 +24,7 @@ import {
 } from "vscode-languageserver-protocol";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 import {
+  qualifiedSettingName,
   WaterproofConfigHelper,
   WaterproofLogger as wpl,
   WaterproofSetting,
@@ -31,6 +32,8 @@ import {
 import { WebviewEvents } from "./webviews/waterproofPanel";
 
 const keepAlivePeriodMs = 10000;
+
+type GetWidgetsResponse = { widgets: { id?: string }[] };
 
 /**
  * Connects client to server and returns result
@@ -203,6 +206,25 @@ export class InfoProvider implements Disposable {
     return hyps;
   }
 
+  private static readonly SUGGESTIONS_WIDGET_ID = "suggestion";
+
+  /** Drops the Lean "Suggestions" panel widget from a `getWidgets` response. */
+  static filterSuggestionWidgets(
+    response: unknown,
+    params: { method?: string },
+  ): unknown {
+    if (params.method !== "Lean.Widget.getWidgets") return response;
+    const widgetsResponse = response as GetWidgetsResponse | null;
+    if (!Array.isArray(widgetsResponse?.widgets)) return response;
+    widgetsResponse.widgets = widgetsResponse.widgets.filter(
+      (widget) =>
+        !(widget.id ?? "")
+          .toLowerCase()
+          .includes(InfoProvider.SUGGESTIONS_WIDGET_ID),
+    );
+    return widgetsResponse;
+  }
+
   /** Filters hypotheses in an rpc response depending on visibility setting */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static filterHypotheses(response: any, params: any): any {
@@ -250,6 +272,7 @@ export class InfoProvider implements Disposable {
         try {
           let result = await this.client.client.sendRequest(method, params);
           result = InfoProvider.filterHypotheses(result, params);
+          result = InfoProvider.filterSuggestionWidgets(result, params);
 
           return result;
         } catch (e) {
@@ -443,22 +466,54 @@ export class InfoProvider implements Disposable {
 
   constructor(
     private client: LeanLspClient,
-    panel: GoalsPanel,
+    private readonly panel: GoalsPanel,
   ) {
     const rpc = new Rpc((m) => panel.postMessage(m));
     rpc.register(this.editorApi);
     this.rpc = rpc;
     this.api = rpc.getApi();
 
-    const sub = panel.on(WebviewEvents.message, (msg) => {
+    // `panel` is an EventEmitter whose `.on` returns the emitter itself, so we
+    // build our own Disposable that detaches only this listener on dispose
+    // (disposing the emitter's return value would tear down the whole panel).
+    const messageHandler = (msg: { type?: MessageType; body?: unknown }) => {
       if (msg.type !== MessageType.infoviewRpc) return;
       this.rpc?.messageReceived(msg.body);
-    });
+    };
+    panel.on(WebviewEvents.message, messageHandler);
+    const messageSubscription: Disposable = {
+      dispose: () => {
+        panel.off(WebviewEvents.message, messageHandler);
+      },
+    };
 
-    this.disposables.push(sub);
+    this.disposables.push(
+      messageSubscription,
+      workspace.onDidChangeConfiguration((e) => {
+        if (
+          e.affectsConfiguration(
+            qualifiedSettingName(WaterproofSetting.VisibilityOfHypotheses),
+          )
+        ) {
+          this.postHypothesisVisibility();
+        }
+      }),
+      client.clientStopped((reason) => {
+        void this.onClientStopped(reason);
+      }),
+    );
+  }
 
-    client.clientStopped((reason) => {
-      void this.onClientStopped(reason);
+  /**
+   * Mirrors the `visibilityOfHypotheses` setting into the infoview webview so
+   * trim.css can hide the built-in "Tactic state" block.
+   */
+  private postHypothesisVisibility() {
+    this.panel.postMessage({
+      type: MessageType.setHypothesisVisibility,
+      body: WaterproofConfigHelper.get(
+        WaterproofSetting.VisibilityOfHypotheses,
+      ),
     });
   }
 
@@ -473,6 +528,7 @@ export class InfoProvider implements Disposable {
       return;
     }
     await api.initialize(loc);
+    this.postHypothesisVisibility();
 
     if (this.client.client.initializeResult) {
       this.resetServerState();

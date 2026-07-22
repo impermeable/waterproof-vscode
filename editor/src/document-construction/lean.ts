@@ -25,6 +25,7 @@ enum Kind {
   Newline,
   MultileanOpen,
   MultileanClose,
+  StudentHiddenOpen,
 }
 
 /**
@@ -78,6 +79,7 @@ const regexes: [RegExp, Kind][] = [
   [/\n```(?=\n|$)/, Kind.CodeClose],
   [/(?<=\n):::input\n/, Kind.InputOpen],
   [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"\n/, Kind.HintOpen],
+  [/(?<=\n):::studentHidden\n/, Kind.StudentHiddenOpen],
   [/\n:::(?=\n|$)/, Kind.Close],
   [/\$`[\s\S]*?`/, Kind.MathInline],
   [/\$\$`[\s\S]*?`/, Kind.MathDisplay],
@@ -192,8 +194,10 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     blocks.push(new CodeBlock(content, range, innerRange, token.line));
 
     return head.next;
-  } else if (token.isOneOf([Kind.HintOpen, Kind.InputOpen])) {
-    // Process a hint block or input block.
+  } else if (
+    token.isOneOf([Kind.HintOpen, Kind.InputOpen, Kind.StudentHiddenOpen])
+  ) {
+    // Process a hint, input or student hidden block.
 
     const expected: Kind[] = [
       Kind.Close,
@@ -238,9 +242,19 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
           ),
         );
       }
-    } else {
+    } else if (token.kind === Kind.InputOpen) {
       blocks.push(
         new InputAreaBlock(content, range, innerRange, token.line, innerBlocks),
+      );
+    } else if (token.kind === Kind.StudentHiddenOpen) {
+      blocks.push(
+        new StudentHiddenBlock(
+          content,
+          range,
+          innerRange,
+          token.line,
+          innerBlocks,
+        ),
       );
     }
 

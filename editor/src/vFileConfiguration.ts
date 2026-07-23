@@ -37,4 +37,11 @@ export const tagConfigurationV: TagConfiguration = {
     openRequiresNewline: false,
     closeRequiresNewline: false,
   },
+  // Rocq has no student-hidden syntax yet; placeholder tags for when it does.
+  studentHidden: {
+    openTag: "<student-hidden>",
+    closeTag: "</student-hidden>",
+    openRequiresNewline: false,
+    closeRequiresNewline: false,
+  },
 };

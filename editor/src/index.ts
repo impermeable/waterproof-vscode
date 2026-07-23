@@ -6,6 +6,7 @@ import {
   WaterproofEditor,
   WaterproofEditorConfig,
   wrapInContainer,
+  wrapInStudentHidden,
 } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import waterproofTactics from "../../completions/tactics.json";
@@ -118,6 +119,19 @@ function createConfiguration(
                 state,
                 undefined,
               ),
+            buttonVisibility: { teacherModeOnly: true },
+          },
+          {
+            title: "\u{1F441}️",
+            hoverText:
+              "Wrap selection in a student-hidden block (only visible in teacher mode)",
+            callback: () => {
+              editorRef.current?.executeProsemirrorCommand(
+                wrapInStudentHidden(tagConfigurationLean),
+              );
+            },
+            isActive: (state) =>
+              wrapInStudentHidden(tagConfigurationLean)(state, undefined),
             buttonVisibility: { teacherModeOnly: true },
           },
         ],

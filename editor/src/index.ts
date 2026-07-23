@@ -3,12 +3,9 @@ import {
   defaultToMarkdown,
   markdown,
   ThemeStyle,
-  MenuBarEntry,
-  TagConfiguration,
   WaterproofEditor,
   WaterproofEditorConfig,
   wrapInContainer,
-  wrapInStudentHidden,
 } from "@impermeable/waterproof-editor";
 // TODO: The tactics completions are static, we want them to be dynamic (LSP supplied and/or configurable when the editor is running)
 import waterproofTactics from "../../completions/tactics.json";
@@ -41,29 +38,6 @@ interface VSCodeAPI {
   postMessage: (message: Message) => void;
 }
 
-/**
- * Build the teacher-mode menubar entry that wraps the selection in a
- * student-hidden block, for the given tag configuration.
- */
-function studentHiddenMenubarEntry(
-  tagConfiguration: TagConfiguration,
-  editorRef: { current?: WaterproofEditor },
-): MenuBarEntry {
-  return {
-    title: "\u{1F441}️",
-    hoverText:
-      "Wrap selection in a student-hidden block (only visible in teacher mode)",
-    callback: () => {
-      editorRef.current?.executeProsemirrorCommand(
-        wrapInStudentHidden(tagConfiguration),
-      );
-    },
-    isActive: (state) =>
-      wrapInStudentHidden(tagConfiguration)(state, undefined),
-    buttonVisibility: { teacherModeOnly: true },
-  };
-}
-
 function createConfiguration(
   format: FileFormat,
   codeAPI: VSCodeAPI,
@@ -84,26 +58,21 @@ function createConfiguration(
 
   // Set format-specific configuration
   switch (format) {
-    case FileFormat.MarkdownV: {
-      const tagConfigurationMv = markdown.configuration("coq");
+    case FileFormat.MarkdownV:
       formatConf = {
         completions: waterproofTactics,
         documentConstructor: (v: string) =>
           markdown.parse(v, { language: "coq" }),
         toMarkdown: defaultToMarkdown,
         markdownName: "Markdown",
-        tagConfiguration: tagConfigurationMv,
+        tagConfiguration: markdown.configuration("coq"),
         languageConfig: {
           highlightDark: langWp.highlight_dark,
           highlightLight: langWp.highlight_light,
           languageSupport: langWp.waterproof(),
         },
-        menubarEntries: [
-          studentHiddenMenubarEntry(tagConfigurationMv, editorRef),
-        ],
       };
       break;
-    }
     case FileFormat.RegularV:
       formatConf = {
         completions: rocqTactics,
@@ -117,9 +86,6 @@ function createConfiguration(
           highlightDark: langRocq.highlight_dark,
           highlightLight: langRocq.highlight_light,
         },
-        menubarEntries: [
-          studentHiddenMenubarEntry(tagConfigurationV, editorRef),
-        ],
       };
       break;
     // Yalep files share the Lean configuration, only the tactics completions
@@ -154,7 +120,6 @@ function createConfiguration(
               ),
             buttonVisibility: { teacherModeOnly: true },
           },
-          studentHiddenMenubarEntry(tagConfigurationLean, editorRef),
         ],
       };
       break;

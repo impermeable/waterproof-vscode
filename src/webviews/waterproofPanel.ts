@@ -159,6 +159,8 @@ export abstract class WaterproofPanel
                     <meta http-equiv="Content-type" content="text/html;charset=utf-8">
                     <title>Infoview</title>
                     <link rel="stylesheet" href="${distBase}/index.css">
+                    <!-- Waterproof declutter overrides; see views/infoview/trim.css -->
+                    <link rel="stylesheet" href="${styleUri}">
                 </head>
                 <body>
                     <div id="root"></div>

@@ -8,6 +8,7 @@ import {
   window,
   ConfigurationTarget,
   Uri,
+  Range,
 } from "vscode";
 import {
   LanguageClientOptions,
@@ -95,7 +96,7 @@ export class Waterproof implements Disposable {
   /** Main executor that allows for arbitrary execution */
   public readonly executorComponent: IExecutor;
 
-  private sidePanelProvider: SidePanelProvider;
+  private readonly sidePanelProvider: SidePanelProvider;
 
   private clientRunning: boolean = false;
 
@@ -537,6 +538,7 @@ export class Waterproof implements Disposable {
     name: string;
     full: string;
     withCursorMarker: string;
+    proofRange: Range;
   }> {
     if (!this.client.activeDocument || !this.client.activeCursorPosition) {
       throw new Error("No active document or cursor position.");
@@ -548,6 +550,7 @@ export class Waterproof implements Disposable {
 
     // Regex to find the end of the proof the user is working on.
     const endRegex = /(?:Qed|Admitted|Defined)\.\s/;
+
     // We request the document symbols with the goal of finding the lemma the user is working on.
     const symbols = await this.client.requestSymbols();
     const firstBefore = symbols
@@ -560,6 +563,13 @@ export class Waterproof implements Disposable {
     if (firstBefore === undefined) {
       throw new Error("Could not find lemma before cursor.");
     }
+
+    const startRegex = new RegExp(
+      firstBefore.name === "_"
+        ? String.raw`Goal\s*[\s\S]*?\.\s+(?:Proof\.)?`
+        : String.raw`(?:Example|Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+${firstBefore.name}\s*:\s*[\s\S]*?\.\s+(?:Proof\.)?`,
+      "g",
+    );
     // Compute the offset into the document where the proof starts (will be the position before Lemma)
     const startProof = document.offsetAt(
       new Position(
@@ -570,16 +580,23 @@ export class Waterproof implements Disposable {
 
     // Get the part of the text of the document starting at the lemma statement.
     const docText = document.getText().substring(startProof);
-    const proofClose = docText.match(endRegex);
+    const proofClose = endRegex.exec(docText);
 
     if (proofClose === null) {
       throw new Error("Could not find end of proof.");
     }
 
-    // Get the text of the proof from the document, we need to add startProof to the index since the regex was run on a su
+    const startMatch = startRegex.exec(docText);
+    if (startMatch === null) {
+      throw new Error("Could not find start of proof.");
+    }
+
+    const proofStart = startProof + startMatch.index + startMatch[0].length;
+
+    // Get the text of the proof from the document
     const theProof = docText.substring(
       0,
-      proofClose.index! + proofClose[0].length,
+      proofClose.index + proofClose[0].length,
     );
 
     // Helper function to remove input-area tags, coq markers and extra whitespace from input string
@@ -602,20 +619,27 @@ export class Waterproof implements Disposable {
           theProof.substring(offsetIntoMatch),
       ),
       name: firstBefore.name,
+      proofRange: new Range(
+        document.positionAt(proofStart),
+        document.positionAt(proofClose.index + startProof),
+      ),
     };
   }
 
   /**
-   * Try a proof/step by executing the given commands/tactics.
+   * Try a proof/step by executing the given commands/tactics at the cursor position.
    * @param steps The proof steps to try. This can be a single tactic or command or multiple separated by the
    * usual `.` and space.
+   * @param pos Optional position at which to try the proof steps.
    */
   public async tryProof(
     steps: string,
+    pos?: Position,
   ): Promise<{ finished: boolean; remainingGoals: string[] }> {
     const execResponse = await executeCommandFullOutput(
       this.client.rocqClient,
       steps,
+      pos,
     );
     return {
       finished: execResponse.proof_finished,

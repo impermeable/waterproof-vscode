@@ -171,12 +171,12 @@
         "boost": 2
     },
     {
-        "label": "Since (*facts*) we get (*names*)",
+        "label": "Since (*facts*) we get that (*names*)",
         "type": "type",
         "detail": "tactic",
-        "template": "Since ${h} we get ${h'}${}",
+        "template": "Since ${h} we get that ${h'}${}",
         "description": "Use existing facts to obtain new ones.",
-        "example": "Since P ∧ Q we get (hP : P) and (hQ : Q)",
+        "example": "Since P ∧ Q we get that P and Q",
         "boost": 2
     },
     {
@@ -241,6 +241,24 @@
         "description": "Finish the proof using a specific term or hypothesis.",
         "example": "We conclude by h",
         "boost": 3
+    },
+    {
+        "label": "We conclude by hypothesis",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We conclude by hypothesis${}",
+        "description": "Finish the proof using an hypothesis.",
+        "example": "We conclude by h",
+        "boost": 2
+    },
+    {
+        "label": "We conclude by contradicting (*facts*) ",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We conclude by contradicting ${p} and ${¬p}${}",
+        "description": "Finish the proof by stating a precise contradiction",
+        "example": "We conclude by contradicting p and ¬p",
+        "boost": 2
     },
     {
         "label": "We combine (*facts*)",

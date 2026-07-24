@@ -1,0 +1,23 @@
+/* Declutter overrides for the upstream Lean infoview. */
+
+/* Hide each goal block's `filename:line:col` summary header. */
+details[data-vscode-context*="pinId"] > summary {
+  display: none !important;
+}
+
+/* Hide the settings gear (does nothing here, overlaps visibilityOfHypotheses). */
+.codicon-settings-gear {
+  display: none !important;
+}
+
+/* Hide the built-in "All Messages" section. */
+details[data-vscode-context*="AllMessagesId"] {
+  display: none !important;
+}
+
+/* When hypotheses are set to "none", hide the built-in "Tactic state" block. */
+[data-wp-hyp-visibility="none"]
+  span[data-vscode-context]
+  > div[data-vscode-context] {
+  display: none !important;
+}

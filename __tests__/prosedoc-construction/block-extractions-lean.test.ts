@@ -103,7 +103,7 @@ test("Identify student-hidden blocks (Lean)", () => {
   const blocks = topLevelBlocksLean(document);
 
   const shBlocks = blocks.filter((b) => typeguards.isStudentHiddenBlock(b));
-  expect(shBlocks.length).toBe(1);
+  expect(shBlocks).toHaveLength(1);
 
   const [b] = shBlocks;
   expect(typeguards.isStudentHiddenBlock(b)).toBe(true);
@@ -113,7 +113,7 @@ test("Identify student-hidden blocks (Lean)", () => {
   // NewlineBlock (i.e. it is not swallowed into the markdown content), matching
   // the behaviour of hint and input blocks.
   const md = blocks.filter((mb) => typeguards.isMarkdownBlock(mb));
-  expect(md.length).toBe(1);
+  expect(md).toHaveLength(1);
   expect(md[0].stringContent).toBe("# Example");
 
   const shIdx = blocks.indexOf(b);
@@ -127,7 +127,7 @@ test("Identify student-hidden blocks (Lean) #2", () => {
   const blocks = topLevelBlocksLean(document);
 
   const shBlocks = blocks.filter((b) => typeguards.isStudentHiddenBlock(b));
-  expect(shBlocks.length).toBe(2);
+  expect(shBlocks).toHaveLength(2);
 
   const [block1, block2] = shBlocks;
   expect(block1.stringContent).toContain("First");
@@ -142,8 +142,8 @@ test('Lean `:::hint "student-hidden"` is parsed as a StudentHiddenBlock', () => 
 
   const shBlocks = blocks.filter((b) => typeguards.isStudentHiddenBlock(b));
   const hintBlocks = blocks.filter((b) => typeguards.isHintBlock(b));
-  expect(shBlocks.length).toBe(1);
-  expect(hintBlocks.length).toBe(0);
+  expect(shBlocks).toHaveLength(1);
+  expect(hintBlocks).toHaveLength(0);
   expect(shBlocks[0].stringContent).toContain("Secret");
 });
 
@@ -161,8 +161,8 @@ test("Student-hidden block with inner code and math (Lean)", () => {
     typeguards.isMathDisplayBlock(b),
   );
   const innerCode = sh!.innerBlocks!.filter((b) => typeguards.isCodeBlock(b));
-  expect(innerMath.length).toBe(1);
-  expect(innerCode.length).toBe(1);
+  expect(innerMath).toHaveLength(1);
+  expect(innerCode).toHaveLength(1);
   expect(innerMath[0].stringContent).toBe("E = mc^2");
   expect(innerCode[0].stringContent).toBe("def x := 1");
 });

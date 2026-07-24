@@ -95,7 +95,7 @@ export class Waterproof implements Disposable {
   /** Main executor that allows for arbitrary execution */
   public readonly executorComponent: IExecutor;
 
-  private sidePanelProvider: SidePanelProvider;
+  private readonly sidePanelProvider: SidePanelProvider;
 
   private clientRunning: boolean = false;
 
@@ -570,7 +570,7 @@ export class Waterproof implements Disposable {
 
     // Get the part of the text of the document starting at the lemma statement.
     const docText = document.getText().substring(startProof);
-    const proofClose = docText.match(endRegex);
+    const proofClose = endRegex.exec(docText);
 
     if (proofClose === null) {
       throw new Error("Could not find end of proof.");

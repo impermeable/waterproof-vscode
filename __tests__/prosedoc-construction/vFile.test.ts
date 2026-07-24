@@ -229,7 +229,7 @@ test("vFile with student-hidden block", () => {
 
   const blocks = vFileParser(doc);
 
-  expect(blocks.length).toBe(5);
+  expect(blocks).toHaveLength(5);
   const [md, nl, sh, nl2, md2] = blocks;
   expect(typeguards.isMarkdownBlock(md)).toBe(true);
   expect(typeguards.isNewlineBlock(nl)).toBe(true);
@@ -254,7 +254,7 @@ test("vFile with student-hidden block", () => {
     tagConfigurationV,
     new DefaultTagSerializer(tagConfigurationV),
   ).getMapping();
-  expect(mapping.root.children.length).toBe(5);
+  expect(mapping.root.children).toHaveLength(5);
 
   // Round-trip: serializing the parsed document restores the original text.
   const serializer = new DefaultTagSerializer(tagConfigurationV);

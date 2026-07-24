@@ -19,15 +19,8 @@ export class LeanSerializer extends DocumentSerializer {
   serializeHint(
     hintNode: Node,
     _parentNode: string | null,
-    neighbors: (skipNewlines: boolean) => Neighborhood,
+    _neighbors: (skipNewlines: boolean) => Neighborhood,
   ): string {
-    // if a hint is the first node, we assume that it contains the preamble
-    if (neighbors(true).nodeAbove === null) {
-      // TODO: This serialization is used to count newlines, but should not show up in practice.
-      // If it does in the future, we need to keep track of the title somehow.
-      // Except for the title, this preserves the round trip functionality of parsing and serializing
-      return hintNode.textContent + '\n#doc (WaterproofGenre) "Title" =>';
-    }
     return this.tagSerializer.serializeHint(hintNode);
   }
 
@@ -69,5 +62,23 @@ export class LeanSerializer extends DocumentSerializer {
     _neighbors: (skipNewlines: boolean) => Neighborhood,
   ): string {
     return this.tagSerializer.serializeContainer(containerNode);
+  }
+
+  serializeStudentHidden(
+    studentHiddenNode: Node,
+    _parentNode: string | null,
+    neighbors: (skipNewlines: boolean) => Neighborhood,
+  ): string {
+    // The parser wraps the preamble in a tagless student-hidden block, so when
+    // a student-hidden block is the first node, we assume it contains the preamble.
+    if (neighbors(true).nodeAbove === null) {
+      // TODO: This serialization is used to count newlines, but should not show up in practice.
+      // If it does in the future, we need to keep track of the title somehow.
+      // Except for the title, this preserves the round trip functionality of parsing and serializing
+      return (
+        studentHiddenNode.textContent + '\n#doc (WaterproofGenre) "Title" =>'
+      );
+    }
+    return this.tagSerializer.serializeStudentHidden(studentHiddenNode);
   }
 }

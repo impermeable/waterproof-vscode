@@ -131,6 +131,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         Kind.CodeOpen,
         Kind.InputOpen,
         Kind.HintOpen,
+        Kind.StudentHiddenOpen,
         Kind.MultileanOpen,
       ]));
 

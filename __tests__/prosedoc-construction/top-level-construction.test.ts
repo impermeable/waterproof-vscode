@@ -234,7 +234,7 @@ test("Parse top level blocks (Lean)", () => {
 
   const [preamble, nl0, md1, nl1, container, nl2, md2, math, md3] = blocks;
 
-  expect(typeguards.isHintBlock(preamble)).toBe(true);
+  expect(typeguards.isStudentHiddenBlock(preamble)).toBe(true);
   expect(preamble.stringContent).toBe("import Some.Library");
 
   expect(typeguards.isNewlineBlock(nl0)).toBe(true);

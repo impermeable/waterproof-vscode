@@ -44,7 +44,7 @@ test("Verify newlines before and after code are translated into newline nodes (L
   // Expect: newline, code (trailing \n is absorbed)
   expect(blocks.length).toBe(4);
   const [pr, nl, b, nl2] = blocks;
-  expect(typeguards.isHintBlock(pr)).toBe(true);
+  expect(typeguards.isStudentHiddenBlock(pr)).toBe(true);
   expect(typeguards.isNewlineBlock(nl)).toBe(true);
   expect(typeguards.isCodeBlock(b)).toBe(true);
   expect(typeguards.isNewlineBlock(nl2)).toBe(true);

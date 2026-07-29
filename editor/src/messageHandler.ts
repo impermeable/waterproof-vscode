@@ -55,7 +55,7 @@ export function handleEditorMessage(
       editor.handleHistoryChange(msg.body);
       break;
     case MessageType.teacher:
-      editor.updateLockingState(msg.body);
+      editor.setTeacherMode(msg.body);
       break;
     case MessageType.progress: {
       const { numberOfLines, progress } = msg.body;

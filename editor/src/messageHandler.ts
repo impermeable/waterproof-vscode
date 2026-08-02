@@ -78,7 +78,10 @@ export function handleEditorMessage(
       break;
     }
     case MessageType.diagnostics:
-      editor.setActiveDiagnostics(msg.body.positionedDiagnostics);
+      editor.setActiveDiagnostics(
+        msg.body.positionedDiagnostics,
+        msg.body.version,
+      );
       break;
     case MessageType.serverStatus: {
       const status: ServerStatus = msg.body;
@@ -92,6 +95,11 @@ export function handleEditorMessage(
     case MessageType.themeUpdate:
       editor.updateNodeViewThemes(msg.body.theme);
       break;
+    case MessageType.codeActionsResolved: {
+      const { version, index, codeActions } = msg.body;
+      editor.patchDiagnosticCodeActions(version, index, codeActions);
+      break;
+    }
     default:
       // If we reach this 'default' case, then we have encountered an unknown message type.
       console.log(`[WEBVIEW] Unrecognized message type '${msg.type}'`);

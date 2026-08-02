@@ -263,8 +263,6 @@ export abstract class LspClient<
     diag: Diagnostic,
     token: CancellationToken,
   ): Promise<OffsetCodeAction[]> {
-    if (diag.severity === DiagnosticSeverity.Error) return [];
-
     const c2p = this.client.code2ProtocolConverter;
     const p2c = this.client.protocol2CodeConverter;
 
@@ -277,9 +275,6 @@ export abstract class LspClient<
     };
 
     try {
-      // Passing the token means an in-flight request is aborted (and rejects here)
-      // as soon as a newer diagnostics pass supersedes this one, instead of running
-      // to completion in the background only to have its result discarded.
       const results = await this.client.sendRequest(
         CodeActionRequest.type,
         params,
@@ -287,22 +282,27 @@ export abstract class LspClient<
       );
       if (!results) return [];
 
-      const actions: OffsetCodeAction[] = [];
-      for (const result of results) {
-        if (!("edit" in result) || !result.edit) continue;
+      const validActions: { action: OffsetCodeAction; isPreferred: boolean }[] =
+        [];
 
-        // asWorkspaceEdit normalizes both the `changes` and `documentChanges` forms of
-        // a LSP WorkspaceEdit into one iterable - some servers only populate
-        // `documentChanges`, so this must not be replaced with manual `changes[uri]`
-        // access or those edits are silently dropped.
+      for (const result of results) {
+        // supports commands as well as edits, but we don't handle those
+        if (!("edit" in result) || !result.edit) continue;
+        // If the code action is disabled, we skip it.
+        if ("disabled" in result && result.disabled) continue;
+
         const edit = await p2c.asWorkspaceEdit(result.edit);
+        const entries = edit.entries();
+
+        // Applying only part of a multi-document action could corrupt the proof.
+        if (
+          entries.some(([uri]) => uri.toString() !== document.uri.toString())
+        ) {
+          continue;
+        }
 
         const edits: OffsetEdit[] = [];
-
-        // Now 'edit' is a fully parsed native vscode.WorkspaceEdit
-        for (const [uri, textEdits] of edit.entries()) {
-          if (uri.toString() !== document.uri.toString()) continue;
-
+        for (const [, textEdits] of entries) {
           for (const te of textEdits) {
             edits.push({
               start: document.offsetAt(te.range.start),
@@ -313,17 +313,36 @@ export abstract class LspClient<
         }
 
         if (edits.length > 0) {
-          actions.push({ title: result.title, edits });
+          validActions.push({
+            action: {
+              title: result.title,
+              edits,
+            },
+            // Check if the LSP result explicitly marks it as preferred
+            isPreferred: "isPreferred" in result ? !!result.isPreferred : false,
+          });
         }
       }
-      return actions;
+
+      // Look for the first preferred action
+      const preferredAction = validActions.find((a) => a.isPreferred);
+      if (preferredAction) {
+        return [preferredAction.action];
+      }
+
+      // If no preferred action exists, but there is exactly ONE valid action, return it
+      if (validActions.length === 1) {
+        return [validActions[0].action];
+      }
+
+      // If there are multiple actions and none are preferred, return empty
+      return [];
     } catch (e) {
-      // Cancellation (LSP RequestCancelled = -32800) is expected whenever a newer
+      // Cancellation is expected whenever a newer
       // diagnostics pass supersedes this one; don't spam the log for that case.
       if (!token.isCancellationRequested) {
         wpl.log(`[LspClient] Failed to resolve code actions: ${e}`);
       }
-      console.log("[LspClient] Cancel");
       return [];
     }
   }
@@ -332,8 +351,6 @@ export abstract class LspClient<
     const document = this.activeDocument;
     if (!document) return;
 
-    // Cancel any code-action resolution still in flight from a previous call - its
-    // result would be stale by the time it resolves anyway.
     this.diagnosticsCts?.cancel();
     this.diagnosticsCts?.dispose();
     const cts = new CancellationTokenSource();
@@ -342,38 +359,66 @@ export abstract class LspClient<
 
     const diagnostics = languages.getDiagnostics(document.uri);
     const docVersionAtStart = document.version;
-    console.time("processDiagnostics");
-    const positionedDiagnostics: OffsetDiagnostic[] = await Promise.all(
-      diagnostics.map(async (d) => {
-        const codeActions = await this.resolveCodeActionsFor(
-          document,
-          d,
-          token,
-        );
-        return {
-          message: d.message,
-          severity: vscodeSeverityToWaterproof(d.severity),
-          startOffset: document.offsetAt(d.range.start),
-          endOffset: document.offsetAt(d.range.end),
-          ...(codeActions.length > 0 ? { codeActions } : {}),
-        };
-      }),
-    );
-    console.timeEnd("processDiagnostics");
 
-    // Guard against the document having changed, or this pass having been superseded
-    // by a newer one, while we were awaiting resolveCodeActionsFor.
-    if (
+    const isStale = (): boolean =>
       token.isCancellationRequested ||
-      document.version !== docVersionAtStart
-    ) {
+      document.version !== docVersionAtStart ||
+      this.activeDocument?.uri.toString() !== document.uri.toString();
+
+    // Build the base diagnostics (no code actions yet) and send them right away,
+    // so squiggles/messages show up without waiting on code action resolution.
+    const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map((d) => ({
+      message: d.message,
+      severity: vscodeSeverityToWaterproof(d.severity),
+      startOffset: document.offsetAt(d.range.start),
+      endOffset: document.offsetAt(d.range.end),
+    }));
+
+    wpl.log(
+      `[diag] sending ${positionedDiagnostics.length} base diagnostics, version=${docVersionAtStart}`,
+    );
+
+    if (isStale()) {
+      if (this.diagnosticsCts === cts) {
+        this.diagnosticsCts = undefined;
+        cts.dispose();
+      }
       return;
     }
 
-    this.webviewManager!.postAndCacheMessage(document, {
+    await this.webviewManager!.postAndCacheMessage(document, {
       type: MessageType.diagnostics,
-      body: { positionedDiagnostics, version: document.version },
+      body: { positionedDiagnostics, version: docVersionAtStart },
     });
+
+    // Resolve code actions per-diagnostic in parallel, but push each one to the
+    // webview as soon as *it* resolves instead of waiting for all of them.
+    try {
+      await Promise.all(
+        diagnostics.map(async (d, index) => {
+          const codeActions = await this.resolveCodeActionsFor(
+            document,
+            d,
+            token,
+          );
+          if (codeActions.length === 0 || isStale()) return;
+
+          wpl.log(
+            `[diag] sending code action patch index=${index} version=${docVersionAtStart} actions=${codeActions.length}`,
+          );
+
+          this.webviewManager!.postMessage(document.uri.toString(), {
+            type: MessageType.codeActionsResolved,
+            body: { version: docVersionAtStart, index, codeActions },
+          });
+        }),
+      );
+    } finally {
+      if (this.diagnosticsCts === cts) {
+        this.diagnosticsCts = undefined;
+        cts.dispose();
+      }
+    }
   }
 
   protected async onCheckingCompleted(): Promise<void> {
@@ -606,8 +651,10 @@ export abstract class LspClient<
   }
 
   dispose(timeout?: number): Promise<void> {
-    this.diagnosticsCts?.cancel();
-    this.diagnosticsCts?.dispose();
+    const diagnosticsCts = this.diagnosticsCts;
+    this.diagnosticsCts = undefined;
+    diagnosticsCts?.cancel();
+    diagnosticsCts?.dispose();
     this.fileProgressComponents.forEach((c) => c.dispose());
     this.disposables.forEach((d) => d.dispose());
     return this.client.dispose(timeout);

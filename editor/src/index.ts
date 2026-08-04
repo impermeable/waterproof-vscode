@@ -67,9 +67,9 @@ function createConfiguration(
         toMarkdown: defaultToMarkdown,
         markdownName: "Markdown",
         templates: {
-          example:
-            'Example "example"\nGiven:\nAssume:\nConclusion:\nProof:\n\nQED',
-          exercise: "",
+          example: "Example example: True.\nProof.\n\nQed.",
+          exercise: { statement: "Lemma exercise:", proof: "Qed." },
+          containerOpenTag: "",
         },
         tagConfiguration: markdown.configuration("coq"),
         languageConfig: {
@@ -87,7 +87,8 @@ function createConfiguration(
         markdownName: "Rocq doc",
         templates: {
           example: "",
-          exercise: "",
+          exercise: { statement: "", proof: "" },
+          containerOpenTag: "",
         },
         tagConfiguration: tagConfigurationV,
         disableMarkdownFeatures: ["code"],
@@ -110,7 +111,12 @@ function createConfiguration(
         templates: {
           example:
             'Example "example"\nGiven:\nAssume:\nConclusion:\nProof:\n\nQED',
-          exercise: "",
+          exercise: {
+            statement:
+              'Example "example"\nGiven:\nAssume:\nConclusion:\nProof:',
+            proof: "QED",
+          },
+          containerOpenTag: "multilean",
         },
         tagConfiguration: tagConfigurationLean,
         serializer: new LeanSerializer(),

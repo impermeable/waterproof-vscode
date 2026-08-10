@@ -68,7 +68,7 @@ function createConfiguration(
         markdownName: "Markdown",
         templates: {
           example: "Example example: True.\nProof.\n\nQed.",
-          exercise: { statement: "Lemma exercise:", proof: "Qed." },
+          exercise: { statement: "Lemma exercise:\nProof.", proof: "Qed." },
           containerOpenTag: "",
         },
         tagConfiguration: markdown.configuration("coq"),
@@ -113,7 +113,7 @@ function createConfiguration(
             'Example "example"\nGiven:\nAssume:\nConclusion:\nProof:\n\nQED',
           exercise: {
             statement:
-              'Example "example"\nGiven:\nAssume:\nConclusion:\nProof:',
+              'Exercise "exercise"\nGiven:\nAssume:\nConclusion:\nProof:',
             proof: "QED",
           },
           containerOpenTag: "multilean",

@@ -388,7 +388,7 @@ export abstract class LspClient<
    * @param result The code action to check
    * @returns true if the code action is allowed, false otherwise
    */
-  protected isAllowedCodeAction(result: CodeAction): boolean {
+  protected isAllowedCodeAction(_result: CodeAction): boolean {
     return true;
   }
 

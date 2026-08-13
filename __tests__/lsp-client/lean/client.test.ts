@@ -892,3 +892,62 @@ describe("LeanLspClient.rewriteDiagnostics", () => {
     expect(result[0].message).toBe("Goals accomplished 🎉");
   });
 });
+
+describe("LeanLspClient.isAllowedCodeAction", () => {
+  const isAllowed = (instance: LeanLspClient, result: unknown) =>
+    // @ts-expect-error protected
+    instance.isAllowedCodeAction(result);
+
+  it("allows a code action whose providerName ends with tryThisProvider", () => {
+    const instance = makeClient();
+
+    const result = {
+      title: "Try this: exact h",
+      data: { providerName: "Lean.Meta.Tactic.TryThis.tryThisProvider" },
+    };
+
+    expect(isAllowed(instance, result)).toBe(true);
+  });
+
+  it("allows a namespaced providerName as long as it ends with tryThisProvider", () => {
+    const instance = makeClient();
+
+    // This is the real-world provider name emitted for the `help` tactic.
+    const result = {
+      title: "Try this: exact h",
+      data: {
+        providerName:
+          "_private.Lean.Meta.Tactic.TryThis.0.Lean.Meta.Tactic.TryThis.tryThisProvider",
+      },
+    };
+
+    expect(isAllowed(instance, result)).toBe(true);
+  });
+
+  it("rejects a code action from an unrelated provider", () => {
+    const instance = makeClient();
+
+    const result = {
+      title: "Unrelated suggestion",
+      data: { providerName: "Lean.Meta.Tactic.SomeOtherProvider" },
+    };
+
+    expect(isAllowed(instance, result)).toBe(false);
+  });
+
+  it("rejects a code action with no data field at all", () => {
+    const instance = makeClient();
+
+    const result = { title: "No data" };
+
+    expect(isAllowed(instance, result)).toBe(false);
+  });
+
+  it("rejects a code action whose data has no providerName", () => {
+    const instance = makeClient();
+
+    const result = { title: "No providerName", data: {} };
+
+    expect(isAllowed(instance, result)).toBe(false);
+  });
+});

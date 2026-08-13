@@ -208,13 +208,11 @@ export class WebviewManager extends EventEmitter {
   }
 
   /**
-   * Sends `message` to the Waterproof webview identified by `documentUri`. The webview caches
-   * this message, which means it's sent again when the editor reinitializes.
+   * Ensures that the webview for the given document URI exists and returns it.
    */
-  public postAndCacheMessage(
+  private resolveWaterproofWebview(
     documentUri: string | Uri | TextDocument,
-    message: Message,
-  ) {
+  ): WaterproofWebview {
     if (typeof documentUri === "object") {
       if ("uri" in documentUri) documentUri = documentUri.uri;
       documentUri = documentUri.toString();
@@ -224,7 +222,28 @@ export class WebviewManager extends EventEmitter {
       throw new Error(
         "There is no Waterproof webview with URI: " + documentUri,
       );
-    webview.postMessage(message, true);
+    return webview;
+  }
+
+  /**
+   * Sends `message` to the Waterproof webview identified by `documentUri`. The webview caches
+   * this message, which means it's sent again when the editor reinitializes.
+   */
+  public postAndCacheMessage(
+    documentUri: string | Uri | TextDocument,
+    message: Message,
+  ) {
+    this.resolveWaterproofWebview(documentUri).postMessage(message, true);
+  }
+
+  /**
+   * Updates the cached message for this type without posting it to the webview.
+   */
+  public cacheMessage(
+    documentUri: string | Uri | TextDocument,
+    message: Message,
+  ) {
+    this.resolveWaterproofWebview(documentUri).cacheMessage(message);
   }
 
   /**

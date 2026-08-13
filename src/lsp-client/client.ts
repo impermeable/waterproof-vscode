@@ -12,6 +12,7 @@ import {
   CancellationTokenSource,
 } from "vscode";
 import {
+  CodeAction,
   CodeActionParams,
   CodeActionRequest,
   DocumentSymbol,
@@ -258,11 +259,23 @@ export abstract class LspClient<
     this.fileProgressComponents.forEach((c) => c.onProgress(params));
   }
 
+  /**
+   * Gets code actions for a given diagnostic, filtering out any that are not allowed by `isAllowedCodeAction`.
+   * @param document The document for which to get code actions.
+   * @param diag The diagnostic for which to get code actions.
+   * @param token Cancellation token to cancel the request.
+   * @param containingArea The range of the input area containing the diagnostic.
+   * @returns A promise resolving to the list of allowed code actions.
+   */
   private async resolveCodeActionsFor(
     document: TextDocument,
     diag: Diagnostic,
     token: CancellationToken,
+    containingArea: Range,
   ): Promise<OffsetCodeAction[]> {
+    const areaStart = document.offsetAt(containingArea.start);
+    const areaEnd = document.offsetAt(containingArea.end);
+
     const c2p = this.client.code2ProtocolConverter;
     const p2c = this.client.protocol2CodeConverter;
 
@@ -275,6 +288,7 @@ export abstract class LspClient<
     };
 
     try {
+      // Ask the LSP for the code actions for the given diagnostic.
       const results = await this.client.sendRequest(
         CodeActionRequest.type,
         params,
@@ -286,10 +300,17 @@ export abstract class LspClient<
         [];
 
       for (const result of results) {
-        // supports commands as well as edits, but we don't handle those
+        // Actions support commands as well as edits, but we don't handle those
         if (!("edit" in result) || !result.edit) continue;
         // If the code action is disabled, we skip it.
         if ("disabled" in result && result.disabled) continue;
+        // LSP specific filtering
+        if (!this.isAllowedCodeAction(result)) {
+          wpl.debug(
+            `[resolveCodeActionsFor] skipping disallowed code action "${result.title}"`,
+          );
+          continue;
+        }
 
         const edit = await p2c.asWorkspaceEdit(result.edit);
         const entries = edit.entries();
@@ -312,39 +333,63 @@ export abstract class LspClient<
           }
         }
 
-        if (edits.length > 0) {
-          validActions.push({
-            action: {
-              title: result.title,
-              edits,
-            },
-            // Check if the LSP result explicitly marks it as preferred
-            isPreferred: "isPreferred" in result ? !!result.isPreferred : false,
-          });
+        if (edits.length === 0) continue;
+
+        // Reject the whole action if any single edit reaches outside the
+        // input area, since we don't want to apply edits that could corrupt
+        // the proof state with no recovery
+        if (!edits.every((e) => e.start >= areaStart && e.end <= areaEnd)) {
+          wpl.debug(
+            `[resolveCodeActionsFor] dropped "${result.title}": edit outside input area [${areaStart}, ${areaEnd}]`,
+          );
+          continue;
         }
+
+        validActions.push({
+          action: {
+            title: result.title,
+            edits,
+          },
+          isPreferred: "isPreferred" in result ? !!result.isPreferred : false,
+        });
       }
 
-      // Look for the first preferred action
-      const preferredAction = validActions.find((a) => a.isPreferred);
-      if (preferredAction) {
-        return [preferredAction.action];
+      // Only return preferred actions if there are any, otherwise return all valid actions.
+      const preferredActions = validActions.filter((a) => a.isPreferred);
+      const actionsToReturn =
+        preferredActions.length > 0 ? preferredActions : validActions;
+
+      // Limit the number of code actions sent to the editor to 3, to prevent the editor being flooded.
+      const keptActions = actionsToReturn.slice(0, 3);
+      const droppedActions = actionsToReturn.slice(3);
+      if (droppedActions.length > 0) {
+        wpl.debug(
+          `[resolveCodeActionsFor] dropped ${droppedActions.length} action(s) beyond top 3 ` +
+            `for diagnostic "${diag.message}": ${droppedActions
+              .map((a) => `"${a.action.title}"`)
+              .join(", ")}`,
+        );
       }
 
-      // If no preferred action exists, but there is exactly ONE valid action, return it
-      if (validActions.length === 1) {
-        return [validActions[0].action];
-      }
-
-      // If there are multiple actions and none are preferred, return empty
-      return [];
+      return keptActions.map((a) => a.action);
     } catch (e) {
-      // Cancellation is expected whenever a newer
-      // diagnostics pass supersedes this one; don't spam the log for that case.
       if (!token.isCancellationRequested) {
         wpl.log(`[LspClient] Failed to resolve code actions: ${e}`);
       }
       return [];
     }
+  }
+
+  /**
+   * Determines if a code action is allowed to be sent to the editor
+   * Can be overridden by other LSP clients to filter out code actions
+   * that are not relevant to the editor.
+   *
+   * @param result The code action to check
+   * @returns true if the code action is allowed, false otherwise
+   */
+  protected isAllowedCodeAction(result: CodeAction): boolean {
+    return true;
   }
 
   protected async processDiagnostics(): Promise<void> {
@@ -360,6 +405,11 @@ export abstract class LspClient<
     const diagnostics = languages.getDiagnostics(document.uri);
     const docVersionAtStart = document.version;
 
+    // Used to bound which code actions are allowed to
+    // surface for each diagnostic (see resolveCodeActionsFor).
+    // avoids unncessary LSP requests for code actions that would be rejected anyway.
+    const inputAreas = this.getInputAreas(document);
+
     const isStale = (): boolean =>
       token.isCancellationRequested ||
       document.version !== docVersionAtStart ||
@@ -374,7 +424,7 @@ export abstract class LspClient<
       endOffset: document.offsetAt(d.range.end),
     }));
 
-    wpl.log(
+    wpl.debug(
       `[diag] sending ${positionedDiagnostics.length} base diagnostics, version=${docVersionAtStart}`,
     );
 
@@ -393,17 +443,28 @@ export abstract class LspClient<
 
     // Resolve code actions per-diagnostic in parallel, but push each one to the
     // webview as soon as *it* resolves instead of waiting for all of them.
+    let anyResolved = false;
     try {
       await Promise.all(
         diagnostics.map(async (d, index) => {
-          const codeActions = await this.resolveCodeActionsFor(
-            document,
-            d,
-            token,
+          const containingArea = inputAreas?.find((area) =>
+            area.contains(d.range),
           );
+
+          const codeActions = containingArea
+            ? await this.resolveCodeActionsFor(
+                document,
+                d,
+                token,
+                containingArea,
+              )
+            : [];
           if (codeActions.length === 0 || isStale()) return;
 
-          wpl.log(
+          positionedDiagnostics[index].codeActions = codeActions;
+          anyResolved = true;
+
+          wpl.debug(
             `[diag] sending code action patch index=${index} version=${docVersionAtStart} actions=${codeActions.length}`,
           );
 
@@ -413,6 +474,15 @@ export abstract class LspClient<
           });
         }),
       );
+
+      // Cache the final message with all code actions so that
+      // they remain when we switch tabs.
+      if (anyResolved && !isStale()) {
+        this.webviewManager!.cacheMessage(document, {
+          type: MessageType.diagnostics,
+          body: { positionedDiagnostics, version: docVersionAtStart },
+        });
+      }
     } finally {
       if (this.diagnosticsCts === cts) {
         this.diagnosticsCts = undefined;

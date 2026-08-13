@@ -12,7 +12,10 @@ import {
   DiagnosticSeverity,
   workspace,
 } from "vscode";
-import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
+import {
+  CodeAction,
+  VersionedTextDocumentIdentifier,
+} from "vscode-languageserver-types";
 import { FileProgressParams } from "../requestTypes";
 import {
   LeanDiagnostic,
@@ -429,6 +432,25 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
       `[leanClient.determineProofStatus] no goals remaining; hasSorry=${hasSorry} -> ${status}`,
     );
     return status;
+  }
+
+  /**
+   * Providers whose suggestions are safe to display inside student input areas.
+   */
+  private static readonly ALLOWED_CODE_ACTION_PROVIDERS: RegExp[] = [
+    // matches "_private.Lean.Meta.Tactic.TryThis.0.Lean.Meta.Tactic.TryThis.tryThisProvider"
+    // which is used by the `help` tactic
+    /tryThisProvider$/,
+  ];
+
+  protected override isAllowedCodeAction(result: CodeAction): boolean {
+    const providerName = result.data?.providerName;
+    if (providerName === undefined) {
+      return false;
+    }
+    return LeanLspClient.ALLOWED_CODE_ACTION_PROVIDERS.some((re) =>
+      re.test(providerName),
+    );
   }
 
   /**

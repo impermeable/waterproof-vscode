@@ -230,7 +230,7 @@
         "detail": "tactic",
         "template": "Since ${h} we get that ${h'}${}",
         "description": "Use existing facts to obtain new ones.",
-        "example": "Since P ∧ Q we get that (hP : P) and (hQ : Q)",
+        "example": "Since P ∧ Q we get that P and Q",
         "boost": 2
     },
     {

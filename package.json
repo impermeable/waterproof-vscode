@@ -380,7 +380,7 @@
           "waterproof.goalAfterTactic": {
             "type": "boolean",
             "default": false,
-            "description": "When showing goals and the cursor is in a tactic, if false, show goals before executing the tactic, if true, show goals after"
+            "description": "When showing goals and the cursor is in a proof step, if false, show goals before executing the proof step, if true, show goals after"
           },
           "waterproof.ppType": {
             "type": "number",

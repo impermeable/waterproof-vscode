@@ -27,6 +27,24 @@
         "boost": 2
     },
     {
+        "label": "We conclude by hypothesis",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We conclude by hypothesis${}",
+        "description": "Finish the proof using an hypothesis.",
+        "example": "We conclude by h",
+        "boost": 2
+    },
+    {
+        "label": "We conclude by contradicting (*facts*) ",
+        "type": "type",
+        "detail": "tactic",
+        "template": "We conclude by contradicting ${p} and ${¬p}${}",
+        "description": "Finish the proof by stating a precise contradiction",
+        "example": "We conclude by contradicting p and ¬p",
+        "boost": 2
+    },
+    {
         "label": "Assume for contradiction (*statement*)",
         "type": "type",
         "detail": "tactic",

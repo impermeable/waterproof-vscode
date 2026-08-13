@@ -36,6 +36,15 @@
         "boost": 1
     },
     {
+        "label": "Let's prove it's contradictory",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Let's prove it's contradictory",
+        "description": "Assume the negation of the goal for a proof by contradiction.",
+        "example": "Let's prove it's contradictory",
+        "boost": 2
+    },
+    {
         "label": "Fix (*name*) : (*type*)",
         "type": "type",
         "detail": "tactic",
@@ -63,6 +72,15 @@
         "boost": 2
     },
     {
+        "label": "Fix (*name*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Fix ${x}${}",
+        "description": "Introduce a variable.",
+        "example": "Fix x",
+        "boost": 2
+    },
+    {
         "label": "Fix (*name*) < (*bound*)",
         "type": "type",
         "detail": "tactic",
@@ -78,6 +96,15 @@
         "template": "Let's prove that ${P}${}",
         "description": "State explicitly what is to be proved next.",
         "example": "Let's prove that 2 = 2",
+        "boost": 2
+    },
+    {
+        "label": "Let's prove that (*name*) works",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Let's prove that $a${} works",
+        "description": "State explicitly that what is to be proved next is to show that a variable works",
+        "example": "Let's prove that a works",
         "boost": 2
     },
     {
@@ -180,6 +207,15 @@
         "boost": 2
     },
     {
+        "label": "Since (*facts*) we get that (*names*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "Since ${h} we get that ${h'}${}",
+        "description": "Use existing facts to obtain new ones.",
+        "example": "Since P ∧ Q we get that (hP : P) and (hQ : Q)",
+        "boost": 2
+    },
+    {
         "label": "Since (*facts*) we conclude that (*statement*)",
         "type": "type",
         "detail": "tactic",
@@ -197,6 +233,16 @@
         "example": "Since P → Q it suffices to prove that P",
         "boost": 2
     },
+    {
+        "label": "It suffices to prove that (*statement*)",
+        "type": "type",
+        "detail": "tactic",
+        "template": "It suffices to prove that ${P}${}",
+        "description": "Reduce the goal using derived facts.",
+        "example": "It suffices to prove that P",
+        "boost": 2
+    },
+
     {
         "label": "We discuss depending on whether (*A*) or (*B*)",
         "type": "type",

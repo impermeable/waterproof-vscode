@@ -8,8 +8,13 @@ import {
   Disposable,
   DiagnosticSeverity,
   Diagnostic,
+  CancellationToken,
+  CancellationTokenSource,
 } from "vscode";
 import {
+  CodeAction,
+  CodeActionParams,
+  CodeActionRequest,
   DocumentSymbol,
   DocumentSymbolParams,
   DocumentSymbolRequest,
@@ -28,7 +33,9 @@ import {
 
 import {
   InputAreaStatus,
+  OffsetCodeAction,
   OffsetDiagnostic,
+  OffsetEdit,
   Severity,
   WaterproofCompletion,
 } from "@impermeable/waterproof-editor";
@@ -252,24 +259,236 @@ export abstract class LspClient<
     this.fileProgressComponents.forEach((c) => c.onProgress(params));
   }
 
-  protected processDiagnostics() {
+  /**
+   * Gets code actions for a given diagnostic, filtering out any that are not allowed by `isAllowedCodeAction`.
+   * @param document The document for which to get code actions.
+   * @param diag The diagnostic for which to get code actions.
+   * @param token Cancellation token to cancel the request.
+   * @param containingArea The range of the input area containing the diagnostic.
+   * @returns A promise resolving to the list of allowed code actions.
+   */
+  private async resolveCodeActionsFor(
+    document: TextDocument,
+    diag: Diagnostic,
+    token: CancellationToken,
+    containingArea: Range,
+  ): Promise<OffsetCodeAction[]> {
+    const areaStart = document.offsetAt(containingArea.start);
+    const areaEnd = document.offsetAt(containingArea.end);
+
+    const c2p = this.client.code2ProtocolConverter;
+    const p2c = this.client.protocol2CodeConverter;
+
+    const params: CodeActionParams = {
+      textDocument: { uri: document.uri.toString() },
+      range: c2p.asRange(diag.range),
+      context: {
+        diagnostics: await c2p.asDiagnostics([diag]),
+      },
+    };
+
+    try {
+      // Ask the LSP for the code actions for the given diagnostic.
+      const results = await this.client.sendRequest(
+        CodeActionRequest.type,
+        params,
+        token,
+      );
+      if (!results) return [];
+
+      const validActions: { action: OffsetCodeAction; isPreferred: boolean }[] =
+        [];
+
+      for (const result of results) {
+        // Actions support commands as well as edits, but we don't handle those
+        if (!("edit" in result) || !result.edit) continue;
+        // If the code action is disabled, we skip it.
+        if ("disabled" in result && result.disabled) continue;
+        // LSP specific filtering
+        if (!this.isAllowedCodeAction(result)) {
+          wpl.debug(
+            `[resolveCodeActionsFor] skipping disallowed code action "${result.title}"`,
+          );
+          continue;
+        }
+
+        const edit = await p2c.asWorkspaceEdit(result.edit);
+        const entries = edit.entries();
+
+        // Applying only part of a multi-document action could corrupt the proof.
+        if (
+          entries.some(([uri]) => uri.toString() !== document.uri.toString())
+        ) {
+          continue;
+        }
+
+        const edits: OffsetEdit[] = [];
+        for (const [, textEdits] of entries) {
+          for (const te of textEdits) {
+            edits.push({
+              start: document.offsetAt(te.range.start),
+              end: document.offsetAt(te.range.end),
+              newText: te.newText,
+            });
+          }
+        }
+
+        if (edits.length === 0) continue;
+
+        // Reject the whole action if any single edit reaches outside the
+        // input area, since we don't want to apply edits that could corrupt
+        // the proof state with no recovery
+        if (!edits.every((e) => e.start >= areaStart && e.end <= areaEnd)) {
+          wpl.debug(
+            `[resolveCodeActionsFor] dropped "${result.title}": edit outside input area [${areaStart}, ${areaEnd}]`,
+          );
+          continue;
+        }
+
+        validActions.push({
+          action: {
+            title: result.title,
+            edits,
+          },
+          isPreferred: "isPreferred" in result ? !!result.isPreferred : false,
+        });
+      }
+
+      // Only return preferred actions if there are any, otherwise return all valid actions.
+      const preferredActions = validActions.filter((a) => a.isPreferred);
+      const actionsToReturn =
+        preferredActions.length > 0 ? preferredActions : validActions;
+
+      // Limit the number of code actions sent to the editor to 3, to prevent the editor being flooded.
+      const keptActions = actionsToReturn.slice(0, 3);
+      const droppedActions = actionsToReturn.slice(3);
+      if (droppedActions.length > 0) {
+        wpl.debug(
+          `[resolveCodeActionsFor] dropped ${droppedActions.length} action(s) beyond top 3 ` +
+            `for diagnostic "${diag.message}": ${droppedActions
+              .map((a) => `"${a.action.title}"`)
+              .join(", ")}`,
+        );
+      }
+
+      return keptActions.map((a) => a.action);
+    } catch (e) {
+      if (!token.isCancellationRequested) {
+        wpl.log(`[LspClient] Failed to resolve code actions: ${e}`);
+      }
+      return [];
+    }
+  }
+
+  /**
+   * Determines if a code action is allowed to be sent to the editor
+   * Can be overridden by other LSP clients to filter out code actions
+   * that are not relevant to the editor.
+   *
+   * @param result The code action to check
+   * @returns true if the code action is allowed, false otherwise
+   */
+  protected isAllowedCodeAction(_result: CodeAction): boolean {
+    return true;
+  }
+
+  protected async processDiagnostics(): Promise<void> {
     const document = this.activeDocument;
     if (!document) return;
 
-    const diagnostics = languages.getDiagnostics(document.uri);
+    this.diagnosticsCts?.cancel();
+    this.diagnosticsCts?.dispose();
+    const cts = new CancellationTokenSource();
+    this.diagnosticsCts = cts;
+    const token = cts.token;
 
-    const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map((d) => {
-      return {
-        message: d.message,
-        severity: vscodeSeverityToWaterproof(d.severity),
-        startOffset: document.offsetAt(d.range.start),
-        endOffset: document.offsetAt(d.range.end),
-      };
-    });
-    this.webviewManager!.postAndCacheMessage(document, {
+    const diagnostics = languages.getDiagnostics(document.uri);
+    const docVersionAtStart = document.version;
+
+    // Used to bound which code actions are allowed to
+    // surface for each diagnostic (see resolveCodeActionsFor).
+    // avoids unncessary LSP requests for code actions that would be rejected anyway.
+    const inputAreas = this.getInputAreas(document);
+
+    const isStale = (): boolean =>
+      token.isCancellationRequested ||
+      document.version !== docVersionAtStart ||
+      this.activeDocument?.uri.toString() !== document.uri.toString();
+
+    // Build the base diagnostics (no code actions yet) and send them right away,
+    // so squiggles/messages show up without waiting on code action resolution.
+    const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map((d) => ({
+      message: d.message,
+      severity: vscodeSeverityToWaterproof(d.severity),
+      startOffset: document.offsetAt(d.range.start),
+      endOffset: document.offsetAt(d.range.end),
+    }));
+
+    wpl.debug(
+      `[diag] sending ${positionedDiagnostics.length} base diagnostics, version=${docVersionAtStart}`,
+    );
+
+    if (isStale()) {
+      if (this.diagnosticsCts === cts) {
+        this.diagnosticsCts = undefined;
+        cts.dispose();
+      }
+      return;
+    }
+
+    await this.webviewManager!.postAndCacheMessage(document, {
       type: MessageType.diagnostics,
-      body: { positionedDiagnostics, version: document.version },
+      body: { positionedDiagnostics, version: docVersionAtStart },
     });
+
+    // Resolve code actions per-diagnostic in parallel, but push each one to the
+    // webview as soon as *it* resolves instead of waiting for all of them.
+    let anyResolved = false;
+    try {
+      await Promise.all(
+        diagnostics.map(async (d, index) => {
+          const containingArea = inputAreas?.find((area) =>
+            area.contains(d.range),
+          );
+
+          const codeActions = containingArea
+            ? await this.resolveCodeActionsFor(
+                document,
+                d,
+                token,
+                containingArea,
+              )
+            : [];
+          if (codeActions.length === 0 || isStale()) return;
+
+          positionedDiagnostics[index].codeActions = codeActions;
+          anyResolved = true;
+
+          wpl.debug(
+            `[diag] sending code action patch index=${index} version=${docVersionAtStart} actions=${codeActions.length}`,
+          );
+
+          this.webviewManager!.postMessage(document.uri.toString(), {
+            type: MessageType.codeActionsResolved,
+            body: { version: docVersionAtStart, index, codeActions },
+          });
+        }),
+      );
+
+      // Cache the final message with all code actions so that
+      // they remain when we switch tabs.
+      if (anyResolved && !isStale()) {
+        this.webviewManager!.cacheMessage(document, {
+          type: MessageType.diagnostics,
+          body: { positionedDiagnostics, version: docVersionAtStart },
+        });
+      }
+    } finally {
+      if (this.diagnosticsCts === cts) {
+        this.diagnosticsCts = undefined;
+        cts.dispose();
+      }
+    }
   }
 
   protected async onCheckingCompleted(): Promise<void> {
@@ -307,6 +526,13 @@ export abstract class LspClient<
 
   // This setTimeout creates a NodeJS.Timeout object, but in the browser it is just a number.
   computeInputAreaStatusTimer?: NodeJS.Timeout | number;
+
+  /**
+   * Tracks the most recent in-flight `processDiagnostics` pass so it can be cancelled
+   * when a newer one supersedes it (e.g. the user keeps typing while code actions are
+   * still being resolved against the previous diagnostics snapshot).
+   */
+  private diagnosticsCts?: CancellationTokenSource;
 
   protected async computeInputAreaStatus(
     document: TextDocument,
@@ -495,6 +721,10 @@ export abstract class LspClient<
   }
 
   dispose(timeout?: number): Promise<void> {
+    const diagnosticsCts = this.diagnosticsCts;
+    this.diagnosticsCts = undefined;
+    diagnosticsCts?.cancel();
+    diagnosticsCts?.dispose();
     this.fileProgressComponents.forEach((c) => c.dispose());
     this.disposables.forEach((d) => d.dispose());
     return this.client.dispose(timeout);

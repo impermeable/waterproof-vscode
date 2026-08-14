@@ -1,4 +1,4 @@
-# Waterproof Tactics Sheet
+# Waterproof Proof Steps Sheet
 
 ## `Help.`
 
@@ -108,7 +108,7 @@ Qed.
 
 ## `Choose (*name_var*) := (*expression*).`
 
-You can use this tactic when you need to show that there exists an x such that a certain property holds. You do this by proposing (\*expression\*) as a choice for x, giving it the name (\*name_var\*).
+You can use this proof step when you need to show that there exists an x such that a certain property holds. You do this by proposing (\*expression\*) as a choice for x, giving it the name (\*name_var\*).
 
 ```coq
 Lemma example_choose :
@@ -178,7 +178,7 @@ Qed.
 
 ## `Obtain such a (*name_var*)`
 
-In case a hypothesis that you just proved starts with 'there exists' s.t. some property holds, then you can use this tactic to select such a variable. The variable will be named (\*name_var\*).
+In case a hypothesis that you just proved starts with 'there exists' s.t. some property holds, then you can use this proof step to select such a variable. The variable will be named (\*name_var\*).
 
 ```coq
 Lemma example_obtain :
@@ -194,7 +194,7 @@ Qed.
 
 ## `Obtain (*name_var*) according to ((*name_hyp*)).`
 
-In case the hypothesis with name (\*name_hyp\*) starts with 'there exists' s.t. some property holds, then you can use this tactic to select such a variable. The variable will be named (\*name_var\*).
+In case the hypothesis with name (\*name_hyp\*) starts with 'there exists' s.t. some property holds, then you can use this proof step to select such a variable. The variable will be named (\*name_var\*).
 
 ```coq
 Lemma example_obtain :
@@ -347,7 +347,7 @@ Contradiction.
 
 ## `Because ((*name_combined_hyp*)) both (*statement_1*) and (*statement_2*).`
 
-If you currently have a hypothesis with name (\*name_combined_hyp\*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses.
+If you currently have a hypothesis with name (\*name_combined_hyp\*) which is in fact of the form H1 ∧ H2, then this proof step splits it up in two separate hypotheses.
 
 ```coq
 Lemma and_example : for all A B : Prop, A ∧ B ⇒ A.
@@ -357,7 +357,7 @@ Assume that A ∧ B as (i). Because (i) both A as (ii) and B as (iii).
 
 ## `Because ((*name_combined_hyp*)) both (*statement_1*) as ((*label_1*)) and (*statement_2*) as ((*label_2*)).`
 
-If you currently have a hypothesis with name (\*name_combined_hyp\*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses.
+If you currently have a hypothesis with name (\*name_combined_hyp\*) which is in fact of the form H1 ∧ H2, then this proof step splits it up in two separate hypotheses.
 
 ```coq
 Lemma and_example : for all A B : Prop, A ∧ B ⇒ A.
@@ -540,7 +540,7 @@ Qed.
 
 ## `We need to verify that (*statement*).`
 
-Used to indicate what to check after using the "Choose" or "Use" tactic.
+Used to indicate what to check after using the "Choose" or "Use" proof step.
 
 ```coq
 Lemma example_choose :

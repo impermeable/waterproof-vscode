@@ -2,7 +2,7 @@
     {
         "label": "let (*name*) be (*description*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "let ${n} be ${an integer}${}",
         "description": "Introducing a variable",
         "example": "let n be an integer",
@@ -11,7 +11,7 @@
     {
         "label": "there exists (*description*) such that (*condition*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "there exists ${an integer p} such that ${p = p}${}",
         "description": "There exists statement",
         "example": "there exists an integer p such that p = p",
@@ -20,7 +20,7 @@
     {
         "label": "for all (*domain*), (*condition*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "for all ${integers z}, ${z = z}${}",
         "description": "For all statement",
         "example": "for all integers z, z = z",
@@ -29,7 +29,7 @@
     {
         "label": "assume (*condition*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "assume ${1 > 0}${}",
         "description": "Assuming a condition",
         "example": "assume 1 > 0",
@@ -38,7 +38,7 @@
     {
         "label": "obtain such (*variable*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "obtain such ${p}${}",
         "description": "Obtaining a variable ",
         "example": "assume 1 > 0",

@@ -4,7 +4,7 @@ const { writeFileSync } = require("fs");
 const tactics = require("../completions/tactics.json");
 const outputLocation = "../docs/tactics-sheet.md";
 
-let mdContent = `# Waterproof Tactics Sheet\n\n`;
+let mdContent = `# Waterproof Proof Steps Sheet\n\n`;
 
 for (const tactic of tactics) {
   mdContent += `## \`${tactic.label}\`\n\n${tactic.description.replaceAll("*", "\\*")}\n\n`;

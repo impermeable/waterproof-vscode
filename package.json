@@ -2,7 +2,7 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.11.1",
+  "version": "0.12.0",
   "waterproofConfiguration": {
     "requiredCoqLspVersion": ">=0.2.4",
     "requiredCoqWaterproofVersion": ">=3.1.0",
@@ -380,7 +380,7 @@
           "waterproof.goalAfterTactic": {
             "type": "boolean",
             "default": false,
-            "description": "When showing goals and the cursor is in a tactic, if false, show goals before executing the tactic, if true, show goals after"
+            "description": "When showing goals and the cursor is in a proof step, if false, show goals before executing the proof step, if true, show goals after"
           },
           "waterproof.ppType": {
             "type": "number",
@@ -572,8 +572,8 @@
       "serialize-javascript": "7.0.5",
       "diff": "8.0.3"
     },
-    "ts-jest": {
-      "brace-expansion": "1.1.16"
+    "ts-jest" : {
+      "brace-expansion": "1.1.18"
     },
     "qs": "^6.15.2",
     "js-yaml": "^4.2.0"

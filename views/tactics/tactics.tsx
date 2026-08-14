@@ -112,7 +112,7 @@ const ProofAssistant = ({ data }: { data: TacticsData }) => {
         <textarea
           className="text-area"
           cols={50}
-          placeholder="Filter tactics"
+          placeholder="Filter proof steps"
           onKeyDown={handleKeyDown}
           onChange={handleChange}
           onClick={handleClick}

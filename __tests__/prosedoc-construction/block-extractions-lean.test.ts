@@ -1,5 +1,5 @@
 import { typeguards, constructDocument } from "@impermeable/waterproof-editor";
-import { topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
+import { topLevelBlocksLean } from "../../editor/src/document-construction";
 import { LeanSerializer } from "../../editor/src/leanSerializer";
 
 /**

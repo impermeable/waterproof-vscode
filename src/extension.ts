@@ -602,9 +602,9 @@ export class Waterproof implements Disposable {
     // Helper function to remove input-area tags, coq markers and extra whitespace from input string
     const removeMarkersAndWhitespace = (input: string) => {
       return input
-        .replace(/<input-area>\s*```coq\s*/g, "")
+        .replace(/<input-area>\s*```(coq|rocq)\s*/g, "")
         .replace(/\s*```\s*<\/input-area>/g, "")
-        .replace(/```coq/g, "")
+        .replace(/```(coq|rocq)/g, "")
         .replace(/```/g, "")
         .replace(/\s+/g, " ");
     };

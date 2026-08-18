@@ -1,5 +1,5 @@
 import { BlockRange, typeguards } from "@impermeable/waterproof-editor";
-import { topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
+import { topLevelBlocksLean } from "../../editor/src/document-construction";
 
 /**
  * Lean equivalents of the newline block tests in newlineblock.test.ts.

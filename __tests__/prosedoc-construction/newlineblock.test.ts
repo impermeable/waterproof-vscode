@@ -1,9 +1,9 @@
 import { BlockRange, typeguards } from "@impermeable/waterproof-editor";
-import { topLevelBlocksMV } from "../../editor/src/document-construction/construct-document";
+import { parse } from "../../editor/src/document-construction";
 
 test("NewlineBlock 1", () => {
   const input = "\n```coq\nCompute 1 + 1.\n```";
-  const blocks = topLevelBlocksMV(input);
+  const blocks = parse(input);
   expect(blocks.length).toBe(2);
   const [b1, b2] = blocks;
   expect(typeguards.isNewlineBlock(b1)).toBe(true);
@@ -16,7 +16,7 @@ test("NewlineBlock 1", () => {
 
 test("NewlineBlock 2", () => {
   const input = "```coq\nCompute 1 + 1.\n```\n";
-  const blocks = topLevelBlocksMV(input);
+  const blocks = parse(input);
   expect(blocks.length).toBe(2);
   const [b1, b2] = blocks;
   expect(typeguards.isCodeBlock(b1)).toBe(true);
@@ -37,7 +37,7 @@ test("NewlineBlock 2", () => {
 
 test("NewlineBlock 3", () => {
   const input = "\n```coq\nCompute 1 + 1.\n```\n";
-  const blocks = topLevelBlocksMV(input);
+  const blocks = parse(input);
   expect(blocks.length).toBe(3);
   const [b1, b2, b3] = blocks;
   expect(typeguards.isNewlineBlock(b1)).toBe(true);

@@ -15,9 +15,13 @@
   --wp-editorInlayHintBackground: var(--vscode-editorInlayHint-background);
   --wp-editorInlayHintForeground: var(--vscode-editorInlayHint-foreground);
   --wp-editorLightBulbForeground: var(--vscode-editorLightBulb-foreground);
-  --wp-editorLineHighlightBackground: var(--vscode-editor-lineHighlightBackground);
+  --wp-editorLineHighlightBackground: var(
+    --vscode-editor-lineHighlightBackground
+  );
   --wp-editorSelectionBackground: var(--vscode-editor-selectionBackground);
-  --wp-editorSelectionForeground: var(--vscode-editor-selectionForeground); /* Does not exist */
+  --wp-editorSelectionForeground: var(
+    --vscode-editor-selectionForeground
+  ); /* Does not exist */
   --wp-errorForeground: var(--vscode-errorForeground);
   --wp-fontFamily: var(--vscode-font-family);
   --wp-fontSize: var(--vscode-font-size);
@@ -26,15 +30,21 @@
   --wp-inputBackground: var(--vscode-input-background);
   --wp-inputBorder: var(--vscode-input-border);
   --wp-inputForeground: var(--vscode-input-foreground);
-  --wp-listActiveselectionBackground: var(--vscode-list-activeSelectionBackground);
-  --wp-listActiveselectionForeground: var(--vscode-list-activeSelectionForeground);
+  --wp-listActiveselectionBackground: var(
+    --vscode-list-activeSelectionBackground
+  );
+  --wp-listActiveselectionForeground: var(
+    --vscode-list-activeSelectionForeground
+  );
   --wp-listDropBackground: var(--vscode-list-dropBackground);
   --wp-listFilterWidgetBackground: var(--vscode-listFilterWidget-background);
   --wp-listHighlightForeground: var(--vscode-list-highlightForeground);
   --wp-menuBackground: var(--vscode-menu-background);
   --wp-menuForeground: var(--vscode-menu-foreground);
   --wp-menuSelectionBackground: var(--vscode-menu-selectionBackground);
-  --wp-menuSelectionBorder: var(--vscode-menu-selectionBorder); /* Does not exist */
+  --wp-menuSelectionBorder: var(
+    --vscode-menu-selectionBorder
+  ); /* Does not exist */
   --wp-menuSelectionForeground: var(--vscode-menu-selectionForeground);
   --wp-menuSeparatorBackground: var(--vscode-menu-separatorBackground);
   --wp-hintOutline: var(--vscode-minimap-findMatchHighlight);

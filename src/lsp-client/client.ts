@@ -296,14 +296,14 @@ export abstract class LspClient<
       );
       if (!results) return [];
 
-      const validActions: { action: OffsetCodeAction; isPreferred: boolean }[] =
+      const validActions: { action: OffsetCodeAction; isPreferred?: boolean }[] =
         [];
 
       for (const result of results) {
         // Actions support commands as well as edits, but we don't handle those
         if (!("edit" in result) || !result.edit) continue;
         // If the code action is disabled, we skip it.
-        if ("disabled" in result && result.disabled) continue;
+        if (result.disabled) continue;
         // LSP specific filtering
         if (!this.isAllowedCodeAction(result)) {
           wpl.debug(
@@ -350,7 +350,7 @@ export abstract class LspClient<
             title: result.title,
             edits,
           },
-          isPreferred: "isPreferred" in result ? !!result.isPreferred : false,
+          isPreferred: result.isPreferred 
         });
       }
 

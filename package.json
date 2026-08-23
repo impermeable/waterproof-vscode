@@ -380,7 +380,7 @@
           "waterproof.goalAfterTactic": {
             "type": "boolean",
             "default": false,
-            "description": "When showing goals and the cursor is in a tactic, if false, show goals before executing the tactic, if true, show goals after"
+            "description": "When showing goals and the cursor is in a proof step, if false, show goals before executing the proof step, if true, show goals after"
           },
           "waterproof.ppType": {
             "type": "number",
@@ -542,7 +542,7 @@
     "@impermeable/codemirror-lang-rocq": "github:impermeable/codemirror-lang-rocq",
     "@impermeable/codemirror-lang-verbose": "github:impermeable/codemirror-lang-verbose",
     "@impermeable/codemirror-lang-waterproof": "github:impermeable/codemirror-lang-waterproof",
-    "@impermeable/waterproof-editor": "^0.16.0",
+    "@impermeable/waterproof-editor": "^0.17.0",
     "@leanprover/infoview": "^0.10.0",
     "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
@@ -573,7 +573,7 @@
       "diff": "8.0.3"
     },
     "ts-jest" : {
-      "brace-expansion": "1.1.16"
+      "brace-expansion": "1.1.18"
     },
     "qs": "^6.15.2",
     "js-yaml": "^4.2.0"

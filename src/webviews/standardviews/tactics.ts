@@ -21,8 +21,8 @@ export class TacticsPanel extends WaterproofPanel {
   private isYalep = false;
 
   constructor(extensionUri: Uri) {
-    // Initialize the tactics panel with the extension Uri and the webview name
-    super(extensionUri, "tactics");
+    // Initialize the tactics panel with the extension Uri and the webview name.
+    super(extensionUri, "tactics", false, "Proof Steps");
 
     this.readyPanel();
     // Set up an event listener for WebviewEvents.change event

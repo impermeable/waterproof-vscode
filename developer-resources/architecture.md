@@ -6,9 +6,9 @@ Waterproof is a VS Code extension that helps students learn to write mathematica
 
 The system is composed of four main components:
 
-1. **`waterproof-editor`** — A ProseMirror-based rich-text editor (npm package `@impermeable/waterproof-editor`) that runs inside a VS Code webview. It handles document editing, rendering, and user interaction (cursor changes, input areas, symbols, tactics). Supports multiple file formats: `.mv` (MarkdownV), `.v` (RegularV), and `.lean` (Lean), each with its own document serializer.
+1. **`waterproof-editor`** — A ProseMirror-based rich-text editor (npm package `@impermeable/waterproof-editor`) that runs inside a VS Code webview. It handles document editing, rendering, and user interaction (cursor changes, input areas, symbols, proof steps). Supports multiple file formats: `.mv` (MarkdownV), `.v` (RegularV), and `.lean` (Lean), each with its own document serializer.
 
-2. **`waterproof-vscode`** — The VS Code extension host logic. It orchestrates everything: manages webviews via the `WebviewManager`, routes messages between the editor and the LSP clients, handles file I/O through VS Code's `CustomTextEditorProvider`, and provides side panels (goals, search, help, tactics, symbols, execute, debug). A `CompositeClient` manages both Rocq and Lean LSP clients simultaneously, routing requests to the correct client based on `document.languageId`.
+2. **`waterproof-vscode`** — The VS Code extension host logic. It orchestrates everything: manages webviews via the `WebviewManager`, routes messages between the editor and the LSP clients, handles file I/O through VS Code's `CustomTextEditorProvider`, and provides side panels (goals, search, help, proof steps, symbols, execute, debug). A `CompositeClient` manages both Rocq and Lean LSP clients simultaneously, routing requests to the correct client based on `document.languageId`.
 
 3. **VS Code** — The host application providing the extension API, webview infrastructure, text document model, command palette, and UI chrome (status bar, side panels, themes).
 
@@ -35,7 +35,7 @@ graph LR
         COMP["CompositeClient<br/><small>composite.ts</small>"]
         ROCQ_C["RocqLspClient<br/><small>lsp-client/rocq/client.ts</small>"]
         LEAN_C["LeanLspClient<br/><small>lsp-client/lean/client.ts</small>"]
-        PANELS["Side Panels<br/><small>Goals, Tactics, Symbols,<br/>Search, Help, Execute</small>"]
+        PANELS["Side Panels<br/><small>Goals, Proof Steps, Symbols,<br/>Search, Help, Execute</small>"]
 
         subgraph "waterproof-editor (Webview)"
             direction TB
@@ -97,7 +97,7 @@ graph TB
         direction LR
         WP_EXT["Waterproof Extension<br/><small>waterproof-vscode</small>"]
         EDITOR_WV["Editor Webview<br/><small>waterproof-editor</small>"]
-        SIDE_PANELS["Side Panels<br/><small>Goals, Tactics, Symbols,<br/>Search, Help</small>"]
+        SIDE_PANELS["Side Panels<br/><small>Goals, Proof Steps, Symbols,<br/>Search, Help</small>"]
 
         WP_EXT --- EDITOR_WV
         WP_EXT --- SIDE_PANELS

@@ -296,8 +296,10 @@ export abstract class LspClient<
       );
       if (!results) return [];
 
-      const validActions: { action: OffsetCodeAction; isPreferred?: boolean }[] =
-        [];
+      const validActions: {
+        action: OffsetCodeAction;
+        isPreferred?: boolean;
+      }[] = [];
 
       for (const result of results) {
         // Actions support commands as well as edits, but we don't handle those
@@ -350,7 +352,7 @@ export abstract class LspClient<
             title: result.title,
             edits,
           },
-          isPreferred: result.isPreferred 
+          isPreferred: result.isPreferred,
         });
       }
 

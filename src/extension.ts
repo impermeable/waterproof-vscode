@@ -71,10 +71,8 @@ export class Waterproof implements Disposable {
   /** The resources that must be released when this extension is disposed of */
   private readonly disposables: Disposable[] = [];
 
-  /** The function that can create a new Rocq language client provider */
+  /** The languages this build can create language clients for */
   private readonly languageSupport: LanguageSupport;
-
-  /** The function that can create a new Lean language client provider */
 
   /** The manager for (communication between) webviews */
   public readonly webviewManager: WebviewManager;

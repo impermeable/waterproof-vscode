@@ -19,9 +19,6 @@ import { SequentialEditor } from "./edit";
 import { getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
-
-/** How long to wait for the editor webview to report itself ready. */
-const READY_TIMEOUT_MS = 10_000;
 import {
   qualifiedSettingName,
   WaterproofConfigHelper,
@@ -38,6 +35,9 @@ import {
   ThemeStyle,
   WrappingDocChange,
 } from "@impermeable/waterproof-editor";
+
+/** How long to wait for the editor webview to report itself ready. */
+const READY_TIMEOUT_MS = 10_000;
 
 export class WaterproofWebview extends EventEmitter {
   /** The webview panel of this ProseMirror instance */

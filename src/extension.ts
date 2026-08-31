@@ -19,7 +19,8 @@ import { IExecutor, IStatusComponent } from "./components";
 import { IGoalsComponent } from "./webviews/goalviews/goalsComponent";
 import { WaterproofStatusBar } from "./components/enableButton";
 import {
-  LanguageClientProviderFactory,
+  LanguageClientSetups,
+  LanguageSupport,
   LspClientConfig,
 } from "./lsp-client/clientTypes";
 import { RocqLspServerConfig } from "./lsp-client/rocq";
@@ -71,10 +72,9 @@ export class Waterproof implements Disposable {
   private readonly disposables: Disposable[] = [];
 
   /** The function that can create a new Rocq language client provider */
-  private readonly getRocqClientProvider: LanguageClientProviderFactory;
+  private readonly languageSupport: LanguageSupport;
 
   /** The function that can create a new Lean language client provider */
-  private readonly getLeanClientProvider: LanguageClientProviderFactory;
 
   /** The manager for (communication between) webviews */
   public readonly webviewManager: WebviewManager;
@@ -108,8 +108,7 @@ export class Waterproof implements Disposable {
    */
   constructor(
     context: ExtensionContext,
-    getRocqClientProvider: LanguageClientProviderFactory,
-    getLeanClientProvider: LanguageClientProviderFactory,
+    languageSupport: LanguageSupport,
     private readonly _isWeb = false,
   ) {
     wpl.log("Waterproof initialized");
@@ -117,8 +116,7 @@ export class Waterproof implements Disposable {
     checkTrimmingWhitespace();
 
     this.context = context;
-    this.getRocqClientProvider = getRocqClientProvider;
-    this.getLeanClientProvider = getLeanClientProvider;
+    this.languageSupport = languageSupport;
 
     this.webviewManager = new WebviewManager();
     // Wire up the webview-manager events. The handlers are defined as methods
@@ -851,55 +849,60 @@ export class Waterproof implements Disposable {
       markdown: { isTrusted: true, supportHtml: true },
     };
 
-    const leanServerOptions = LeanLspServerConfig.create();
-
-    const leanClientOptions: LanguageClientOptions = {
-      documentSelector: [{ language: "lean4" }],
-      outputChannelName: "Waterproof Lean LSP Events (Initial)",
-      revealOutputChannelOn: RevealOutputChannelOn.Info,
-      initializationOptions: leanServerOptions,
-      markdown: { isTrusted: true, supportHtml: true },
-    };
-
     // Whether the user has decided to skip the launch checks
     let skipLaunchChecksSetting = WaterproofConfigHelper.get(
       WaterproofSetting.SkipLaunchChecks,
     );
     if (this._isWeb) {
-      // In the web version, we only support rocq
+      // The prelaunch checks shell out through `child_process` to inspect the
+      // installed tooling, which the web extension cannot do. Skip them and
+      // start the only server a web build can run.
       skipLaunchChecksSetting = "rocq";
       wpl.log(
-        "Web version detected, automatically skipping launch checks for Rocq and not launching Lean client.",
+        "Web version detected, skipping launch checks and starting only the Rocq client.",
       );
     }
 
-    // The web version cannot run Lean, so no provider is created for it. This
-    // has to be decided before constructing the `CompositeClient`, which
-    // instantiates every client it is given a provider for.
-    const leanClientProvider = this._isWeb
-      ? undefined
-      : this.getLeanClientProvider(
+    const clientSetups: LanguageClientSetups = {
+      rocq: {
+        provider: this.languageSupport.rocq(
+          this.context,
+          rocqClientOptions,
+          WaterproofConfigHelper.configuration,
+        ),
+        createOutputChannel: () =>
+          window.createOutputChannel(
+            "Waterproof Rocq LSP Events (After Initialization)",
+          ),
+      },
+    };
+
+    // Lean is only configured when the entry point supplies a factory for it;
+    // the web build does not, as it cannot spawn a Lake process.
+    const getLeanClientProvider = this.languageSupport.lean;
+    if (getLeanClientProvider) {
+      const leanClientOptions: LanguageClientOptions = {
+        documentSelector: [{ language: "lean4" }],
+        outputChannelName: "Waterproof Lean LSP Events (Initial)",
+        revealOutputChannelOn: RevealOutputChannelOn.Info,
+        initializationOptions: LeanLspServerConfig.create(),
+        markdown: { isTrusted: true, supportHtml: true },
+      };
+      clientSetups.lean = {
+        provider: getLeanClientProvider(
           this.context,
           leanClientOptions,
           WaterproofConfigHelper.configuration,
-        );
+        ),
+        createOutputChannel: () =>
+          window.createOutputChannel(
+            "Waterproof Lean LSP Events (After Initialization)",
+          ),
+      };
+    }
 
     wpl.log("Initializing client...");
-    this.client = new CompositeClient(
-      this.getRocqClientProvider(
-        this.context,
-        rocqClientOptions,
-        WaterproofConfigHelper.configuration,
-      ),
-      window.createOutputChannel(
-        "Waterproof Rocq LSP Events (After Initialization)",
-      ),
-      leanClientProvider,
-      window.createOutputChannel(
-        "Waterproof Lean LSP Events (After Initialization)",
-      ),
-      this.context,
-    );
+    this.client = new CompositeClient(clientSetups, this.context);
     let allowedLanguages: string[] = [];
 
     if (skipLaunchChecksSetting !== "none") {

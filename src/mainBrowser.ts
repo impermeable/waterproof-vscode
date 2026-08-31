@@ -31,32 +31,13 @@ const getRocqClientProvider: LanguageClientProviderFactory = (
     );
 };
 
-/**
- * Lean is not supported in the web version: there is no way to spawn the Lake
- * process the Lean server needs. The extension gates on this and never asks for
- * a Lean client, so the returned provider only exists as a backstop; note that
- * it must not throw here, as the factory itself is called during activation.
- *
- * @param clientOptions the options available for a LanguageClient (see vscode api)
- * @param wsConfig the workspace configuration of Waterproof
- * @returns a provider that rejects any attempt to create a Lean client
- */
-const getLeanClientProvider: LanguageClientProviderFactory = (
-  _context: ExtensionContext,
-  _clientOptions: LanguageClientOptions,
-  _wsConfig: WorkspaceConfiguration,
-) => {
-  return () => {
-    throw new Error("Lean is not supported in the web version of Waterproof");
-  };
-};
-
 export function activate(context: ExtensionContext): void {
   console.log("Browser activate function");
+  // No `lean` entry: this build cannot spawn the Lake process a Lean server
+  // needs, so it declares Rocq as the only language it supports.
   const extension: Waterproof = new Waterproof(
     context,
-    getRocqClientProvider,
-    getLeanClientProvider,
+    { rocq: getRocqClientProvider },
     true,
   );
   context.subscriptions.push(extension);

@@ -1,14 +1,9 @@
 import { LeanLspClient } from "./lean";
 import { RocqLspClient } from "./rocq";
 import { convertToString } from "../../lib/types";
-import { ILspClient, LanguageClientProvider } from "./clientTypes";
+import { ILspClient, LanguageClientSetups } from "./clientTypes";
 import { WaterproofLogger as wpl } from "../helpers";
-import {
-  ExtensionContext,
-  OutputChannel,
-  Position,
-  TextDocument,
-} from "vscode";
+import { ExtensionContext, Position, TextDocument } from "vscode";
 import { DocumentSymbol } from "vscode-languageserver-types";
 import { Hypothesis } from "../api";
 import { WebviewManager } from "../webviewManager";
@@ -24,22 +19,20 @@ export class CompositeClient implements ILspClient {
 
   protected document?: TextDocument;
 
-  constructor(
-    rocqClientProvider: LanguageClientProvider,
-    rocqOutputChannel: OutputChannel,
-    leanClientProvider: LanguageClientProvider | undefined,
-    leanOutputChannel: OutputChannel,
-    context: ExtensionContext,
-  ) {
+  constructor(clients: LanguageClientSetups, context: ExtensionContext) {
     this.rocqClient = new RocqLspClient(
-      rocqClientProvider,
-      rocqOutputChannel,
+      clients.rocq.provider,
+      clients.rocq.createOutputChannel(),
       context,
     );
-    // Constructing a client eagerly instantiates its underlying `LanguageClient`,
-    // so only do so when Lean is actually supported.
-    this.leanClient = leanClientProvider
-      ? new LeanLspClient(leanClientProvider, leanOutputChannel)
+    // Constructing a client eagerly instantiates its underlying `LanguageClient`
+    // and its output channel, so only do so for the languages this build
+    // actually supports.
+    this.leanClient = clients.lean
+      ? new LeanLspClient(
+          clients.lean.provider,
+          clients.lean.createOutputChannel(),
+        )
       : undefined;
 
     this.lastClient = this.rocqClient;

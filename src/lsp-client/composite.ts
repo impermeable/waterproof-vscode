@@ -198,10 +198,13 @@ export class CompositeClient implements ILspClient {
 
   async dispose(timeout?: number): Promise<void> {
     const disposePromises = [];
-    if (this.rocqClient.isRunning()) {
+    // Dispose every client that was created, not only the running ones: a
+    // client that failed to start still owns resources. Disposing a client that
+    // never started is a no-op on the language client itself.
+    if (this.rocqClient.hasClient) {
       disposePromises.push(this.rocqClient.dispose(timeout));
     }
-    if (this.leanClient?.isRunning()) {
+    if (this.leanClient?.hasClient) {
       disposePromises.push(this.leanClient.dispose(timeout));
     }
     await Promise.all(disposePromises);

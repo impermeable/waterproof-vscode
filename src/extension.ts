@@ -961,12 +961,14 @@ export class Waterproof implements Disposable {
    * Disposes of the Rocq LSP client.
    */
   private async stopClient(): Promise<void> {
-    if (this.client.isRunning()) {
-      await this.client.dispose(2000);
+    const wasRunning = this.client.isRunning();
+    // Dispose unconditionally rather than only when running: a client that was
+    // created but failed to start still owns resources, and would otherwise be
+    // orphaned by the next `initializeClient`.
+    await this.client.dispose(2000);
+    if (wasRunning) {
       this.clientRunning = false;
       this.statusBar.update([]);
-    } else {
-      return Promise.resolve();
     }
   }
 

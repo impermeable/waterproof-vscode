@@ -7,6 +7,39 @@ import {
 import { Waterproof } from "./extension";
 
 /**
+ * A `LanguageClient` that owns the web worker its server runs in.
+ *
+ * `vscode-languageclient/browser` only wraps the worker it is handed in a
+ * message reader/writer; it never terminates it. Without this, restarting the
+ * document checker would leave the previous wacoq worker running forever, each
+ * one holding the filesystem it unzipped out of `core-fs.zip` and its own idle
+ * loop.
+ */
+class WorkerLanguageClient extends LanguageClient {
+  // Not named `worker`: the base class already declares a private field by
+  // that name.
+  private readonly lspWorker: Worker;
+
+  constructor(
+    worker: Worker,
+    id: string,
+    name: string,
+    clientOptions: LanguageClientOptions,
+  ) {
+    super(id, name, clientOptions, worker);
+    this.lspWorker = worker;
+  }
+
+  override async dispose(timeout?: number): Promise<void> {
+    try {
+      await super.dispose(timeout);
+    } finally {
+      this.lspWorker.terminate();
+    }
+  }
+}
+
+/**
  * This function is responsible for creating Rocq language client providers
  *
  * @param clientOptions the options available for a LanguageClient (see vscode api)
@@ -18,17 +51,21 @@ const getRocqClientProvider: LanguageClientProviderFactory = (
   clientOptions: LanguageClientOptions,
   _wsConfig: WorkspaceConfiguration,
 ) => {
-  const lspWorker = new Worker(
-    Uri.joinPath(context.extensionUri, "out/wacoq_worker.js").toString(true),
-  );
-  lspWorker.postMessage(context.extensionUri.toString());
-  return () =>
-    new LanguageClient(
+  // The worker is started by the provider rather than here, so that its
+  // lifetime matches the client that terminates it. A provider that is never
+  // called leaves no worker behind.
+  return () => {
+    const lspWorker = new Worker(
+      Uri.joinPath(context.extensionUri, "out/wacoq_worker.js").toString(true),
+    );
+    lspWorker.postMessage(context.extensionUri.toString());
+    return new WorkerLanguageClient(
+      lspWorker,
       "waterproof",
       "Waterproof Document Checker",
       clientOptions,
-      lspWorker,
     );
+  };
 };
 
 export function activate(context: ExtensionContext): void {

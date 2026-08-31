@@ -15,7 +15,8 @@ import {
   RevealOutputChannelOn,
 } from "vscode-languageclient";
 
-import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
+import { IExecutor, IStatusComponent } from "./components";
+import { IGoalsComponent } from "./webviews/goalviews/goalsComponent";
 import { WaterproofStatusBar } from "./components/enableButton";
 import {
   LanguageClientProviderFactory,

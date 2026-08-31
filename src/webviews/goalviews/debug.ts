@@ -3,7 +3,7 @@ import { LspClientConfig } from "../../lsp-client/clientTypes";
 import { WebviewEvents, WebviewState } from "../waterproofPanel";
 import { GoalsBase } from "./goalsBase";
 import { RocqLspClient } from "../../lsp-client/rocq";
-import type { CompositeClient } from "../../lsp-client/composite";
+import { CompositeClient } from "../../lsp-client/composite";
 
 //the debug panel extends the GoalsBase class
 export class DebugPanel extends GoalsBase {

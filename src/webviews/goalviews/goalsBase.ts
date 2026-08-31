@@ -1,10 +1,9 @@
 import { Uri } from "vscode";
 import { RocqGoalAnswer, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
-import { IGoalsComponent } from "../../components";
 import { LspClientConfig } from "../../lsp-client/clientTypes";
-// Type-only: `components` and `lsp-client` import from each other.
-import type { CompositeClient } from "../../lsp-client/composite";
+import { CompositeClient } from "../../lsp-client/composite";
+import { IGoalsComponent } from "./goalsComponent";
 import { WaterproofPanel } from "../waterproofPanel";
 import { WaterproofConfigHelper, WaterproofSetting } from "../../helpers";
 import { RocqLspClient } from "../../lsp-client/rocq";

@@ -860,27 +860,6 @@ export class Waterproof implements Disposable {
       markdown: { isTrusted: true, supportHtml: true },
     };
 
-    wpl.log("Initializing client...");
-    this.client = new CompositeClient(
-      this.getRocqClientProvider(
-        this.context,
-        rocqClientOptions,
-        WaterproofConfigHelper.configuration,
-      ),
-      window.createOutputChannel(
-        "Waterproof Rocq LSP Events (After Initialization)",
-      ),
-      this.getLeanClientProvider(
-        this.context,
-        leanClientOptions,
-        WaterproofConfigHelper.configuration,
-      ),
-      window.createOutputChannel(
-        "Waterproof Lean LSP Events (After Initialization)",
-      ),
-      this.context,
-    );
-
     // Whether the user has decided to skip the launch checks
     let skipLaunchChecksSetting = WaterproofConfigHelper.get(
       WaterproofSetting.SkipLaunchChecks,
@@ -892,6 +871,34 @@ export class Waterproof implements Disposable {
         "Web version detected, automatically skipping launch checks for Rocq and not launching Lean client.",
       );
     }
+
+    // The web version cannot run Lean, so no provider is created for it. This
+    // has to be decided before constructing the `CompositeClient`, which
+    // instantiates every client it is given a provider for.
+    const leanClientProvider = this._isWeb
+      ? undefined
+      : this.getLeanClientProvider(
+          this.context,
+          leanClientOptions,
+          WaterproofConfigHelper.configuration,
+        );
+
+    wpl.log("Initializing client...");
+    this.client = new CompositeClient(
+      this.getRocqClientProvider(
+        this.context,
+        rocqClientOptions,
+        WaterproofConfigHelper.configuration,
+      ),
+      window.createOutputChannel(
+        "Waterproof Rocq LSP Events (After Initialization)",
+      ),
+      leanClientProvider,
+      window.createOutputChannel(
+        "Waterproof Lean LSP Events (After Initialization)",
+      ),
+      this.context,
+    );
     let allowedLanguages: string[] = [];
 
     if (skipLaunchChecksSetting !== "none") {

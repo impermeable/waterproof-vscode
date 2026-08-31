@@ -3,6 +3,8 @@ import { RocqGoalAnswer, PpString } from "../../../lib/types";
 import { MessageType } from "../../../shared";
 import { IGoalsComponent } from "../../components";
 import { LspClientConfig } from "../../lsp-client/clientTypes";
+// Type-only: `components` and `lsp-client` import from each other.
+import type { CompositeClient } from "../../lsp-client/composite";
 import { WaterproofPanel } from "../waterproofPanel";
 import { WaterproofConfigHelper, WaterproofSetting } from "../../helpers";
 import { RocqLspClient } from "../../lsp-client/rocq";
@@ -29,11 +31,19 @@ export abstract class GoalsBase
     return client.requestGoals();
   }
 
-  //sends message for renderGoals
-  async updateGoals(client: RocqLspClient): Promise<void> {
+  /**
+   * Sends message for renderGoals.
+   *
+   * These panels render Rocq goals, so they accept either the Rocq client
+   * directly (as `CompositeGoalsPanel` passes it) or the `CompositeClient` (as
+   * the goals components registered on the extension are given), picking the
+   * Rocq client off the latter. The composite itself has no `requestGoals`.
+   */
+  async updateGoals(client: RocqLspClient | CompositeClient): Promise<void> {
+    const rocqClient = "rocqClient" in client ? client.rocqClient : client;
     let goals: RocqGoalAnswer<PpString>;
     try {
-      goals = await this.getGoals(client);
+      goals = await this.getGoals(rocqClient);
     } catch (error) {
       wpl.debug(`Failed to retrieve goals: ${error}`);
       this.failedGoals(error);

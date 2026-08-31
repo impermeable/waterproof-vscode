@@ -19,6 +19,9 @@ import { SequentialEditor } from "./edit";
 import { getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
+
+/** How long to wait for the editor webview to report itself ready. */
+const READY_TIMEOUT_MS = 10_000;
 import {
   qualifiedSettingName,
   WaterproofConfigHelper,
@@ -79,6 +82,15 @@ export class WaterproofWebview extends EventEmitter {
    * per type is cached.
    */
   private _cachedMessages: Map<MessageType, Message>;
+
+  /**
+   * Watchdog for the editor bundle: the webview only renders once it has sent
+   * `MessageType.ready`, at which point we answer with the document contents. If
+   * `editor_output/index.js` fails to load or throws while evaluating, that
+   * message never arrives and the editor stays blank with no error on the
+   * extension side, so time it out and say so.
+   */
+  private _readyTimeout?: ReturnType<typeof setTimeout>;
 
   /** Checks whether the document is currently being changed */
   get documentIsUpToDate() {
@@ -306,6 +318,7 @@ export class WaterproofWebview extends EventEmitter {
 
     this._disposables.push(
       this._panel.onDidDispose(() => {
+        clearTimeout(this._readyTimeout);
         this._panel.dispose();
         for (const d of this._disposables) {
           d.dispose();
@@ -370,6 +383,19 @@ export class WaterproofWebview extends EventEmitter {
         </body>
         </html>
         `;
+    WaterproofLogger.debug(
+      `[editor] webview html set for ${WaterproofFileUtil.getBasename(this._document.uri)}, script=${scriptUri}`,
+    );
+    this._readyTimeout = setTimeout(() => {
+      this._readyTimeout = undefined;
+      WaterproofLogger.log(
+        `[editor] No 'ready' message from the editor webview after ${READY_TIMEOUT_MS}ms. ` +
+          `The editor will stay blank. This usually means the bundle at ${scriptUri} ` +
+          `failed to load or threw while evaluating; check the webview devtools ` +
+          `(Developer: Open Webview Developer Tools).`,
+      );
+    }, READY_TIMEOUT_MS);
+
     // TODO: find a proper way to do this
     this.themeUpdate();
   }
@@ -567,6 +593,11 @@ export class WaterproofWebview extends EventEmitter {
         this.handleChangeFromEditor(msg.body);
         break;
       case MessageType.ready:
+        if (this._readyTimeout !== undefined) {
+          clearTimeout(this._readyTimeout);
+          this._readyTimeout = undefined;
+        }
+        WaterproofLogger.debug("[editor] webview reported ready, syncing");
         this.syncWebview();
         // When ready send the state of the teacher mode and show menu items settings to editor
         this.updateTeacherMode();

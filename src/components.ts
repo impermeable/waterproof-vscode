@@ -1,7 +1,8 @@
 import { Disposable, Position } from "vscode";
 import { RocqGoalAnswer, PpString } from "../lib/types";
 import { FileProgressParams } from "./lsp-client/requestTypes";
-import { ILspClient } from "./lsp-client/clientTypes";
+// Type-only: `components` and `lsp-client` import from each other.
+import type { CompositeClient } from "./lsp-client/composite";
 
 /**
  * This defines the interface of a component that displays
@@ -53,9 +54,11 @@ export interface IGoalsComponent extends Disposable {
    * Update the goals component with the latest goals answer
    * from the coq-lsp server
    *
-   * @param goals the goal answer object received from coq-lsp
+   * @param client the composite client to request the goals from. Components
+   *               that can only render the goals of a single language server
+   *               have to pick the relevant client off it themselves.
    */
-  updateGoals(client: ILspClient): Promise<void>;
+  updateGoals(client: CompositeClient): Promise<void>;
 
   /**
    * Update the status bar to indicate failure to start client

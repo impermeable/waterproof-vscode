@@ -3,6 +3,7 @@ import { LspClientConfig } from "../../lsp-client/clientTypes";
 import { WebviewEvents, WebviewState } from "../waterproofPanel";
 import { GoalsBase } from "./goalsBase";
 import { RocqLspClient } from "../../lsp-client/rocq";
+import { CompositeClient } from "../../lsp-client/composite";
 
 //the debug panel extends the GoalsBase class
 export class DebugPanel extends GoalsBase {
@@ -16,7 +17,7 @@ export class DebugPanel extends GoalsBase {
   }
 
   //override updateGoals to activate the panel before posting the goals message
-  override updateGoals(client: RocqLspClient): Promise<void> {
+  override updateGoals(client: RocqLspClient | CompositeClient): Promise<void> {
     this.activatePanel();
     return super.updateGoals(client);
   }

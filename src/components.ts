@@ -1,7 +1,6 @@
 import { Disposable, Position } from "vscode";
 import { RocqGoalAnswer, PpString } from "../lib/types";
 import { FileProgressParams } from "./lsp-client/requestTypes";
-import { ILspClient } from "./lsp-client/clientTypes";
 
 /**
  * This defines the interface of a component that displays
@@ -42,33 +41,6 @@ export interface IFileProgressComponent extends Disposable {
    * processed.
    */
   onProgress(params: FileProgressParams): void;
-}
-
-/**
- * This defines the interface of components that display
- * goal and message related information
- */
-export interface IGoalsComponent extends Disposable {
-  /**
-   * Update the goals component with the latest goals answer
-   * from the coq-lsp server
-   *
-   * @param goals the goal answer object received from coq-lsp
-   */
-  updateGoals(client: ILspClient): Promise<void>;
-
-  /**
-   * Update the status bar to indicate failure to start client
-   *
-   * @param e the error that resulted in failure to receive
-   *          goal answer
-   */
-  failedGoals(e: unknown): void;
-
-  /**
-   * Disable the GoalsComponent
-   */
-  disable(): void;
 }
 
 /**

@@ -245,3 +245,16 @@ Sent from the extension to the editor to enable/disable teacher mode in the edit
 ```ts
 boolean // Flag indicating whether teacher mode should be turned on or off
 ```
+
+### `codeActionsResolved`
+#### Description
+Sent by the extension to the editor to patch in the code actions for a single diagnostic after they have been resolved. Code actions are resolved per-diagnostic in parallel and pushed to the editor as soon as each one finishes. The `index` refers to the position of the diagnostic within the diagnostics array that was current for the given `version` (see `diagnostics`); patches that arrive for a diagnostics version that is no longer active should be discarded by the editor.
+
+#### Body
+```ts
+{
+    version: number,                 // Document version the patched diagnostic belongs to
+    index: number,                   // Index of the diagnostic (within the last `diagnostics` message for this version) to patch
+    codeActions: OffsetCodeAction[]  // The resolved code actions for that diagnostic
+}
+```

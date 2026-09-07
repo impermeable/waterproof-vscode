@@ -153,6 +153,42 @@
         "boost": 1
     },
     {
+        "label": "Let's proceed by induction on (*name*)",
+        "type": "type",
+        "detail": "proof step",
+        "template": "Let's proceed by induction on ${n}",
+        "description": "Start a proof by weak induction.",
+        "example": "Let's proceed by induction on n",
+        "boost": 3
+    },
+    {
+        "label": "Let's proceed by strong induction on (*name*)",
+        "type": "type",
+        "detail": "proof step",
+        "template": "Let's proceed by strong induction on ${n}",
+        "description": "Start a proof by strong induction.",
+        "example": "Let's proceed by strong induction on n", 
+        "boost": 2
+    },
+    {
+        "label": "Let's proceed by induction on (*name*), with base cases (*numbers*)",
+        "type": "type",
+        "detail": "proof step",
+        "template": "Let's proceed by induction on ${n}, with base cases ${0 and  1}",
+        "description": "Start a proof by weak induction with custom base cases.",
+        "example": "Let's proceed by induction on n, with base cases 0 and 1.",
+        "boost": 2
+    },
+    {
+        "label": "Let's proceed by strong induction on (*name*), with base cases (*numbers*)",
+        "type": "type",
+        "detail": "proof step",
+        "template": "Let's proceed by strong induction on ${n}, with base cases ${0 and 1}",
+        "description": "Start a proof by strong induction with custom base cases.",
+        "example": "Let's proceed by strong induction on n, with base cases 0 and 1",
+        "boost": 1
+    },
+    {
         "label": "Let's prove the contrapositive: (*statement*)",
         "type": "type",
         "detail": "proof step",

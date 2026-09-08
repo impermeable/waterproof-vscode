@@ -2,217 +2,217 @@
     {
         "label": "exists (*indent*) : (*term*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "exists ${(*indent*)} : ${(*term*)}"
     },
     {
         "label": "intro",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "intro"
     },
     {
         "label": "intros",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "intro"
     },
     {
         "label": "intro (*indent*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "intro ${(*indent*)}"
     },
     {
         "label": "intros (*indent*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "intros ${(*indent*)}"
     },
     {
         "label": "intro until (*indent*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "intro until ${(*indent*)}"
     },
     {
         "label": "intros until (*indent*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "intros until ${(*indent*)}"
     },
     {
         "label": "split",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "split"
     },
     {
         "label": "contradiction",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "contradiction"
     },
     {
         "label": "contradiction (*one_term_with_bindings*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "contradiction ${(*one_term_with_bindings*)}"
     },
     {
         "label": "destruct (*induction_clause*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "destruct ${(*induction_clause*)}"
     },
     {
         "label": "destruct (*induction_clause*) as (*induction_principle*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "destruct ${(*induction_clause*)} as ${(*induction_principle*)}"
     },
     {
         "label": "assert ((*indent*) : (*term*))",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "assert (${(*indent*)} : ${(*term*)})"
     },
     {
         "label": "assert ((*indent*) := (*term*))",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "assert (${(*indent*)} := ${(*term*)})"
     },
     {
         "label": "assert (*one_term*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "assert ${(*one_term*)}"
     },
     {
         "label": "auto",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "auto"
     },
     {
         "label": "eauto",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "eauto"
     },
     {
         "label": "induction (*induction_clause*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "induction ${(*induction_clause*)}"
     },
     {
         "label": "induction (*induction_clause*) as (*induction_principle*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "induction ${(*induction_clause*)} as (*induction_principle*)"
     },
     {
         "label": "induction (*induction_clause*) using (*induction_principle*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "induction ${(*induction_clause*)} using (*induction_principle*)"
     },
     {
         "label": "refine (*one_term*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "refine ${(*one_term*)}"
     },
     {
         "label": "enough ((*indent*) : (*term*))",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "enough (${(*indent*)} : ${(*term*)})"
     },
     {
         "label": "enough (*one_term*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "enough ${(*one_term*)}"
     },
     {
         "label": "rewrite (*oriented_rewriter*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "rewrite ${(*oriented_rewriter*)}"
     },
     {
         "label": "apply (*one_term_with_bindings*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "apply ${(*one_term_with_bindings*)}"
     },
     {
         "label": "apply (*one_term_with_bindings*) in (*indent*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "apply ${(*one_term_with_bindings*)} in (*indent*)"
     },
     {
         "label": "unfold (*reference_occs*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "unfold ${(*reference_occs*)}"
     },
     {
         "label": "unfold (*reference_occs*) in (*ocurrences*)",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "unfold ${(*reference_occs*)} in ${(*ocurrences*)}"
     },
     {
         "label": "left",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "left"
     },
     {
         "label": "right",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "right"
     },
     {
         "label": "admit",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "admit"
     },
     {
         "label": "constructor",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "constructor"
     },
     {
         "label": "simpl",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "simpl"
     },
     {
         "label": "repeat",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "repeat"
     },
     {
-        "label": "repeat (* tactic *)",
+        "label": "repeat (* proof step *)",
         "type": "type",
-        "detail": "tactic",
-        "template": "repeat ${(* tactic *)}"
+        "detail": "proof step",
+        "template": "repeat ${(* proof step *)}"
     },
     {
         "label": "reflexivity",
         "type": "type",
-        "detail": "tactic",
+        "detail": "proof step",
         "template": "reflexivity"
     }
 ]

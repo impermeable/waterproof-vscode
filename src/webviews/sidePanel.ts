@@ -114,7 +114,7 @@ export class SidePanelProvider implements vscode.WebviewViewProvider {
                     <button class="symbol-button" id="goals">Goals</button>
                     <button class="symbol-button" id="search">Search</button>
                     <button class="symbol-button" id="symbols">Symbols</button>
-                    <button class="symbol-button" id="tactics">Tactics</button>
+                    <button class="symbol-button" id="tactics">Proof Steps</button>
                     <button class="symbol-button" id="execute">Execute</button>
                     <button class="symbol-button" id="debug">Debug</button>
                 </div>

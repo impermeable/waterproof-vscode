@@ -37,3 +37,7 @@ eslint.config.mjs
 cypress/
 vendor/
 completions/
+.prettierignore
+tsconfig.jest.json
+.claude
+hooks/

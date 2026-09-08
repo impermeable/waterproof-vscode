@@ -43,14 +43,22 @@ export abstract class WaterproofPanel
   private extensionUri: Uri;
   private _state: WebviewState;
   private name: string;
+  /** User-facing title shown on the webview tab. */
+  private title: string;
   /** Whether the webview contains an input field. */
   private readonly _supportInsert: boolean;
   private disposables: Disposable[] = [];
 
-  constructor(extensionUri: Uri, name: string, supportInsert: boolean = false) {
+  constructor(
+    extensionUri: Uri,
+    name: string,
+    supportInsert: boolean = false,
+    title?: string,
+  ) {
     super();
     this.extensionUri = extensionUri;
     this.name = name;
+    this.title = title ?? name.charAt(0).toUpperCase() + name.slice(1);
     this._state = WebviewState.closed;
     this._supportInsert = supportInsert;
   }
@@ -81,21 +89,12 @@ export abstract class WaterproofPanel
     if (this.state != WebviewState.ready) return; // Error handling
 
     const webviewOpts = { enableScripts: true, enableFindWidget: false };
-    if (this.name == "search") {
-      this._panel = window.createWebviewPanel(
-        this.name,
-        "Search",
-        { preserveFocus: true, viewColumn: ViewColumn.Two },
-        webviewOpts,
-      );
-    } else {
-      this._panel = window.createWebviewPanel(
-        this.name,
-        this.name.charAt(0).toUpperCase() + this.name.slice(1),
-        { preserveFocus: true, viewColumn: ViewColumn.Two },
-        webviewOpts,
-      );
-    }
+    this._panel = window.createWebviewPanel(
+      this.name,
+      this.title,
+      { preserveFocus: true, viewColumn: ViewColumn.Two },
+      webviewOpts,
+    );
 
     this._panel.onDidChangeViewState((e) => {
       if (e.webviewPanel.active)

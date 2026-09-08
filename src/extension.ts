@@ -8,16 +8,19 @@ import {
   window,
   ConfigurationTarget,
   Uri,
+  Range,
 } from "vscode";
 import {
   LanguageClientOptions,
   RevealOutputChannelOn,
 } from "vscode-languageclient";
 
-import { IExecutor, IGoalsComponent, IStatusComponent } from "./components";
+import { IExecutor, IStatusComponent } from "./components";
+import { IGoalsComponent } from "./webviews/goalviews/goalsComponent";
 import { WaterproofStatusBar } from "./components/enableButton";
 import {
-  LanguageClientProviderFactory,
+  LanguageClientSetups,
+  LanguageSupport,
   LspClientConfig,
 } from "./lsp-client/clientTypes";
 import { RocqLspServerConfig } from "./lsp-client/rocq";
@@ -68,11 +71,8 @@ export class Waterproof implements Disposable {
   /** The resources that must be released when this extension is disposed of */
   private readonly disposables: Disposable[] = [];
 
-  /** The function that can create a new Rocq language client provider */
-  private readonly getRocqClientProvider: LanguageClientProviderFactory;
-
-  /** The function that can create a new Lean language client provider */
-  private readonly getLeanClientProvider: LanguageClientProviderFactory;
+  /** The languages this build can create language clients for */
+  private readonly languageSupport: LanguageSupport;
 
   /** The manager for (communication between) webviews */
   public readonly webviewManager: WebviewManager;
@@ -95,7 +95,7 @@ export class Waterproof implements Disposable {
   /** Main executor that allows for arbitrary execution */
   public readonly executorComponent: IExecutor;
 
-  private sidePanelProvider: SidePanelProvider;
+  private readonly sidePanelProvider: SidePanelProvider;
 
   private clientRunning: boolean = false;
 
@@ -106,8 +106,7 @@ export class Waterproof implements Disposable {
    */
   constructor(
     context: ExtensionContext,
-    getRocqClientProvider: LanguageClientProviderFactory,
-    getLeanClientProvider: LanguageClientProviderFactory,
+    languageSupport: LanguageSupport,
     private readonly _isWeb = false,
   ) {
     wpl.log("Waterproof initialized");
@@ -115,8 +114,7 @@ export class Waterproof implements Disposable {
     checkTrimmingWhitespace();
 
     this.context = context;
-    this.getRocqClientProvider = getRocqClientProvider;
-    this.getLeanClientProvider = getLeanClientProvider;
+    this.languageSupport = languageSupport;
 
     this.webviewManager = new WebviewManager();
     // Wire up the webview-manager events. The handlers are defined as methods
@@ -537,6 +535,7 @@ export class Waterproof implements Disposable {
     name: string;
     full: string;
     withCursorMarker: string;
+    proofRange: Range;
   }> {
     if (!this.client.activeDocument || !this.client.activeCursorPosition) {
       throw new Error("No active document or cursor position.");
@@ -548,6 +547,7 @@ export class Waterproof implements Disposable {
 
     // Regex to find the end of the proof the user is working on.
     const endRegex = /(?:Qed|Admitted|Defined)\.\s/;
+
     // We request the document symbols with the goal of finding the lemma the user is working on.
     const symbols = await this.client.requestSymbols();
     const firstBefore = symbols
@@ -560,6 +560,13 @@ export class Waterproof implements Disposable {
     if (firstBefore === undefined) {
       throw new Error("Could not find lemma before cursor.");
     }
+
+    const startRegex = new RegExp(
+      firstBefore.name === "_"
+        ? String.raw`Goal\s*[\s\S]*?\.\s+(?:Proof\.)?`
+        : String.raw`(?:Example|Theorem|Lemma|Fact|Remark|Corollary|Proposition|Property)\s+${firstBefore.name}\s*:\s*[\s\S]*?\.\s+(?:Proof\.)?`,
+      "g",
+    );
     // Compute the offset into the document where the proof starts (will be the position before Lemma)
     const startProof = document.offsetAt(
       new Position(
@@ -570,16 +577,23 @@ export class Waterproof implements Disposable {
 
     // Get the part of the text of the document starting at the lemma statement.
     const docText = document.getText().substring(startProof);
-    const proofClose = docText.match(endRegex);
+    const proofClose = endRegex.exec(docText);
 
     if (proofClose === null) {
       throw new Error("Could not find end of proof.");
     }
 
-    // Get the text of the proof from the document, we need to add startProof to the index since the regex was run on a su
+    const startMatch = startRegex.exec(docText);
+    if (startMatch === null) {
+      throw new Error("Could not find start of proof.");
+    }
+
+    const proofStart = startProof + startMatch.index + startMatch[0].length;
+
+    // Get the text of the proof from the document
     const theProof = docText.substring(
       0,
-      proofClose.index! + proofClose[0].length,
+      proofClose.index + proofClose[0].length,
     );
 
     // Helper function to remove input-area tags, coq markers and extra whitespace from input string
@@ -602,20 +616,27 @@ export class Waterproof implements Disposable {
           theProof.substring(offsetIntoMatch),
       ),
       name: firstBefore.name,
+      proofRange: new Range(
+        document.positionAt(proofStart),
+        document.positionAt(proofClose.index + startProof),
+      ),
     };
   }
 
   /**
-   * Try a proof/step by executing the given commands/tactics.
+   * Try a proof/step by executing the given commands/tactics at the cursor position.
    * @param steps The proof steps to try. This can be a single tactic or command or multiple separated by the
    * usual `.` and space.
+   * @param pos Optional position at which to try the proof steps.
    */
   public async tryProof(
     steps: string,
+    pos?: Position,
   ): Promise<{ finished: boolean; remainingGoals: string[] }> {
     const execResponse = await executeCommandFullOutput(
       this.client.rocqClient,
       steps,
+      pos,
     );
     return {
       finished: execResponse.proof_finished,
@@ -826,48 +847,60 @@ export class Waterproof implements Disposable {
       markdown: { isTrusted: true, supportHtml: true },
     };
 
-    const leanServerOptions = LeanLspServerConfig.create();
-
-    const leanClientOptions: LanguageClientOptions = {
-      documentSelector: [{ language: "lean4" }],
-      outputChannelName: "Waterproof Lean LSP Events (Initial)",
-      revealOutputChannelOn: RevealOutputChannelOn.Info,
-      initializationOptions: leanServerOptions,
-      markdown: { isTrusted: true, supportHtml: true },
-    };
-
-    wpl.log("Initializing client...");
-    this.client = new CompositeClient(
-      this.getRocqClientProvider(
-        this.context,
-        rocqClientOptions,
-        WaterproofConfigHelper.configuration,
-      ),
-      window.createOutputChannel(
-        "Waterproof Rocq LSP Events (After Initialization)",
-      ),
-      this.getLeanClientProvider(
-        this.context,
-        leanClientOptions,
-        WaterproofConfigHelper.configuration,
-      ),
-      window.createOutputChannel(
-        "Waterproof Lean LSP Events (After Initialization)",
-      ),
-      this.context,
-    );
-
     // Whether the user has decided to skip the launch checks
     let skipLaunchChecksSetting = WaterproofConfigHelper.get(
       WaterproofSetting.SkipLaunchChecks,
     );
     if (this._isWeb) {
-      // In the web version, we only support rocq
+      // The prelaunch checks shell out through `child_process` to inspect the
+      // installed tooling, which the web extension cannot do. Skip them and
+      // start the only server a web build can run.
       skipLaunchChecksSetting = "rocq";
       wpl.log(
-        "Web version detected, automatically skipping launch checks for Rocq and not launching Lean client.",
+        "Web version detected, skipping launch checks and starting only the Rocq client.",
       );
     }
+
+    const clientSetups: LanguageClientSetups = {
+      rocq: {
+        provider: this.languageSupport.rocq(
+          this.context,
+          rocqClientOptions,
+          WaterproofConfigHelper.configuration,
+        ),
+        createOutputChannel: () =>
+          window.createOutputChannel(
+            "Waterproof Rocq LSP Events (After Initialization)",
+          ),
+      },
+    };
+
+    // Lean is only configured when the entry point supplies a factory for it;
+    // the web build does not, as it cannot spawn a Lake process.
+    const getLeanClientProvider = this.languageSupport.lean;
+    if (getLeanClientProvider) {
+      const leanClientOptions: LanguageClientOptions = {
+        documentSelector: [{ language: "lean4" }],
+        outputChannelName: "Waterproof Lean LSP Events (Initial)",
+        revealOutputChannelOn: RevealOutputChannelOn.Info,
+        initializationOptions: LeanLspServerConfig.create(),
+        markdown: { isTrusted: true, supportHtml: true },
+      };
+      clientSetups.lean = {
+        provider: getLeanClientProvider(
+          this.context,
+          leanClientOptions,
+          WaterproofConfigHelper.configuration,
+        ),
+        createOutputChannel: () =>
+          window.createOutputChannel(
+            "Waterproof Lean LSP Events (After Initialization)",
+          ),
+      };
+    }
+
+    wpl.log("Initializing client...");
+    this.client = new CompositeClient(clientSetups, this.context);
     let allowedLanguages: string[] = [];
 
     if (skipLaunchChecksSetting !== "none") {
@@ -928,12 +961,14 @@ export class Waterproof implements Disposable {
    * Disposes of the Rocq LSP client.
    */
   private async stopClient(): Promise<void> {
-    if (this.client.isRunning()) {
-      await this.client.dispose(2000);
+    const wasRunning = this.client.isRunning();
+    // Dispose unconditionally rather than only when running: a client that was
+    // created but failed to start still owns resources, and would otherwise be
+    // orphaned by the next `initializeClient`.
+    await this.client.dispose(2000);
+    if (wasRunning) {
       this.clientRunning = false;
       this.statusBar.update([]);
-    } else {
-      return Promise.resolve();
     }
   }
 

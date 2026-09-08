@@ -83,6 +83,18 @@ export abstract class LspClient<
   }
 
   /**
+   * Whether the underlying client has been created.
+   *
+   * Unlike `isRunning`, reading this never creates one, and it stays true for a
+   * client that was created but failed to start. Such a client still owns
+   * resources that have to be released — in the web build, the worker its
+   * server runs in.
+   */
+  get hasClient(): boolean {
+    return this._client !== undefined;
+  }
+
+  /**
    * Checks whether the underlying client exists and is running.
    */
   isRunning(): boolean {

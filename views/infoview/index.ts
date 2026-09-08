@@ -1,4 +1,10 @@
+import "./trim.css";
 import { MessageType } from "../../shared";
+import {
+  handleHypothesisVisibilityMessage,
+  setHypothesisVisibility,
+} from "./hypothesisVisibility";
+import { defaultInfoviewConfig } from "@leanprover/infoview-api";
 import type {
   EditorApi,
   InfoviewApi,
@@ -22,6 +28,7 @@ interface PersistentInfoviewState {
   cursorLoc?: Location;
   initializeResult?: InitializeResult;
   diags?: LeanPublishDiagnosticsParams;
+  hypothesisVisibility?: string;
 }
 
 const vscodeApi = acquireVsCodeApi<PersistentInfoviewState>();
@@ -32,12 +39,20 @@ function modifyState(
   vscodeApi.setState(f(vscodeApi.getState() ?? {}));
 }
 
+const persistHypothesisVisibility = (value: string) =>
+  modifyState((s) => ({ ...s, hypothesisVisibility: value }));
+
 // The exact type or shape of an Rpc message does not matter to us
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpc = new Rpc((m: any) =>
   vscodeApi.postMessage({ type: MessageType.infoviewRpc, body: m }),
 );
 window.addEventListener("message", (e) => rpc.messageReceived(e.data));
+
+window.addEventListener("message", (e) =>
+  handleHypothesisVisibilityMessage(e.data, persistHypothesisVisibility),
+);
+
 const editorApi: EditorApi = rpc.getApi<EditorApi>();
 
 const div: HTMLElement | null = document.querySelector("#root");
@@ -111,6 +126,19 @@ if (div && script) {
           previousState.diags,
         );
       }
+      if (previousState.hypothesisVisibility !== undefined) {
+        setHypothesisVisibility(
+          previousState.hypothesisVisibility,
+          persistHypothesisVisibility,
+        );
+      }
     }
+
+    // Start every config-controllable section collapsed, decluttering the panel on open.
+    await api.changedInfoviewConfig({
+      ...defaultInfoviewConfig,
+      autoOpenShowsGoal: true, // keep "All Messages" folded
+      expectedTypeVisibility: "Collapsed by default",
+    });
   });
 }

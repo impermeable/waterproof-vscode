@@ -1,4 +1,4 @@
-import { Position, TextDocument } from "vscode";
+import { Position, Range, TextDocument } from "vscode";
 import { RunResult } from "./lsp-client/petanque";
 import { GoalConfig } from "../lib/types";
 
@@ -14,10 +14,12 @@ export type WaterproofAPI = {
     name: string;
     full: string;
     withCursorMarker: string;
+    proofRange: Range;
   }>;
   execCommand: (cmd: string) => Promise<GoalConfig<string> & RunResult<number>>;
   tryProof: (
     steps: string,
+    pos?: Position,
   ) => Promise<{ finished: boolean; remainingGoals: string[] }>;
   cursorPosition: () => Position | undefined;
 };

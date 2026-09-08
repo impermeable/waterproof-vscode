@@ -68,6 +68,7 @@ export type Message =
   | MessageBase<MessageType.serverStatus, ServerStatus>
   | MessageBase<MessageType.setAutocomplete, Completion[]>
   | MessageBase<MessageType.setData, string[] | RocqGoalAnswer<PpString>>
+  | MessageBase<MessageType.setHypothesisVisibility, string>
   | MessageBase<MessageType.setShowLineNumbers, boolean>
   | MessageBase<MessageType.setShowMenuItems, boolean>
   | MessageBase<MessageType.teacher, boolean>
@@ -105,6 +106,7 @@ export const enum MessageType {
   serverStatus,
   setAutocomplete,
   setData,
+  setHypothesisVisibility,
   setShowLineNumbers,
   setShowMenuItems,
   teacher,

@@ -37,4 +37,10 @@ export const tagConfigurationV: TagConfiguration = {
     openRequiresNewline: false,
     closeRequiresNewline: false,
   },
+  studentHidden: {
+    openTag: "(* begin student-hidden *)\n",
+    closeTag: "\n(* end student-hidden *)",
+    openRequiresNewline: true,
+    closeRequiresNewline: true,
+  },
 };

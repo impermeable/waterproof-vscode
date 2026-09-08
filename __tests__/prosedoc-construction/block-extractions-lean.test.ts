@@ -95,6 +95,87 @@ test("Identify hint blocks (Lean) #2", () => {
   expect(block2.stringContent).toContain("Test");
 });
 
+// --- Student-hidden block tests (equivalents of the hint block tests above) ---
+
+test("Identify student-hidden blocks (Lean)", () => {
+  // A `:::studentHidden` block is parsed into a StudentHiddenBlock.
+  const document = "# Example\n:::studentHidden\n# Secret note\n:::\n";
+  const blocks = topLevelBlocksLean(document);
+
+  const shBlocks = blocks.filter((b) => typeguards.isStudentHiddenBlock(b));
+  expect(shBlocks).toHaveLength(1);
+
+  const [b] = shBlocks;
+  expect(typeguards.isStudentHiddenBlock(b)).toBe(true);
+  expect(b.stringContent).toContain("# Secret note");
+
+  // The newline separating the preceding markdown from the block is its own
+  // NewlineBlock (i.e. it is not swallowed into the markdown content), matching
+  // the behaviour of hint and input blocks.
+  const md = blocks.filter((mb) => typeguards.isMarkdownBlock(mb));
+  expect(md).toHaveLength(1);
+  expect(md[0].stringContent).toBe("# Example");
+
+  const shIdx = blocks.indexOf(b);
+  expect(typeguards.isNewlineBlock(blocks[shIdx - 1])).toBe(true);
+});
+
+test("Identify student-hidden blocks (Lean) #2", () => {
+  // Two consecutive student-hidden blocks.
+  const document =
+    "# Example\n:::studentHidden\nFirst\n:::\n:::studentHidden\nSecond\n:::\n";
+  const blocks = topLevelBlocksLean(document);
+
+  const shBlocks = blocks.filter((b) => typeguards.isStudentHiddenBlock(b));
+  expect(shBlocks).toHaveLength(2);
+
+  const [block1, block2] = shBlocks;
+  expect(block1.stringContent).toContain("First");
+  expect(block2.stringContent).toContain("Second");
+});
+
+test('Lean `:::hint "student-hidden"` is parsed as a StudentHiddenBlock', () => {
+  // The reserved hint title "student-hidden" is treated as a student-hidden
+  // block rather than a regular hint.
+  const document = '# Example\n:::hint "student-hidden"\nSecret\n:::\n';
+  const blocks = topLevelBlocksLean(document);
+
+  const shBlocks = blocks.filter((b) => typeguards.isStudentHiddenBlock(b));
+  const hintBlocks = blocks.filter((b) => typeguards.isHintBlock(b));
+  expect(shBlocks).toHaveLength(1);
+  expect(hintBlocks).toHaveLength(0);
+  expect(shBlocks[0].stringContent).toContain("Secret");
+});
+
+test("Student-hidden block with inner code and math (Lean)", () => {
+  // A student-hidden block parses its inner blocks like hint/input blocks do.
+  const document =
+    "# Header\n:::studentHidden\n$$`E = mc^2`\n```lean\ndef x := 1\n```\n:::\n";
+  const blocks = topLevelBlocksLean(document);
+
+  const sh = blocks.find((b) => typeguards.isStudentHiddenBlock(b));
+  expect(sh).toBeDefined();
+  expect(sh!.innerBlocks).toBeDefined();
+
+  const innerMath = sh!.innerBlocks!.filter((b) =>
+    typeguards.isMathDisplayBlock(b),
+  );
+  const innerCode = sh!.innerBlocks!.filter((b) => typeguards.isCodeBlock(b));
+  expect(innerMath).toHaveLength(1);
+  expect(innerCode).toHaveLength(1);
+  expect(innerMath[0].stringContent).toBe("E = mc^2");
+  expect(innerCode[0].stringContent).toBe("def x := 1");
+});
+
+test("Serialization round-trip of a student-hidden block is identity (Lean)", () => {
+  // Exercises LeanSerializer.serializeStudentHidden via the tag serializer.
+  const document =
+    "# Header\n:::studentHidden\n```lean\ndef x := 1\n```\n:::\n# After\n";
+  const blocks = topLevelBlocksLean(document);
+  const out = new LeanSerializer().serializeDocument(constructDocument(blocks));
+  expect(out).toBe(document);
+});
+
 // --- Math display block tests (equivalents of "Parse Math Display blocks" #1, #2) ---
 
 test("Parse Math Display blocks (Lean)", () => {

@@ -6,6 +6,7 @@ import {
   MarkdownBlock,
   MathDisplayBlock,
   NewlineBlock,
+  StudentHiddenBlock,
   WaterproofDocument,
 } from "@impermeable/waterproof-editor";
 
@@ -26,15 +27,18 @@ enum VNestedState {
   None,
   Hint,
   Input,
+  StudentHidden,
 }
 
 /**
  * Parser for .v (Rocq) files.
- * Recognizes code, hint, and input area blocks.
+ * Recognizes code, hint, input area, and student-hidden blocks.
  *
  * - Code is the default state.
  * - Hints: between `(* begin details : title *)` and `(* end details *)`.
  * - Input areas: between `(* begin input *)` and `(* end input *)`.
+ * - Student-hidden blocks (only visible in teacher mode): between
+ *   `(* begin student-hidden *)` and `(* end student-hidden *)`.
  *
  * @param document The .v file content
  * @returns An array of Block forming a WaterproofDocument
@@ -62,6 +66,10 @@ export function vFileParser(document: string): WaterproofDocument {
     inputOpenLength = inputOpen.length;
   const inputClose = "\n(* end input *)",
     inputCloseLength = inputClose.length;
+  const studentHiddenOpen = "(* begin student-hidden *)\n",
+    studentHiddenOpenLength = studentHiddenOpen.length;
+  const studentHiddenClose = "\n(* end student-hidden *)",
+    studentHiddenCloseLength = studentHiddenClose.length;
   const markdownOpen = "(** ",
     markdownOpenLength = markdownOpen.length;
   const markdownClose = "*)",
@@ -120,6 +128,12 @@ export function vFileParser(document: string): WaterproofDocument {
   }
   function closesInputBlock(): boolean {
     return lookAhead(inputClose);
+  }
+  function opensStudentHiddenBlock(): boolean {
+    return lookAhead(studentHiddenOpen);
+  }
+  function closesStudentHiddenBlock(): boolean {
+    return lookAhead(studentHiddenClose);
   }
 
   function backToCode(clearNestedBlocks: boolean = false) {
@@ -206,6 +220,15 @@ export function vFileParser(document: string): WaterproofDocument {
           rangeStartNested = i;
           nested = VNestedState.Input;
           continue;
+        } else if (opensStudentHiddenBlock() && nested === VNestedState.None) {
+          closeCode();
+          setRangeStart();
+          i += studentHiddenOpenLength;
+          setInnerRangeStart();
+          innerRangeStartNested = i;
+          rangeStartNested = i;
+          nested = VNestedState.StudentHidden;
+          continue;
         } else if (opensMarkdownBlock()) {
           closeCode();
           setRangeStart();
@@ -257,10 +280,42 @@ export function vFileParser(document: string): WaterproofDocument {
           innerBlocks = [];
 
           continue;
+        } else if (
+          nested === VNestedState.StudentHidden &&
+          closesStudentHiddenBlock()
+        ) {
+          closeCode();
+          nested = VNestedState.None;
+          const range = {
+            from: getRangeStart(),
+            to: i + studentHiddenCloseLength,
+          };
+          const innerRange = { from: getInnerRangeStart(), to: i };
+          const studentHiddenBlock = new StudentHiddenBlock(
+            document.slice(innerRange.from, innerRange.to),
+            range,
+            innerRange,
+            0,
+            innerBlocks,
+          );
+          pushBlock(studentHiddenBlock);
+          i += studentHiddenCloseLength;
+
+          state = VParserState.Newline;
+          setRangeStart();
+          setInnerRangeStart();
+          innerBlocks = [];
+
+          continue;
         } else {
           if (document[i] === "\n") {
             i++;
-            if (opensHintBlock() || opensInputBlock() || opensMarkdownBlock()) {
+            if (
+              opensHintBlock() ||
+              opensInputBlock() ||
+              opensStudentHiddenBlock() ||
+              opensMarkdownBlock()
+            ) {
               i--;
               closeCode();
               // create a newline block

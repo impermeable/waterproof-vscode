@@ -15,18 +15,6 @@
         "kind": "build",
         "isDefault": true
       }
-    },
-    {
-      "type": "npm",
-      "script": "compile-test",
-      "isBackground": false,
-      "presentation": {
-        "reveal": "always"
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      }
     }
   ]
 }

@@ -21,4 +21,4 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          build: npm run esbuild
+          build: npm run dev

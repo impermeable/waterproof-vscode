@@ -172,8 +172,8 @@ To get started with Waterproof, we recommend going through the tutorial. The tut
 ### Where to put Waterproof files
 In order for the Waterproof extension to work on files, the folder in which the files are located needs to be indicated as *trusted* in vscode, for which vscode will usually show a popup. It is therefore recommended to organize your Waterproof files in folders, open such a folder with vscode, and if the popup occurs, trust these folders.
 
-### Tactics
-Waterproof makes use of 'tactics', information on the available tactics, together with explanations and examples can be accessed via the extension or through the repository:
+### Proof Steps
+Waterproof makes use of 'proof steps', information on the available proof steps, together with explanations and examples can be accessed via the extension or through the repository:
 
-* From the Waterproof extension: Navigate to the Waterproof sidebar (accessible via the droplet icon on the left) and click on the `Tactics` button. The panel that now opens shows all available tactics.
-* From the repository: The repository contains a [Markdown](/docs/tactics-sheet.md) version of the tactics sheet.
+* From the Waterproof extension: Navigate to the Waterproof sidebar (accessible via the droplet icon on the left) and click on the `Proof Steps` button. The panel that now opens shows all available proof steps.
+* From the repository: The repository contains a [Markdown](/docs/tactics-sheet.md) version of the proof steps sheet.

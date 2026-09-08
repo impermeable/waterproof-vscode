@@ -2,6 +2,7 @@ import {
   BlockRange,
   DefaultTagSerializer,
   Mapping,
+  constructDocument,
   typeguards,
 } from "@impermeable/waterproof-editor";
 import { vFileParser } from "../../editor/src/document-construction/vFile";
@@ -220,4 +221,42 @@ test("vFile with input area", () => {
   });
   expect(mapping.root.children[6].prosemirrorStart).toBe(15);
   expect(mapping.root.children[6].prosemirrorEnd).toBe(16);
+});
+
+test("vFile with student-hidden block", () => {
+  const doc =
+    "(** A *)\n(* begin student-hidden *)\nsecret\n(* end student-hidden *)\n(** B *)";
+
+  const blocks = vFileParser(doc);
+
+  expect(blocks).toHaveLength(5);
+  const [md, nl, sh, nl2, md2] = blocks;
+  expect(typeguards.isMarkdownBlock(md)).toBe(true);
+  expect(typeguards.isNewlineBlock(nl)).toBe(true);
+  expect(typeguards.isStudentHiddenBlock(sh)).toBe(true);
+  expect(typeguards.isNewlineBlock(nl2)).toBe(true);
+  expect(typeguards.isMarkdownBlock(md2)).toBe(true);
+
+  expect(sh.range).toStrictEqual<BlockRange>({ from: 9, to: 67 });
+  expect(sh.innerRange).toStrictEqual<BlockRange>({ from: 36, to: 42 });
+  expect(sh.stringContent).toBe("secret");
+
+  expect(sh.innerBlocks).toBeDefined();
+  expect(sh.innerBlocks?.length).toBe(1);
+  const [hiddenCode] = sh.innerBlocks!;
+  expect(typeguards.isCodeBlock(hiddenCode)).toBe(true);
+  expect(hiddenCode.stringContent).toBe("secret");
+
+  // The mapping can be built for a document containing a student-hidden block.
+  const mapping = new Mapping(
+    blocks,
+    0,
+    tagConfigurationV,
+    new DefaultTagSerializer(tagConfigurationV),
+  ).getMapping();
+  expect(mapping.root.children).toHaveLength(5);
+
+  // Round-trip: serializing the parsed document restores the original text.
+  const serializer = new DefaultTagSerializer(tagConfigurationV);
+  expect(serializer.serializeDocument(constructDocument(blocks))).toBe(doc);
 });

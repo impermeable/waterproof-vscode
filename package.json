@@ -2,7 +2,7 @@
   "name": "waterproof",
   "displayName": "Waterproof",
   "description": "Waterproof for VSC",
-  "version": "0.11.1",
+  "version": "0.12.1",
   "waterproofConfiguration": {
     "requiredCoqLspVersion": ">=0.2.4",
     "requiredCoqWaterproofVersion": ">=3.1.0",
@@ -380,7 +380,7 @@
           "waterproof.goalAfterTactic": {
             "type": "boolean",
             "default": false,
-            "description": "When showing goals and the cursor is in a tactic, if false, show goals before executing the tactic, if true, show goals after"
+            "description": "When showing goals and the cursor is in a proof step, if false, show goals before executing the proof step, if true, show goals after"
           },
           "waterproof.ppType": {
             "type": "number",
@@ -518,7 +518,7 @@
     "@types/vscode": "^1.73.0",
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.0",
-    "@vscode/vsce": "^3.9.1",
+    "@vscode/vsce": "^3.9.2",
     "cypress": "^15.15.0",
     "esbuild": "^0.28.1",
     "esbuild-plugin-copy": "^2.1.1",
@@ -542,7 +542,7 @@
     "@impermeable/codemirror-lang-rocq": "github:impermeable/codemirror-lang-rocq",
     "@impermeable/codemirror-lang-verbose": "github:impermeable/codemirror-lang-verbose",
     "@impermeable/codemirror-lang-waterproof": "github:impermeable/codemirror-lang-waterproof",
-    "@impermeable/waterproof-editor": "^0.15.1",
+    "@impermeable/waterproof-editor": "^0.17.0",
     "@leanprover/infoview": "^0.10.0",
     "@leanprover/infoview-api": "^0.10.0",
     "@ocaml-wasm/4.12--janestreet-base": "^0.16.0-0",
@@ -572,23 +572,25 @@
       "serialize-javascript": "7.0.5",
       "diff": "8.0.3"
     },
+    "ts-jest" : {
+      "brace-expansion": "1.1.18"
+    },
     "qs": "^6.15.2",
     "js-yaml": "^4.2.0"
   },
   "main": "./out/src/mainNode.js",
   "browser": "./out/src/mainBrowser.js",
   "scripts": {
-    "vscode:prepublish": "npm run typecheck && npm run esbuild -- --minify --sourcemap=no",
+    "vscode:prepublish": "npm run build",
     "generate-symbols": "node scripts/generate-symbols.mts",
-    "esbuild": "npm run generate-symbols && node esbuild.mjs",
+    "dev": "npm run generate-symbols && node esbuild.mjs",
+    "build": "npm run typecheck && npm run dev -- --minify --sourcemap=no",
     "typecheck": "npm run generate-symbols && tsc -b",
-    "compile": "npm run esbuild",
-    "watch": "npm run esbuild -- --watch",
-    "test-package": "node_modules/.bin/vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
-    "test-pre-release": "node_modules/.bin/vsce package --pre-release --ignoreFile .vscodeignore -o test_out/extension.vsix",
+    "watch": "npm run dev -- --watch",
     "clean": "rm -R test_out/*; rm -R editor_output/*; rm -R out/*",
-    "package": "npm run clean && npm run test-package",
-    "package-pre-release": "npm run clean && npm run test-pre-release",
+    "package:vsix": "mkdir -p test_out && npx vsce package --ignoreFile .vscodeignore -o test_out/extension.vsix",
+    "package": "npm run clean && npm run package:vsix",
+    "package-pre-release": "npm run clean && npm run package:vsix -- --pre-release",
     "unit-tests": "npx jest",
     "unit-tests-cov": "npx jest --coverage",
     "lezer-generator": "npx lezer-generator ./editor/src/waterproof-editor/codeview/lang-pack/syntax.grammar -o ./editor/src/waterproof-editor/codeview/lang-pack/syntax.ts",
@@ -598,6 +600,6 @@
     "format": "npx prettier --write \"**/*.{ts,tsx,js,mjs}\"",
     "format:check": "npx prettier --check \"**/*.{ts,tsx,js,mjs}\"",
     "test": "npm run unit-tests && npm run cypress-tests",
-    "install-extension": "npm run test-package && code --install-extension test_out/extension.vsix --force"
+    "install-extension": "npm run package:vsix && code --install-extension test_out/extension.vsix --force"
   }
 }

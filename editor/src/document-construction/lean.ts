@@ -8,6 +8,7 @@ import {
   MarkdownBlock,
   MathDisplayBlock,
   NewlineBlock,
+  StudentHiddenBlock,
   WaterproofDocument,
 } from "@impermeable/waterproof-editor";
 
@@ -24,6 +25,7 @@ enum Kind {
   Newline,
   MultileanOpen,
   MultileanClose,
+  StudentHiddenOpen,
 }
 
 /**
@@ -77,6 +79,7 @@ const regexes: [RegExp, Kind][] = [
   [/\n```(?=\n|$)/, Kind.CodeClose],
   [/(?<=\n):::input\n/, Kind.InputOpen],
   [/(?<=\n):::hint "(?<HintTitle>[\s\S]*?)"\n/, Kind.HintOpen],
+  [/(?<=\n):::studentHidden\n/, Kind.StudentHiddenOpen],
   [/\n:::(?=\n|$)/, Kind.Close],
   [/\$`[\s\S]*?`/, Kind.MathInline],
   [/\$\$`[\s\S]*?`/, Kind.MathDisplay],
@@ -128,6 +131,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
         Kind.CodeOpen,
         Kind.InputOpen,
         Kind.HintOpen,
+        Kind.StudentHiddenOpen,
         Kind.MultileanOpen,
       ]));
 
@@ -144,14 +148,7 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
     const child = new CodeBlock(content, range, innerRange, token.line);
     blocks.push(
-      new HintBlock(
-        content,
-        "🛠 Technical details",
-        range,
-        innerRange,
-        token.line,
-        [child],
-      ),
+      new StudentHiddenBlock(content, range, innerRange, token.line, [child]),
     );
     const newlineRange = { from: token.range.to - 1, to: token.range.to };
     blocks.push(new NewlineBlock(newlineRange, newlineRange, token.line));
@@ -198,8 +195,10 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
     blocks.push(new CodeBlock(content, range, innerRange, token.line));
 
     return head.next;
-  } else if (token.isOneOf([Kind.HintOpen, Kind.InputOpen])) {
-    // Process a hint block or input block.
+  } else if (
+    token.isOneOf([Kind.HintOpen, Kind.InputOpen, Kind.StudentHiddenOpen])
+  ) {
+    // Process a hint, input or student hidden block.
 
     const expected: Kind[] = [
       Kind.Close,
@@ -222,19 +221,41 @@ function handle(doc: string, token: Token, blocks: Block[]): Token | undefined {
 
     if (token.kind === Kind.HintOpen) {
       const title = token.namedGroups?.HintTitle ?? "";
+      if (title === "student-hidden") {
+        blocks.push(
+          new StudentHiddenBlock(
+            content,
+            range,
+            innerRange,
+            token.line,
+            innerBlocks,
+          ),
+        );
+      } else {
+        blocks.push(
+          new HintBlock(
+            content,
+            title,
+            range,
+            innerRange,
+            token.line,
+            innerBlocks,
+          ),
+        );
+      }
+    } else if (token.kind === Kind.InputOpen) {
       blocks.push(
-        new HintBlock(
+        new InputAreaBlock(content, range, innerRange, token.line, innerBlocks),
+      );
+    } else if (token.kind === Kind.StudentHiddenOpen) {
+      blocks.push(
+        new StudentHiddenBlock(
           content,
-          title,
           range,
           innerRange,
           token.line,
           innerBlocks,
         ),
-      );
-    } else {
-      blocks.push(
-        new InputAreaBlock(content, range, innerRange, token.line, innerBlocks),
       );
     }
 

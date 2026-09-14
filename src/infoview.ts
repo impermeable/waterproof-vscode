@@ -434,6 +434,34 @@ export class InfoProvider implements Disposable {
                     text: insertText,
                 }
             });
+        insertText: async (text, kind, pos) => {
+            const document = this.client.activeDocument;
+            const position = pos?.position
+                ? new Position(pos.position.line, pos.position.character)
+                : this.client.activeCursorPosition;
+
+            if (!document || !this.client.webviewManager) {
+                return;
+            }
+
+            if (!position) {
+                return;
+            }
+
+            const targetPosition = kind === 'above'
+                ? new Position(position.line, 0)
+                : position;
+            const start = document.offsetAt(targetPosition);
+            const insertText = kind === 'above' && !text.endsWith('\n') ? `${text}\n` : text;
+
+            this.client.webviewManager.postMessage(document.uri.toString(), {
+                type: MessageType.replaceRange,
+                body: {
+                    start,
+                    end: start,
+                    text: insertText,
+                }
+            });
         },
 
         applyEdit: async (e: WorkspaceEdit) => {

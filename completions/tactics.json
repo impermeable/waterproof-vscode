@@ -102,7 +102,7 @@
         "type": "type",
         "detail": "proof step",
         "template": "& ${3 < 5 = 2 + 3 ≤ 7}",
-        "description": "Example of a chain of (in)equalities in which every inequality should.",
+        "description": "Example of a chain of (in)equalities in which every inequality should hold.",
         "example": "Lemma example_inequalities :\n  ∀ ε > 0, Rmin(ε,1) < 2.\nProof.\nTake ε > 0.\nWe conclude that (& Rmin(ε,1) ≤ 1 < 2).\nQed."
     },
     {
@@ -110,7 +110,7 @@
         "type": "type",
         "detail": "proof step",
         "template": "& ${3 < 5 = 2 + 3 ≤ 7}",
-        "description": "Example of a chain of (in)equalities in which every inequality should.",
+        "description": "Example of a chain of (in)equalities in which every inequality should hold.",
         "example": "Lemma example_inequalities :\n  ∀ ε > 0, Rmin(ε,1) < 2.\nProof.\nTake ε : ℝ.\nAssume that ε > 0.\nWe conclude that & Rmin(ε,1) ≤ 1 < 2.\nQed."
     },
     {
@@ -192,7 +192,7 @@
         "type": "type",
         "detail": "proof step",
         "template": "We claim that ${0 = 0}.${}",
-        "description": "Lets you first show (*statement*) before continuing with the rest of the proof. After you showed (*statement*), it will be available as a hypothesis with name (*optional_name*).",
+        "description": "Lets you first show (*statement*) before continuing with the rest of the proof. After you show (*statement*), it will be available as a hypothesis with name (*optional_name*).",
         "example": "We claim that 2 = 2 as (two_is_two).",
         "boost": 2
     },
@@ -201,7 +201,7 @@
         "type": "type",
         "detail": "proof step",
         "template": "We claim that ${0 = 0} as (${i}).${}",
-        "description": "Lets you first show (*statement*) before continuing with the rest of the proof. After you showed (*statement*), it will be available as a hypothesis with name (*label*).",
+        "description": "Lets you first show (*statement*) before continuing with the rest of the proof. After you show (*statement*), it will be available as a hypothesis with name (*label*).",
         "example": "We claim that 2 = 2 as (two_is_two).",
         "boost": 1
     },

@@ -68,7 +68,10 @@ function createConfiguration(
         markdownName: "Markdown",
         templates: {
           example: "Example example: True.\nProof.\n\nQed.",
-          exercise: { statement: "Lemma exercise:\nProof.", proof: "Qed." },
+          exercise: {
+            statement: "Lemma exercise: True.\nProof.",
+            closing: "Qed.",
+          },
           containerOpenTag: "",
         },
         tagConfiguration: markdown.configuration("coq"),
@@ -87,7 +90,7 @@ function createConfiguration(
         markdownName: "Rocq doc",
         templates: {
           example: "",
-          exercise: { statement: "", proof: "" },
+          exercise: { statement: "", closing: "" },
           containerOpenTag: "",
         },
         tagConfiguration: tagConfigurationV,
@@ -114,7 +117,7 @@ function createConfiguration(
           exercise: {
             statement:
               'Exercise "exercise"\nGiven:\nAssume:\nConclusion:\nProof:',
-            proof: "QED",
+            closing: "QED",
           },
           containerOpenTag: "multilean",
         },

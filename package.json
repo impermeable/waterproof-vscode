@@ -521,7 +521,6 @@
     "@vscode/vsce": "^4.0.0",
     "cypress": "^15.15.0",
     "esbuild": "^0.28.1",
-    "esbuild-plugin-copy": "^2.0.2",
     "eslint": "^10.3.0",
     "fs-extra": "^11.1.1",
     "jest": "^30.5.2",
@@ -568,15 +567,10 @@
     "vscode-uri": "3.1.0"
   },
   "overrides": {
-    "mocha": {
-      "serialize-javascript": "7.0.5",
-      "diff": "8.0.3"
-    },
-    "ts-jest": {
-      "brace-expansion": "1.1.18"
-    },
     "qs": "^6.15.2",
-    "js-yaml": "^4.2.0"
+    "js-yaml": "^4.2.0",
+    "prosemirror-view": "^1.42.6",
+    "katex": "^0.19.0"
   },
   "main": "./out/src/mainNode.js",
   "browser": "./out/src/mainBrowser.js",

@@ -244,6 +244,7 @@ const MULTI_AREA_DOCUMENT = {
  */
 class TestLspClient extends LspClient<GoalRequest, GoalAnswer> {
   readonly language = "test-lang";
+  protected override readonly requestsCodeActions = true;
 
   protected isAllowedCodeAction(result: CodeAction): boolean {
     return result.kind === "quickfix";
@@ -303,6 +304,7 @@ function makeClientDouble(overrides: { sendRequest?: jest.Mock } = {}) {
     onNotification: jest.fn(() => ({ dispose: jest.fn() })),
     sendRequest: overrides.sendRequest ?? jest.fn().mockResolvedValue([]),
     middleware: { handleDiagnostics: undefined },
+    initializeResult: { capabilities: { codeActionProvider: true } },
     protocol2CodeConverter: {
       asRange: (r: Range) => r,
       asWorkspaceEdit: jest.fn(async (edit: unknown) => edit),
@@ -418,6 +420,27 @@ describe("LspClient.processDiagnostics code actions", () => {
       .filter((m) => m.type === MessageType.diagnostics);
   };
 
+  /** Makes every code action resolve to the given edits ([line, char, line, char, newText]). */
+  const mockEdits = (
+    instance: TestLspClient,
+    edits: [number, number, number, number, string][],
+    document: TextDocument = FAKE_DOCUMENT,
+  ) => {
+    const asWorkspaceEdit = instance.client.protocol2CodeConverter
+      .asWorkspaceEdit as jest.Mock;
+    asWorkspaceEdit.mockResolvedValue({
+      entries: () => [
+        [
+          document.uri,
+          edits.map(([sl, sc, el, ec, newText]) => ({
+            range: new Range(new Position(sl, sc), new Position(el, ec)),
+            newText,
+          })),
+        ],
+      ],
+    });
+  };
+
   beforeEach(() => {
     getDiagnostics.mockReturnValue([]);
   });
@@ -487,7 +510,9 @@ describe("LspClient.processDiagnostics code actions", () => {
           codeActions: [
             {
               title: "Try this: exact h",
-              edits: [{ start: 31, end: 35, newText: "exact h" }],
+              edits: [
+                { start: 31, end: 35, newText: "exact h", oldText: " thr" },
+              ],
             },
           ],
         }),
@@ -889,7 +914,7 @@ describe("LspClient.processDiagnostics code actions", () => {
     expect(resolvedPatches(instance)).toHaveLength(0);
   });
 
-  it("drops a resolved code-action patch when the active document changes before it resolves", async () => {
+  it("keeps delivering and caching a document's code actions after switching to another document", async () => {
     getDiagnostics.mockReturnValue([infoDiagnostic()]);
     const instance = makeClient();
     const sendRequest = instance.client.sendRequest as jest.Mock;
@@ -900,6 +925,7 @@ describe("LspClient.processDiagnostics code actions", () => {
           resolveRequest = resolve;
         }),
     );
+    mockEdits(instance, [[1, 2, 1, 6, "exact h"]]);
 
     const pass = processDiagnostics(instance);
     await new Promise((resolve) => setImmediate(resolve));
@@ -910,11 +936,17 @@ describe("LspClient.processDiagnostics code actions", () => {
     } as TextDocument;
 
     resolveRequest([
-      { title: "Now-stale fix", edit: { changes: {} }, kind: "quickfix" },
+      { title: "Still valid fix", edit: { changes: {} }, kind: "quickfix" },
     ]);
     await pass;
 
-    expect(resolvedPatches(instance)).toHaveLength(0);
+    // The patch goes to the editor of the document it belongs to, not the active one.
+    const postMessage = instance.webviewManager?.postMessage as jest.Mock;
+    expect(postMessage).toHaveBeenCalledWith(
+      "file:///test.wp",
+      expect.objectContaining({ type: MessageType.codeActionsResolved }),
+    );
+    expect(cachedMessages(instance)).toHaveLength(1);
   });
 
   it("drops an action when its edit reaches outside the containing input area", async () => {
@@ -1496,5 +1528,189 @@ describe("LspClient.processDiagnostics code actions", () => {
         codeActions: [expect.objectContaining({ title: "Fix B" })],
       }),
     ]);
+  });
+
+  // ---- opting in to code actions ------------------------------------------
+
+  it("does not request code actions for a client that has not opted in", async () => {
+    getDiagnostics.mockReturnValue([infoDiagnostic()]);
+    const instance = makeClient();
+    // @ts-expect-error readonly, overridden for this test
+    instance.requestsCodeActions = false;
+    const sendRequest = instance.client.sendRequest as jest.Mock;
+
+    await processDiagnostics(instance);
+
+    expect(sendRequest).not.toHaveBeenCalled();
+    expect(diagnosticsMessages(instance)).toHaveLength(1);
+  });
+
+  it("does not request code actions when the server does not provide them", async () => {
+    getDiagnostics.mockReturnValue([infoDiagnostic()]);
+    const instance = makeClient();
+    // @ts-expect-error test double
+    instance.client.initializeResult = { capabilities: {} };
+    const sendRequest = instance.client.sendRequest as jest.Mock;
+
+    await processDiagnostics(instance);
+
+    expect(sendRequest).not.toHaveBeenCalled();
+    expect(diagnosticsMessages(instance)).toHaveLength(1);
+  });
+
+  // ---- the same action returned for several diagnostics -------------------
+
+  it("only attaches an action to the narrowest diagnostic overlapping its edits", async () => {
+    const wide = {
+      message: "unsolved goals",
+      severity: DiagnosticSeverity.Error,
+      range: new Range(new Position(1, 0), new Position(4, 9)),
+    } as Diagnostic;
+    const narrow = {
+      message: "Help",
+      severity: DiagnosticSeverity.Information,
+      range: new Range(new Position(3, 0), new Position(3, 4)),
+    } as Diagnostic;
+    getDiagnostics.mockReturnValue([wide, narrow]);
+    const instance = makeClient();
+    const sendRequest = instance.client.sendRequest as jest.Mock;
+    // Like Lean's "Try this" provider: both requests return the same action.
+    sendRequest.mockResolvedValue([
+      { title: "Try this: exact h", edit: { changes: {} }, kind: "quickfix" },
+    ]);
+    mockEdits(instance, [[3, 0, 3, 4, "exact h"]]);
+
+    await processDiagnostics(instance);
+
+    const patches = resolvedPatches(instance);
+    expect(patches).toHaveLength(1);
+    expect(patches[0].body.index).toBe(1);
+  });
+
+  // ---- limiting concurrent requests ---------------------------------------
+
+  it("has at most 4 code action requests in flight at once", async () => {
+    getDiagnostics.mockReturnValue(
+      Array.from(
+        { length: 6 },
+        (_, i) => ({ ...infoDiagnostic(), message: `Help ${i}` }) as Diagnostic,
+      ),
+    );
+    const instance = makeClient();
+    const sendRequest = instance.client.sendRequest as jest.Mock;
+    const resolvers: Array<(v: unknown[]) => void> = [];
+    sendRequest.mockImplementation(
+      () => new Promise((resolve) => resolvers.push(resolve)),
+    );
+
+    const pass = processDiagnostics(instance);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(sendRequest).toHaveBeenCalledTimes(4);
+
+    resolvers[0]([]);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(sendRequest).toHaveBeenCalledTimes(5);
+
+    resolvers.slice(1).forEach((resolve) => resolve([]));
+    await new Promise((resolve) => setImmediate(resolve));
+    resolvers.slice(5).forEach((resolve) => resolve([]));
+    await pass;
+    expect(sendRequest).toHaveBeenCalledTimes(6);
+  });
+
+  // ---- carrying actions over to the next pass -----------------------------
+
+  it("includes still-valid actions of the previous pass in the next diagnostics message", async () => {
+    getDiagnostics.mockReturnValue([infoDiagnostic()]);
+    const instance = makeClient();
+    const sendRequest = instance.client.sendRequest as jest.Mock;
+    sendRequest.mockResolvedValueOnce([
+      { title: "Fix", edit: { changes: {} }, kind: "quickfix" },
+    ]);
+    mockEdits(instance, [[1, 2, 1, 6, "exact h"]]);
+    await processDiagnostics(instance);
+
+    // The next pass is still waiting for the server.
+    sendRequest.mockImplementation(() => new Promise(() => {}));
+    void processDiagnostics(instance);
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const messages = diagnosticsMessages(instance);
+    expect(messages).toHaveLength(2);
+    expect(messages[1].body.positionedDiagnostics[0].codeActions).toEqual([
+      {
+        title: "Fix",
+        edits: [{ start: 11, end: 15, newText: "exact h", oldText: "ne o" }],
+      },
+    ]);
+  });
+
+  it("does not carry actions over when the text they would replace has changed", async () => {
+    getDiagnostics.mockReturnValue([infoDiagnostic()]);
+    const instance = makeClient();
+    const sendRequest = instance.client.sendRequest as jest.Mock;
+    sendRequest.mockResolvedValueOnce([
+      { title: "Fix", edit: { changes: {} }, kind: "quickfix" },
+    ]);
+    mockEdits(instance, [[1, 2, 1, 6, "exact h"]]);
+    await processDiagnostics(instance);
+
+    instance.activeDocument = {
+      ...FAKE_DOCUMENT,
+      version: 2,
+      getText: () => FAKE_TEXT.replace("line one", "liXXXXne"),
+    } as TextDocument;
+    sendRequest.mockImplementation(() => new Promise(() => {}));
+    void processDiagnostics(instance);
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const messages = diagnosticsMessages(instance);
+    expect(messages).toHaveLength(2);
+    expect(
+      messages[1].body.positionedDiagnostics[0].codeActions,
+    ).toBeUndefined();
+  });
+
+  it("clears carried-over actions when the server no longer returns any", async () => {
+    getDiagnostics.mockReturnValue([infoDiagnostic()]);
+    const instance = makeClient();
+    const sendRequest = instance.client.sendRequest as jest.Mock;
+    sendRequest.mockResolvedValueOnce([
+      { title: "Fix", edit: { changes: {} }, kind: "quickfix" },
+    ]);
+    mockEdits(instance, [[1, 2, 1, 6, "exact h"]]);
+    await processDiagnostics(instance);
+
+    sendRequest.mockResolvedValueOnce([]);
+    await processDiagnostics(instance);
+
+    const patches = resolvedPatches(instance);
+    expect(patches).toHaveLength(2);
+    expect(patches[1].body.codeActions).toEqual([]);
+    const cached = cachedMessages(instance);
+    expect(
+      cached[cached.length - 1].body.positionedDiagnostics[0].codeActions,
+    ).toBeUndefined();
+  });
+
+  it("keeps carried-over actions when re-resolving them fails", async () => {
+    getDiagnostics.mockReturnValue([infoDiagnostic()]);
+    const instance = makeClient();
+    const sendRequest = instance.client.sendRequest as jest.Mock;
+    sendRequest.mockResolvedValueOnce([
+      { title: "Fix", edit: { changes: {} }, kind: "quickfix" },
+    ]);
+    mockEdits(instance, [[1, 2, 1, 6, "exact h"]]);
+    await processDiagnostics(instance);
+
+    sendRequest.mockRejectedValueOnce(new Error("server hiccup"));
+    await processDiagnostics(instance);
+
+    // No patch for the second pass: the carried actions in its diagnostics message stand.
+    expect(resolvedPatches(instance)).toHaveLength(1);
+    expect(
+      diagnosticsMessages(instance)[1].body.positionedDiagnostics[0]
+        .codeActions,
+    ).toEqual([expect.objectContaining({ title: "Fix" })]);
   });
 });

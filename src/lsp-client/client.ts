@@ -62,6 +62,13 @@ function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
   }
 }
 
+/**
+ * Identifies a diagnostic across diagnostics passes, for carrying code actions over.
+ */
+function codeActionKey(d: OffsetDiagnostic): string {
+  return `${d.startOffset}:${d.endOffset}:${d.message}`;
+}
+
 function wasCanceledByServer(reason: unknown): boolean {
   return (
     !!reason &&
@@ -244,7 +251,9 @@ export abstract class LspClient<
         if (
           e.uris.map((uri) => uri.path).includes(this.activeDocument.uri.path)
         ) {
-          this.processDiagnostics();
+          this.processDiagnostics().catch((e) =>
+            wpl.log(`[LspClient] Failed to process diagnostics: ${e}`),
+          );
         }
       }),
     );
@@ -272,19 +281,35 @@ export abstract class LspClient<
   }
 
   /**
+   * Whether this client asks its language server for code actions to attach to diagnostics.
+   *
+   * This is opt-in: when enabled, every diagnostic inside an input area costs a request on
+   * every diagnostics update, and the resulting actions are shown to students as buttons, so
+   * a client should only enable it together with a suitable `isAllowedCodeAction` filter.
+   */
+  protected readonly requestsCodeActions: boolean = false;
+
+  /** The maximum number of code actions shown for a single diagnostic. */
+  private static readonly MAX_CODE_ACTIONS_PER_DIAGNOSTIC = 3;
+
+  /** The maximum number of code action requests in flight at once, per diagnostics pass. */
+  private static readonly MAX_CONCURRENT_CODE_ACTION_REQUESTS = 4;
+
+  /**
    * Gets code actions for a given diagnostic, filtering out any that are not allowed by `isAllowedCodeAction`.
    * @param document The document for which to get code actions.
    * @param diag The diagnostic for which to get code actions.
    * @param token Cancellation token to cancel the request.
    * @param containingArea The range of the input area containing the diagnostic.
-   * @returns A promise resolving to the list of allowed code actions.
+   * @returns A promise resolving to the list of allowed code actions, or `undefined` if they
+   *   could not be retrieved (e.g. because the request failed or was cancelled).
    */
   private async resolveCodeActionsFor(
     document: TextDocument,
     diag: Diagnostic,
     token: CancellationToken,
     containingArea: Range,
-  ): Promise<OffsetCodeAction[]> {
+  ): Promise<OffsetCodeAction[] | undefined> {
     const areaStart = document.offsetAt(containingArea.start);
     const areaEnd = document.offsetAt(containingArea.end);
 
@@ -308,6 +333,7 @@ export abstract class LspClient<
       );
       if (!results) return [];
 
+      const text = document.getText();
       const validActions: {
         action: OffsetCodeAction;
         isPreferred?: boolean;
@@ -339,10 +365,14 @@ export abstract class LspClient<
         const edits: OffsetEdit[] = [];
         for (const [, textEdits] of entries) {
           for (const te of textEdits) {
+            const start = document.offsetAt(te.range.start);
+            const end = document.offsetAt(te.range.end);
             edits.push({
-              start: document.offsetAt(te.range.start),
-              end: document.offsetAt(te.range.end),
+              start,
+              end,
               newText: te.newText,
+              // Lets the editor (and later passes) check that the edit still applies.
+              oldText: text.slice(start, end),
             });
           }
         }
@@ -373,24 +403,12 @@ export abstract class LspClient<
       const actionsToReturn =
         preferredActions.length > 0 ? preferredActions : validActions;
 
-      // Limit the number of code actions sent to the editor to 3, to prevent the editor being flooded.
-      const keptActions = actionsToReturn.slice(0, 3);
-      const droppedActions = actionsToReturn.slice(3);
-      if (droppedActions.length > 0) {
-        wpl.debug(
-          `[resolveCodeActionsFor] dropped ${droppedActions.length} action(s) beyond top 3 ` +
-            `for diagnostic "${diag.message}": ${droppedActions
-              .map((a) => `"${a.action.title}"`)
-              .join(", ")}`,
-        );
-      }
-
-      return keptActions.map((a) => a.action);
+      return actionsToReturn.map((a) => a.action);
     } catch (e) {
       if (!token.isCancellationRequested) {
         wpl.log(`[LspClient] Failed to resolve code actions: ${e}`);
       }
-      return [];
+      return undefined;
     }
   }
 
@@ -406,31 +424,42 @@ export abstract class LspClient<
     return true;
   }
 
+  /**
+   * Whether code actions should be requested for diagnostics: the client has to opt in
+   * (see {@linkcode requestsCodeActions}) and the server has to support them.
+   */
+  private codeActionsEnabled(): boolean {
+    return (
+      this.requestsCodeActions &&
+      !!this.client.initializeResult?.capabilities.codeActionProvider
+    );
+  }
+
+  /**
+   * Sends the diagnostics of the active document to its editor, and then resolves and
+   * streams in the code actions for the diagnostics inside input areas.
+   */
   protected async processDiagnostics(): Promise<void> {
     const document = this.activeDocument;
     if (!document) return;
+    const uri = document.uri.toString();
 
-    this.diagnosticsCts?.cancel();
-    this.diagnosticsCts?.dispose();
+    // A newer pass for the same document supersedes any pass still in flight.
+    const previousCts = this.diagnosticsCts.get(uri);
+    previousCts?.cancel();
+    previousCts?.dispose();
     const cts = new CancellationTokenSource();
-    this.diagnosticsCts = cts;
+    this.diagnosticsCts.set(uri, cts);
     const token = cts.token;
 
     const diagnostics = languages.getDiagnostics(document.uri);
     const docVersionAtStart = document.version;
 
-    // Used to bound which code actions are allowed to
-    // surface for each diagnostic (see resolveCodeActionsFor).
-    // avoids unncessary LSP requests for code actions that would be rejected anyway.
-    const inputAreas = this.getInputAreas(document);
-
+    // Note that switching to another document does not make a pass stale: its results are
+    // still posted to (and cached for) the editor of the document they belong to.
     const isStale = (): boolean =>
-      token.isCancellationRequested ||
-      document.version !== docVersionAtStart ||
-      this.activeDocument?.uri.toString() !== document.uri.toString();
+      token.isCancellationRequested || document.version !== docVersionAtStart;
 
-    // Build the base diagnostics (no code actions yet) and send them right away,
-    // so squiggles/messages show up without waiting on code action resolution.
     const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map((d) => ({
       message: d.message,
       severity: vscodeSeverityToWaterproof(d.severity),
@@ -438,70 +467,169 @@ export abstract class LspClient<
       endOffset: document.offsetAt(d.range.end),
     }));
 
-    wpl.debug(
-      `[diag] sending ${positionedDiagnostics.length} base diagnostics, version=${docVersionAtStart}`,
-    );
-
-    if (isStale()) {
-      if (this.diagnosticsCts === cts) {
-        this.diagnosticsCts = undefined;
-        cts.dispose();
-      }
-      return;
-    }
-
-    await this.webviewManager!.postAndCacheMessage(document, {
-      type: MessageType.diagnostics,
-      body: { positionedDiagnostics, version: docVersionAtStart },
-    });
-
-    // Resolve code actions per-diagnostic in parallel, but push each one to the
-    // webview as soon as *it* resolves instead of waiting for all of them.
-    let anyResolved = false;
     try {
-      await Promise.all(
-        diagnostics.map(async (d, index) => {
-          const containingArea = inputAreas?.find((area) =>
-            area.contains(d.range),
-          );
+      const codeActionsEnabled = this.codeActionsEnabled();
 
-          const codeActions = containingArea
-            ? await this.resolveCodeActionsFor(
-                document,
-                d,
-                token,
-                containingArea,
-              )
-            : [];
-          if (codeActions.length === 0 || isStale()) return;
+      // Only diagnostics inside an input area get code actions (see resolveCodeActionsFor).
+      // This avoids unnecessary LSP requests for code actions that would be rejected anyway.
+      const inputAreas = codeActionsEnabled
+        ? this.getInputAreas(document)
+        : undefined;
+      const containingAreas = diagnostics.map((d) =>
+        inputAreas?.find((area) => area.contains(d.range)),
+      );
+      const requested = containingAreas.flatMap((area, index) =>
+        area ? [index] : [],
+      );
 
-          positionedDiagnostics[index].codeActions = codeActions;
-          anyResolved = true;
+      // Carry over the code actions of the previous pass for diagnostics that are still
+      // there, as long as their edits still apply to the current text. This keeps the
+      // actions visible across progressive diagnostics updates while they are re-resolved.
+      const previousActions = this.resolvedCodeActions.get(uri);
+      const currentActions = new Map<string, OffsetCodeAction[]>();
+      this.resolvedCodeActions.set(uri, currentActions);
+      if (previousActions && requested.length > 0) {
+        const text = document.getText();
+        for (const index of requested) {
+          const d = positionedDiagnostics[index];
+          const key = codeActionKey(d);
+          const carried = previousActions
+            .get(key)
+            ?.filter((action) =>
+              action.edits.every(
+                (e) =>
+                  e.oldText !== undefined &&
+                  text.slice(e.start, e.end) === e.oldText,
+              ),
+            );
+          if (carried && carried.length > 0) {
+            d.codeActions = carried;
+            currentActions.set(key, carried);
+          }
+        }
+      }
 
+      wpl.debug(
+        `[diag] sending ${positionedDiagnostics.length} base diagnostics, version=${docVersionAtStart}`,
+      );
+
+      // Send the diagnostics right away, so squiggles/messages show up without waiting
+      // on code action resolution. A copy is sent, since the entries are updated below.
+      this.webviewManager!.postAndCacheMessage(document, {
+        type: MessageType.diagnostics,
+        body: {
+          positionedDiagnostics: positionedDiagnostics.map((d) => ({ ...d })),
+          version: docVersionAtStart,
+        },
+      });
+
+      if (requested.length === 0) return;
+
+      // Some servers (e.g. Lean's "Try this" provider) return every action on the lines a
+      // diagnostic covers, so the same action can be returned for several diagnostics. It is
+      // only shown on the narrowest requested diagnostic that overlaps its edits.
+      const ownerOf = (action: OffsetCodeAction): number | undefined => {
+        const start = Math.min(...action.edits.map((e) => e.start));
+        const end = Math.max(...action.edits.map((e) => e.end));
+        let owner: number | undefined;
+        for (const index of requested) {
+          const d = positionedDiagnostics[index];
+          if (d.startOffset > end || start > d.endOffset) continue;
+          const width = d.endOffset - d.startOffset;
+          if (
+            owner === undefined ||
+            width <
+              positionedDiagnostics[owner].endOffset -
+                positionedDiagnostics[owner].startOffset
+          ) {
+            owner = index;
+          }
+        }
+        return owner;
+      };
+
+      let anyChanged = false;
+      const resolveOne = async (index: number) => {
+        const resolved = await this.resolveCodeActionsFor(
+          document,
+          diagnostics[index],
+          token,
+          containingAreas[index]!,
+        );
+        if (resolved === undefined || isStale()) return;
+
+        const owned = resolved.filter((action) => {
+          const owner = ownerOf(action);
+          return owner === undefined || owner === index;
+        });
+        const max = LspClient.MAX_CODE_ACTIONS_PER_DIAGNOSTIC;
+        const codeActions = owned.slice(0, max);
+        if (owned.length > max) {
           wpl.debug(
-            `[diag] sending code action patch index=${index} version=${docVersionAtStart} actions=${codeActions.length}`,
+            `[resolveCodeActionsFor] dropped ${owned.length - max} action(s) beyond top ${max} ` +
+              `for diagnostic "${diagnostics[index].message}": ${owned
+                .slice(max)
+                .map((a) => `"${a.title}"`)
+                .join(", ")}`,
           );
+        }
 
-          this.webviewManager!.postMessage(document.uri.toString(), {
-            type: MessageType.codeActionsResolved,
-            body: { version: docVersionAtStart, index, codeActions },
-          });
-        }),
+        const diagnostic = positionedDiagnostics[index];
+        // Nothing to report: no actions now, and none were carried over from the previous pass.
+        if (codeActions.length === 0 && diagnostic.codeActions === undefined)
+          return;
+
+        const key = codeActionKey(diagnostic);
+        if (codeActions.length > 0) {
+          diagnostic.codeActions = codeActions;
+          currentActions.set(key, codeActions);
+        } else {
+          delete diagnostic.codeActions;
+          currentActions.delete(key);
+        }
+        anyChanged = true;
+
+        wpl.debug(
+          `[diag] sending code action patch index=${index} version=${docVersionAtStart} actions=${codeActions.length}`,
+        );
+
+        this.webviewManager!.postMessage(uri, {
+          type: MessageType.codeActionsResolved,
+          body: { version: docVersionAtStart, index, codeActions },
+        });
+      };
+
+      // Resolve code actions per diagnostic, a few at a time, and push each one to the
+      // webview as soon as *it* resolves instead of waiting for all of them.
+      const queue = [...requested];
+      const worker = async () => {
+        while (queue.length > 0 && !isStale()) await resolveOne(queue.shift()!);
+      };
+      await Promise.all(
+        Array.from(
+          {
+            length: Math.min(
+              LspClient.MAX_CONCURRENT_CODE_ACTION_REQUESTS,
+              queue.length,
+            ),
+          },
+          worker,
+        ),
       );
 
       // Cache the final message with all code actions so that
       // they remain when we switch tabs.
-      if (anyResolved && !isStale()) {
+      if (anyChanged && !isStale()) {
         this.webviewManager!.cacheMessage(document, {
           type: MessageType.diagnostics,
           body: { positionedDiagnostics, version: docVersionAtStart },
         });
       }
     } finally {
-      if (this.diagnosticsCts === cts) {
-        this.diagnosticsCts = undefined;
-        cts.dispose();
+      if (this.diagnosticsCts.get(uri) === cts) {
+        this.diagnosticsCts.delete(uri);
       }
+      cts.dispose();
     }
   }
 
@@ -542,11 +670,20 @@ export abstract class LspClient<
   computeInputAreaStatusTimer?: NodeJS.Timeout | number;
 
   /**
-   * Tracks the most recent in-flight `processDiagnostics` pass so it can be cancelled
-   * when a newer one supersedes it (e.g. the user keeps typing while code actions are
-   * still being resolved against the previous diagnostics snapshot).
+   * Tracks, per document URI, the most recent in-flight `processDiagnostics` pass so it can
+   * be cancelled when a newer one supersedes it (e.g. the user keeps typing while code
+   * actions are still being resolved against the previous diagnostics snapshot).
    */
-  private diagnosticsCts?: CancellationTokenSource;
+  private readonly diagnosticsCts = new Map<string, CancellationTokenSource>();
+
+  /**
+   * Per document URI, the code actions of the latest diagnostics pass, keyed by
+   * {@linkcode codeActionKey}. Used to carry actions over to the next pass.
+   */
+  private readonly resolvedCodeActions = new Map<
+    string,
+    Map<string, OffsetCodeAction[]>
+  >();
 
   protected async computeInputAreaStatus(
     document: TextDocument,
@@ -735,10 +872,12 @@ export abstract class LspClient<
   }
 
   dispose(timeout?: number): Promise<void> {
-    const diagnosticsCts = this.diagnosticsCts;
-    this.diagnosticsCts = undefined;
-    diagnosticsCts?.cancel();
-    diagnosticsCts?.dispose();
+    for (const cts of this.diagnosticsCts.values()) {
+      cts.cancel();
+      cts.dispose();
+    }
+    this.diagnosticsCts.clear();
+    this.resolvedCodeActions.clear();
     this.fileProgressComponents.forEach((c) => c.dispose());
     this.disposables.forEach((d) => d.dispose());
     return this.client.dispose(timeout);

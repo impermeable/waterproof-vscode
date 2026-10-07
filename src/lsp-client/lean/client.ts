@@ -434,6 +434,8 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
     return status;
   }
 
+  protected override readonly requestsCodeActions = true;
+
   /**
    * Providers whose suggestions are safe to display inside student input areas.
    */

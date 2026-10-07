@@ -208,8 +208,18 @@ export class WaterproofWebview extends EventEmitter {
   public postMessage(message: Message, cache: boolean = false) {
     this._panel.webview.postMessage(message);
     if (cache) {
-      this._cachedMessages.set(message.type, message);
+      this.cacheMessage(message);
     }
+  }
+
+  /**
+   * Updates the cached message for this type without posting it to the webview.
+   * Use this when the webview already has the up-to-date state (e.g. via
+   * incremental patches) and you only need the cache to be correct for a
+   * future re-sync.
+   */
+  public cacheMessage(message: Message) {
+    this._cachedMessages.set(message.type, message);
   }
 
   /**

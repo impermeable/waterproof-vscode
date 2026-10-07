@@ -7,6 +7,7 @@ import {
   ExtensionContext,
   WorkspaceConfiguration,
   Disposable,
+  OutputChannel,
   Position,
   TextDocument,
 } from "vscode";
@@ -31,6 +32,37 @@ export type LanguageClientProviderFactory = (
   clientOptions: LanguageClientOptions,
   wsConfig: WorkspaceConfiguration,
 ) => LanguageClientProvider;
+
+/**
+ * Everything needed to bring up the client for a single language.
+ *
+ * The provider and the output channel are grouped so that a language is either
+ * fully configured or entirely absent; the channel is created lazily, so a
+ * language this build does not support leaves no empty channel behind in the
+ * Output dropdown.
+ */
+export interface LanguageClientSetup {
+  provider: LanguageClientProvider;
+  createOutputChannel: () => OutputChannel;
+}
+
+/** The per-language setups the `CompositeClient` is built from. */
+export interface LanguageClientSetups {
+  rocq: LanguageClientSetup;
+  lean?: LanguageClientSetup;
+}
+
+/**
+ * The languages an entry point can provide clients for.
+ *
+ * `lean` is absent in builds that cannot run a Lean server, such as the web
+ * extension, which has no way to spawn a Lake process. Leaving it out is what
+ * makes a language unsupported; there is no separate flag to keep in sync.
+ */
+export interface LanguageSupport {
+  rocq: LanguageClientProviderFactory;
+  lean?: LanguageClientProviderFactory;
+}
 
 export interface ILspClient extends TimeoutDisposable {
   /**

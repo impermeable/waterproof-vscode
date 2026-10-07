@@ -8,122 +8,60 @@
 // .call(fakeThis, ...)`) instead of constructing the full extension, which would
 // pull in the entire VS Code activation path.
 
-jest.mock(
-  "vscode",
-  () => ({
-    Position: class {
-      constructor(
-        public line: number,
-        public character: number,
-      ) {}
-    },
-    commands: {
-      registerCommand: jest.fn(),
-      registerTextEditorCommand: jest.fn(),
-      executeCommand: jest.fn(),
-    },
-    window: {
-      createOutputChannel: jest.fn(() => ({
-        appendLine: jest.fn(),
-        dispose: jest.fn(),
-      })),
-    },
-    workspace: {},
-    ConfigurationTarget: { Global: 1 },
-    Uri: { parse: jest.fn(), joinPath: jest.fn() },
-    RevealOutputChannelOn: { Info: 1 },
-  }),
-  { virtual: true },
+function helperMocks(): typeof import("../__helpers__/extension-mocks").extensionMocks {
+  return require("../__helpers__/extension-mocks").extensionMocks; // eslint-disable-line @typescript-eslint/no-require-imports
+}
+
+jest.mock("vscode", () => helperMocks().vscode(), { virtual: true });
+jest.mock("vscode-languageclient", () => helperMocks().languageClient(), {
+  virtual: true,
+});
+jest.mock("../../src/lsp-client/commandExecutor", () =>
+  helperMocks().commandExecutor(),
 );
-
-jest.mock(
-  "vscode-languageclient",
-  () => ({
-    RevealOutputChannelOn: { Info: 1 },
-  }),
-  { virtual: true },
+jest.mock("../../src/helpers", () => helperMocks().helpers());
+jest.mock("../../src/pm-editor", () => helperMocks().pmEditor());
+jest.mock("../../src/util", () => helperMocks().util());
+jest.mock("../../src/components/enableButton", () =>
+  helperMocks().enableButton(),
 );
-
-// The handlers only touch a couple of collaborators; everything else imported by
-// extension.ts is mocked away so the module loads cheaply.
-jest.mock("../../src/lsp-client/commandExecutor", () => ({
-  executeCommand: jest.fn(),
-  executeCommandFullOutput: jest.fn(),
-}));
-jest.mock("../../src/helpers", () => ({
-  WaterproofLogger: { log: jest.fn(), debug: jest.fn(), show: jest.fn() },
-  WaterproofConfigHelper: {
-    get: jest.fn(),
-    update: jest.fn(),
-    configuration: {},
-  },
-  WaterproofFileUtil: {},
-  WaterproofPackageJSON: {},
-  WaterproofSetting: {},
-}));
-
-// The remaining imports of extension.ts are only used to build the live
-// extension; for these tests we just need them to be loadable.
-jest.mock("../../src/pm-editor", () => ({
-  WaterproofEditorProvider: { register: jest.fn() },
-}));
-jest.mock("../../src/util", () => ({
-  checkConflictingExtensions: jest.fn(),
-  excludeRocqFileTypes: jest.fn(),
-  checkTrimmingWhitespace: jest.fn(),
-}));
-jest.mock("../../src/components/enableButton", () => ({
-  WaterproofStatusBar: class {},
-}));
-jest.mock("../../src/webviews/sidePanel", () => ({
-  addSidePanel: jest.fn(),
-  SidePanelProvider: class {},
-}));
-jest.mock("../../src/webviews/standardviews/search", () => ({
-  Search: class {},
-}));
-jest.mock("../../src/webviews/standardviews/execute", () => ({
-  ExecutePanel: class {},
-}));
-jest.mock("../../src/webviews/standardviews/symbols", () => ({
-  SymbolsPanel: class {},
-}));
-jest.mock("../../src/webviews/standardviews/tactics", () => ({
-  TacticsPanel: class {},
-}));
-jest.mock("../../src/webviews/goalviews/debug", () => ({
-  DebugPanel: class {},
-}));
-jest.mock("../../src/webviews/goalviews/goalsPanel", () => ({
-  GoalsPanel: class {},
-}));
-jest.mock("../../src/webviews/goalviews/compositeGoalsPanel", () => ({
-  CompositeGoalsPanel: class {},
-}));
-jest.mock("../../src/lsp-client/composite", () => ({
-  CompositeClient: class {},
-}));
-jest.mock("../../src/lsp-client/rocq", () => ({
-  RocqLspServerConfig: { create: jest.fn() },
-}));
-jest.mock("../../src/lsp-client/lean", () => ({
-  LeanLspServerConfig: { create: jest.fn() },
-}));
-jest.mock("../../src/helpers/exerciseSheet", () => ({
-  clearInputCells: jest.fn(),
-}));
+jest.mock("../../src/webviews/sidePanel", () => helperMocks().sidePanel());
+jest.mock("../../src/webviews/standardviews/search", () =>
+  helperMocks().search(),
+);
+jest.mock("../../src/webviews/standardviews/execute", () =>
+  helperMocks().execute(),
+);
+jest.mock("../../src/webviews/standardviews/symbols", () =>
+  helperMocks().symbols(),
+);
+jest.mock("../../src/webviews/standardviews/tactics", () =>
+  helperMocks().tactics(),
+);
+jest.mock("../../src/webviews/goalviews/debug", () =>
+  helperMocks().debugPanel(),
+);
+jest.mock("../../src/webviews/goalviews/goalsPanel", () =>
+  helperMocks().goalsPanel(),
+);
+jest.mock("../../src/webviews/goalviews/compositeGoalsPanel", () =>
+  helperMocks().compositeGoalsPanel(),
+);
+jest.mock("../../src/lsp-client/composite", () => helperMocks().composite());
+jest.mock("../../src/lsp-client/rocq", () => helperMocks().rocq());
+jest.mock("../../src/lsp-client/lean", () => helperMocks().lean());
+jest.mock("../../src/helpers/exerciseSheet", () =>
+  helperMocks().exerciseSheet(),
+);
 
 import { Position } from "vscode";
 import { Waterproof } from "../../src/extension";
 import { executeCommand } from "../../src/lsp-client/commandExecutor";
+import { doc } from "../__helpers__/extension-mocks";
 
 const executeCommandMock = executeCommand as jest.Mock;
 
-type FakeDoc = { uri: { toString: () => string } };
-
-function doc(uri: string): FakeDoc {
-  return { uri: { toString: () => uri } };
-}
+type FakeDoc = ReturnType<typeof doc>;
 
 // Minimal stand-in for the `this` context the handlers rely on.
 function makeCtx(overrides: Record<string, unknown> = {}) {

@@ -151,7 +151,7 @@ Qed.
 
 ## `& 3 < 5 = 2 + 3 ≤ 7 (chain of (in)equalities, with opening parenthesis)`
 
-Example of a chain of (in)equalities in which every inequality should.
+Example of a chain of (in)equalities in which every inequality should hold.
 
 ```coq
 Lemma example_inequalities :
@@ -164,7 +164,7 @@ Qed.
 
 ## `& 3 < 5 = 2 + 3 ≤ 7 (chain of (in)equalities)`
 
-Example of a chain of (in)equalities in which every inequality should.
+Example of a chain of (in)equalities in which every inequality should hold.
 
 ```coq
 Lemma example_inequalities :
@@ -248,7 +248,7 @@ Tries to automatically prove (\*statement\*). If that works, (\*statement\*) is 
 Lemma example_it_holds_that :
   ∀ ε > 0,
     4 - Rmax(ε,1) ≤ 3.
-    
+
 Proof.
 Take ε > 0.
 It holds that Rmax(ε,1) ≥ 1 as (i).
@@ -264,7 +264,7 @@ Tries to automatically prove (\*statement\*). If that works, (\*statement\*) is 
 Lemma example_it_holds_that :
   ∀ ε > 0,
     4 - Rmax(ε,1) ≤ 3.
-    
+
 Proof.
 Take ε > 0.
 It holds that Rmax(ε,1) ≥ 1.
@@ -302,7 +302,7 @@ Qed.
 
 ## `We claim that (*statement*).`
 
-Lets you first show (\*statement\*) before continuing with the rest of the proof. After you showed (\*statement\*), it will be available as a hypothesis with name (\*optional_name\*).
+Lets you first show (\*statement\*) before continuing with the rest of the proof. After you show (\*statement\*), it will be available as a hypothesis with name (\*optional_name\*).
 
 ```coq
 We claim that 2 = 2 as (two_is_two).
@@ -310,7 +310,7 @@ We claim that 2 = 2 as (two_is_two).
 
 ## `We claim that (*statement*) ((*label*)).`
 
-Lets you first show (\*statement\*) before continuing with the rest of the proof. After you showed (\*statement\*), it will be available as a hypothesis with name (\*label\*).
+Lets you first show (\*statement\*) before continuing with the rest of the proof. After you show (\*statement\*), it will be available as a hypothesis with name (\*label\*).
 
 ```coq
 We claim that 2 = 2 as (two_is_two).
@@ -370,10 +370,10 @@ Assume that A ∧ B as (i). Because (i) both A as (ii) and B as (iii).
 Split in two cases (\*case_1\*) and (\*case_2\*).
 
 ```coq
-Lemma example_cases : 
+Lemma example_cases :
   ∀ x ∈ ℝ, ∀ y ∈ ℝ,
     Rmax(x,y) = x ∨ Rmax(x,y) = y.
-Proof. 
+Proof.
 Take x ∈ ℝ. Take y ∈ ℝ.
 Either x < y or x ≥ y.
 - Case x < y.
@@ -605,10 +605,10 @@ Qed.
 Used to indicate the case after an "Either" sentence.
 
 ```coq
-Lemma example_cases : 
+Lemma example_cases :
   ∀ x ∈ ℝ, ∀ y ∈ ℝ,
     Rmax(x,y) = x ∨ Rmax(x,y) = y.
-Proof. 
+Proof.
 Take x ∈ ℝ. Take y ∈ ℝ.
 Either x < y or x ≥ y.
 - Case x < y.
@@ -619,4 +619,3 @@ Either x < y or x ≥ y.
   We conclude that Rmax(x,y) = x.
 Qed.
 ```
-

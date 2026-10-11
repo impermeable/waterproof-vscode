@@ -55,6 +55,7 @@ function createConfiguration(
     | "serializer"
     | "templates"
     | "menubarEntries"
+    | "emptyCodePlaceholders"
   >;
 
   // Set format-specific configuration
@@ -79,6 +80,10 @@ function createConfiguration(
           highlightLight: langWp.highlight_light,
           languageSupport: langWp.waterproof(),
         },
+        emptyCodePlaceholders: {
+          general: "Empty code cell",
+          inInput: "(* Type your proof here *)",
+        },
       };
       break;
     case FileFormat.RegularV:
@@ -98,6 +103,10 @@ function createConfiguration(
           languageSupport: langRocq.rocq(),
           highlightDark: langRocq.highlight_dark,
           highlightLight: langRocq.highlight_light,
+        },
+        emptyCodePlaceholders: {
+          general: "Empty code cell",
+          inInput: "(* Type your proof here *)",
         },
       };
       break;
@@ -126,6 +135,10 @@ function createConfiguration(
           highlightDark: langVerbose.highlight_dark,
           highlightLight: langVerbose.highlight_light,
           languageSupport: langVerbose.verbose(),
+        },
+        emptyCodePlaceholders: {
+          general: "Empty code cell",
+          inInput: "-- Type your proof here",
         },
         menubarEntries: [
           {

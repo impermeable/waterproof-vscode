@@ -23,6 +23,7 @@
   --wp-fontSize: var(--vscode-font-size);
   --wp-fontWeight: var(--vscode-font-weight);
   --wp-foreground: var(--vscode-foreground);
+  --wp-textLinkForeground: var(--vscode-textLink-foreground);
   --wp-inputBackground: var(--vscode-input-background);
   --wp-inputBorder: var(--vscode-input-border);
   --wp-inputForeground: var(--vscode-input-foreground);

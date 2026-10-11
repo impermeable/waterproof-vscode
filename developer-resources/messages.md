@@ -59,6 +59,10 @@ number // Position of the cursor (offset based) after mapping
 #### Description
 Message that contains the diagnostics in the current document which the extension received from the LSP server. Send to the editor upon receiving from the LSP server.
 
+A diagnostic may have its message split into `segments`, some of which are suggestions: a segment with an `edit` is shown as a link inside the message that applies the edit when clicked. Concatenating the segment texts gives the diagnostic's message. Segments are resolved by language clients that support them; the Lean client takes them from the "Try this" widgets in the interactive diagnostics (`Lean.Widget.getInteractiveDiagnostics`), which requires the server to be started with `hasWidgets: true`.
+
+The diagnostics are sent as soon as they are published, with the segments carried over from the previous message where their edits still apply, and sent again once the segments have been resolved. The editor only offers suggestions while its document `version` equals the one the diagnostics were computed for. Each edit also carries the `oldText` it replaces, and the editor refuses to apply an edit whose `oldText` no longer matches the document, or that touches a part of the document the user cannot edit.
+
 #### Body
 ```ts
 DiagnosticMessage // Type containing the diagnostics as well as the version of the document the diagnostics correspond to

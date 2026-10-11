@@ -1,38 +1,39 @@
 import { LeanLspClient } from "./lean";
 import { RocqLspClient } from "./rocq";
 import { convertToString } from "../../lib/types";
-import { ILspClient, LanguageClientProvider } from "./clientTypes";
+import { ILspClient, LanguageClientSetups } from "./clientTypes";
 import { WaterproofLogger as wpl } from "../helpers";
-import {
-  ExtensionContext,
-  OutputChannel,
-  Position,
-  TextDocument,
-} from "vscode";
+import { ExtensionContext, Position, TextDocument } from "vscode";
 import { DocumentSymbol } from "vscode-languageserver-types";
 import { Hypothesis } from "../api";
 import { WebviewManager } from "../webviewManager";
 
 export class CompositeClient implements ILspClient {
   public readonly rocqClient: RocqLspClient;
-  public readonly leanClient: LeanLspClient;
+  /**
+   * The Lean client, or `undefined` when Lean is not supported by this build
+   * (e.g. the web extension, which has no way to spawn a Lake process).
+   */
+  public readonly leanClient?: LeanLspClient;
   protected readonly lastClient: RocqLspClient | LeanLspClient;
 
   protected document?: TextDocument;
 
-  constructor(
-    rocqClientProvider: LanguageClientProvider,
-    rocqOutputChannel: OutputChannel,
-    leanClientProvider: LanguageClientProvider,
-    leanOutputChannel: OutputChannel,
-    context: ExtensionContext,
-  ) {
+  constructor(clients: LanguageClientSetups, context: ExtensionContext) {
     this.rocqClient = new RocqLspClient(
-      rocqClientProvider,
-      rocqOutputChannel,
+      clients.rocq.provider,
+      clients.rocq.createOutputChannel(),
       context,
     );
-    this.leanClient = new LeanLspClient(leanClientProvider, leanOutputChannel);
+    // Constructing a client eagerly instantiates its underlying `LanguageClient`
+    // and its output channel, so only do so for the languages this build
+    // actually supports.
+    this.leanClient = clients.lean
+      ? new LeanLspClient(
+          clients.lean.provider,
+          clients.lean.createOutputChannel(),
+        )
+      : undefined;
 
     this.lastClient = this.rocqClient;
   }
@@ -61,7 +62,8 @@ export class CompositeClient implements ILspClient {
   }
 
   protected getClient(document: TextDocument): RocqLspClient | LeanLspClient {
-    if (document?.languageId === "lean4") return this.leanClient;
+    if (document?.languageId === "lean4" && this.leanClient)
+      return this.leanClient;
     else return this.rocqClient;
   }
 
@@ -137,7 +139,7 @@ export class CompositeClient implements ILspClient {
   async prelaunchChecks(): Promise<string[]> {
     const [rocqAllowed, leanAllowed] = await Promise.all([
       this.rocqClient.prelaunchChecks(),
-      this.leanClient.prelaunchChecks(),
+      this.leanClient?.prelaunchChecks() ?? [],
     ]);
 
     return [...rocqAllowed, ...leanAllowed];
@@ -147,20 +149,27 @@ export class CompositeClient implements ILspClient {
    * Check if all clients are running.
    */
   isRunning(): boolean {
-    return this.rocqClient.isRunning() || this.leanClient.isRunning();
+    return (
+      this.rocqClient.isRunning() || (this.leanClient?.isRunning() ?? false)
+    );
   }
 
   async startWithHandlers(
     webviewManager: WebviewManager,
     allowedLanguages: string[],
   ): Promise<string[]> {
+    const leanClient = this.leanClient;
     const rocqAllowed = allowedLanguages.includes(this.rocqClient.language);
-    const leanAllowed = allowedLanguages.includes(this.leanClient.language);
+    const leanAllowed =
+      leanClient !== undefined &&
+      allowedLanguages.includes(leanClient.language);
 
     if (!rocqAllowed) {
       wpl.log("Skipping Rocq client start: prelaunch checks failed.");
     }
-    if (!leanAllowed) {
+    if (leanClient === undefined) {
+      wpl.log("Skipping Lean client start: Lean is not supported.");
+    } else if (!leanAllowed) {
       wpl.log("Skipping Lean client start: prelaunch checks failed.");
     }
 
@@ -174,7 +183,7 @@ export class CompositeClient implements ILspClient {
       : Promise.resolve([]);
 
     const leanStart = leanAllowed
-      ? this.leanClient
+      ? leanClient
           .startWithHandlers(webviewManager, allowedLanguages)
           .catch((err) => {
             wpl.log(`Failed to start Lean client: ${err}`);
@@ -189,10 +198,13 @@ export class CompositeClient implements ILspClient {
 
   async dispose(timeout?: number): Promise<void> {
     const disposePromises = [];
-    if (this.rocqClient.isRunning()) {
+    // Dispose every client that was created, not only the running ones: a
+    // client that failed to start still owns resources. Disposing a client that
+    // never started is a no-op on the language client itself.
+    if (this.rocqClient.hasClient) {
       disposePromises.push(this.rocqClient.dispose(timeout));
     }
-    if (this.leanClient.isRunning()) {
+    if (this.leanClient?.hasClient) {
       disposePromises.push(this.leanClient.dispose(timeout));
     }
     await Promise.all(disposePromises);

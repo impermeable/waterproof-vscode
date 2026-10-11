@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import process from "process";
 import * as esbuild from "esbuild";
-import copy from "esbuild-plugin-copy";
 import path from "path";
-import { existsSync } from "fs";
+import { copyFileSync, existsSync, globSync, mkdirSync } from "fs";
 
 // Resolve a package to its root directory, following npm workspace hoisting.
 // Checks the local node_modules first, then walks up to the workspace root.
@@ -20,6 +19,21 @@ const sourcemap_client = disable_sourcemap ? null : { sourcemap: "inline" };
 const sourcemap_view = disable_sourcemap ? null : { sourcemap: "inline" };
 
 if (watch) console.log("Watch mode enabled, rebuilding on file change...");
+
+// Copy files matching the given glob patterns (flattened) into the directory `to`.
+const copyPlugin = (from, to) => {
+  return {
+    name: "copy assets",
+    setup(build) {
+      build.onEnd(() => {
+        mkdirSync(to, { recursive: true });
+        for (const file of globSync(from)) {
+          copyFileSync(file, path.join(to, path.basename(file)));
+        }
+      });
+    },
+  };
+};
 
 const watchPlugin = (fileName) => {
   return {
@@ -109,18 +123,10 @@ const browserConfig = {
     ".html": "text",
   },
   plugins: [
-    copy({
-      assets: {
-        from: [
-          "./vendor/*.zip",
-          "./vendor/*.bc",
-          "./vendor/*.js",
-          "./vendor/*.wasm",
-        ],
-        to: [".."],
-      },
-      keepStructure: false,
-    }),
+    copyPlugin(
+      ["./vendor/*.zip", "./vendor/*.bc", "./vendor/*.js", "./vendor/*.wasm"],
+      "out",
+    ),
     watchPlugin("extension/browser"),
   ],
 };

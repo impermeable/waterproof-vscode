@@ -8,6 +8,8 @@ import {
   Disposable,
   DiagnosticSeverity,
   Diagnostic,
+  CancellationToken,
+  CancellationTokenSource,
 } from "vscode";
 import {
   DocumentSymbol,
@@ -29,6 +31,7 @@ import {
 import {
   InputAreaStatus,
   OffsetDiagnostic,
+  OffsetMessageSegment,
   Severity,
   WaterproofCompletion,
 } from "@impermeable/waterproof-editor";
@@ -38,6 +41,8 @@ import {
   ILspClient,
   LanguageClient,
   LanguageClientProvider,
+  MessageSegment,
+  SegmentedDiagnostic,
   WpDiagnostic,
 } from "./clientTypes";
 import { GoalAnswer, GoalRequest } from "../../lib/types";
@@ -53,6 +58,20 @@ function vscodeSeverityToWaterproof(severity: DiagnosticSeverity): Severity {
     case DiagnosticSeverity.Hint:
       return Severity.Hint;
   }
+}
+
+/**
+ * Identifies a diagnostic, both to match segmented diagnostics to published ones and to
+ * carry segments over to the next pass.
+ */
+function diagnosticKey(
+  d: Pick<OffsetDiagnostic, "startOffset" | "endOffset" | "message">,
+): string {
+  return `${d.startOffset}:${d.endOffset}:${d.message}`;
+}
+
+function toPosition(p: { line: number; character: number }): Position {
+  return new Position(p.line, p.character);
 }
 
 function wasCanceledByServer(reason: unknown): boolean {
@@ -80,6 +99,18 @@ export abstract class LspClient<
       this._client = this.provideClient();
     }
     return this._client;
+  }
+
+  /**
+   * Whether the underlying client has been created.
+   *
+   * Unlike `isRunning`, reading this never creates one, and it stays true for a
+   * client that was created but failed to start. Such a client still owns
+   * resources that have to be released — in the web build, the worker its
+   * server runs in.
+   */
+  get hasClient(): boolean {
+    return this._client !== undefined;
   }
 
   /**
@@ -225,7 +256,9 @@ export abstract class LspClient<
         if (
           e.uris.map((uri) => uri.path).includes(this.activeDocument.uri.path)
         ) {
-          this.processDiagnostics();
+          this.processDiagnostics().catch((e) =>
+            wpl.log(`[LspClient] Failed to process diagnostics: ${e}`),
+          );
         }
       }),
     );
@@ -252,24 +285,156 @@ export abstract class LspClient<
     this.fileProgressComponents.forEach((c) => c.onProgress(params));
   }
 
-  protected processDiagnostics() {
+  /**
+   * Splits the messages of diagnostics into segments, some of which are suggestions with an
+   * edit (e.g. Lean's "Try this"). Clients that don't implement this get no suggestions.
+   *
+   * @param document The document the diagnostics belong to.
+   * @param diagnostics The (non-empty) diagnostics of the document.
+   * @param token Cancelled when a newer diagnostics pass starts.
+   * @returns The segmented diagnostics, which are matched to `diagnostics` by range and
+   *   message, or `undefined` if they could not be resolved (in which case the segments of
+   *   the previous pass are kept).
+   */
+  protected resolveMessageSegments?(
+    document: TextDocument,
+    diagnostics: readonly Diagnostic[],
+    token: CancellationToken,
+  ): Promise<SegmentedDiagnostic[] | undefined>;
+
+  /** Converts message segments to offset-based segments. */
+  private toOffsetSegments(
+    document: TextDocument,
+    text: string,
+    segments: readonly MessageSegment[],
+  ): OffsetMessageSegment[] {
+    return segments.map(({ text: segmentText, edit }) => {
+      if (!edit) return { text: segmentText };
+      const start = document.offsetAt(toPosition(edit.range.start));
+      const end = document.offsetAt(toPosition(edit.range.end));
+      return {
+        text: segmentText,
+        edit: {
+          start,
+          end,
+          newText: edit.newText,
+          oldText: text.slice(start, end),
+        },
+      };
+    });
+  }
+
+  /**
+   * Sends the diagnostics of the active document to its editor. When the client resolves
+   * message segments, the diagnostics are sent again once their segments are known.
+   */
+  protected async processDiagnostics(): Promise<void> {
     const document = this.activeDocument;
     if (!document) return;
+    const uri = document.uri.toString();
+
+    // A newer pass for the same document supersedes any pass still in flight.
+    const previousCts = this.diagnosticsCts.get(uri);
+    previousCts?.cancel();
+    previousCts?.dispose();
+    const cts = new CancellationTokenSource();
+    this.diagnosticsCts.set(uri, cts);
+    const token = cts.token;
 
     const diagnostics = languages.getDiagnostics(document.uri);
+    const version = document.version;
+    const text = document.getText();
 
+    // Carry over the segments of the previous pass for diagnostics that are still there, as
+    // long as their edits still apply to the current text. This keeps them visible across
+    // progressive diagnostics updates while they are re-resolved.
+    const previous = this.resolvedSegments.get(uri);
+    const stillApplies = (segments: readonly OffsetMessageSegment[]) =>
+      segments.every(
+        ({ edit: e }) => !e || text.slice(e.start, e.end) === e.oldText,
+      );
     const positionedDiagnostics: OffsetDiagnostic[] = diagnostics.map((d) => {
-      return {
+      const positioned: OffsetDiagnostic = {
         message: d.message,
         severity: vscodeSeverityToWaterproof(d.severity),
         startOffset: document.offsetAt(d.range.start),
         endOffset: document.offsetAt(d.range.end),
       };
+      const carried = previous?.get(diagnosticKey(positioned));
+      return carried && stillApplies(carried)
+        ? { ...positioned, segments: carried }
+        : positioned;
     });
-    this.webviewManager!.postAndCacheMessage(document, {
-      type: MessageType.diagnostics,
-      body: { positionedDiagnostics, version: document.version },
-    });
+
+    try {
+      // Send the diagnostics right away, so squiggles/messages show up without waiting
+      // on segment resolution.
+      this.webviewManager!.postAndCacheMessage(document, {
+        type: MessageType.diagnostics,
+        body: { positionedDiagnostics, version },
+      });
+
+      if (!this.resolveMessageSegments || diagnostics.length === 0) return;
+
+      let resolved: SegmentedDiagnostic[] | undefined;
+      try {
+        resolved = await this.resolveMessageSegments(
+          document,
+          diagnostics,
+          token,
+        );
+      } catch (e) {
+        if (!token.isCancellationRequested) {
+          wpl.log(`[LspClient] Failed to resolve message segments: ${e}`);
+        }
+        return;
+      }
+      if (
+        resolved === undefined ||
+        token.isCancellationRequested ||
+        document.version !== version
+      ) {
+        return;
+      }
+
+      const segmentsByKey = new Map<string, OffsetMessageSegment[]>();
+      for (const d of resolved) {
+        const key = diagnosticKey({
+          startOffset: document.offsetAt(toPosition(d.range.start)),
+          endOffset: document.offsetAt(toPosition(d.range.end)),
+          message: d.message,
+        });
+        segmentsByKey.set(
+          key,
+          this.toOffsetSegments(document, text, d.segments),
+        );
+      }
+      this.resolvedSegments.set(uri, segmentsByKey);
+
+      const withSegments = positionedDiagnostics.map(
+        ({ segments: _carried, ...d }): OffsetDiagnostic => {
+          const segments = segmentsByKey.get(diagnosticKey(d));
+          return segments ? { ...d, segments } : d;
+        },
+      );
+      const changed = withSegments.some(
+        (d, i) =>
+          JSON.stringify(d.segments) !==
+          JSON.stringify(positionedDiagnostics[i].segments),
+      );
+      if (!changed) return;
+
+      wpl.debug(`[diag] sending diagnostics with segments, version=${version}`);
+      this.webviewManager!.postAndCacheMessage(document, {
+        type: MessageType.diagnostics,
+        body: { positionedDiagnostics: withSegments, version },
+      });
+    } finally {
+      if (this.diagnosticsCts.get(uri) === cts) {
+        this.diagnosticsCts.delete(uri);
+      }
+      cts.dispose();
+    }
   }
 
   protected async onCheckingCompleted(): Promise<void> {
@@ -307,6 +472,22 @@ export abstract class LspClient<
 
   // This setTimeout creates a NodeJS.Timeout object, but in the browser it is just a number.
   computeInputAreaStatusTimer?: NodeJS.Timeout | number;
+
+  /**
+   * Tracks, per document URI, the most recent in-flight `processDiagnostics` pass so it can
+   * be cancelled when a newer one supersedes it (e.g. the user keeps typing while
+   * segments are still being resolved against the previous diagnostics snapshot).
+   */
+  private readonly diagnosticsCts = new Map<string, CancellationTokenSource>();
+
+  /**
+   * Per document URI, the segments of the latest diagnostics pass, keyed by
+   * {@linkcode diagnosticKey}. Used to carry them over to the next pass.
+   */
+  private readonly resolvedSegments = new Map<
+    string,
+    Map<string, OffsetMessageSegment[]>
+  >();
 
   protected async computeInputAreaStatus(
     document: TextDocument,
@@ -495,6 +676,12 @@ export abstract class LspClient<
   }
 
   dispose(timeout?: number): Promise<void> {
+    for (const cts of this.diagnosticsCts.values()) {
+      cts.cancel();
+      cts.dispose();
+    }
+    this.diagnosticsCts.clear();
+    this.resolvedSegments.clear();
     this.fileProgressComponents.forEach((c) => c.dispose());
     this.disposables.forEach((d) => d.dispose());
     return this.client.dispose(timeout);

@@ -5,12 +5,13 @@
  *
  * For rocq an input cell has the following form:
  * <input-area>
- * ```coq
+ * ```rocq
  *
  * ....code....
  *
  * ```
  * </input-area>
+ * But for legacy reasons we also support ```coq
  *
  * For lean an input cell has the following form:
  * :::input
@@ -33,8 +34,8 @@ export function clearInputCells(content: string, extension: string): string {
       replacement = ":::input\n```lean\n\n```\n:::";
       break;
     case ".mv":
-      pattern = /<input-area>\s*```coq[\s\S]*?```\s*<\/input-area>/g;
-      replacement = "<input-area>\n```coq\n\n```\n</input-area>";
+      pattern = /<input-area>\s*```(coq|rocq)[\s\S]*?```\s*<\/input-area>/g;
+      replacement = "<input-area>\n```$1\n\n```\n</input-area>";
       break;
     default:
       throw new Error(

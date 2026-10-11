@@ -79,8 +79,9 @@
       {
         "id": "coq",
         "aliases": [
-          "rocq",
           "Coq",
+          "rocq",
+          "Rocq",
           "Gallina",
           "gallina"
         ],

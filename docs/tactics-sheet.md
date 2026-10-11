@@ -4,7 +4,7 @@
 
 Tries to give you a hint on what to do next.
 
-```coq
+```rocq
 Lemma example_help :
   0 = 0.
 Proof.
@@ -17,7 +17,7 @@ Qed.
 
 Take an arbitrary element from (\*type\*) and call it (\*name\*).
 
-```coq
+```rocq
 Lemma example_take :
   for all x : ℝ,
     x = x.
@@ -31,7 +31,7 @@ Qed.
 
 Take an arbitrary element from (\*set\*) and call it (\*name\*).
 
-```coq
+```rocq
 Lemma example_take :
   ∀ x ∈ ℝ,
     x = x.
@@ -45,7 +45,7 @@ Qed.
 
 Take an arbitrary element larger than (\*number\*) and call it (\*name\*).
 
-```coq
+```rocq
 Lemma example_take :
   ∀ x > 3,
     x = x.
@@ -59,7 +59,7 @@ Qed.
 
 Take an arbitrary element larger than or equal to (\*number\*) and call it (\*name\*).
 
-```coq
+```rocq
 Lemma example_take :
   ∀ x ≥ 5,
     x = x.
@@ -73,7 +73,7 @@ Qed.
 
 Generally makes a proof more readable. Has the additional functionality that you can write a slightly different but equivalent formulation of the goal: you can for instance change names of certain variables.
 
-```coq
+```rocq
 Lemma example_we_need_to_show_that :
   0 = 0.
 Proof.
@@ -86,7 +86,7 @@ Qed.
 
 Tries to automatically prove the current goal.
 
-```coq
+```rocq
 Lemma example_we_conclude_that :
   0 = 0.
 Proof.
@@ -98,7 +98,7 @@ Qed.
 
 Tries to automatically prove the current goal.
 
-```coq
+```rocq
 Lemma example_we_conclude_that :
   0 = 0.
 Proof.
@@ -108,9 +108,9 @@ Qed.
 
 ## `Choose (*name_var*) := (*expression*).`
 
-You can use this proof step when you need to show that there exists an x such that a certain property holds. You do this by proposing (\*expression\*) as a choice for x, giving it the name (\*name_var\*).
+You can use this tactic when you need to show that there exists an x such that a certain property holds. You do this by proposing (\*expression\*) as a choice for x, giving it the name (\*name_var\*).
 
-```coq
+```rocq
 Lemma example_choose :
   ∃ y ∈ ℝ,
     y < 3.
@@ -125,7 +125,7 @@ Qed.
 
 If you need to prove (\*statement\*) ⇒ B, this allows you to assume that (\*statement\*) holds.
 
-```coq
+```rocq
 Lemma example_assume :
   ∀ a ∈ ℝ, a < 0 ⇒ - a > 0.
 Proof.
@@ -139,7 +139,7 @@ Qed.
 
 If you need to prove (\*statement\*) ⇒ B, this allows you to assume that (\*statement\*) holds, giving it the label (\*label\*). You can leave out ((\*label\*)) if you don't wish to name your assumption.
 
-```coq
+```rocq
 Lemma example_assume :
   ∀ a ∈ ℝ, a < 0 ⇒ - a > 0.
 Proof.
@@ -153,7 +153,7 @@ Qed.
 
 Example of a chain of (in)equalities in which every inequality should.
 
-```coq
+```rocq
 Lemma example_inequalities :
   ∀ ε > 0, Rmin(ε,1) < 2.
 Proof.
@@ -166,7 +166,7 @@ Qed.
 
 Example of a chain of (in)equalities in which every inequality should.
 
-```coq
+```rocq
 Lemma example_inequalities :
   ∀ ε > 0, Rmin(ε,1) < 2.
 Proof.
@@ -178,9 +178,9 @@ Qed.
 
 ## `Obtain such a (*name_var*)`
 
-In case a hypothesis that you just proved starts with 'there exists' s.t. some property holds, then you can use this proof step to select such a variable. The variable will be named (\*name_var\*).
+In case a hypothesis that you just proved starts with 'there exists' s.t. some property holds, then you can use this tactic to select such a variable. The variable will be named (\*name_var\*).
 
-```coq
+```rocq
 Lemma example_obtain :
   ∀ x ∈ ℝ,
     (∃ y ∈ ℝ, 10 < y ∧ y < x) ⇒
@@ -194,9 +194,9 @@ Qed.
 
 ## `Obtain (*name_var*) according to ((*name_hyp*)).`
 
-In case the hypothesis with name (\*name_hyp\*) starts with 'there exists' s.t. some property holds, then you can use this proof step to select such a variable. The variable will be named (\*name_var\*).
+In case the hypothesis with name (\*name_hyp\*) starts with 'there exists' s.t. some property holds, then you can use this tactic to select such a variable. The variable will be named (\*name_var\*).
 
-```coq
+```rocq
 Lemma example_obtain :
   ∀ x ∈ ℝ,
     (∃ y ∈ ℝ, 10 < y ∧ y < x) ⇒
@@ -212,7 +212,7 @@ Qed.
 
 Waterproof tries to verify automatically whether it is indeed enough to show (\*statement\*) to prove the current goal. If so, (\*statement\*) becomes the new goal.
 
-```coq
+```rocq
 Lemma example_it_suffices_to_show_that :
   ∀ ε > 0,
       3 + Rmax(ε,2) ≥ 3.
@@ -227,7 +227,7 @@ Qed.
 
 Waterproof tries to verify automatically whether it is indeed enough to show (\*statement\*) to prove the current goal, using (\*lemma or assumption\*). If so, (\*statement\*) becomes the new goal.
 
-```coq
+```rocq
 Lemma example_it_suffices_to_show_that :
   ∀ ε ∈ ℝ,
     ε > 0 ⇒
@@ -244,7 +244,7 @@ Qed.
 
 Tries to automatically prove (\*statement\*). If that works, (\*statement\*) is added as a hypothesis with name (\*optional_label\*).
 
-```coq
+```rocq
 Lemma example_it_holds_that :
   ∀ ε > 0,
     4 - Rmax(ε,1) ≤ 3.
@@ -260,7 +260,7 @@ Qed.
 
 Tries to automatically prove (\*statement\*). If that works, (\*statement\*) is added as a hypothesis.
 
-```coq
+```rocq
 Lemma example_it_holds_that :
   ∀ ε > 0,
     4 - Rmax(ε,1) ≤ 3.
@@ -276,7 +276,7 @@ Qed.
 
 Tries to prove (\*statement\*) using (\*lemma\*) or (\*assumption\*). If that works, (\*statement\*) is added as a hypothesis with name (\*optional_label\*). You can leave out ((\*optional_label\*)) if you don't wish to name the statement.
 
-```coq
+```rocq
 Lemma example_forwards :
   7 < f(-1) ⇒ 2 < f(6).
 Proof.
@@ -290,7 +290,7 @@ Qed.
 
 Tries to prove (\*statement\*) using (\*lemma\*) or (\*assumption\*). If that works, (\*statement\*) is added as a hypothesis with name (\*optional_label\*). You can leave out ((\*optional_label\*)) if you don't wish to name the statement.
 
-```coq
+```rocq
 Lemma example_forwards :
   7 < f(-1) ⇒ 2 < f(6).
 Proof.
@@ -304,7 +304,7 @@ Qed.
 
 Lets you first show (\*statement\*) before continuing with the rest of the proof. After you showed (\*statement\*), it will be available as a hypothesis with name (\*optional_name\*).
 
-```coq
+```rocq
 We claim that 2 = 2 as (two_is_two).
 ```
 
@@ -312,7 +312,7 @@ We claim that 2 = 2 as (two_is_two).
 
 Lets you first show (\*statement\*) before continuing with the rest of the proof. After you showed (\*statement\*), it will be available as a hypothesis with name (\*label\*).
 
-```coq
+```rocq
 We claim that 2 = 2 as (two_is_two).
 ```
 
@@ -320,7 +320,7 @@ We claim that 2 = 2 as (two_is_two).
 
 Assumes the opposite of what you need to show. Afterwards, you need to make substeps that show that both A and ¬ A (i.e. not A) for some statement A. Finally, you can finish your proof with 'Contradiction.'
 
-```coq
+```rocq
 Lemma example_contradicition :
   ∀ x ∈ ℝ,
     (∀ ε > 0, x > 1 - ε) ⇒
@@ -341,15 +341,15 @@ Qed.
 
 If you have shown both A and not A for some statement A, you can write "Contradiction" to finish the proof of the current goal.
 
-```coq
+```rocq
 Contradiction.
 ```
 
 ## `Because ((*name_combined_hyp*)) both (*statement_1*) and (*statement_2*).`
 
-If you currently have a hypothesis with name (\*name_combined_hyp\*) which is in fact of the form H1 ∧ H2, then this proof step splits it up in two separate hypotheses.
+If you currently have a hypothesis with name (\*name_combined_hyp\*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses.
 
-```coq
+```rocq
 Lemma and_example : for all A B : Prop, A ∧ B ⇒ A.
 Take A : Prop. Take B : Prop.
 Assume that A ∧ B as (i). Because (i) both A as (ii) and B as (iii).
@@ -357,9 +357,9 @@ Assume that A ∧ B as (i). Because (i) both A as (ii) and B as (iii).
 
 ## `Because ((*name_combined_hyp*)) both (*statement_1*) as ((*label_1*)) and (*statement_2*) as ((*label_2*)).`
 
-If you currently have a hypothesis with name (\*name_combined_hyp\*) which is in fact of the form H1 ∧ H2, then this proof step splits it up in two separate hypotheses.
+If you currently have a hypothesis with name (\*name_combined_hyp\*) which is in fact of the form H1 ∧ H2, then this tactic splits it up in two separate hypotheses.
 
-```coq
+```rocq
 Lemma and_example : for all A B : Prop, A ∧ B ⇒ A.
 Take A : Prop. Take B : Prop.
 Assume that A ∧ B as (i). Because (i) both A as (ii) and B as (iii).
@@ -369,7 +369,7 @@ Assume that A ∧ B as (i). Because (i) both A as (ii) and B as (iii).
 
 Split in two cases (\*case_1\*) and (\*case_2\*).
 
-```coq
+```rocq
 Lemma example_cases : 
   ∀ x ∈ ℝ, ∀ y ∈ ℝ,
     Rmax(x,y) = x ∨ Rmax(x,y) = y.
@@ -389,7 +389,7 @@ Qed.
 
 Uses the definition and alternative characterizations of (\*name_kw\*) in relevant statements in the proof, and gives suggestions on how to use them.
 
-```coq
+```rocq
 Expand infimum.
 ```
 
@@ -397,7 +397,7 @@ Expand infimum.
 
 Uses a number of definitions and alternative characterizations to reformulate relevant statements.
 
-```coq
+```rocq
 Expand All.
 ```
 
@@ -405,7 +405,7 @@ Expand All.
 
 Splits the goal in two separate goals, if it is of the form A ∧ B
 
-```coq
+```rocq
 Lemma example_both_statements:
   ∀ x ∈ ℝ, (x^2 ≥ 0) ∧ (| x | ≥ 0).
 Proof.
@@ -420,7 +420,7 @@ Qed.
 
 Splits a goal of the form A ⇔ B, into the goals (A ⇒ B) and (B ⇒ A)
 
-```coq
+```rocq
 Lemma example_both_directions:
   ∀ x ∈ ℝ, ∀ y ∈ ℝ,
     x < y ⇔ y > x.
@@ -440,7 +440,7 @@ Qed.
 
 Prove a statement by induction on the variable with (\*name_var\*).
 
-```coq
+```rocq
 Lemma example_induction :
   ∀ n : ℕ → ℕ, (∀ k ∈ ℕ, n(k) < n(k + 1))%nat ⇒
     ∀ k ∈ ℕ, (k ≤ n(k))%nat.
@@ -470,15 +470,15 @@ Temporarily give the name (\*name\*) to the expression (\*expression\*)
 
 Tries to first verify (\*extra_statement\*) after it uses that to verify (\*statement\*). The statement gets added as a hypothesis.
 
-```coq
+```rocq
 Since x = y it holds that x = z.
 ```
 
 ## `Since (*extra_statement*) it holds that (*statement*) as ((*label*)).`
 
-Tries to first verify (\*extra_statement\*) after it uses that to verify (\*statement\*). The statement gets added as a hypothesiwe need to show{s, optionally with the name (\*optional_label\*).
+Tries to first verify (\*extra_statement\*) after it uses that to verify (\*statement\*). The statement gets added as a hypothesis, optionally with the name (\*optional_label\*).
 
-```coq
+```rocq
 Since x = y it holds that x = z.
 ```
 
@@ -486,7 +486,7 @@ Since x = y it holds that x = z.
 
 Tries to automatically prove the current goal, after first trying to prove (\*extra_statement\*).
 
-```coq
+```rocq
 Since x = y we conclude that x = z.
 ```
 
@@ -494,7 +494,7 @@ Since x = y we conclude that x = z.
 
 Waterproof tries to verify automatically whether it is indeed enough to show (\*statement\*) to prove the current goal, after first trying to prove (\*extra_statement\*). If so, (\*statement\*) becomes the new goal.
 
-```coq
+```rocq
 Lemma example_backwards :
   3 < f(0) ⇒ 2 < f(5).
 Proof.
@@ -508,7 +508,7 @@ Qed.
 
 Use a forall statement, i.e. apply it to a particular expression.
 
-```coq
+```rocq
 Lemma example_use_for_all :
   ∀ x ∈ ℝ,
     (∀ ε > 0, x < ε) ⇒
@@ -527,7 +527,7 @@ Qed.
 
 A synonym for "We conclude that ((\*statement\*))".
 
-```coq
+```rocq
 Lemma example_choose :
   ∃ y ∈ ℝ,
     y < 3.
@@ -540,9 +540,9 @@ Qed.
 
 ## `We need to verify that (*statement*).`
 
-Used to indicate what to check after using the "Choose" or "Use" proof step.
+Used to indicate what to check after using the "Choose" or "Use" tactic.
 
-```coq
+```rocq
 Lemma example_choose :
   ∃ y ∈ ℝ,
     y < 3.
@@ -558,7 +558,7 @@ Qed.
 
 Postpones the proof of (\*statement\*), and (\*statement\*) is added as a hypothesis with name (\*optional_label\*). You can leave out ((\*optional_label\*)) if you don't wish to name the statement.
 
-```coq
+```rocq
 Lemma example_forwards :
   7 < f(-1) ⇒ 2 < f(6).
 Proof.
@@ -572,7 +572,7 @@ Qed.
 
 Postpones the proof of (\*statement\*), and (\*statement\*) is added as a hypothesis.
 
-```coq
+```rocq
 Lemma example_forwards :
   7 < f(-1) ⇒ 2 < f(6).
 Proof.
@@ -590,7 +590,7 @@ Postpones for now the proof of (a possible alternative formulation of) the curre
 
 Postpones for now the proof that (\*statement\*) is enough to prove the current goal. Now, (\*statement\*) becomes the new goal.
 
-```coq
+```rocq
 Lemma example_backwards :
   3 < f(0) ⇒ 2 < f(5).
 Proof.
@@ -604,7 +604,7 @@ Qed.
 
 Used to indicate the case after an "Either" sentence.
 
-```coq
+```rocq
 Lemma example_cases : 
   ∀ x ∈ ℝ, ∀ y ∈ ℝ,
     Rmax(x,y) = x ∨ Rmax(x,y) = y.

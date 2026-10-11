@@ -629,7 +629,7 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
   public clientStopped = this.clientStoppedEmitter.event;
 
   async dispose(timeout?: number): Promise<void> {
-    for (const uri of [...this.rpcSessions.keys()]) this.closeRpcSession(uri);
+    for (const uri of this.rpcSessions.keys()) this.closeRpcSession(uri);
     await super.dispose(timeout);
     this.clientStoppedEmitter.fire({
       message: "Lean server has stopped",

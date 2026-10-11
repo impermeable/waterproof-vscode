@@ -12,10 +12,10 @@ import type { MessageSegment, SegmentedDiagnostic } from "../clientTypes";
  * `textInsertionWidget` with the suggestion text as link text. Both carry the edit in their
  * props as `{ range, suggestion }`.
  */
-const SUGGESTION_WIDGET_IDS: readonly string[] = [
+const SUGGESTION_WIDGET_IDS: Set<string> = new Set([
   "Lean.Meta.Hint.textInsertionWidget",
   "Lean.Meta.Hint.tryThisDiffWidget",
-];
+]);
 
 type Embed = MsgEmbed | { [key: string]: unknown };
 
@@ -61,7 +61,7 @@ function suggestionEdit(embed: Embed): TextEdit | undefined {
   const { wi } = embed.widget as {
     wi: { id?: string; props?: { range?: LspRange; suggestion?: unknown } };
   };
-  if (!wi.id || !SUGGESTION_WIDGET_IDS.includes(wi.id)) return undefined;
+  if (!wi.id || !SUGGESTION_WIDGET_IDS.has(wi.id)) return undefined;
   const range = wi.props?.range;
   const suggestion = wi.props?.suggestion;
   if (!range || typeof suggestion !== "string") return undefined;

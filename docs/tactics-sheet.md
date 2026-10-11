@@ -151,7 +151,7 @@ Qed.
 
 ## `& 3 < 5 = 2 + 3 ≤ 7 (chain of (in)equalities, with opening parenthesis)`
 
-Example of a chain of (in)equalities in which every inequality should.
+Example of a chain of (in)equalities in which every inequality should hold.
 
 ```rocq
 Lemma example_inequalities :
@@ -164,7 +164,7 @@ Qed.
 
 ## `& 3 < 5 = 2 + 3 ≤ 7 (chain of (in)equalities)`
 
-Example of a chain of (in)equalities in which every inequality should.
+Example of a chain of (in)equalities in which every inequality should hold.
 
 ```rocq
 Lemma example_inequalities :
@@ -302,7 +302,7 @@ Qed.
 
 ## `We claim that (*statement*).`
 
-Lets you first show (\*statement\*) before continuing with the rest of the proof. After you showed (\*statement\*), it will be available as a hypothesis with name (\*optional_name\*).
+Lets you first show (\*statement\*) before continuing with the rest of the proof. After you show (\*statement\*), it will be available as a hypothesis with name (\*optional_name\*).
 
 ```rocq
 We claim that 2 = 2 as (two_is_two).
@@ -310,7 +310,7 @@ We claim that 2 = 2 as (two_is_two).
 
 ## `We claim that (*statement*) ((*label*)).`
 
-Lets you first show (\*statement\*) before continuing with the rest of the proof. After you showed (\*statement\*), it will be available as a hypothesis with name (\*label\*).
+Lets you first show (\*statement\*) before continuing with the rest of the proof. After you show (\*statement\*), it will be available as a hypothesis with name (\*label\*).
 
 ```rocq
 We claim that 2 = 2 as (two_is_two).

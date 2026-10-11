@@ -1,0 +1,1115 @@
+{
+  "published": [
+    {
+      "range": {
+        "end": {
+          "character": 8,
+          "line": 3
+        },
+        "start": {
+          "character": 2,
+          "line": 3
+        }
+      },
+      "message": "Help\n  • The assumption h has shape “∃ n > 0, ...”\n    One can use it with:\n    Since ∃ n > 0, P n we get n such that (n_pos : n > 0) and (hn : P n)\n    The names n, n_pos and hn can be chosen freely among available names."
+    },
+    {
+      "range": {
+        "end": {
+          "character": 8,
+          "line": 7
+        },
+        "start": {
+          "character": 2,
+          "line": 7
+        }
+      },
+      "message": "Help\n  • The assumption h starts with “∀ n, ...”\n    One can use it with:\n    Since ∀ (n : ℕ), P n ⇒ Q n we get that P n₀ ⇒ Q n₀\n    where n₀ is a natural number\n  • If this assumption won't be used again in its general shape, one can also specialize h with\n    We apply h to n₀"
+    },
+    {
+      "range": {
+        "end": {
+          "character": 25,
+          "line": 2
+        },
+        "start": {
+          "character": 24,
+          "line": 2
+        }
+      },
+      "message": "Variable name `h` is not explicitly referenced.\n\nThe binding can be removed (if unused) or named `_` (if used implicitly).\n\nNote: This linter can be disabled with `set_option linter.unusedVariables false`"
+    },
+    {
+      "range": {
+        "end": {
+          "character": 8,
+          "line": 3
+        },
+        "start": {
+          "character": 2,
+          "line": 3
+        }
+      },
+      "message": "'help h' tactic does nothing\n\nNote: This linter can be disabled with `set_option linter.unusedTactic false`"
+    },
+    {
+      "range": {
+        "end": {
+          "character": 8,
+          "line": 7
+        },
+        "start": {
+          "character": 2,
+          "line": 7
+        }
+      },
+      "message": "'help h' tactic does nothing\n\nNote: This linter can be disabled with `set_option linter.unusedTactic false`"
+    }
+  ],
+  "interactive": [
+    {
+      "fullRange": {
+        "end": {
+          "character": 8,
+          "line": 3
+        },
+        "start": {
+          "character": 2,
+          "line": 3
+        }
+      },
+      "message": {
+        "append": [
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "Help"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n  "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "• "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "The assumption h has shape “∃ n > 0, ...”"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n    "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "One can use it with:"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n    "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "widget": {
+                  "alt": {
+                    "tag": [
+                      {
+                        "expr": {
+                          "text": "Since ∃ n > 0, P n we get n such that (n_pos : n > 0) and (hn : P n)"
+                        }
+                      },
+                      {
+                        "text": ""
+                      }
+                    ]
+                  },
+                  "wi": {
+                    "id": "Lean.Meta.Hint.textInsertionWidget",
+                    "javascriptHash": "14102652505372521831",
+                    "props": {
+                      "acceptSuggestionProps": {
+                        "hoverText": "Apply suggestion",
+                        "kind": "text",
+                        "linkText": "Since ∃ n > 0, P n we get n such that (n_pos : n > 0) and (hn : P n)"
+                      },
+                      "range": {
+                        "end": {
+                          "character": 8,
+                          "line": 3
+                        },
+                        "start": {
+                          "character": 2,
+                          "line": 3
+                        }
+                      },
+                      "suggestion": "Since ∃ n > 0, P n we get n such that (n_pos : n > 0) and (hn : P n)"
+                    }
+                  }
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n    "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "The names n, n_pos and hn can be chosen freely among available names."
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          }
+        ]
+      },
+      "range": {
+        "end": {
+          "character": 8,
+          "line": 3
+        },
+        "start": {
+          "character": 2,
+          "line": 3
+        }
+      },
+      "severity": 3,
+      "source": "Lean 4"
+    },
+    {
+      "fullRange": {
+        "end": {
+          "character": 8,
+          "line": 7
+        },
+        "start": {
+          "character": 2,
+          "line": 7
+        }
+      },
+      "message": {
+        "append": [
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "Help"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n  "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "• "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "The assumption h starts with “∀ n, ...”"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n    "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "One can use it with:"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n    "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "widget": {
+                  "alt": {
+                    "tag": [
+                      {
+                        "expr": {
+                          "text": "Since ∀ (n : ℕ), P n ⇒ Q n we get that P n₀ ⇒ Q n₀"
+                        }
+                      },
+                      {
+                        "text": ""
+                      }
+                    ]
+                  },
+                  "wi": {
+                    "id": "Lean.Meta.Hint.textInsertionWidget",
+                    "javascriptHash": "14102652505372521831",
+                    "props": {
+                      "acceptSuggestionProps": {
+                        "hoverText": "Apply suggestion",
+                        "kind": "text",
+                        "linkText": "Since ∀ (n : ℕ), P n ⇒ Q n we get that P n₀ ⇒ Q n₀"
+                      },
+                      "range": {
+                        "end": {
+                          "character": 8,
+                          "line": 7
+                        },
+                        "start": {
+                          "character": 2,
+                          "line": 7
+                        }
+                      },
+                      "suggestion": "Since ∀ (n : ℕ), P n ⇒ Q n we get that P n₀ ⇒ Q n₀"
+                    }
+                  }
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n    "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "where n₀ is a natural number"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n  "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "• "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "If this assumption won't be used again in its general shape, one can also specialize h with"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n    "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "widget": {
+                  "alt": {
+                    "tag": [
+                      {
+                        "expr": {
+                          "text": "We apply h to n₀"
+                        }
+                      },
+                      {
+                        "text": ""
+                      }
+                    ]
+                  },
+                  "wi": {
+                    "id": "Lean.Meta.Hint.textInsertionWidget",
+                    "javascriptHash": "14102652505372521831",
+                    "props": {
+                      "acceptSuggestionProps": {
+                        "hoverText": "Apply suggestion",
+                        "kind": "text",
+                        "linkText": "We apply h to n₀"
+                      },
+                      "range": {
+                        "end": {
+                          "character": 8,
+                          "line": 7
+                        },
+                        "start": {
+                          "character": 2,
+                          "line": 7
+                        }
+                      },
+                      "suggestion": "We apply h to n₀"
+                    }
+                  }
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          }
+        ]
+      },
+      "range": {
+        "end": {
+          "character": 8,
+          "line": 7
+        },
+        "start": {
+          "character": 2,
+          "line": 7
+        }
+      },
+      "severity": 3,
+      "source": "Lean 4"
+    },
+    {
+      "fullRange": {
+        "end": {
+          "character": 25,
+          "line": 2
+        },
+        "start": {
+          "character": 24,
+          "line": 2
+        }
+      },
+      "message": {
+        "append": [
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "Variable name `"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "h"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "` is not explicitly referenced."
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": ""
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "The binding can be removed (if unused) or named `_` (if used implicitly)."
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "Note: "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "This linter can be disabled with `set_option "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "linter.unusedVariables"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": " false`"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          }
+        ]
+      },
+      "range": {
+        "end": {
+          "character": 25,
+          "line": 2
+        },
+        "start": {
+          "character": 24,
+          "line": 2
+        }
+      },
+      "severity": 2,
+      "source": "Lean 4",
+      "tags": [1]
+    },
+    {
+      "fullRange": {
+        "end": {
+          "character": 8,
+          "line": 3
+        },
+        "start": {
+          "character": 2,
+          "line": 3
+        }
+      },
+      "message": {
+        "append": [
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "'"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "help h"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "' tactic does nothing"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "Note: "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "This linter can be disabled with `set_option "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "linter.unusedTactic"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": " false`"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          }
+        ]
+      },
+      "range": {
+        "end": {
+          "character": 8,
+          "line": 3
+        },
+        "start": {
+          "character": 2,
+          "line": 3
+        }
+      },
+      "severity": 2,
+      "source": "Lean 4"
+    },
+    {
+      "fullRange": {
+        "end": {
+          "character": 8,
+          "line": 7
+        },
+        "start": {
+          "character": 2,
+          "line": 7
+        }
+      },
+      "message": {
+        "append": [
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "'"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "help h"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "' tactic does nothing"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "\n"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "Note: "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "This linter can be disabled with `set_option "
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": "linter.unusedTactic"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "tag": [
+              {
+                "expr": {
+                  "text": " false`"
+                }
+              },
+              {
+                "text": ""
+              }
+            ]
+          }
+        ]
+      },
+      "range": {
+        "end": {
+          "character": 8,
+          "line": 7
+        },
+        "start": {
+          "character": 2,
+          "line": 7
+        }
+      },
+      "severity": 2,
+      "source": "Lean 4"
+    }
+  ]
+}

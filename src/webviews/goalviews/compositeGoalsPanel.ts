@@ -1,6 +1,6 @@
 import { CompositeClient } from "../../lsp-client/composite";
 import { GoalsPanel } from "./goalsPanel";
-import { IGoalsComponent } from "../../components";
+import { IGoalsComponent } from "./goalsComponent";
 import { LeanLspClient } from "../../lsp-client/lean";
 import { InfoProvider } from "../../infoview";
 import { Location } from "vscode-languageserver-types";

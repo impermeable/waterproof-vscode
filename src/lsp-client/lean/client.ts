@@ -10,6 +10,7 @@ import {
   OutputChannel,
   Diagnostic,
   DiagnosticSeverity,
+  CancellationToken,
   workspace,
 } from "vscode";
 import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
@@ -26,7 +27,11 @@ import {
   WaterproofLogger as wpl,
   WaterproofSetting,
 } from "../../helpers";
-import { LanguageClientProvider, WpDiagnostic } from "../clientTypes";
+import {
+  LanguageClientProvider,
+  SegmentedDiagnostic,
+  WpDiagnostic,
+} from "../clientTypes";
 import { WebviewManager } from "../../webviewManager";
 import { findOccurrences } from "../qedStatus";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
@@ -37,6 +42,19 @@ import {
 } from "vscode-languageclient";
 import { FileProgressKind, MessageType } from "../../../shared";
 import { patchDiagnosticConverters } from "./converter";
+import type {
+  InteractiveDiagnostic,
+  RpcCallParams,
+} from "@leanprover/infoview-api";
+import {
+  collectRpcRefs,
+  toSegmentedDiagnostics,
+} from "./interactiveDiagnostics";
+import { LeanRpcSession } from "./rpcSession";
+
+// Values of `RpcErrorCode` from `@leanprover/infoview-api`, which only exports it as a runtime enum.
+const RPC_CONTENT_MODIFIED = -32801;
+const RPC_NEEDS_RECONNECT = -32900;
 
 export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
   language = "lean4";
@@ -60,6 +78,10 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
       this.client.onNotification(leanFileProgressNotificationType, (params) => {
         this.onFileProgress(params);
       }),
+      // The server ends a document's RPC sessions when it is closed.
+      workspace.onDidCloseTextDocument((document) =>
+        this.closeRpcSession(document.uri.toString()),
+      ),
     );
 
     const hndl = this.client.middleware.handleDiagnostics;
@@ -432,6 +454,41 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
   }
 
   /**
+   * Takes the "Try this" suggestions from the interactive diagnostics, where they are embedded
+   * in the message they belong to. This needs the server to be started with
+   * `hasWidgets: true`, otherwise the suggestion widgets are stripped from the messages.
+   * Diagnostics rewritten by `rewriteDiagnostics` match no interactive diagnostic, so they
+   * get no suggestions.
+   */
+  protected override async resolveMessageSegments(
+    document: TextDocument,
+    diagnostics: readonly Diagnostic[],
+    token: CancellationToken,
+  ): Promise<SegmentedDiagnostic[] | undefined> {
+    // Only request the lines we have diagnostics for, so that the request doesn't wait for
+    // the server to process the rest of the file.
+    const end = Math.max(...diagnostics.map((d) => d.range.end.line));
+    const uri = document.uri.toString();
+    let interactive: InteractiveDiagnostic[];
+    try {
+      interactive = await this.callGetInteractiveDiagnostics(
+        uri,
+        { start: 0, end: end + 1 },
+        token,
+      );
+    } catch (e) {
+      if (rpcErrorCode(e) === RPC_CONTENT_MODIFIED) return undefined;
+      throw e;
+    }
+    const result = toSegmentedDiagnostics(interactive);
+    wpl.debug(
+      `[leanClient] interactive diagnostics uri=${uri.split("/").pop()}, ` +
+        `count=${interactive.length}, withSuggestions=${result.length}`,
+    );
+    return result;
+  }
+
+  /**
    * Finds the position just after the proof-closing marker (`□` in Yalep, `QED` in Verbose
    * Lean) that follows `searchFrom` in the document. In these dialects the marker lives in a
    * `lean` block *after* the input area's closing `:::`, and it is the step that discharges
@@ -471,6 +528,70 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
       : document.positionAt(bestStart + bestLength);
   }
 
+  /** RPC sessions used for `getInteractiveDiagnostics`, by document URI. */
+  private rpcSessions = new Map<string, Promise<LeanRpcSession>>();
+
+  private async callGetInteractiveDiagnostics(
+    uri: string,
+    lineRange: { start: number; end: number },
+    token: CancellationToken,
+    retry = true,
+  ): Promise<InteractiveDiagnostic[]> {
+    const { sessionId } = await this.getRpcSession(uri);
+    const params: RpcCallParams = {
+      textDocument: { uri },
+      position: { line: 0, character: 0 },
+      sessionId,
+      method: "Lean.Widget.getInteractiveDiagnostics",
+      params: { lineRange },
+    };
+    let result: InteractiveDiagnostic[];
+    try {
+      result = await this.client.sendRequest("$/lean/rpc/call", params, token);
+    } catch (e) {
+      // The server drops sessions, e.g. when the file worker restarts.
+      if (retry && rpcErrorCode(e) === RPC_NEEDS_RECONNECT) {
+        this.closeRpcSession(uri);
+        return this.callGetInteractiveDiagnostics(uri, lineRange, token, false);
+      }
+      throw e;
+    }
+    this.releaseRpcRefs(uri, sessionId, result);
+    return result;
+  }
+
+  /** Releases the RPC references in `result`, which we never dereference. */
+  private releaseRpcRefs(uri: string, sessionId: string, result: unknown) {
+    const refs = collectRpcRefs(result);
+    if (refs.length === 0) return;
+    this.client
+      .sendNotification("$/lean/rpc/release", { uri, sessionId, refs })
+      .catch((e: unknown) =>
+        wpl.debug(`[leanClient] failed to release RPC refs: ${e}`),
+      );
+  }
+
+  private getRpcSession(uri: string): Promise<LeanRpcSession> {
+    const existing = this.rpcSessions.get(uri);
+    if (existing) return existing;
+    // Forget the session when it is lost, or when connecting fails, unless it has been
+    // replaced by then.
+    const forget = () => {
+      if (this.rpcSessions.get(uri) === session) this.closeRpcSession(uri);
+    };
+    const session = LeanRpcSession.connect(this.client, uri, forget);
+    this.rpcSessions.set(uri, session);
+    session.catch(forget);
+    return session;
+  }
+
+  private closeRpcSession(uri: string) {
+    const session = this.rpcSessions.get(uri);
+    if (!session) return;
+    this.rpcSessions.delete(uri);
+    session.then((s) => s.dispose()).catch(() => {});
+  }
+
   // Emitters for infoview
   private didChangeEmitter = new EventEmitter<DidChangeTextDocumentParams>();
   public didChange(
@@ -508,10 +629,19 @@ export class LeanLspClient extends LspClient<LeanGoalRequest, LeanGoalAnswer> {
   public clientStopped = this.clientStoppedEmitter.event;
 
   async dispose(timeout?: number): Promise<void> {
+    for (const uri of this.rpcSessions.keys()) this.closeRpcSession(uri);
     await super.dispose(timeout);
     this.clientStoppedEmitter.fire({
       message: "Lean server has stopped",
       reason: "",
     });
   }
+}
+
+function rpcErrorCode(e: unknown): number | undefined {
+  if (e !== null && typeof e === "object" && "code" in e) {
+    const code = (e as { code: unknown }).code;
+    return typeof code === "number" ? code : undefined;
+  }
+  return undefined;
 }

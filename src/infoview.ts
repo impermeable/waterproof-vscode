@@ -2,9 +2,6 @@ import {
   EditorApi,
   InfoviewApi,
   InfoviewConfig,
-  RpcConnected,
-  RpcConnectParams,
-  RpcKeepAliveParams,
   ServerStoppedReason,
 } from "@leanprover/infoview-api";
 import { Rpc } from "./helpers/rpc";
@@ -17,11 +14,8 @@ import {
   workspace,
 } from "vscode";
 import { LeanLspClient } from "./lsp-client/lean";
-import {
-  DocumentUri,
-  WorkspaceEdit,
-  Location,
-} from "vscode-languageserver-protocol";
+import { LeanRpcSession } from "./lsp-client/lean/rpcSession";
+import { WorkspaceEdit, Location } from "vscode-languageserver-protocol";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
 import {
   qualifiedSettingName,
@@ -31,59 +25,7 @@ import {
 } from "./helpers";
 import { WebviewEvents } from "./webviews/waterproofPanel";
 
-const keepAlivePeriodMs = 10000;
-
 type GetWidgetsResponse = { widgets: { id?: string }[] };
-
-/**
- * Connects client to server and returns result
- */
-async function rpcConnect(
-  client: LeanLspClient,
-  uri: DocumentUri,
-): Promise<string> {
-  const connParams: RpcConnectParams = { uri };
-  try {
-    const result: RpcConnected = await client.client.sendRequest(
-      "$/lean/rpc/connect",
-      connParams,
-    );
-    return result.sessionId;
-  } catch (e) {
-    wpl.log(`Could not initialize a Lean RPC session: ${e}`);
-    throw e;
-  }
-}
-
-/**
- * The class for rpc session
- */
-class RpcSessionAtPos implements Disposable {
-  keepAliveInterval?: NodeJS.Timeout;
-  client: LeanLspClient;
-
-  constructor(
-    client: LeanLspClient,
-    public sessionId: string,
-    public uri: DocumentUri,
-  ) {
-    this.client = client;
-    this.keepAliveInterval = setInterval(async () => {
-      const params: RpcKeepAliveParams = { uri, sessionId };
-      try {
-        await client.client.sendNotification("$/lean/rpc/keepAlive", params);
-      } catch (e) {
-        wpl.log(`[InfoProvider] failed to send keepalive for ${uri}: ${e}`);
-        if (this.keepAliveInterval) clearInterval(this.keepAliveInterval);
-      }
-    }, keepAlivePeriodMs);
-  }
-
-  dispose() {
-    if (this.keepAliveInterval) clearInterval(this.keepAliveInterval);
-    // TODO: at this point we could close the session
-  }
-}
 
 export class InfoProvider implements Disposable {
   private rpc?: Rpc;
@@ -92,7 +34,7 @@ export class InfoProvider implements Disposable {
   private clientNotifSubscriptions = new Map<string, [number, Disposable[]]>();
   private disposables: Disposable[] = [];
   public isInitialized: boolean = false;
-  private rpcSessions = new Map<string, RpcSessionAtPos>();
+  private rpcSessions = new Map<string, LeanRpcSession>();
 
   dispose() {
     this.disposables.forEach((d) => d.dispose());
@@ -448,10 +390,17 @@ export class InfoProvider implements Disposable {
 
     createRpcSession: async (uri) => {
       wpl.log(`[Infoprovider] Creating rpc session for ${uri}`);
-      const sessionId = await rpcConnect(this.client, uri);
-      const session = new RpcSessionAtPos(this.client, sessionId, uri);
-      this.rpcSessions.set(sessionId, session);
-      return sessionId;
+      let session: LeanRpcSession;
+      try {
+        session = await LeanRpcSession.connect(this.client.client, uri, (e) =>
+          wpl.log(`[InfoProvider] failed to send keepalive for ${uri}: ${e}`),
+        );
+      } catch (e) {
+        wpl.log(`Could not initialize a Lean RPC session: ${e}`);
+        throw e;
+      }
+      this.rpcSessions.set(session.sessionId, session);
+      return session.sessionId;
     },
 
     closeRpcSession: async (sessionId) => {

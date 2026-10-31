@@ -51,7 +51,7 @@ function createConfiguration(
     | "markdownName"
     | "tagConfiguration"
     | "languageConfig"
-    | "disableMarkdownFeatures"
+    | "markdownOptions"
     | "serializer"
     | "templates"
     | "menubarEntries"
@@ -94,7 +94,7 @@ function createConfiguration(
           containerOpenTag: "",
         },
         tagConfiguration: tagConfigurationV,
-        disableMarkdownFeatures: ["code"],
+        markdownOptions: { disableMarkdownFeatures: ["code"] },
         languageConfig: {
           languageSupport: langRocq.rocq(),
           highlightDark: langRocq.highlight_dark,

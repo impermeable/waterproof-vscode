@@ -62,7 +62,7 @@ export const extensionMocks = {
     WaterproofFileUtil: {},
     WaterproofPackageJSON: {
       // `initializeClient` slices the leading ">=" off this.
-      requiredCoqLspVersion: jest.fn(() => ">=0.2.4"),
+      requiredCoqLspVersion: jest.fn(() => ">=0.2.5"),
       requiredCoqWaterproofVersion: jest.fn(() => ">=3.1.0"),
     },
     WaterproofSetting: { SkipLaunchChecks: "skipLaunchChecks" },

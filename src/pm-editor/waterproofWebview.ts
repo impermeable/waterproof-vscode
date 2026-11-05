@@ -362,6 +362,10 @@ export class WaterproofWebview extends EventEmitter {
       }
     })();
 
+    const showLineNrs = this._showLineNrsInEditor;
+    const showMenuItems = this._showMenuItemsInEditor;
+    const teacherMode = this._teacherMode;
+
     // Fill the webview panel with initial HTML of our ProseMirror based editor.
     this._panel.webview.html = `
         <!doctype html>
@@ -374,7 +378,7 @@ export class WaterproofWebview extends EventEmitter {
         <body format="${this._format}">
             <article>
                 <!-- The div underneath stores the editor -->
-                <div id="editor" spellcheck="false" data-theme-kind="${themeKind}">
+                <div id="editor" spellcheck="false" data-theme-kind="${themeKind}" data-show-line-nrs="${showLineNrs}" data-show-menu-items="${showMenuItems}" data-teacher-mode="${teacherMode}" >
                 </div>
             </article>
             <div style="height: 50vh"></div>

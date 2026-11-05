@@ -1,6 +1,7 @@
 import { FileFormat, Message, MessageType } from "../../shared";
 import {
   defaultToMarkdown,
+  InitialValues,
   markdown,
   ThemeStyle,
   WaterproofEditor,
@@ -42,6 +43,7 @@ function createConfiguration(
   format: FileFormat,
   codeAPI: VSCodeAPI,
   editorRef: { current?: WaterproofEditor },
+  initialValues: InitialValues,
 ) {
   let formatConf: Pick<
     WaterproofEditorConfig,
@@ -159,6 +161,7 @@ function createConfiguration(
     // Include format-specific configuration
     ...formatConf,
 
+    sendViewPortHints: true,
     symbols: symbols,
     api: {
       executeHelp() {
@@ -198,6 +201,7 @@ function createConfiguration(
         });
       },
     },
+    initialValues,
   };
 
   return cfg;
@@ -223,27 +227,47 @@ window.onload = () => {
   // Create a ref so that menubar callbacks can dispatch commands after the editor is constructed.
   const editorRef: { current?: WaterproofEditor } = {};
 
-  // Create the editor, passing it the vscode api and the editor and content HTML elements.
-  const cfg = createConfiguration(format, codeAPI, editorRef);
   // Retrieve the current theme style from the attribute 'data-theme-kind'
   // attached to the editor element. This allows us to set the initial theme kind
   // rather than waiting for the themestyle message to arrive.
-  const themeStyle: ThemeStyle = (() => {
-    const value = editorElement.getAttribute("data-theme-kind");
-    if (value === null) {
-      throw Error("Could not get theme style from editor element");
+  const initialValues: {
+    themeStyle: ThemeStyle;
+    showLineNrs: boolean;
+    showMenuItems: boolean;
+    teacherMode: boolean;
+  } = (() => {
+    const themeStyle = editorElement.getAttribute("data-theme-kind");
+    const showLineNrs = editorElement.getAttribute("data-show-line-nrs");
+    const showMenuItems = editorElement.getAttribute("data-show-menu-items");
+    const teacherMode = editorElement.getAttribute("data-teacher-mode");
+
+    if (themeStyle === null || showLineNrs === null || showMenuItems === null) {
+      const errMsg =
+        `Could not get one or more initial options from attributes, found the values: ` +
+        `{themeStyle: "${themeStyle}"; showLineNrs: "${showLineNrs}"; showMenuItems: "${showMenuItems}"; ` +
+        `teacherMode: "${teacherMode}"; }`;
+      throw Error(errMsg);
     }
 
-    switch (value) {
-      case "dark":
-        return ThemeStyle.Dark;
-      case "light":
-        return ThemeStyle.Light;
-      default:
-        throw Error("Invalid theme encountered");
-    }
+    // TODO: In the future we probably want to use the official 'data-vscode-theme-kind' on <body>.
+    const themeValue =
+      themeStyle === "dark" ? ThemeStyle.Dark : ThemeStyle.Light;
+    const lineNrsValue = showLineNrs === "true" ? true : false;
+    const menuItemsValue = showMenuItems === "true" ? true : false;
+    const teacherModeValue = teacherMode === "true" ? true : false;
+
+    return {
+      themeStyle: themeValue,
+      showLineNrs: lineNrsValue,
+      showMenuItems: menuItemsValue,
+      teacherMode: teacherModeValue,
+    };
   })();
-  const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
+
+  // Create the editor, passing it the vscode api and the editor and content HTML elements.
+  const cfg = createConfiguration(format, codeAPI, editorRef, initialValues);
+
+  const editor = new WaterproofEditor(editorElement, cfg);
   editorRef.current = editor;
 
   //@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.
@@ -256,16 +280,10 @@ window.onload = () => {
     handleEditorMessage(editor, msg);
   });
 
-  let timeoutHandle: number | undefined;
-  window.addEventListener("scroll", (_event) => {
-    if (timeoutHandle === undefined) {
-      timeoutHandle = window.setTimeout(() => {
-        editor.handleScroll(window.innerHeight);
-        timeoutHandle = undefined;
-      }, 100);
-    }
-  });
-
   // Start the editor
   codeAPI.postMessage({ type: MessageType.ready });
+
+  window.requestAnimationFrame(() => {
+    editor.reportProgress(1, 1, "File loaded");
+  });
 };

@@ -40,21 +40,19 @@ type ExecCallback = (err: Error | null, stdout: string, stderr: string) => void;
  */
 function fakeOcamlfind(installed: Record<string, string>): string[] {
   const queried: string[] = [];
-  jest
-    .mocked(exec)
-    .mockImplementation(((command: string, _opts: unknown, cb: ExecCallback) => {
-      const pkg = command.split(" ").pop()!;
-      queried.push(pkg);
-      if (pkg in installed) {
-        cb(null, `${installed[pkg]}\n`, "");
-      } else {
-        cb(
-          new Error(`ocamlfind: Package \`${pkg}' not found`),
-          "",
-          "",
-        );
-      }
-    }) as unknown as typeof exec);
+  jest.mocked(exec).mockImplementation(((
+    command: string,
+    _opts: unknown,
+    cb: ExecCallback,
+  ) => {
+    const pkg = command.split(" ").pop()!;
+    queried.push(pkg);
+    if (pkg in installed) {
+      cb(null, `${installed[pkg]}\n`, "");
+    } else {
+      cb(new Error(`ocamlfind: Package \`${pkg}' not found`), "", "");
+    }
+  }) as unknown as typeof exec);
   return queried;
 }
 

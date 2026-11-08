@@ -7,19 +7,26 @@ import * as fs from "fs";
  */
 
 it("should remove content of every input cell of waterproof rocq code", () => {
-  const inputPath = path.join(__dirname, "inputFile.mv");
-  const input: string = fs.readFileSync(inputPath, "utf-8");
-  const outputPath = path.join(__dirname, "outputFile.mv");
-  const output: string = fs.readFileSync(outputPath, "utf-8");
-  const result = clearInputCells(input, ".mv");
-  expect(result).toBe(output);
+  runTest("inputFile.mv", "outputFile.mv", ".mv");
+});
+
+it("should preserve the language identifier in .mv files (rocq and coq)", () => {
+  runTest("inputFileMixedRocqCoq.mv", "outputFileMixedRocqCoq.mv", ".mv");
 });
 
 it("should remove content of every input cell of waterproof lean code", () => {
-  const inputPath = path.join(__dirname, "inputFile.lean");
-  const input: string = fs.readFileSync(inputPath, "utf-8");
-  const outputPath = path.join(__dirname, "outputFile.lean");
-  const output: string = fs.readFileSync(outputPath, "utf-8");
-  const result = clearInputCells(input, ".lean");
-  expect(result).toBe(output);
+  runTest("inputFile.lean", "outputFile.lean", ".lean");
 });
+
+function runTest(
+  inputFilePath: string,
+  expectedOutputFilePath: string,
+  ext: string,
+) {
+  const inputPath = path.join(__dirname, inputFilePath);
+  const inputText: string = fs.readFileSync(inputPath, "utf-8");
+  const outputPath = path.join(__dirname, expectedOutputFilePath);
+  const outputText: string = fs.readFileSync(outputPath, "utf-8");
+  const result = clearInputCells(inputText, ext);
+  expect(result).toBe(outputText);
+}

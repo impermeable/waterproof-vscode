@@ -8,9 +8,9 @@ import {
   constructDocument,
 } from "@impermeable/waterproof-editor";
 import {
-  topLevelBlocksMV,
+  parse,
   topLevelBlocksLean,
-} from "../../editor/src/document-construction/construct-document";
+} from "../../editor/src/document-construction";
 import { LeanSerializer } from "../../editor/src/leanSerializer";
 
 const inputDocumentMV = `# Example document
@@ -60,7 +60,7 @@ A list:
 
 // FIXME: Add checks for prewhite and postwhite here.
 test("Parse top level blocks (MV)", () => {
-  const blocks = topLevelBlocksMV(inputDocumentMV);
+  const blocks = parse(inputDocumentMV);
   expect(blocks.length).toBe(10);
 
   expect(typeguards.isMarkdownBlock(blocks[0])).toBe(true);
@@ -103,7 +103,7 @@ test("Markdown and Code", () => {
 \`\`\`coq
 Compute 3 + 3.
 \`\`\``;
-  const blocks = topLevelBlocksMV(input);
+  const blocks = parse(input);
   expect(blocks.length).toBe(3);
 
   const [md, nl, code] = blocks;
@@ -134,7 +134,7 @@ Lemma trivial : True.
 Proof. auto. Qed.
 \`\`\`
 </input-area>`;
-  const blocks = topLevelBlocksMV(input);
+  const blocks = parse(input);
   expect(blocks.length).toBe(1);
   const [ia] = blocks;
 
@@ -204,7 +204,7 @@ Goal False.
 Goal True.
 \`\`\`
 </input-area>`;
-  const blocks = topLevelBlocksMV(input);
+  const blocks = parse(input);
 
   expect(blocks.length).toBe(2);
   const [md, ia] = blocks;

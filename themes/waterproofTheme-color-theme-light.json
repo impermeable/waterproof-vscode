@@ -301,7 +301,7 @@
 
         "walkThrough.embeddedEditorBackground": "#eceeff",
         // "walkthrough.stepTitle.foreground": "#ff00000",
-        "textLink.foreground": "#6183bb",
+        "textLink.foreground": "#2b3990",
         "textLink.activeForeground": "#7dcfff",
         "textPreformat.foreground": "#000000",
         "textBlockQuote.background": "#eceeff",

@@ -53,6 +53,7 @@ export function createVscodeLspMock() {
       })),
       onDidChangeConfiguration: jest.fn(() => ({ dispose: jest.fn() })),
       onDidChangeTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidCloseTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
     },
     languages: {
       createDiagnosticCollection: jest.fn(() => ({

@@ -78,7 +78,10 @@ export function handleEditorMessage(
       break;
     }
     case MessageType.diagnostics:
-      editor.setActiveDiagnostics(msg.body.positionedDiagnostics);
+      editor.setActiveDiagnostics(
+        msg.body.positionedDiagnostics,
+        msg.body.version,
+      );
       break;
     case MessageType.serverStatus: {
       const status: ServerStatus = msg.body;

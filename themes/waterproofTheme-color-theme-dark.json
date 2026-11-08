@@ -312,7 +312,7 @@
 		"textBlockQuote.border": "#343841",
 		"textCodeBlock.background": "#2b2f38",
 		"textLink.activeForeground": "#7dcfff",
-		"textLink.foreground": "#6183bb",
+		"textLink.foreground": "#7dcfff",
 		"textPreformat.background": "#2b2f38",
 		"textPreformat.foreground": "#d4d7df",
 		"textSeparator.foreground": "#343841",

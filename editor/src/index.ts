@@ -18,9 +18,7 @@ import symbols from "../../completions/symbols+lean.json";
 import "@impermeable/waterproof-editor/styles.css";
 // import the style sheet mapping waterproof style properties to vscode styles
 import "./vscodemapping.css";
-import { vFileParser } from "./document-construction/vFile";
 import { rocqdocToMarkdown } from "./rocqdoc";
-import { topLevelBlocksLean } from "./document-construction/construct-document";
 import { tagConfigurationV } from "./vFileConfiguration";
 import * as langWp from "@impermeable/codemirror-lang-waterproof";
 import * as langVerbose from "@impermeable/codemirror-lang-verbose";
@@ -29,6 +27,8 @@ import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
 import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
 import { handleEditorMessage } from "./messageHandler";
+import { topLevelBlocksLean, vFileParser } from "./document-construction";
+import { parse } from "./document-construction/statemachine";
 
 /**
  * Very basic representation of the acquirable VSCodeApi.
@@ -55,6 +55,7 @@ function createConfiguration(
     | "serializer"
     | "templates"
     | "menubarEntries"
+    | "emptyCodePlaceholders"
   >;
 
   // Set format-specific configuration
@@ -62,8 +63,7 @@ function createConfiguration(
     case FileFormat.MarkdownV:
       formatConf = {
         completions: waterproofTactics,
-        documentConstructor: (v: string) =>
-          markdown.parse(v, { language: "coq" }),
+        documentConstructor: parse,
         toMarkdown: defaultToMarkdown,
         markdownName: "Markdown",
         templates: {
@@ -79,6 +79,10 @@ function createConfiguration(
           highlightDark: langWp.highlight_dark,
           highlightLight: langWp.highlight_light,
           languageSupport: langWp.waterproof(),
+        },
+        emptyCodePlaceholders: {
+          general: "Empty code cell",
+          inInput: "(* Type your proof here *)",
         },
       };
       break;
@@ -99,6 +103,10 @@ function createConfiguration(
           languageSupport: langRocq.rocq(),
           highlightDark: langRocq.highlight_dark,
           highlightLight: langRocq.highlight_light,
+        },
+        emptyCodePlaceholders: {
+          general: "Empty code cell",
+          inInput: "(* Type your proof here *)",
         },
       };
       break;
@@ -127,6 +135,10 @@ function createConfiguration(
           highlightDark: langVerbose.highlight_dark,
           highlightLight: langVerbose.highlight_light,
           languageSupport: langVerbose.verbose(),
+        },
+        emptyCodePlaceholders: {
+          general: "Empty code cell",
+          inInput: "-- Type your proof here",
         },
         menubarEntries: [
           {

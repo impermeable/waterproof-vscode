@@ -60,6 +60,7 @@ jest.mock(
         })),
         onDidChangeConfiguration: jest.fn(() => ({ dispose: jest.fn() })),
         onDidChangeTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
+        onDidCloseTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
       },
       languages: {
         createDiagnosticCollection: jest.fn(() => ({
@@ -134,6 +135,7 @@ import {
   OutputChannel,
   Uri,
   Diagnostic,
+  workspace,
 } from "vscode";
 import { InputAreaStatus } from "@impermeable/waterproof-editor";
 import { LeanLspClient } from "../../../src/lsp-client/lean/client";
@@ -890,5 +892,215 @@ describe("LeanLspClient.rewriteDiagnostics", () => {
     const result = rewrite(instance, [accomplished], [AREA]);
 
     expect(result[0].message).toBe("Goals accomplished 🎉");
+  });
+});
+
+describe("LeanLspClient.resolveMessageSegments", () => {
+  const HELP_RANGE = {
+    start: { line: 3, character: 2 },
+    end: { line: 3, character: 8 },
+  };
+  const interactiveHelp = {
+    range: HELP_RANGE,
+    severity: 3,
+    message: {
+      append: [
+        { text: "Help\n  • " },
+        {
+          tag: [
+            {
+              widget: {
+                wi: {
+                  id: "Lean.Meta.Hint.textInsertionWidget",
+                  javascriptHash: "0",
+                  props: { range: HELP_RANGE, suggestion: "We apply h" },
+                },
+                alt: { text: "We apply h" },
+              },
+            },
+            { text: "" },
+          ],
+        },
+      ],
+    },
+  };
+  const interactiveWithoutSuggestion = {
+    range: HELP_RANGE,
+    severity: 2,
+    message: { text: "'help h' tactic does nothing" },
+  };
+
+  const vscodeDiagnostic = (message: string, line = 3) =>
+    ({
+      message,
+      severity: DiagnosticSeverity.Information,
+      range: new Range(new Position(line, 2), new Position(line, 8)),
+    }) as Diagnostic;
+
+  type Double = ReturnType<typeof makeClientDouble> & {
+    sendNotification: jest.Mock;
+  };
+
+  /** Sets up a client whose `$/lean/rpc/call` requests return (or throw) `callResults` in order. */
+  function setup(callResults: Array<unknown | Error>) {
+    const instance = makeClient();
+    // @ts-expect-error protected
+    const double = instance.client as Double;
+    double.sendNotification = jest.fn(() => Promise.resolve());
+    let session = 0;
+    double.sendRequest.mockImplementation((method: string) => {
+      if (method === "$/lean/rpc/connect")
+        return Promise.resolve({ sessionId: `s${++session}` });
+      if (method === "$/lean/rpc/call") {
+        const next = callResults.shift();
+        return next instanceof Error
+          ? Promise.reject(next)
+          : Promise.resolve(next);
+      }
+      return Promise.reject(new Error(`unexpected request ${method}`));
+    });
+    const resolve = (
+      diagnostics: Diagnostic[] = [vscodeDiagnostic("Help\n  • We apply h")],
+    ) =>
+      // @ts-expect-error protected
+      instance.resolveMessageSegments(FAKE_DOCUMENT, diagnostics, {
+        isCancellationRequested: false,
+      });
+    return { instance, double, resolve };
+  }
+
+  const rpcError = (code: number) =>
+    Object.assign(new Error("rpc error"), { code });
+
+  const requests = (double: Double, method: string) =>
+    double.sendRequest.mock.calls.filter(([m]) => m === method);
+
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it("returns the diagnostics with suggestions, split into segments", async () => {
+    const { double, resolve } = setup([
+      [interactiveHelp, interactiveWithoutSuggestion],
+    ]);
+
+    const result = await resolve();
+
+    expect(result).toEqual([
+      {
+        range: HELP_RANGE,
+        message: "Help\n  • We apply h",
+        segments: [
+          { text: "Help\n  • " },
+          {
+            text: "We apply h",
+            edit: { range: HELP_RANGE, newText: "We apply h" },
+          },
+        ],
+      },
+    ]);
+    expect(requests(double, "$/lean/rpc/call")[0][1]).toEqual({
+      textDocument: { uri: "file:///test.lean" },
+      position: { line: 0, character: 0 },
+      sessionId: "s1",
+      method: "Lean.Widget.getInteractiveDiagnostics",
+      params: { lineRange: { start: 0, end: 4 } },
+    });
+  });
+
+  it("only requests the lines up to the last diagnostic", async () => {
+    const { double, resolve } = setup([[]]);
+
+    await resolve([vscodeDiagnostic("a", 3), vscodeDiagnostic("b", 7)]);
+
+    expect(requests(double, "$/lean/rpc/call")[0][1].params).toEqual({
+      lineRange: { start: 0, end: 8 },
+    });
+  });
+
+  it("reuses the RPC session for the same document", async () => {
+    const { double, resolve } = setup([[], []]);
+
+    await resolve();
+    await resolve();
+
+    expect(requests(double, "$/lean/rpc/connect")).toHaveLength(1);
+  });
+
+  it("reconnects once when the server asks for it", async () => {
+    const { double, resolve } = setup([rpcError(-32900), [interactiveHelp]]);
+
+    const result = await resolve();
+
+    expect(result).toHaveLength(1);
+    expect(requests(double, "$/lean/rpc/connect")).toHaveLength(2);
+    expect(requests(double, "$/lean/rpc/call")[1][1].sessionId).toBe("s2");
+  });
+
+  it("returns undefined when the document changed during the request", async () => {
+    const { resolve } = setup([rpcError(-32801)]);
+
+    await expect(resolve()).resolves.toBeUndefined();
+  });
+
+  it("rethrows other errors", async () => {
+    const { resolve } = setup([rpcError(-32603)]);
+
+    await expect(resolve()).rejects.toThrow("rpc error");
+  });
+
+  it("releases RPC references in the response", async () => {
+    const withRef = {
+      ...interactiveHelp,
+      message: {
+        tag: [
+          { expr: { tag: [{ info: { p: "42" } }, { text: "x" }] } },
+          { text: "" },
+        ],
+      },
+    };
+    const { double, resolve } = setup([[withRef]]);
+
+    await resolve();
+
+    expect(double.sendNotification).toHaveBeenCalledWith("$/lean/rpc/release", {
+      uri: "file:///test.lean",
+      sessionId: "s1",
+      refs: [{ p: "42" }],
+    });
+  });
+
+  it("sends keep-alives and stops them on dispose", async () => {
+    const { instance, double, resolve } = setup([[]]);
+    await resolve();
+
+    jest.advanceTimersByTime(10000);
+    expect(double.sendNotification).toHaveBeenCalledWith(
+      "$/lean/rpc/keepAlive",
+      { uri: "file:///test.lean", sessionId: "s1" },
+    );
+
+    await instance.dispose();
+    await Promise.resolve();
+    double.sendNotification.mockClear();
+    jest.advanceTimersByTime(30000);
+    expect(double.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("closes the session when its document is closed", async () => {
+    const onDidClose = workspace.onDidCloseTextDocument as jest.Mock;
+    onDidClose.mockClear();
+    const { double, resolve } = setup([[], []]);
+    await resolve();
+
+    const [[closeListener]] = onDidClose.mock.calls;
+    closeListener(FAKE_DOCUMENT);
+    await Promise.resolve();
+    double.sendNotification.mockClear();
+    jest.advanceTimersByTime(30000);
+    expect(double.sendNotification).not.toHaveBeenCalled();
+
+    // The next request connects a new session.
+    await resolve();
+    expect(requests(double, "$/lean/rpc/connect")).toHaveLength(2);
   });
 });

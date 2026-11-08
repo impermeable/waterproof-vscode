@@ -1,5 +1,5 @@
 import { typeguards } from "@impermeable/waterproof-editor";
-import { topLevelBlocksLean } from "../../editor/src/document-construction/construct-document";
+import { topLevelBlocksLean } from "../../editor/src/document-construction";
 
 /**
  * Lean equivalents of the inner block tests in inner-blocks.test.ts.

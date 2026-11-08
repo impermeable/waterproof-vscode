@@ -33,7 +33,7 @@ Install this extension and follow the installation instructions that pop up.
 
 ### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
 
-### Step 2: Install the coq-lsp and coq-waterproof plugins
+### Step 2: Install the coq-lsp and rocq-waterproof plugins
 
 In a terminal, execute the following lines
 
@@ -42,7 +42,7 @@ apt-get install opam
 opam init
 eval $(opam env)
 opam install coq-lsp.0.2.5+9.1
-opam install coq-waterproof
+opam install rocq-waterproof
 ```
 
 If vscode cannot detect the installation, set the coq-lsp path to the output of `which coq-lsp`. This can be done
@@ -53,7 +53,7 @@ Alternatively, make sure that the `PATH` available to vscode contains the coq-ls
 
 ### Step 1: Install this [Waterproof vscode extension](https://marketplace.visualstudio.com/items?itemName=waterproof-tue.waterproof)
 
-### Step 2: Install the coq-lsp and coq-waterproof plugins
+### Step 2: Install the coq-lsp and rocq-waterproof plugins
 
 If you use homebrew, first install opam by executing the following lines in a terminal
 
@@ -74,7 +74,7 @@ Then execute
 opam init
 eval $(opam env)
 opam install coq-lsp.0.2.5+9.1
-opam install coq-waterproof
+opam install rocq-waterproof
 ```
 
 Note: It may be that you need to install more dependencies, for which you can also use homebrew or MacPorts.
@@ -132,7 +132,7 @@ sudo apt-get update
 
 (Press enter to accept all requests)
 
-### Step 1: Install the coq-lsp and coq-waterproof plugins
+### Step 1: Install the coq-lsp and rocq-waterproof plugins
 
 Within a WSL distribution, execute the following lines:
 
@@ -141,7 +141,7 @@ sudo apt-get install opam
 opam init
 eval $(opam env)
 opam install coq-lsp.0.2.5+9.1
-opam install coq-waterproof
+opam install rocq-waterproof
 ```
 
 The last two lines may take a while to install

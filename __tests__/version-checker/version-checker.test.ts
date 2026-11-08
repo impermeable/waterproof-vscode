@@ -1,5 +1,5 @@
 import { exec } from "child_process";
-import type { ExtensionContext } from "vscode";
+import { window, type ExtensionContext } from "vscode";
 import { VersionChecker } from "../../src/version-checker/version-checker";
 
 jest.mock("child_process", () => ({ exec: jest.fn() }));
@@ -125,6 +125,52 @@ describe("VersionChecker.checkWaterproofLib", () => {
     const ext = process.platform === "win32" ? ".exe" : "";
     expect(jest.mocked(exec).mock.calls[0][0]).toBe(
       `/opt/wp/bin/ocamlfind${ext} query -format %v rocq-waterproof.plugin`,
+    );
+  });
+});
+
+describe("VersionChecker.checkWaterproofLib error reasons", () => {
+  it.each([
+    ["an Error", new Error("spawn failed"), "spawn failed"],
+    ["a non-object value", "boom", "Unknown error"],
+  ])(
+    "reports a readable reason when exec throws %s",
+    async (_, thrown, expected) => {
+      jest.mocked(exec).mockImplementation(() => {
+        throw thrown;
+      });
+
+      const result = await makeChecker().checkWaterproofLib();
+
+      expect(result).toEqual({
+        reason: `rocq-waterproof.plugin: ${expected}\ncoq-waterproof.plugin: ${expected}`,
+      });
+    },
+  );
+});
+
+describe("VersionChecker.run", () => {
+  it("tells the user rocq-waterproof is missing when neither plugin is found", async () => {
+    fakeOcamlfind({});
+
+    await makeChecker().run();
+
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining("rocq-waterproof"),
+      { modal: true },
+      expect.anything(),
+    );
+  });
+
+  it("tells the user rocq-waterproof is outdated when an old coq-waterproof is found", async () => {
+    fakeOcamlfind({ "coq-waterproof.plugin": "2.2.0+8.17" });
+
+    await makeChecker().run();
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringMatching(/of rocq-waterproof in mind, but we found 2\.2\.0/),
+      { modal: true },
+      expect.anything(),
     );
   });
 });

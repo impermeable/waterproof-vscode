@@ -77,7 +77,7 @@ export class VersionChecker {
       const wpV = rocqWaterproofResult.wpVersion;
       if (wpV.needsUpdate(this._reqVersionRocqWP)) {
         this.informUpdateAvailable(
-          "coq-waterproof",
+          "rocq-waterproof",
           this._reqVersionRocqWP,
           wpV,
         );
@@ -111,23 +111,27 @@ export class VersionChecker {
         WaterproofPackageJSON.defaultCoqLspPathWindows(this._context);
     const extra_env = needEnv ? { OCAMLFIND_CONF: findlib_conf } : {};
     wpl.debug(`ocamlfindPath: ${ocamlfindPath}`);
-    const command = `${ocamlfindPath} query -format %v coq-waterproof.plugin`;
 
-    try {
-      const stdout = await this.exec(command, extra_env);
-      wpl.log(`Waterproof version: ${stdout}`);
-      const [wpVersion, reqRocqVersion] = stdout.trim().split("+");
-      const versionRocqWaterproof = Version.fromString(wpVersion);
-      const versionRequiredRocq = Version.fromString(reqRocqVersion);
-      return {
-        wpVersion: versionRocqWaterproof,
-        requiredRocqVersion: versionRequiredRocq,
-      };
-    } catch (err: unknown) {
-      return err instanceof Error
-        ? { reason: err.message }
-        : { reason: "Unknown error" };
+    // The plugin was renamed from coq-waterproof to rocq-waterproof.
+    // Prefer the new name, but fall back to the old one for older installations.
+    // These must be queried separately: `ocamlfind query a b` fails if either is missing.
+    const findlibNames = ["rocq-waterproof.plugin", "coq-waterproof.plugin"];
+    const reasons: string[] = [];
+    for (const name of findlibNames) {
+      const command = `${ocamlfindPath} query -format %v ${name}`;
+      try {
+        const stdout = await this.exec(command, extra_env);
+        wpl.log(`Waterproof version (${name}): ${stdout}`);
+        const [wpVersion, reqRocqVersion] = stdout.trim().split("+");
+        return {
+          wpVersion: Version.fromString(wpVersion),
+          requiredRocqVersion: Version.fromString(reqRocqVersion),
+        };
+      } catch (err: unknown) {
+        reasons.push(`${name}: ${errorReason(err)}`);
+      }
     }
+    return { reason: reasons.join("\n") };
   }
 
   /**
@@ -193,9 +197,9 @@ export class VersionChecker {
    */
   private informWaterproofLibNotFound() {
     const message_installer =
-      "Waterproof\n\nWe could not find a required library, in particular the coq-waterproof library.\nUse the button below to download a new installer.";
+      "Waterproof\n\nWe could not find a required library, in particular the rocq-waterproof library.\nUse the button below to download a new installer.";
     const message_no_installer =
-      "Waterproof\n\nWe could not find a required library, in particular the `coq-waterproof` library.\nFor more information on how to make the waterproof extension work see the installation instructions.";
+      "Waterproof\n\nWe could not find a required library, in particular the `rocq-waterproof` library.\nFor more information on how to make the waterproof extension work see the installation instructions.";
     if (this.platformHasAutoInstaller() && env.remoteName === undefined) {
       window
         .showInformationMessage(
@@ -335,6 +339,14 @@ export class VersionChecker {
       );
     }
   }
+}
+
+/** Extract a human-readable reason from a thrown value (`exec` rejects with `{ reason }`). */
+function errorReason(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null && isVersionError(err))
+    return err.reason;
+  return "Unknown error";
 }
 
 const getPlatformHelper = () => {

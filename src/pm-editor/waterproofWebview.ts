@@ -84,6 +84,13 @@ export class WaterproofWebview extends EventEmitter {
   private _cachedMessages: Map<MessageType, Message>;
 
   /**
+   * Set when the document was saved while edits from the editor were still queued. The refresh
+   * is then postponed until the queue is drained, since the saved text does not yet contain the
+   * queued edits and would roll the editor back to an outdated state.
+   */
+  private _refreshPendingAfterEdits = false;
+
+  /**
    * Watchdog for the editor bundle: the webview only renders once it has sent
    * `MessageType.ready`, at which point we answer with the document contents. If
    * `editor_output/index.js` fails to load or throws while evaluating, that
@@ -135,6 +142,10 @@ export class WaterproofWebview extends EventEmitter {
 
     this._panel = webviewPanel;
     this._workspaceEditor.onFinish(() => {
+      if (this._refreshPendingAfterEdits) {
+        this._refreshPendingAfterEdits = false;
+        this.refreshOnSave();
+      }
       this.emit(WebviewEvents.finishUpdate);
     });
     this._cachedMessages = new Map();
@@ -443,6 +454,12 @@ export class WaterproofWebview extends EventEmitter {
   }
 
   private refreshOnSave() {
+    // Edits from the editor are still being applied to the document, so its text is behind the
+    // editor. Refreshing now would make the editor show outdated content; wait for the queue.
+    if (this._workspaceEditor.isInProgress) {
+      this._refreshPendingAfterEdits = true;
+      return;
+    }
     this.postMessage({
       type: MessageType.refreshDocument,
       body: {

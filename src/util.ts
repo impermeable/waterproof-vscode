@@ -165,6 +165,7 @@ export function checkTextChangingSaveSettings(scope: ConfigurationScope) {
   if (enabled.length === 0) return;
 
   const names = enabled.map((setting) => `\`files.${setting}\``).join(", ");
+  const settingIds = enabled.map((setting) => `files.${setting}`).join(",");
   window
     .showWarningMessage(
       `The following settings change the document when saving: ${names}. This may cause unexpected behaviour in Waterproof, and we thus recommend you to turn them off.`,
@@ -175,7 +176,7 @@ export function checkTextChangingSaveSettings(scope: ConfigurationScope) {
       if (selection === "Open Settings") {
         commands.executeCommand(
           "workbench.action.openSettings",
-          `@id:${enabled.map((setting) => `files.${setting}`).join(",")}`,
+          `@id:${settingIds}`,
         );
       }
     });

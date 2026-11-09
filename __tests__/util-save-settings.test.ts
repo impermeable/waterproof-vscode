@@ -1,3 +1,6 @@
+// NOTE: These tests were AI-generated. They describe the current behaviour of the code and
+// may therefore codify existing buggy behaviour; a failing test is not necessarily a regression.
+
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
 // Settings in the `files` section, as returned by the mocked `workspace.getConfiguration`.

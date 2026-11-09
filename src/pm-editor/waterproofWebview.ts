@@ -13,7 +13,11 @@ import {
   workspace,
 } from "vscode";
 
-import { getNonce } from "../util";
+import {
+  checkTextChangingSaveSettings,
+  enabledTextChangingSaveSettings,
+  getNonce,
+} from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/waterproofPanel";
 import { SequentialEditor } from "./edit";
 import { getFormatFromExtension, isIllegalFileName } from "./fileUtils";
@@ -160,6 +164,7 @@ export class WaterproofWebview extends EventEmitter {
       WaterproofSetting.EnforceCorrectNonInputArea,
     );
     this._lastCorrectDocString = doc.getText();
+    checkTextChangingSaveSettings(doc);
 
     const format = getFormatFromExtension(doc);
     if (format === undefined) {
@@ -272,6 +277,10 @@ export class WaterproofWebview extends EventEmitter {
 
     this._disposables.push(
       workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration("files", this._document)) {
+          checkTextChangingSaveSettings(this._document);
+        }
+
         if (
           e.affectsConfiguration(
             qualifiedSettingName(WaterproofSetting.TeacherMode),
@@ -462,12 +471,7 @@ export class WaterproofWebview extends EventEmitter {
    * unnecessary and risks showing outdated content while edits are still in flight.
    */
   private saveMayChangeText(): boolean {
-    const config = workspace.getConfiguration("files", this._document);
-    return (
-      config.get<boolean>("trimTrailingWhitespace", false) ||
-      config.get<boolean>("trimFinalNewlines", false) ||
-      config.get<boolean>("insertFinalNewline", false)
-    );
+    return enabledTextChangingSaveSettings(this._document).length > 0;
   }
 
   private refreshOnSave() {

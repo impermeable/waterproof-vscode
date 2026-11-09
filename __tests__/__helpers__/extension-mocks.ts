@@ -74,7 +74,6 @@ export const extensionMocks = {
     // `initializeClient` attaches a `.catch` to this, so it has to be thenable.
     checkConflictingExtensions: jest.fn(() => Promise.resolve()),
     excludeRocqFileTypes: jest.fn(),
-    checkTrimmingWhitespace: jest.fn(),
   }),
 
   enableButton: () => ({ WaterproofStatusBar: class {} }),

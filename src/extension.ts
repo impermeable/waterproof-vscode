@@ -30,11 +30,7 @@ import {
   executeCommandFullOutput,
 } from "./lsp-client/commandExecutor";
 import { WaterproofEditorProvider } from "./pm-editor";
-import {
-  checkConflictingExtensions,
-  excludeRocqFileTypes,
-  checkTrimmingWhitespace,
-} from "./util";
+import { checkConflictingExtensions, excludeRocqFileTypes } from "./util";
 import { WebviewManager, WebviewManagerEvents } from "./webviewManager";
 import { DebugPanel } from "./webviews/goalviews/debug";
 import { GoalsPanel } from "./webviews/goalviews/goalsPanel";
@@ -111,7 +107,6 @@ export class Waterproof implements Disposable {
   ) {
     wpl.log("Waterproof initialized");
     excludeRocqFileTypes();
-    checkTrimmingWhitespace();
 
     this.context = context;
     this.languageSupport = languageSupport;

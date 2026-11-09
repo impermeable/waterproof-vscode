@@ -1,4 +1,5 @@
 import {
+  ConfigurationScope,
   env,
   extensions,
   ExtensionContext,
@@ -129,29 +130,53 @@ export function excludeRocqFileTypes() {
   }
 }
 
+/** Settings in the `files` section with which VS Code changes the text of a document on save. */
+const TEXT_CHANGING_SAVE_SETTINGS = [
+  "trimTrailingWhitespace",
+  "trimFinalNewlines",
+  "insertFinalNewline",
+] as const;
+
 /**
- * Checks whether the user has enabled the setting `trimTrailingWhitespace`, and warns the
- * user in that case.
+ * Returns the settings (without the `files.` prefix) with which VS Code would change the text of
+ * a document in `scope` when saving it.
  */
-export function checkTrimmingWhitespace() {
-  const config = workspace.getConfiguration("files");
-  const isTrimTrailingWhitespaceEnabled = config.get<boolean>(
-    "trimTrailingWhitespace",
+export function enabledTextChangingSaveSettings(
+  scope: ConfigurationScope,
+): string[] {
+  const config = workspace.getConfiguration("files", scope);
+  return TEXT_CHANGING_SAVE_SETTINGS.filter((setting) =>
+    config.get<boolean>(setting, false),
   );
-  if (isTrimTrailingWhitespaceEnabled) {
-    window
-      .showWarningMessage(
-        "The setting `Trim Trailing Whitespace` is enabled. This may cause unexpected behaviour in Waterproof, and we thus recommend you to turn it off.",
-        "Open Settings",
-        "Dismiss",
-      )
-      .then((selection) => {
-        if (selection === "Open Settings") {
-          commands.executeCommand(
-            "workbench.action.openSettings",
-            "Trim Trailing Whitespace",
-          );
-        }
-      });
-  }
+}
+
+/** The combination of settings that was last warned about, to avoid repeating the warning. */
+let lastWarnedSaveSettings = "";
+
+/**
+ * Warns the user when settings that change the document text on save are enabled for `scope`.
+ * The warning is shown again only when the combination of enabled settings changes.
+ */
+export function checkTextChangingSaveSettings(scope: ConfigurationScope) {
+  const enabled = enabledTextChangingSaveSettings(scope);
+  const key = enabled.join(",");
+  if (key === lastWarnedSaveSettings) return;
+  lastWarnedSaveSettings = key;
+  if (enabled.length === 0) return;
+
+  const names = enabled.map((setting) => `\`files.${setting}\``).join(", ");
+  window
+    .showWarningMessage(
+      `The following settings change the document when saving: ${names}. This may cause unexpected behaviour in Waterproof, and we thus recommend you to turn them off.`,
+      "Open Settings",
+      "Dismiss",
+    )
+    .then((selection) => {
+      if (selection === "Open Settings") {
+        commands.executeCommand(
+          "workbench.action.openSettings",
+          `@id:${enabled.map((setting) => `files.${setting}`).join(",")}`,
+        );
+      }
+    });
 }

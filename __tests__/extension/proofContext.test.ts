@@ -82,7 +82,6 @@ jest.mock("../../src/pm-editor", () => ({
 jest.mock("../../src/util", () => ({
   checkConflictingExtensions: jest.fn(),
   excludeRocqFileTypes: jest.fn(),
-  checkTrimmingWhitespace: jest.fn(),
 }));
 jest.mock("../../src/components/enableButton", () => ({
   WaterproofStatusBar: class {},

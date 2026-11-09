@@ -251,7 +251,10 @@ export class WaterproofWebview extends EventEmitter {
     // Register listener for when the document is saved, to trigger a refresh of the editor content.
     this._disposables.push(
       workspace.onDidSaveTextDocument((e) => {
-        if (e.uri.toString() === this._document.uri.toString()) {
+        if (
+          e.uri.toString() === this._document.uri.toString() &&
+          this.saveMayChangeText()
+        ) {
           this.refreshOnSave();
         }
       }),
@@ -451,6 +454,20 @@ export class WaterproofWebview extends EventEmitter {
 
     // send any cached messages
     for (const m of this._cachedMessages.values()) this.postMessage(m);
+  }
+
+  /**
+   * Whether saving the document may change its text, through settings that VS Code applies on
+   * save. Only then does the editor need to be refreshed after a save; refreshing otherwise is
+   * unnecessary and risks showing outdated content while edits are still in flight.
+   */
+  private saveMayChangeText(): boolean {
+    const config = workspace.getConfiguration("files", this._document);
+    return (
+      config.get<boolean>("trimTrailingWhitespace", false) ||
+      config.get<boolean>("trimFinalNewlines", false) ||
+      config.get<boolean>("insertFinalNewline", false)
+    );
   }
 
   private refreshOnSave() {

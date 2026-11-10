@@ -161,7 +161,7 @@ describe("handleEditorMessage refreshDocument", () => {
     const reply = jest.fn();
     handleEditorMessage(editor, refresh(2), { sentChanges: 2, reply });
 
-    expect(editor.refreshDocument).toHaveBeenCalledWith("new", 5);
+    expect(editor.refreshDocument).toHaveBeenCalledWith("new", 5, true);
     expect(reply).toHaveBeenCalledWith({
       type: MessageType.refreshResult,
       body: { accepted: true },
@@ -178,23 +178,6 @@ describe("handleEditorMessage refreshDocument", () => {
       type: MessageType.refreshResult,
       body: { accepted: false },
     });
-  });
-
-  it("forces the update when the editor skipped it", () => {
-    const editor = {
-      ...createEditorMock(),
-      serializeDocument: jest.fn(() => "old"),
-    };
-    handleEditorMessage(editor, refresh(0), {
-      sentChanges: 0,
-      reply: jest.fn(),
-    });
-
-    expect(editor.refreshDocument.mock.calls).toEqual([
-      ["new", 5],
-      ["new", Number.NaN],
-      ["new", 5],
-    ]);
   });
 
   it("resets the count of sent changes on init", () => {

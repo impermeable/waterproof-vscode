@@ -1,11 +1,6 @@
 import type { MessageHandlerEditor } from "@impermeable/waterproof-editor";
 import { Message, MessageType, ServerStatus } from "../../shared";
 
-/** The editor operations used by the message handler. */
-export type HandledEditor = MessageHandlerEditor & {
-  serializeDocument?: () => string | undefined;
-};
-
 /** State the editor keeps to stay in sync with the document in the extension. */
 export interface DocumentSync {
   /** The number of changes sent to the extension since the editor was initialized. */
@@ -14,28 +9,8 @@ export interface DocumentSync {
   reply: (msg: Message) => void;
 }
 
-/**
- * Replaces the content of the editor. `refreshDocument` skips the update when `version` equals
- * the editor's own version, which can happen while the content differs (e.g. when the extension
- * dropped a change that conflicted with a change to the document); force the update then.
- */
-function refreshDocument(
-  editor: HandledEditor,
-  value: string,
-  version: number,
-) {
-  editor.refreshDocument(value, version);
-  if (
-    editor.serializeDocument !== undefined &&
-    editor.serializeDocument() !== value
-  ) {
-    editor.refreshDocument(value, Number.NaN);
-    editor.refreshDocument(value, version);
-  }
-}
-
 export function handleEditorMessage(
-  editor: HandledEditor,
+  editor: MessageHandlerEditor,
   msg: Message,
   sync?: DocumentSync,
 ): void {
@@ -65,7 +40,11 @@ export function handleEditorMessage(
       // extension sends a new refresh once it has applied those changes.
       const accepted =
         sync === undefined || msg.body.receivedChanges === sync.sentChanges;
-      if (accepted) refreshDocument(editor, msg.body.value, msg.body.version);
+      // Force the refresh: the extension only sends one when the content differs, but the
+      // versions can match nonetheless (e.g. after it dropped a change from this editor that
+      // conflicted with a change to the document), and the editor would then skip it.
+      if (accepted)
+        editor.refreshDocument(msg.body.value, msg.body.version, true);
       sync?.reply({ type: MessageType.refreshResult, body: { accepted } });
       break;
     }

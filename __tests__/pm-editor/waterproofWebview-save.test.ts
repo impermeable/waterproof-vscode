@@ -185,9 +185,14 @@ afterEach(() => {
 });
 
 describe("refresh after saving", () => {
-  it("does not refresh when no setting changes the text on save", () => {
+  it("refreshes when no setting changes the text on save", () => {
     save(doc);
-    expect(refreshMessages()).toHaveLength(0);
+    expect(refreshMessages()).toEqual([
+      {
+        type: MessageType.refreshDocument,
+        body: { value: "abcdef", version: 1 },
+      },
+    ]);
   });
 
   it.each([
@@ -206,13 +211,11 @@ describe("refresh after saving", () => {
   });
 
   it("ignores saves of other documents", () => {
-    settings = { trimTrailingWhitespace: true };
     save({ uri: { toString: () => "file:///other.mv" } });
     expect(refreshMessages()).toHaveLength(0);
   });
 
   it("waits until queued edits from the editor are applied", async () => {
-    settings = { trimTrailingWhitespace: true };
     sendDeletionFromEditor(5);
     sendDeletionFromEditor(4);
 
@@ -232,7 +235,6 @@ describe("refresh after saving", () => {
   });
 
   it("sends a single refresh for several saves during queued edits", async () => {
-    settings = { trimTrailingWhitespace: true };
     sendDeletionFromEditor(5);
     save(doc);
     save(doc);
@@ -242,7 +244,6 @@ describe("refresh after saving", () => {
   });
 
   it("does not refresh after queued edits when there was no save", async () => {
-    settings = { trimTrailingWhitespace: true };
     sendDeletionFromEditor(5);
 
     await completeEdit();

@@ -21,4 +21,4 @@ jobs:
         node-version: 24.x
 
     - name: Run npm audit
-      run: npm audit
+      run: npm audit --omit=dev

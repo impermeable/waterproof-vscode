@@ -26,7 +26,7 @@ import * as langRocq from "@impermeable/codemirror-lang-rocq";
 import { tagConfigurationLean } from "./leanFileConfiguration";
 import { LeanSerializer } from "./leanSerializer";
 import { versoMarkdownToMarkdown } from "./versoMarkdownSupport";
-import { handleEditorMessage } from "./messageHandler";
+import { DocumentSync, handleEditorMessage } from "./messageHandler";
 import { topLevelBlocksLean, vFileParser } from "./document-construction";
 import { parse } from "./document-construction/statemachine";
 
@@ -42,6 +42,7 @@ function createConfiguration(
   format: FileFormat,
   codeAPI: VSCodeAPI,
   editorRef: { current?: WaterproofEditor },
+  sync: DocumentSync,
 ) {
   let formatConf: Pick<
     WaterproofEditorConfig,
@@ -189,6 +190,7 @@ function createConfiguration(
         codeAPI.postMessage({ type: MessageType.editorReady });
       },
       documentChange(change) {
+        sync.sentChanges++;
         codeAPI.postMessage({ type: MessageType.docChange, body: change });
       },
       applyStepError(errorMessage) {
@@ -236,7 +238,11 @@ window.onload = () => {
   const editorRef: { current?: WaterproofEditor } = {};
 
   // Create the editor, passing it the vscode api and the editor and content HTML elements.
-  const cfg = createConfiguration(format, codeAPI, editorRef);
+  const sync: DocumentSync = {
+    sentChanges: 0,
+    reply: (msg) => codeAPI.postMessage(msg),
+  };
+  const cfg = createConfiguration(format, codeAPI, editorRef, sync);
   // Retrieve the current theme style from the attribute 'data-theme-kind'
   // attached to the editor element. This allows us to set the initial theme kind
   // rather than waiting for the themestyle message to arrive.
@@ -265,7 +271,7 @@ window.onload = () => {
   window.addEventListener("message", (event: MessageEvent<Message>) => {
     const msg = event.data;
 
-    handleEditorMessage(editor, msg);
+    handleEditorMessage(editor, msg, sync);
   });
 
   let timeoutHandle: number | undefined;

@@ -1,12 +1,23 @@
 import type { MessageHandlerEditor } from "@impermeable/waterproof-editor";
 import { Message, MessageType, ServerStatus } from "../../shared";
 
+/** State the editor keeps to stay in sync with the document in the extension. */
+export interface DocumentSync {
+  /** The number of changes sent to the extension since the editor was initialized. */
+  sentChanges: number;
+  /** Sends a message to the extension. */
+  reply: (msg: Message) => void;
+}
+
 export function handleEditorMessage(
   editor: MessageHandlerEditor,
   msg: Message,
+  sync?: DocumentSync,
 ): void {
   switch (msg.type) {
     case MessageType.init:
+      // The extension starts counting the changes it receives anew.
+      if (sync) sync.sentChanges = 0;
       editor.init(msg.body.value, msg.body.version);
       break;
     case MessageType.insert: {
@@ -24,9 +35,19 @@ export function handleEditorMessage(
       }
       break;
     }
-    case MessageType.refreshDocument:
-      editor.refreshDocument(msg.body.value, msg.body.version);
+    case MessageType.refreshDocument: {
+      // A refresh that misses changes this editor has sent would undo them; reject it. The
+      // extension sends a new refresh once it has applied those changes.
+      const accepted =
+        sync === undefined || msg.body.receivedChanges === sync.sentChanges;
+      // Force the refresh: the extension only sends one when the content differs, but the
+      // versions can match nonetheless (e.g. after it dropped a change from this editor that
+      // conflicted with a change to the document), and the editor would then skip it.
+      if (accepted)
+        editor.refreshDocument(msg.body.value, msg.body.version, true);
+      sync?.reply({ type: MessageType.refreshResult, body: { accepted } });
       break;
+    }
     case MessageType.replaceRange: {
       const { start, end, text } = msg.body;
       editor.replaceRange(start, end, text);

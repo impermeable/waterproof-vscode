@@ -1,12 +1,48 @@
 import type { MessageHandlerEditor } from "@impermeable/waterproof-editor";
 import { Message, MessageType, ServerStatus } from "../../shared";
 
+/** The editor operations used by the message handler. */
+export type HandledEditor = MessageHandlerEditor & {
+  serializeDocument?: () => string | undefined;
+};
+
+/** State the editor keeps to stay in sync with the document in the extension. */
+export interface DocumentSync {
+  /** The number of changes sent to the extension since the editor was initialized. */
+  sentChanges: number;
+  /** Sends a message to the extension. */
+  reply: (msg: Message) => void;
+}
+
+/**
+ * Replaces the content of the editor. `refreshDocument` skips the update when `version` equals
+ * the editor's own version, which can happen while the content differs (e.g. when the extension
+ * dropped a change that conflicted with a change to the document); force the update then.
+ */
+function refreshDocument(
+  editor: HandledEditor,
+  value: string,
+  version: number,
+) {
+  editor.refreshDocument(value, version);
+  if (
+    editor.serializeDocument !== undefined &&
+    editor.serializeDocument() !== value
+  ) {
+    editor.refreshDocument(value, Number.NaN);
+    editor.refreshDocument(value, version);
+  }
+}
+
 export function handleEditorMessage(
-  editor: MessageHandlerEditor,
+  editor: HandledEditor,
   msg: Message,
+  sync?: DocumentSync,
 ): void {
   switch (msg.type) {
     case MessageType.init:
+      // The extension starts counting the changes it receives anew.
+      if (sync) sync.sentChanges = 0;
       editor.init(msg.body.value, msg.body.version);
       break;
     case MessageType.insert: {
@@ -24,9 +60,15 @@ export function handleEditorMessage(
       }
       break;
     }
-    case MessageType.refreshDocument:
-      editor.refreshDocument(msg.body.value, msg.body.version);
+    case MessageType.refreshDocument: {
+      // A refresh that misses changes this editor has sent would undo them; reject it. The
+      // extension sends a new refresh once it has applied those changes.
+      const accepted =
+        sync === undefined || msg.body.receivedChanges === sync.sentChanges;
+      if (accepted) refreshDocument(editor, msg.body.value, msg.body.version);
+      sync?.reply({ type: MessageType.refreshResult, body: { accepted } });
       break;
+    }
     case MessageType.replaceRange: {
       const { start, end, text } = msg.body;
       editor.replaceRange(start, end, text);

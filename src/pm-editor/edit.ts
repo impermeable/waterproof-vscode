@@ -42,7 +42,12 @@ export class SequentialEditor {
       () => {
         this.applyNext();
       },
-      (reason) => console.log("REJECTED EDIT", reason),
+      (reason) => {
+        // Continue with the queue, so that it does not stay in progress forever. The document
+        // then differs from the editor, which is refreshed once the queue is drained.
+        console.log("REJECTED EDIT", reason);
+        this.applyNext();
+      },
     );
   }
 

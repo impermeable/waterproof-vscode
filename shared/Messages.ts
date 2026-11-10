@@ -48,7 +48,16 @@ export type Message =
       MessageType.insert,
       { symbolUnicode: string; type: "symbol" | "tactics"; time: number }
     >
-  | MessageBase<MessageType.refreshDocument, { value: string; version: number }>
+  | MessageBase<
+      MessageType.refreshDocument,
+      {
+        value: string;
+        version: number;
+        /** The number of changes from the editor that `value` includes. */
+        receivedChanges: number;
+      }
+    >
+  | MessageBase<MessageType.refreshResult, { accepted: boolean }>
   | MessageBase<
       MessageType.replaceRange,
       { start: number; end: number; text: string }
@@ -113,4 +122,5 @@ export const enum MessageType {
   themeUpdate,
   viewportHint,
   infoviewRpc,
+  refreshResult,
 }

@@ -149,3 +149,62 @@ describe("handleEditorMessage", () => {
     });
   });
 });
+
+describe("handleEditorMessage refreshDocument", () => {
+  const refresh = (receivedChanges: number): Message => ({
+    type: MessageType.refreshDocument,
+    body: { value: "new", version: 5, receivedChanges },
+  });
+
+  it("applies a refresh that includes all sent changes and accepts it", () => {
+    const editor = createEditorMock();
+    const reply = jest.fn();
+    handleEditorMessage(editor, refresh(2), { sentChanges: 2, reply });
+
+    expect(editor.refreshDocument).toHaveBeenCalledWith("new", 5);
+    expect(reply).toHaveBeenCalledWith({
+      type: MessageType.refreshResult,
+      body: { accepted: true },
+    });
+  });
+
+  it("rejects a refresh that misses sent changes", () => {
+    const editor = createEditorMock();
+    const reply = jest.fn();
+    handleEditorMessage(editor, refresh(1), { sentChanges: 2, reply });
+
+    expect(editor.refreshDocument).not.toHaveBeenCalled();
+    expect(reply).toHaveBeenCalledWith({
+      type: MessageType.refreshResult,
+      body: { accepted: false },
+    });
+  });
+
+  it("forces the update when the editor skipped it", () => {
+    const editor = {
+      ...createEditorMock(),
+      serializeDocument: jest.fn(() => "old"),
+    };
+    handleEditorMessage(editor, refresh(0), {
+      sentChanges: 0,
+      reply: jest.fn(),
+    });
+
+    expect(editor.refreshDocument.mock.calls).toEqual([
+      ["new", 5],
+      ["new", Number.NaN],
+      ["new", 5],
+    ]);
+  });
+
+  it("resets the count of sent changes on init", () => {
+    const editor = createEditorMock();
+    const sync = { sentChanges: 3, reply: jest.fn() };
+    handleEditorMessage(
+      editor,
+      { type: MessageType.init, body: { value: "x", version: 1 } },
+      sync,
+    );
+    expect(sync.sentChanges).toBe(0);
+  });
+});

@@ -16,6 +16,7 @@ import {
 import { checkTextChangingSaveSettings, getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/waterproofPanel";
 import { SequentialEditor } from "./edit";
+import { applyDocChange, mapDocChange } from "./documentSync";
 import { getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
@@ -84,11 +85,21 @@ export class WaterproofWebview extends EventEmitter {
   private _cachedMessages: Map<MessageType, Message>;
 
   /**
-   * Set when the document was saved while edits from the editor were still queued. The refresh
-   * is then postponed until the queue is drained, since the saved text does not yet contain the
-   * queued edits and would roll the editor back to an outdated state.
+   * The text shown by the editor, as far as the extension knows: the text last sent to the
+   * editor (and accepted by it), with all changes received from the editor since applied to it.
+   * Whenever no edits are queued and this differs from the document, the editor is refreshed.
    */
-  private _refreshPendingAfterEdits = false;
+  private _editorText: string;
+
+  /**
+   * The number of changes received from the editor since it was initialized. The editor counts
+   * the changes it sends in the same way, and only accepts a refresh that includes all of them;
+   * otherwise the refresh would undo its changes that are still on their way to the extension.
+   */
+  private _receivedChanges = 0;
+
+  /** The text of the refresh that was sent to the editor and not yet accepted or rejected. */
+  private _pendingRefresh?: string;
 
   /**
    * Watchdog for the editor bundle: the webview only renders once it has sent
@@ -142,10 +153,7 @@ export class WaterproofWebview extends EventEmitter {
 
     this._panel = webviewPanel;
     this._workspaceEditor.onFinish(() => {
-      if (this._refreshPendingAfterEdits) {
-        this._refreshPendingAfterEdits = false;
-        this.refreshOnSave();
-      }
+      this.refreshIfOutOfSync();
       this.emit(WebviewEvents.finishUpdate);
     });
     this._cachedMessages = new Map();
@@ -160,6 +168,7 @@ export class WaterproofWebview extends EventEmitter {
       WaterproofSetting.EnforceCorrectNonInputArea,
     );
     this._lastCorrectDocString = doc.getText();
+    this._editorText = doc.getText();
     checkTextChangingSaveSettings(doc);
 
     const format = getFormatFromExtension(doc);
@@ -249,24 +258,13 @@ export class WaterproofWebview extends EventEmitter {
       Uri.joinPath(extensionUri, "editor_output", "index.css"),
     );
 
-    // Register listener for when the document is saved, to trigger a refresh of the editor content.
-    // This picks up changes made outside the editor (in a text editor, by save actions such as
-    // formatting, or by other extensions). When the document only contains edits from the editor
-    // itself, the versions match and the editor ignores the refresh.
-    this._disposables.push(
-      workspace.onDidSaveTextDocument((e) => {
-        if (e.uri.toString() === this._document.uri.toString()) {
-          this.refreshOnSave();
-        }
-      }),
-    );
-
-    // Register various listeners
+    // Bring the editor up to date with changes made to the document outside of it: in a text
+    // editor, by undo/redo there, by save actions such as trimming whitespace or formatting, or by
+    // other extensions. Changes coming from the editor itself leave the two in sync.
     this._disposables.push(
       workspace.onDidChangeTextDocument((e) => {
-        if (!e.reason) return;
         if (e.document.uri.toString() === this._document.uri.toString()) {
-          this.syncWebview();
+          this.refreshIfOutOfSync();
         }
       }),
     );
@@ -349,7 +347,10 @@ export class WaterproofWebview extends EventEmitter {
     this._disposables.push(
       this._panel.onDidChangeViewState((e) => {
         if (e.webviewPanel.active) {
-          this.syncWebview();
+          // The editor is kept in sync with the document already, so it only needs to be
+          // refreshed if that is still pending; re-initializing it would lose its position.
+          this.refreshIfOutOfSync();
+          this.sendEditorState();
           this.emit(WebviewEvents.change, WebviewState.focus);
 
           // Overwrite the undo and redo commands
@@ -445,39 +446,67 @@ export class WaterproofWebview extends EventEmitter {
     );
   }
 
+  /**
+   * Initializes a newly loaded editor with the document content. Only used when the webview
+   * (re)loads, since it then has no content and has not sent any changes yet.
+   */
   private syncWebview() {
-    // send document content
+    const text = this._document.getText();
+    this._editorText = text;
+    this._receivedChanges = 0;
+    this._pendingRefresh = undefined;
     this.postMessage({
       type: MessageType.init,
-      body: {
-        value: this._document.getText(),
-        version: this._document.version,
-      },
+      body: { value: text, version: this._document.version },
     });
+    this.sendEditorState();
+    // Edits from a previous instance of the editor may still be queued.
+    this.refreshIfOutOfSync();
+  }
 
+  /** Sends the line number setting and the cached messages, which a (re)built editor needs. */
+  private sendEditorState() {
     this.updateLineNumberStatusInEditor();
-
-    // send any cached messages
     for (const m of this._cachedMessages.values()) this.postMessage(m);
   }
 
-  private refreshOnSave() {
-    // Edits from the editor are still being applied to the document, so its text is behind the
-    // editor. Refreshing now would make the editor show outdated content; wait for the queue.
-    if (this._workspaceEditor.isInProgress) {
-      this._refreshPendingAfterEdits = true;
+  /**
+   * Sends the document text to the editor if it differs from what the editor shows.
+   *
+   * This waits until the edits from the editor have been applied, since until then the document
+   * is behind the editor, and until the editor has answered the previous refresh. The editor
+   * rejects the refresh if it has sent changes that the extension had not received yet; the
+   * extension then applies those and tries again.
+   */
+  private refreshIfOutOfSync() {
+    if (
+      this._workspaceEditor.isInProgress ||
+      this._pendingRefresh !== undefined
+    )
       return;
-    }
+    const text = this._document.getText();
+    if (text === this._editorText) return;
+
+    this._pendingRefresh = text;
     this.postMessage({
       type: MessageType.refreshDocument,
       body: {
-        value: this._document.getText(),
+        value: text,
         version: this._document.version,
+        receivedChanges: this._receivedChanges,
       },
     });
-    this.updateLineNumberStatusInEditor();
-    // send any cached messages
-    for (const m of this._cachedMessages.values()) this.postMessage(m);
+    // Refreshing replaces the editor state, which drops decorations such as diagnostics.
+    this.sendEditorState();
+  }
+
+  /** Handles the editor's answer to a refresh. */
+  private handleRefreshResult(accepted: boolean) {
+    if (accepted && this._pendingRefresh !== undefined) {
+      this._editorText = this._pendingRefresh;
+    }
+    this._pendingRefresh = undefined;
+    this.refreshIfOutOfSync();
   }
 
   private updateLineNumberStatusInEditor() {
@@ -554,37 +583,43 @@ export class WaterproofWebview extends EventEmitter {
         this._lastCorrectDocString,
       );
     });
-    // We save the document and call sync webview to make sure that the editor is up to date
-    this.document.save().then(() => {
-      this.syncWebview();
-    });
+    // The editor is refreshed once the edit has been applied, since the document then differs
+    // from the editor.
+    this.document.save();
   }
 
   /** Handle a doc change sent from prosemirror */
   private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
-    // const e = new WorkspaceEdit();
+    // The change is expressed in offsets into the text the editor shows.
+    const base = this._editorText;
+    this._editorText = applyDocChange(base, change);
+    this._receivedChanges++;
 
     this._workspaceEditor.edit((e) => {
-      if ("firstEdit" in change) {
-        this.applyChangeToWorkspace(change.firstEdit, e);
-        this.applyChangeToWorkspace(change.secondEdit, e);
+      // By the time the edit is applied, the document may have been changed outside the editor
+      // as well; move the change along with those changes.
+      const mapped = mapDocChange(change, base, this._document.getText());
+      if (mapped === undefined) {
+        // Both changed the same text; the document wins, and the editor is refreshed after
+        // the queue is drained.
+        WaterproofLogger.log(
+          "Dropped a change from the editor that conflicts with a change to the document",
+        );
+        return;
+      }
+      if ("firstEdit" in mapped) {
+        this.applyChangeToWorkspace(mapped.firstEdit, e);
+        this.applyChangeToWorkspace(mapped.secondEdit, e);
       } else {
-        this.applyChangeToWorkspace(change, e);
+        this.applyChangeToWorkspace(mapped, e);
       }
     });
-    // workspace.applyEdit(e).then((val) => {
-    //     if (val) {
-    //         this.document.save();
-    //     } else {
-    //         WaterproofLogger.log("Failed to apply edit to workspace");
-    //     }
-    // },
-    // (reason) => console.log("REJECTED EDIT", reason));
 
     // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
     if (!this._teacherMode && this._enforceCorrectNonInputArea) {
       let foundDefect = false;
-      const nonInputRegions = getNonInputRegions(this._document.getText());
+      // Check the text as the editor shows it, since the edit may not have been applied yet.
+      const nonInputRegions = getNonInputRegions(this._editorText);
       if (nonInputRegions.length !== this._nonInputRegions.length) {
         foundDefect = true;
       } else {
@@ -599,7 +634,7 @@ export class WaterproofWebview extends EventEmitter {
       if (foundDefect) {
         showRestoreMessage(this.restore.bind(this));
       } else {
-        this._lastCorrectDocString = this._document.getText();
+        this._lastCorrectDocString = this._editorText;
       }
     }
   }
@@ -616,6 +651,9 @@ export class WaterproofWebview extends EventEmitter {
     switch (msg.type) {
       case MessageType.docChange:
         this.handleChangeFromEditor(msg.body);
+        break;
+      case MessageType.refreshResult:
+        this.handleRefreshResult(msg.body.accepted);
         break;
       case MessageType.ready:
         if (this._readyTimeout !== undefined) {

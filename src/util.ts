@@ -141,9 +141,7 @@ const TEXT_CHANGING_SAVE_SETTINGS = [
  * Returns the settings (without the `files.` prefix) with which VS Code would change the text of
  * a document in `scope` when saving it.
  */
-export function enabledTextChangingSaveSettings(
-  scope: ConfigurationScope,
-): string[] {
+function enabledTextChangingSaveSettings(scope: ConfigurationScope): string[] {
   const config = workspace.getConfiguration("files", scope);
   return TEXT_CHANGING_SAVE_SETTINGS.filter((setting) =>
     config.get<boolean>(setting, false),

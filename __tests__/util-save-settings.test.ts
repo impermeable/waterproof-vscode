@@ -51,38 +51,21 @@ beforeEach(() => {
 
 const scope = { languageId: "rocq" };
 
-describe("enabledTextChangingSaveSettings", () => {
-  it("returns no settings when none are enabled", () => {
-    expect(util.enabledTextChangingSaveSettings(scope)).toEqual([]);
-  });
-
-  it("returns every enabled text-changing setting", () => {
-    settings = {
-      trimTrailingWhitespace: true,
-      trimFinalNewlines: false,
-      insertFinalNewline: true,
-    };
-    expect(util.enabledTextChangingSaveSettings(scope)).toEqual([
-      "trimTrailingWhitespace",
-      "insertFinalNewline",
-    ]);
-  });
-
+describe("checkTextChangingSaveSettings", () => {
   it("ignores unrelated settings in the files section", () => {
     settings = { autoSave: true, hotExit: true } as never;
-    expect(util.enabledTextChangingSaveSettings(scope)).toEqual([]);
+    util.checkTextChangingSaveSettings(scope);
+    expect(vscode.window.showWarningMessage).not.toHaveBeenCalled();
   });
 
   it("reads the settings for the given scope", () => {
-    util.enabledTextChangingSaveSettings(scope);
+    util.checkTextChangingSaveSettings(scope);
     expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith(
       "files",
       scope,
     );
   });
-});
 
-describe("checkTextChangingSaveSettings", () => {
   it("does not warn when no text-changing settings are enabled", () => {
     util.checkTextChangingSaveSettings(scope);
     expect(vscode.window.showWarningMessage).not.toHaveBeenCalled();

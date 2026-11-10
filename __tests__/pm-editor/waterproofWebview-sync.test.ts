@@ -52,7 +52,6 @@ jest.mock(
           get: (_key: string, def?: unknown) => def,
         })),
         applyEdit: jest.fn(),
-        onDidSaveTextDocument: listener(),
         onDidChangeTextDocument: listener(),
         onDidChangeConfiguration: listener(),
       },

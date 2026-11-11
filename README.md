@@ -86,6 +86,11 @@ brew install pkgconf
 
 before you re-execute the command `opam install coq-lsp.0.2.5+9.1`.
 
+Try restarting the extension by clicking on the red "Waterproof Checker" bar in the bottom left of the vscode window.
+If vscode cannot detect the installation, set the coq-lsp path to the output of `which coq-lsp`.
+This can be done using ctrl+shift+p and selecting "Waterproof: Change Waterproof path".
+Alternatively, make sure that the `PATH` available to vscode contains the coq-lsp binary.
+
 ## Manual installation on Windows with installer
 
 ### Step 1: Dependencies installer

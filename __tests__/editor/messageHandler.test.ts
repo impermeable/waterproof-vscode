@@ -2,6 +2,7 @@ import { Message, MessageType } from "../../shared";
 import { handleEditorMessage } from "../../editor/src/messageHandler";
 import { MessageHandlerEditor } from "@impermeable/waterproof-editor";
 import { describe, expect, it, jest } from "@jest/globals";
+import { EditorDocumentSync } from "../../editor/src/documentSync";
 
 function createEditorMock(): jest.Mocked<MessageHandlerEditor> {
   return {
@@ -15,7 +16,6 @@ function createEditorMock(): jest.Mocked<MessageHandlerEditor> {
     setShowMenuItems: jest.fn(),
     handleHistoryChange: jest.fn(),
     setTeacherMode: jest.fn(),
-    refreshDocument: jest.fn(),
     removeBusyIndicators: jest.fn(),
     reportProgress: jest.fn(),
     setBusyIndicator: jest.fn(),
@@ -27,6 +27,34 @@ function createEditorMock(): jest.Mocked<MessageHandlerEditor> {
 }
 
 describe("handleEditorMessage", () => {
+  describe("sync", () => {
+    const init = (generation: number, webview = "a"): Message => ({
+      type: MessageType.init,
+      body: { value: "x", version: 3, generation, webview },
+    });
+    const change = { startInFile: 0, endInFile: 0, finalText: "a" };
+
+    it("shows the content, and tags later changes with its generation", () => {
+      const editor = createEditorMock();
+      const post = jest.fn();
+      const sync = new EditorDocumentSync(post, "a");
+      handleEditorMessage(editor, init(4), sync);
+      expect(editor.init).toHaveBeenCalledWith("x", 3);
+      sync.sendChange(change);
+      expect(post).toHaveBeenCalledWith({
+        type: MessageType.docChange,
+        body: { change, generation: 4 },
+      });
+    });
+
+    it("ignores content for an earlier instance of the webview", () => {
+      const editor = createEditorMock();
+      const sync = new EditorDocumentSync(jest.fn(), "b");
+      handleEditorMessage(editor, init(4, "a"), sync);
+      expect(editor.init).not.toHaveBeenCalled();
+    });
+  });
+
   describe("insert", () => {
     it("calls handleSnippet for tactics type, not insertSymbol", () => {
       const editor = createEditorMock();

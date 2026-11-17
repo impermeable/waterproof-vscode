@@ -134,9 +134,15 @@ export function excludeRocqFileTypes() {
  * user in that case.
  */
 export function checkTrimmingWhitespace() {
-  const config = workspace.getConfiguration("files");
-  const isTrimTrailingWhitespaceEnabled = config.get<boolean>(
-    "trimTrailingWhitespace",
+  // The extension turns it off for Coq and Lean (`configurationDefaults` in package.json), and
+  // VS Code for Markdown (.mv files), so this only warns when the user turned it on for them.
+  // When it is on, saving changes the document, and changes typed in the Waterproof editor
+  // just before can be discarded.
+  const isTrimTrailingWhitespaceEnabled = ["coq", "lean4", "markdown"].some(
+    (languageId) =>
+      workspace
+        .getConfiguration("files", { languageId })
+        .get<boolean>("trimTrailingWhitespace"),
   );
   if (isTrimTrailingWhitespaceEnabled) {
     window

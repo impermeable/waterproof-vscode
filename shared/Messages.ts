@@ -38,24 +38,41 @@ export type Message =
       MessageType.diagnostics,
       { positionedDiagnostics: Array<OffsetDiagnostic>; version: number }
     >
-  | MessageBase<MessageType.docChange, DocChange | WrappingDocChange>
+  | MessageBase<
+      MessageType.docChange,
+      {
+        change: DocChange | WrappingDocChange;
+        /** The generation of the content the change was made to (see `init`). */
+        generation: number;
+      }
+    >
   | MessageBase<MessageType.editorHistoryChange, HistoryChange>
   | MessageBase<MessageType.editorReady>
   | MessageBase<MessageType.errorGoals, unknown>
   | MessageBase<MessageType.executionInfo, { from: number; to: number }>
-  | MessageBase<MessageType.init, { value: string; version: number }>
+  | MessageBase<
+      MessageType.init,
+      {
+        value: string;
+        version: number;
+        /** Counts the times the editor got the document; it tags its changes with it. */
+        generation: number;
+        /** The webview instance this is meant for, from its `ready`. */
+        webview: string;
+      }
+    >
   | MessageBase<
       MessageType.insert,
       { symbolUnicode: string; type: "symbol" | "tactics"; time: number }
     >
-  | MessageBase<MessageType.refreshDocument, { value: string; version: number }>
   | MessageBase<
       MessageType.replaceRange,
       { start: number; end: number; text: string }
     >
   | MessageBase<MessageType.progress, SimpleProgressParams>
   | MessageBase<MessageType.qedStatus, InputAreaStatus[]>
-  | MessageBase<MessageType.ready>
+  /** The editor webview has loaded; `webview` identifies this instance of it. */
+  | MessageBase<MessageType.ready, { webview: string }>
   | MessageBase<
       MessageType.renderGoals,
       { goals: RocqGoalAnswer<PpString>; visibility?: HypVisibility }
@@ -95,7 +112,6 @@ export const enum MessageType {
   flash,
   init,
   insert,
-  refreshDocument,
   replaceRange,
   progress,
   qedStatus,

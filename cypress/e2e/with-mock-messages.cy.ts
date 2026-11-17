@@ -72,6 +72,8 @@ describe("TestingTest", () => {
                     value:
                       "<input-area>\n```coq\nCompute 3 + 3.\n```\n</input-area>",
                     version: 1,
+                    generation: 1,
+                    webview: msg.body.webview,
                   },
                 });
 
@@ -80,7 +82,7 @@ describe("TestingTest", () => {
                 }
               } else if (msg.type === MessageType.docChange) {
                 // @ts-expect-error Okay for test purposes
-                edits.push(msg.body);
+                edits.push(msg.body.change);
               }
             },
           };

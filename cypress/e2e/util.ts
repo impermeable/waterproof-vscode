@@ -26,10 +26,12 @@ export function setupTest(
                 body: {
                   value: initialDocument,
                   version: 1,
+                  generation: 1,
+                  webview: msg.body.webview,
                 },
               });
             } else if (msg.type === MessageType.docChange) {
-              edits.push(msg.body);
+              edits.push(msg.body.change);
             } else {
               if (callbacks) {
                 const callback = callbacks[msg.type];

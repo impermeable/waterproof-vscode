@@ -15,7 +15,7 @@ import {
 
 import { getNonce } from "../util";
 import { WebviewEvents, WebviewState } from "../webviews/waterproofPanel";
-import { SequentialEditor } from "./edit";
+import { DocumentSync, EditorChange, TextEdit } from "./documentSync";
 import { getFormatFromExtension, isIllegalFileName } from "./fileUtils";
 
 const SAVE_AS = "Save As";
@@ -29,12 +29,7 @@ import {
 import { getNonInputRegions, showRestoreMessage } from "./file-utils";
 import { WaterproofEditorProvider } from "./waterproofEditor";
 import { FileFormat, Message, MessageType } from "../../shared";
-import {
-  DocChange,
-  HistoryChange,
-  ThemeStyle,
-  WrappingDocChange,
-} from "@impermeable/waterproof-editor";
+import { HistoryChange, ThemeStyle } from "@impermeable/waterproof-editor";
 
 /** How long to wait for the editor webview to report itself ready. */
 const READY_TIMEOUT_MS = 10_000;
@@ -50,7 +45,9 @@ export class WaterproofWebview extends EventEmitter {
   private readonly _format: FileFormat = FileFormat.MarkdownV;
 
   /** The editor that appends changes to the document associated with this panel */
-  private readonly _workspaceEditor = new SequentialEditor();
+
+  /** Keeps the editor and the document in sync. */
+  private readonly _sync: DocumentSync;
 
   /** Disposables */
   private readonly _disposables: Disposable[] = [];
@@ -94,7 +91,7 @@ export class WaterproofWebview extends EventEmitter {
 
   /** Checks whether the document is currently being changed */
   get documentIsUpToDate() {
-    return !this._workspaceEditor.isInProgress;
+    return !this._sync.editsInProgress;
   }
 
   // Handlers for undo and redo actions.
@@ -134,11 +131,24 @@ export class WaterproofWebview extends EventEmitter {
     }
 
     this._panel = webviewPanel;
-    this._workspaceEditor.onFinish(() => {
-      this.emit(WebviewEvents.finishUpdate);
-    });
     this._cachedMessages = new Map();
     this._document = doc;
+
+    this._sync = new DocumentSync({
+      documentText: () => this._document.getText(),
+      documentVersion: () => this._document.version,
+      applyEdits: (edits) => workspace.applyEdit(this.workspaceEdit(edits)),
+      sendInit: (text, version, generation, webview) =>
+        this.sendInit(text, version, generation, webview),
+      reportDiscardedChanges: (count) => {
+        window.showWarningMessage(
+          `${count} change(s) made in the Waterproof editor were discarded, because the ` +
+            `file was changed elsewhere at the same time. The editor now shows the file.`,
+        );
+      },
+      editsFinished: () => this.emit(WebviewEvents.finishUpdate),
+      log: (message) => WaterproofLogger.log(message),
+    });
 
     this._nonInputRegions = getNonInputRegions(doc.getText());
 
@@ -237,21 +247,12 @@ export class WaterproofWebview extends EventEmitter {
       Uri.joinPath(extensionUri, "editor_output", "index.css"),
     );
 
-    // Register listener for when the document is saved, to trigger a refresh of the editor content.
-    this._disposables.push(
-      workspace.onDidSaveTextDocument((e) => {
-        if (e.uri.toString() === this._document.uri.toString()) {
-          this.refreshOnSave();
-        }
-      }),
-    );
-
-    // Register various listeners
+    // Changes made elsewhere (a text editor, undo there, save actions, other extensions) are
+    // brought to the editor.
     this._disposables.push(
       workspace.onDidChangeTextDocument((e) => {
-        if (!e.reason) return;
         if (e.document.uri.toString() === this._document.uri.toString()) {
-          this.syncWebview();
+          this._sync.documentChanged();
         }
       }),
     );
@@ -319,6 +320,7 @@ export class WaterproofWebview extends EventEmitter {
     this._disposables.push(
       this._panel.onDidDispose(() => {
         clearTimeout(this._readyTimeout);
+        this._sync.dispose();
         this._panel.dispose();
         for (const d of this._disposables) {
           d.dispose();
@@ -330,7 +332,6 @@ export class WaterproofWebview extends EventEmitter {
     this._disposables.push(
       this._panel.onDidChangeViewState((e) => {
         if (e.webviewPanel.active) {
-          this.syncWebview();
           this.emit(WebviewEvents.change, WebviewState.focus);
 
           // Overwrite the undo and redo commands
@@ -426,31 +427,20 @@ export class WaterproofWebview extends EventEmitter {
     );
   }
 
-  private syncWebview() {
-    // send document content
+  /** (Re)initializes the editor with `text`, and sends the state a new editor needs. */
+  private sendInit(
+    text: string,
+    version: number,
+    generation: number,
+    webview: string,
+  ) {
     this.postMessage({
       type: MessageType.init,
-      body: {
-        value: this._document.getText(),
-        version: this._document.version,
-      },
+      body: { value: text, version, generation, webview },
     });
 
     this.updateLineNumberStatusInEditor();
 
-    // send any cached messages
-    for (const m of this._cachedMessages.values()) this.postMessage(m);
-  }
-
-  private refreshOnSave() {
-    this.postMessage({
-      type: MessageType.refreshDocument,
-      body: {
-        value: this._document.getText(),
-        version: this._document.version,
-      },
-    });
-    this.updateLineNumberStatusInEditor();
     // send any cached messages
     for (const m of this._cachedMessages.values()) this.postMessage(m);
   }
@@ -488,78 +478,38 @@ export class WaterproofWebview extends EventEmitter {
     );
   }
 
-  /** Apply new doc changes to the underlying file */
-  private applyChangeToWorkspace(change: DocChange, edit: WorkspaceEdit) {
-    if (change.startInFile === change.endInFile) {
-      edit.insert(
-        this.document.uri,
-        this.document.positionAt(change.startInFile),
-        change.finalText,
-      );
-    } else if (change.finalText.length === 0) {
-      edit.delete(
-        this.document.uri,
-        new Range(
-          this._document.positionAt(change.startInFile),
-          this.document.positionAt(change.endInFile),
-        ),
-      );
-    } else {
+  /** A workspace edit with `edits`, expressed in offsets into the current document. */
+  private workspaceEdit(edits: TextEdit[]): WorkspaceEdit {
+    const edit = new WorkspaceEdit();
+    for (const { start, end, text } of edits) {
       edit.replace(
-        this.document.uri,
+        this._document.uri,
         new Range(
-          this._document.positionAt(change.startInFile),
-          this.document.positionAt(change.endInFile),
+          this._document.positionAt(start),
+          this._document.positionAt(end),
         ),
-        change.finalText,
+        text,
       );
     }
+    return edit;
   }
 
   // Restore the document to the last correct state, that is, a state for which the content
   //  outside of the <input-area> tags is correct.
   private restore() {
-    this._workspaceEditor.edit((edit) => {
-      edit.replace(
-        this.document.uri,
-        new Range(
-          this._document.positionAt(0),
-          this.document.positionAt(this.document.getText().length),
-        ),
-        this._lastCorrectDocString,
-      );
-    });
-    // We save the document and call sync webview to make sure that the editor is up to date
-    this.document.save().then(() => {
-      this.syncWebview();
-    });
+    this._sync.replaceDocument(this._lastCorrectDocString);
   }
 
   /** Handle a doc change sent from prosemirror */
-  private handleChangeFromEditor(change: DocChange | WrappingDocChange) {
-    // const e = new WorkspaceEdit();
-
-    this._workspaceEditor.edit((e) => {
-      if ("firstEdit" in change) {
-        this.applyChangeToWorkspace(change.firstEdit, e);
-        this.applyChangeToWorkspace(change.secondEdit, e);
-      } else {
-        this.applyChangeToWorkspace(change, e);
-      }
-    });
-    // workspace.applyEdit(e).then((val) => {
-    //     if (val) {
-    //         this.document.save();
-    //     } else {
-    //         WaterproofLogger.log("Failed to apply edit to workspace");
-    //     }
-    // },
-    // (reason) => console.log("REJECTED EDIT", reason));
+  private handleChangeFromEditor(change: EditorChange, generation: number) {
+    const editorText = this._sync.changeFromEditor(change, generation);
+    if (editorText === undefined) return;
 
     // If we are in teacher mode or we don't want to check for non input region correctness we skip it.
     if (!this._teacherMode && this._enforceCorrectNonInputArea) {
       let foundDefect = false;
-      const nonInputRegions = getNonInputRegions(this._document.getText());
+      // Check the text as the editor shows it; the change may not have been applied yet.
+      const nonInputRegions = getNonInputRegions(editorText);
       if (nonInputRegions.length !== this._nonInputRegions.length) {
         foundDefect = true;
       } else {
@@ -574,7 +524,7 @@ export class WaterproofWebview extends EventEmitter {
       if (foundDefect) {
         showRestoreMessage(this.restore.bind(this));
       } else {
-        this._lastCorrectDocString = this._document.getText();
+        this._lastCorrectDocString = editorText;
       }
     }
   }
@@ -590,7 +540,7 @@ export class WaterproofWebview extends EventEmitter {
   private handleMessage(msg: Message) {
     switch (msg.type) {
       case MessageType.docChange:
-        this.handleChangeFromEditor(msg.body);
+        this.handleChangeFromEditor(msg.body.change, msg.body.generation);
         break;
       case MessageType.ready:
         if (this._readyTimeout !== undefined) {
@@ -598,10 +548,11 @@ export class WaterproofWebview extends EventEmitter {
           this._readyTimeout = undefined;
         }
         WaterproofLogger.debug("[editor] webview reported ready, syncing");
-        this.syncWebview();
-        // When ready send the state of the teacher mode and show menu items settings to editor
+        // Send the state of the teacher mode and show menu items settings to editor. These are
+        // cached, and so are sent again after the content.
         this.updateTeacherMode();
         this.updateMenuItemsInEditor();
+        this._sync.editorReady(msg.body.webview);
         break;
       default:
         this.emit(WebviewEvents.message, msg);

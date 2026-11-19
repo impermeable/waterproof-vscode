@@ -574,7 +574,10 @@ export abstract class LspClient<
       workspace.onDidChangeTextDocument((event) => {
         if (
           webviewManager.has(event.document.uri.toString()) &&
-          event.document.languageId === this.language
+          (event.document.languageId === this.language || // Needed for .lean files as the languageId is 'lean4' and our lsp language is "lean4"
+            (event.document.languageId === "markdown" &&
+              this.language === "rocq") || // Needed for .mv files as the languageId is 'markdown' and our lsp language is "rocq"
+            (event.document.languageId === "coq" && this.language === "rocq")) // Needed for .v files as the languageId is 'coq' and our lsp language is "rocq"
         ) {
           this.updateCompletions(event.document);
         }

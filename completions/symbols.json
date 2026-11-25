@@ -358,12 +358,6 @@
         "apply": "∨"
     },
     {
-        "label": "\\abs",
-        "type": "symbol",
-        "apply": "∣",
-        "symbolPanelCategory": 2
-    },
-    {
         "label": "\\intersection",
         "type": "symbol",
         "apply": "∩",

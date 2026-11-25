@@ -49,6 +49,7 @@ export type Message =
       { symbolUnicode: string; type: "symbol" | "tactics"; time: number }
     >
   | MessageBase<MessageType.refreshDocument, { value: string; version: number }>
+  | MessageBase<MessageType.restoreFocus>
   | MessageBase<
       MessageType.replaceRange,
       { start: number; end: number; text: string }
@@ -113,4 +114,5 @@ export const enum MessageType {
   themeUpdate,
   viewportHint,
   infoviewRpc,
+  restoreFocus,
 }

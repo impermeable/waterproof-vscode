@@ -258,12 +258,33 @@ window.onload = () => {
   const editor = new WaterproofEditor(editorElement, cfg, themeStyle);
   editorRef.current = editor;
 
+  let lastFocusedEditorElement: HTMLElement | null = null;
+  editorElement.addEventListener("focusin", (event) => {
+    if (event.target instanceof HTMLElement) {
+      lastFocusedEditorElement = event.target;
+    }
+  });
+  const restoreEditorFocus = () => {
+    if (
+      lastFocusedEditorElement !== null &&
+      editorElement.contains(lastFocusedEditorElement)
+    ) {
+      lastFocusedEditorElement.focus({ preventScroll: true });
+    }
+  };
+  window.addEventListener("focus", restoreEditorFocus);
+
   //@ts-expect-error For now, expose editor in the window. Allows for calling editorInstance methods via the debug console.
   window.editorInstance = editor;
 
   // Register event listener for communication between extension and editor
   window.addEventListener("message", (event: MessageEvent<Message>) => {
     const msg = event.data;
+
+    if (msg.type === MessageType.restoreFocus) {
+      restoreEditorFocus();
+      return;
+    }
 
     handleEditorMessage(editor, msg);
   });

@@ -317,6 +317,14 @@ export class WaterproofWebview extends EventEmitter {
     );
 
     this._disposables.push(
+      window.onDidChangeWindowState((state) => {
+        if (state.focused && this._panel.active) {
+          this.postMessage({ type: MessageType.restoreFocus });
+        }
+      }),
+    );
+
+    this._disposables.push(
       this._panel.onDidDispose(() => {
         clearTimeout(this._readyTimeout);
         this._panel.dispose();
@@ -330,7 +338,6 @@ export class WaterproofWebview extends EventEmitter {
     this._disposables.push(
       this._panel.onDidChangeViewState((e) => {
         if (e.webviewPanel.active) {
-          this.syncWebview();
           this.emit(WebviewEvents.change, WebviewState.focus);
 
           // Overwrite the undo and redo commands
@@ -602,6 +609,9 @@ export class WaterproofWebview extends EventEmitter {
         // When ready send the state of the teacher mode and show menu items settings to editor
         this.updateTeacherMode();
         this.updateMenuItemsInEditor();
+        if (window.state.focused && this._panel.active) {
+          this.postMessage({ type: MessageType.restoreFocus });
+        }
         break;
       default:
         this.emit(WebviewEvents.message, msg);

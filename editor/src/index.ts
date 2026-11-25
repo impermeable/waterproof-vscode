@@ -268,16 +268,6 @@ window.onload = () => {
     handleEditorMessage(editor, msg);
   });
 
-  let timeoutHandle: number | undefined;
-  window.addEventListener("scroll", (_event) => {
-    if (timeoutHandle === undefined) {
-      timeoutHandle = window.setTimeout(() => {
-        editor.handleScroll(window.innerHeight);
-        timeoutHandle = undefined;
-      }, 100);
-    }
-  });
-
   // Start the editor
   codeAPI.postMessage({ type: MessageType.ready });
 };

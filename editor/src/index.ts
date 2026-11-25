@@ -278,6 +278,8 @@ window.onload = () => {
     }
   });
 
+  editor.reportProgress(0, 1, "File loaded");
+
   // Start the editor
   codeAPI.postMessage({ type: MessageType.ready });
 };
